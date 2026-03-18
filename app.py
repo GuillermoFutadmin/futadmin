@@ -16,10 +16,16 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 app = Flask(__name__, static_folder=os.path.join(BASE_DIR, 'static'))
 app.config['SECRET_KEY'] = os.getenv('FLASK_SECRET_KEY', secrets.token_hex(24))
-db_url = os.getenv('SQLALCHEMY_DATABASE_URI') or os.getenv('DATABASE_URL') or 'sqlite:///futadmin.db'
+db_url = os.getenv('DATABASE_URL') or os.getenv('SQLALCHEMY_DATABASE_URI') or 'sqlite:///futadmin.db'
 if db_url.startswith("postgres://"):
     db_url = db_url.replace("postgres://", "postgresql://", 1)
 app.config['SQLALCHEMY_DATABASE_URI'] = db_url
+
+# Log de diagnóstico en el arranque
+print(f"--- Arrancando Aplicación FutAdmin ---")
+print(f"DATABASE_URI Configurada: {db_url[:40]}...")
+if db_url.startswith("sqlite"):
+    print("ADVERTENCIA: Usando SQLite. Si estás en Railway, verifica que DATABASE_URL esté ligada.")
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SESSION_COOKIE_SECURE'] = os.getenv('SSL_REQUIRED', 'False') == 'True'
 app.config['SESSION_COOKIE_HTTPONLY'] = True
