@@ -119,34 +119,32 @@ def get_all_equipos():
 
 @app.route('/api/debug_prod')
 def debug_prod():
-    # Esta ruta ayuda a confirmar qué base de datos y usuario estamos usando en tiempo real
-    return jsonify({
-        "database": app.config['SQLALCHEMY_DATABASE_URI'][:50] + "...",
-        "is_postgres": "postgresql" in app.config['SQLALCHEMY_DATABASE_URI'],
-        "user_in_session": session.get('user_id'),
-        "user_rol": session.get('user_rol'),
-        "secret_key_stable": app.config['SECRET_KEY'] != 'dev-key-fallback-replace-me'
-    })
-
-@app.route('/api/debug_prod')
-def debug_prod():
-    # Solo accesible por admin o master password en session
-    if session.get('user_rol') != 'admin':
-        return jsonify({"error": "No autorizado"}), 403
+    # Ruta de diagnóstico que combina info básica (pública) y stats (admin)
+    is_admin = session.get('user_rol') == 'admin'
     
     db_uri = app.config.get('SQLALCHEMY_DATABASE_URI', 'None')
-    masked_uri = db_uri[:20] + "..." + db_uri[-10:] if len(db_uri) > 30 else db_uri
+    # Protegemos la URI de la BD
+    masked_uri = db_uri[:25] + "..." + db_uri[-10:] if len(db_uri) > 35 else "Confidencial"
     
-    stats = {
-        "db": masked_uri,
-        "session": {k: v for k, v in session.items() if k != 'csrf_token'},
-        "counts": {
-            "ligas": Liga.query.count(),
-            "usuarios": Usuario.query.count(),
-            "canchas": Cancha.query.count()
-        }
+    data = {
+        "database_type": "PostgreSQL" if "postgresql" in db_uri else "SQLite/Other",
+        "db_masked": masked_uri,
+        "session_active": 'user_id' in session,
+        "user_rol": session.get('user_rol'),
+        "secret_key_stable": app.config['SECRET_KEY'] != 'dev-key-fallback-replace-me'
     }
-    return jsonify(stats)
+
+    if is_admin:
+        try:
+            data["counts"] = {
+                "ligas": Liga.query.count(),
+                "usuarios": Usuario.query.count(),
+                "canchas": Cancha.query.count()
+            }
+        except Exception as e:
+            data["error_stats"] = str(e)
+
+    return jsonify(data)
 
 # --- Ruta de Subida de Archivos ---
 
