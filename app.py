@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 from flask_talisman import Talisman
 from werkzeug.middleware.proxy_fix import ProxyFix
 import os, secrets, uuid, math
+from PIL import Image
 
 # Cargar variables de entorno desde .env
 load_dotenv()
@@ -172,11 +173,30 @@ def upload_file():
     if file and allowed_file(file.filename):
         # Sanitizar nombre
         ext = file.filename.rsplit('.', 1)[1].lower()
-        unique_name = f"{uuid.uuid4().hex}.{ext}"
-        save_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_name)
-        file.save(save_path)
-        url = f"/static/uploads/{unique_name}"
-        return jsonify({"url": url}), 201
+        # Cargar imagen y comprimir para ahorrar espacio (Max 800px, 70% calidad)
+        try:
+            img = Image.open(file)
+            # Convertir a RGB si es necesario (para JPEG/compatibilidad)
+            if img.mode in ("RGBA", "P"):
+                img = img.convert("RGB")
+            
+            max_size = (800, 800)
+            img.thumbnail(max_size, Image.Resampling.LANCZOS)
+            
+            # Forzamos extensión a jpg para consistencia y ahorro
+            unique_name = f"{uuid.uuid4().hex}.jpg"
+            save_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_name)
+            
+            img.save(save_path, "JPEG", optimize=True, quality=70)
+            url = f"/static/uploads/{unique_name}"
+            return jsonify({"url": url}), 201
+        except Exception as e:
+            print(f"Error comprimiendo imagen: {e}")
+            # Fallback: guardar tal cual si falla Pillow
+            file.seek(0)
+            file.save(save_path)
+            url = f"/static/uploads/{unique_name}"
+            return jsonify({"url": url}), 201
     return jsonify({"error": "Formato de archivo no permitido"}), 400
 
 # --- Rutas API: Equipos ---
