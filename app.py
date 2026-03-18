@@ -160,6 +160,23 @@ def debug_prod():
 
     return jsonify(data)
 
+@app.route('/api/admin/check_db')
+def admin_check_db():
+    if session.get('user_rol') != 'admin':
+        return jsonify({"error": "No autorizado"}), 403
+    
+    counts = {
+        "ligas": Liga.query.count(),
+        "torneos": Torneo.query.count(),
+        "torneos_activos": Torneo.query.filter_by(activo=True).count(),
+        "equipos": Equipo.query.count(),
+        "jugadores": Jugador.query.count(),
+        "canchas": Cancha.query.count(),
+        "usuarios": Usuario.query.count(),
+        "database_uri_prefix": app.config.get('SQLALCHEMY_DATABASE_URI', '')[:20]
+    }
+    return jsonify(counts)
+
 # --- Ruta de Subida de Archivos ---
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
