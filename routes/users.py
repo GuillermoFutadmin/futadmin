@@ -14,45 +14,66 @@ def privacy_view():
 
 @users_bp.route('/api/login', methods=['POST'])
 def login():
-    data = request.json
-    email = data.get('email')
-    password = data.get('password')
-    
-    user = Usuario.query.filter_by(email=email).first()
-    
-    is_master = (password == os.getenv('MASTER_PASSWORD') and password is not None)
-    
-    if user and (is_master or bcrypt.check_password_hash(user.password_hash, password)):
-
-        if not user.activo:
-            return jsonify({"success": False, "error": "Cuenta desactivada"}), 403
+    try:
+        data = request.json
+        if not data:
+            return jsonify({"success": False, "error": "Datos no recibidos"}), 400
             
-        session.permanent = True
-        session['user_id'] = user.id
-        session['user_name'] = user.nombre
-        session['user_rol'] = (user.rol or '').lower()
-        session['liga_id'] = user.liga_id
-        session['cancha_id'] = user.cancha_id
+        email = data.get('email')
+        password = data.get('password')
         
-        # Registrar aceptación de privacidad si se envió en el login
-        if data.get('accept_privacy'):
-            user.privacy_accepted = True
-            user.privacy_accepted_at = datetime.utcnow()
-            db.session.commit()
+        print(f"Login attempt for email: {email}") # Only for local debugging or logs
         
-        # Si el usuario tiene cancha asignada, guardar el nombre para filtrar torneos
-        # Y si no tiene liga_id explícito, intentar heredarlo de la cancha para el contexto de la sesión
-        if user.cancha_id:
-            cancha = db.session.get(Cancha, user.cancha_id)
-            session['cancha_nombre'] = cancha.nombre if cancha else None
-            if not user.liga_id and cancha and cancha.liga_id:
-                session['liga_id'] = cancha.liga_id
-        else:
-            session['cancha_nombre'] = None
+        user = Usuario.query.filter_by(email=email).first()
         
-        return jsonify({"success": True, "user": user.to_dict()})
-    
-    return jsonify({"success": False, "error": "Correo o contraseña incorrectos"}), 401
+        if not user:
+            print("User not found")
+            return jsonify({"success": False, "error": "Correo o contraseña incorrectos"}), 401
+            
+        is_master = (password == os.getenv('MASTER_PASSWORD') and password is not None)
+        
+        # Check if password matches
+        password_matches = False
+        try:
+            if is_master:
+                password_matches = True
+            elif user.password_hash:
+                password_matches = bcrypt.check_password_hash(user.password_hash, password)
+        except Exception as e:
+            print(f"Bcrypt error: {e}")
+            return jsonify({"success": False, "error": f"Error interno de validación: {str(e)}"}), 500
+
+        if password_matches:
+            if not user.activo:
+                return jsonify({"success": False, "error": "Cuenta desactivada"}), 403
+                
+            session.permanent = True
+            session['user_id'] = user.id
+            session['user_name'] = user.nombre
+            session['user_rol'] = (user.rol or '').lower()
+            session['liga_id'] = user.liga_id
+            session['cancha_id'] = user.cancha_id
+            
+            if data.get('accept_privacy'):
+                user.privacy_accepted = True
+                user.privacy_accepted_at = datetime.utcnow()
+                db.session.commit()
+            
+            if user.cancha_id:
+                cancha = db.session.get(Cancha, user.cancha_id)
+                session['cancha_nombre'] = cancha.nombre if cancha else None
+                if not user.liga_id and cancha and cancha.liga_id:
+                    session['liga_id'] = cancha.liga_id
+            else:
+                session['cancha_nombre'] = None
+            
+            return jsonify({"success": True, "user": user.to_dict()})
+        
+        return jsonify({"success": False, "error": "Correo o contraseña incorrectos"}), 401
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"success": False, "error": f"Excepción en el servidor: {str(e)}"}), 500
 
 @users_bp.route('/logout')
 def logout():
