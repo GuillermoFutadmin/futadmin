@@ -115,6 +115,17 @@ def get_all_equipos():
 
 @app.route('/api/debug_prod')
 def debug_prod():
+    # Esta ruta ayuda a confirmar qué base de datos y usuario estamos usando en tiempo real
+    return jsonify({
+        "database": app.config['SQLALCHEMY_DATABASE_URI'][:50] + "...",
+        "is_postgres": "postgresql" in app.config['SQLALCHEMY_DATABASE_URI'],
+        "user_in_session": session.get('user_id'),
+        "user_rol": session.get('user_rol'),
+        "secret_key_stable": app.config['SECRET_KEY'] != 'dev-key-fallback-replace-me'
+    })
+
+@app.route('/api/debug_prod')
+def debug_prod():
     # Solo accesible por admin o master password en session
     if session.get('user_rol') != 'admin':
         return jsonify({"error": "No autorizado"}), 403
