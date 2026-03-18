@@ -17,7 +17,12 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 app = Flask(__name__, static_folder=os.path.join(BASE_DIR, 'static'))
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1, x_prefix=1)
-app.config['SECRET_KEY'] = os.getenv('FLASK_SECRET_KEY', secrets.token_hex(24))
+# IMPORTANTE: El Secret Key DEBE ser el mismo para todos los workers
+app.config['SECRET_KEY'] = os.getenv('FLASK_SECRET_KEY')
+if not app.config['SECRET_KEY']:
+    print("ADVERTENCIA CRÍTICA: FLASK_SECRET_KEY no detectada. Usando llave volátil (esto romperá sesiones en Railway).")
+    app.config['SECRET_KEY'] = 'dev-key-fallback-replace-me'
+
 db_url = os.getenv('DATABASE_URL') or os.getenv('SQLALCHEMY_DATABASE_URI') or 'sqlite:///futadmin.db'
 if db_url.startswith("postgres://"):
     db_url = db_url.replace("postgres://", "postgresql://", 1)
@@ -28,11 +33,13 @@ print(f"--- Arrancando Aplicación FutAdmin ---")
 print(f"DATABASE_URI Configurada: {db_url[:40]}...")
 if db_url.startswith("sqlite"):
     print("ADVERTENCIA: Usando SQLite. Si estás en Railway, verifica que DATABASE_URL esté ligada.")
+
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SESSION_COOKIE_SECURE'] = True # Forzar Secure en Railway (HTTPS)
+app.config['SESSION_COOKIE_SECURE'] = True
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-app.config['PERMANENT_SESSION_LIFETIME'] = 86400
+app.config['SESSION_COOKIE_NAME'] = 'futadmin_session_prod'
+app.config['PERMANENT_SESSION_LIFETIME'] = 86400 * 7 # 7 días
 app.config['UPLOAD_FOLDER'] = os.path.join(BASE_DIR, 'static', 'uploads')
 app.config['TELEGRAM_BOT_TOKEN'] = os.getenv('TELEGRAM_BOT_TOKEN')
 app.config['MAX_CONTENT_LENGTH'] = int(os.getenv('MAX_CONTENT_LENGTH', 2 * 1024 * 1024))
