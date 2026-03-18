@@ -7,31 +7,31 @@ def init():
     with app.app_context():
         try:
             print("--- Iniciando Script de Inicialización ---")
-            db_url = os.getenv('SQLALCHEMY_DATABASE_URI') or "None"
-            print(f"DATABASE_URL: {db_url[:30]}...")
+            db_url = app.config.get('SQLALCHEMY_DATABASE_URI') or "None"
+            print(f"DATABASE_URI detectada: {db_url[:40]}...")
             
             print("Paso 1: Creando tablas en PostgreSQL...")
             db.create_all()
             print("Éxito: Tablas creadas o ya existentes.")
 
-            # Verificar si ya existe el admin
-            admin_email = 'admin@futadmin.com'
-            admin = Usuario.query.filter_by(email=admin_email).first()
-            if not admin:
-                print(f"Paso 2: Creando usuario administrador: {admin_email}")
-                hashed_pw = bcrypt.generate_password_hash('Gd012354R1.').decode('utf-8')
-                new_admin = Usuario(
-                    nombre='Administrador Global',
-                    email=admin_email,
-                    password_hash=hashed_pw,
-                    rol='admin',
-                    activo=True
-                )
-                db.session.add(new_admin)
-                db.session.commit()
-                print("Éxito: Usuario administrador creado.")
-            else:
-                print("Paso 2: El usuario administrador ya existe.")
+            # Verificar y crear administradores
+            for admin_email in ['admin@futadmin.com', 'admin@adminfutbol.com']:
+                admin = Usuario.query.filter_by(email=admin_email).first()
+                if not admin:
+                    print(f"Paso 2: Creando usuario administrador: {admin_email}")
+                    hashed_pw = bcrypt.generate_password_hash('Gd012354R1.').decode('utf-8')
+                    new_admin = Usuario(
+                        nombre='Administrador Global',
+                        email=admin_email,
+                        password_hash=hashed_pw,
+                        rol='admin',
+                        activo=True
+                    )
+                    db.session.add(new_admin)
+                    db.session.commit()
+                    print(f"Éxito: Usuario {admin_email} creado.")
+                else:
+                    print(f"Paso 2: El usuario {admin_email} ya existe.")
                 
             # Crear configuración básica si no existe
             privacy = Configuracion.query.get('privacy_policy')
