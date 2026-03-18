@@ -7,6 +7,7 @@ from datetime import datetime, timedelta, date
 from sqlalchemy import or_
 from dotenv import load_dotenv
 from flask_talisman import Talisman
+from werkzeug.middleware.proxy_fix import ProxyFix
 import os, secrets, uuid, math
 
 # Cargar variables de entorno desde .env
@@ -15,6 +16,7 @@ load_dotenv()
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 app = Flask(__name__, static_folder=os.path.join(BASE_DIR, 'static'))
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1, x_prefix=1)
 app.config['SECRET_KEY'] = os.getenv('FLASK_SECRET_KEY', secrets.token_hex(24))
 db_url = os.getenv('DATABASE_URL') or os.getenv('SQLALCHEMY_DATABASE_URI') or 'sqlite:///futadmin.db'
 if db_url.startswith("postgres://"):
@@ -79,6 +81,7 @@ def check_login():
     
     # Permitir si el usuario está en sesión
     if 'user_id' not in session:
+        print(f"DEBUG AUTH: 401 en {request.path} - Session: {list(session.keys())}")
         if request.path.startswith('/api/'):
             return jsonify({"error": "No autenticado"}), 401
         return redirect(url_for('users.login_view'))
