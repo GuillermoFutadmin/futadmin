@@ -1,11 +1,9 @@
 import os
 from flask import Blueprint, jsonify, request, session, redirect, url_for, render_template
 
-from models import db, Usuario, Liga, Cancha, Configuracion
-from flask_bcrypt import Bcrypt
+from models import db, Usuario, Liga, Cancha, Configuracion, bcrypt
 from datetime import datetime
 
-bcrypt = Bcrypt()
 users_bp = Blueprint('users', __name__)
 
 @users_bp.route('/privacy')
