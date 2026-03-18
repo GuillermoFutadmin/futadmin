@@ -37,9 +37,15 @@ if db_url.startswith("sqlite"):
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SESSION_COOKIE_SECURE'] = True
 app.config['SESSION_COOKIE_HTTPONLY'] = True
-app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-app.config['SESSION_COOKIE_NAME'] = 'futadmin_session_prod'
+app.config['SESSION_COOKIE_SAMESITE'] = 'None' # Máxima compatibilidad con Secure=True
+app.config['SESSION_COOKIE_NAME'] = 'futadmin_session_prod_v2'
 app.config['PERMANENT_SESSION_LIFETIME'] = 86400 * 7 # 7 días
+
+@app.after_request
+def add_security_headers(response):
+    response.headers['Vary'] = 'Cookie'
+    return response
+
 app.config['UPLOAD_FOLDER'] = os.path.join(BASE_DIR, 'static', 'uploads')
 app.config['TELEGRAM_BOT_TOKEN'] = os.getenv('TELEGRAM_BOT_TOKEN')
 app.config['MAX_CONTENT_LENGTH'] = int(os.getenv('MAX_CONTENT_LENGTH', 2 * 1024 * 1024))
