@@ -53,7 +53,8 @@ app.config['MAX_CONTENT_LENGTH'] = int(os.getenv('MAX_CONTENT_LENGTH', 2 * 1024 
 # Inicializar Talisman para headers de seguridad y SSL (si SSL_REQUIRED=True)
 talisman = Talisman(app, 
     force_https=os.getenv('SSL_REQUIRED', 'False') == 'True',
-    content_security_policy=None # Ajustar después si es necesario, por ahora None para no romper el front ad-hoc
+    content_security_policy=None,
+    frame_options=None # Permitir que Telegram abra la app en un iframe (necesario para TWA)
 )
 
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
