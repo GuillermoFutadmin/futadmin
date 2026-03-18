@@ -27,22 +27,19 @@ def seed_data():
         nombres_personas = ["Juan", "Pedro", "Luis", "Carlos", "Roberto", "Miguel", "Angel", "Diego", "Fernando", "Javier"]
         apellidos = ["García", "Rodríguez", "Martínez", "Hernández", "López", "González", "Pérez", "Sánchez", "Ramírez", "Cruz"]
 
-        # Definir una sede compartida para los dos combos más "grandes"
-        sede_compartida_nombre = "Arena FutAdmin Central"
-
         for idx, liga in enumerate(recent_ligas):
             print(f"Procesando Liga: {liga.nombre} (ID: {liga.id})")
             
-            # Decidir el nombre de la sede: las 2 más recientes comparten sede
-            nombre_sede = sede_compartida_nombre if idx < 2 else f"Cancha Local - {liga.nombre}"
+            # Sede Única por Liga para Administradores Independientes (como pidió el Ing)
+            nombre_sede = f"Sede Exclusiva {liga.nombre}"
             
             # 1. Crear Sede (Cancha) vinculada a esta liga
-            cancha = Cancha.query.filter_by(liga_id=liga.id, nombre=nombre_sede).first()
+            cancha = Cancha.query.filter_by(liga_id=liga.id).first()
             if not cancha:
                 cancha = Cancha(
                     nombre=nombre_sede,
                     liga_id=liga.id,
-                    direccion="Complejo Deportivo Av. Revolución #450",
+                    direccion=f"Dirección Local {liga.id}",
                     municipio="Tijuana",
                     estado="Baja California",
                     tipo="Propia",
@@ -50,7 +47,7 @@ def seed_data():
                 )
                 db.session.add(cancha)
                 db.session.flush()
-                print(f"  - Creada Sede: {cancha.nombre} para Liga {liga.id}")
+                print(f"  - Creada Sede: {cancha.nombre}")
             else:
                 print(f"  - Usando Sede existente: {cancha.nombre}")
 
@@ -58,7 +55,7 @@ def seed_data():
             torneo = Torneo.query.filter_by(liga_id=liga.id, archived=False).first()
             if not torneo:
                 torneo = Torneo(
-                    nombre=f"Torneo Apertura - {liga.nombre}",
+                    nombre=f"Torneo Apertura {datetime.now().year} - {liga.nombre}",
                     liga_id=liga.id,
                     tipo="Liga",
                     activo=True,
@@ -75,7 +72,7 @@ def seed_data():
             pool_nombres = random.sample(nombres_equipos, min(num_equipos, len(nombres_equipos)))
             
             for i in range(num_equipos):
-                nombre_eq = pool_nombres[i] if i < len(pool_nombres) else f"EQ-{uuid.uuid4().hex[:4].upper()}"
+                nombre_eq = pool_nombres[i] if i < len(pool_nombres) else f"Equipo {idx+1}-{i+1}"
                 
                 if Equipo.query.filter_by(nombre=nombre_eq, torneo_id=torneo.id).first():
                     continue
@@ -110,7 +107,8 @@ def seed_data():
                     db.session.add(jugador)
 
         db.session.commit()
-        print("¡Inyección de datos (con sedes compartidas) completada!")
+        print("¡Inyección de datos (Exclusividad Protegida) completada!")
 
 if __name__ == "__main__":
+    from datetime import datetime
     seed_data()
