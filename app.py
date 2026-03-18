@@ -96,6 +96,26 @@ def get_all_equipos():
     equipos = query.all()
     return jsonify([{"id": e.id, "nombre": e.nombre} for e in equipos])
 
+@app.route('/api/debug_prod')
+def debug_prod():
+    # Solo accesible por admin o master password en session
+    if session.get('user_rol') != 'admin':
+        return jsonify({"error": "No autorizado"}), 403
+    
+    db_uri = app.config.get('SQLALCHEMY_DATABASE_URI', 'None')
+    masked_uri = db_uri[:20] + "..." + db_uri[-10:] if len(db_uri) > 30 else db_uri
+    
+    stats = {
+        "db": masked_uri,
+        "session": {k: v for k, v in session.items() if k != 'csrf_token'},
+        "counts": {
+            "ligas": Liga.query.count(),
+            "usuarios": Usuario.query.count(),
+            "canchas": Cancha.query.count()
+        }
+    }
+    return jsonify(stats)
+
 # --- Ruta de Subida de Archivos ---
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
