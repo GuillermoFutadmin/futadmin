@@ -27,28 +27,34 @@ def seed_data():
         nombres_personas = ["Juan", "Pedro", "Luis", "Carlos", "Roberto", "Miguel", "Angel", "Diego", "Fernando", "Javier"]
         apellidos = ["García", "Rodríguez", "Martínez", "Hernández", "López", "González", "Pérez", "Sánchez", "Ramírez", "Cruz"]
 
-        for liga in recent_ligas:
+        # Definir una sede compartida para los dos combos más "grandes"
+        sede_compartida_nombre = "Arena FutAdmin Central"
+
+        for idx, liga in enumerate(recent_ligas):
             print(f"Procesando Liga: {liga.nombre} (ID: {liga.id})")
             
-            # 1. Crear Sede (Cancha)
-            cancha = Cancha.query.filter_by(liga_id=liga.id).first()
+            # Decidir el nombre de la sede: las 2 más recientes comparten sede
+            nombre_sede = sede_compartida_nombre if idx < 2 else f"Cancha Local - {liga.nombre}"
+            
+            # 1. Crear Sede (Cancha) vinculada a esta liga
+            cancha = Cancha.query.filter_by(liga_id=liga.id, nombre=nombre_sede).first()
             if not cancha:
                 cancha = Cancha(
-                    nombre=f"Unidad Deportiva {liga.nombre}",
+                    nombre=nombre_sede,
                     liga_id=liga.id,
-                    direccion="Av. Principal #123, Col. Centro",
-                    municipio="Ciudad de México",
-                    estado="CDMX",
+                    direccion="Complejo Deportivo Av. Revolución #450",
+                    municipio="Tijuana",
+                    estado="Baja California",
                     tipo="Propia",
                     modalidad="Fútbol 7"
                 )
                 db.session.add(cancha)
                 db.session.flush()
-                print(f"  - Creada Sede: {cancha.nombre}")
+                print(f"  - Creada Sede: {cancha.nombre} para Liga {liga.id}")
             else:
                 print(f"  - Usando Sede existente: {cancha.nombre}")
 
-            # 2. Crear Torneo si no tiene ninguno activo
+            # 2. Crear Torneo
             torneo = Torneo.query.filter_by(liga_id=liga.id, archived=False).first()
             if not torneo:
                 torneo = Torneo(
@@ -66,13 +72,11 @@ def seed_data():
 
             # 3. Inyectar entre 15 y 25 equipos
             num_equipos = random.randint(15, 25)
-            # Evitar nombres duplicados en la misma liga
             pool_nombres = random.sample(nombres_equipos, min(num_equipos, len(nombres_equipos)))
             
             for i in range(num_equipos):
-                nombre_eq = pool_nombres[i] if i < len(pool_nombres) else f"Equipo {i+1} - {liga.nombre}"
+                nombre_eq = pool_nombres[i] if i < len(pool_nombres) else f"EQ-{uuid.uuid4().hex[:4].upper()}"
                 
-                # Verificar si ya existe el equipo por nombre en ese torneo
                 if Equipo.query.filter_by(nombre=nombre_eq, torneo_id=torneo.id).first():
                     continue
 
@@ -86,7 +90,7 @@ def seed_data():
                 db.session.add(equipo)
                 db.session.flush()
 
-                # 4. Inyectar 10-15 jugadores por equipo
+                # 4. Inyectar jugadores
                 num_jugadores = random.randint(10, 15)
                 for j in range(num_jugadores):
                     nom = random.choice(nombres_personas)
@@ -100,16 +104,13 @@ def seed_data():
                         edad=random.randint(18, 45),
                         equipo_id=equipo.id,
                         liga_id=liga.id,
-                        es_capitan=(j == 0), # El primero es capitán
+                        es_capitan=(j == 0),
                         es_portero=(pos == "Portero")
                     )
                     db.session.add(jugador)
-                
-                if i % 5 == 0:
-                    print(f"    - Inyectados {i} equipos...")
 
         db.session.commit()
-        print("¡Inyección de datos completada exitosamente!")
+        print("¡Inyección de datos (con sedes compartidas) completada!")
 
 if __name__ == "__main__":
     seed_data()
