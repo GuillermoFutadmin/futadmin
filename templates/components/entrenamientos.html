@@ -1,0 +1,281 @@
+<!-- Módulo: Entrenamientos -->
+<div id="view-entrenamientos" class="sub-view view-container" style="display: none;">
+    <!-- Sub-vista: Lista de Grupos -->
+    <div id="entrenamientos-grupos" class="tab-content default-tab active">
+        <div class="action-bar dashboard-header">
+            <div class="flex-group">
+                <button class="btn-primary" onclick="ui.entrenamientos.openNuevoGrupoModal()">+ Nuevo
+                    Grupo</button>
+            </div>
+        </div>
+        <div class="leagues-grid" id="grupos-entrenamiento-list">
+            <!-- Carga dinámica por JS -->
+        </div>
+    </div>
+
+    <!-- Sub-vista: Alumnos del Grupo -->
+    <div id="entrenamientos-alumnos" class="tab-content" style="display: none;">
+        <div class="action-bar dashboard-header">
+            <div class="flex-group">
+                <button class="btn-secondary" onclick="ui.entrenamientos.goToGrupos()">← Volver a
+                    Grupos</button>
+                <h3 id="current-grupo-title" style="margin:0; color:var(--text-color);">Alumnos del Grupo
+                </h3>
+            </div>
+            <div class="flex-group">
+                <button class="btn-primary" onclick="ui.entrenamientos.openAlumnoModal()">+ Inscribir
+                    Alumno</button>
+            </div>
+        </div>
+        <div id="alumnos-entrenamiento-list" class="leagues-grid fade-in-up">
+            <!-- Tarjetas de alumnos dinámicas -->
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Grupo de Entrenamiento (Formulario Avanzado) -->
+<div id="modal-grupo-entrenamiento" class="modal">
+    <div class="modal-content" style="max-width:620px;">
+        <div class="modal-header">
+            <h3 id="grupo-modal-title">⚽ Nuevo Grupo de Entrenamiento</h3>
+            <button type="button" class="close-btn"
+                onclick="Core.closeModal('modal-grupo-entrenamiento')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="form-grupo-entrenamiento" onsubmit="ui.entrenamientos.saveGrupo(event)">
+                <input type="hidden" id="grupo-id">
+
+                <div class="modal-tabs">
+                    <button type="button" class="modal-tab active"
+                        onclick="ui.entrenamientos.switchTab('general', this)">Información General</button>
+                    <button type="button" class="modal-tab" onclick="ui.entrenamientos.switchTab('horarios', this)">⏰
+                        Horarios</button>
+                    <button type="button" class="modal-tab" onclick="ui.entrenamientos.switchTab('finanzas', this)">💰
+                        Finanzas</button>
+                </div>
+
+                <!-- Tab General -->
+                <div id="grupo-tab-general" class="modal-tab-content active">
+                    <div class="form-group">
+                        <label for="grupo-nombre">Nombre del Grupo / Categoría *</label>
+                        <input type="text" id="grupo-nombre" required placeholder="Ej. Infantil 2014, Clínica Porteros">
+                    </div>
+                    <div class="form-group">
+                        <label for="grupo-foto">Foto del Grupo (URL o Subir)</label>
+                        <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+                            <input type="text" id="grupo-foto" placeholder="https://..." style="flex: 1;"
+                                onchange="document.getElementById('grupo-foto-preview').src = this.value || ''">
+                            <button type="button" class="btn-secondary"
+                                onclick="document.getElementById('global-file-upload').setAttribute('data-target', 'grupo-foto'); document.getElementById('global-file-upload').setAttribute('data-preview', 'grupo-foto-preview'); document.getElementById('global-file-upload').click();">
+                                Subir Foto
+                            </button>
+                        </div>
+                        <div
+                            style="width: 100%; height: 120px; border-radius: 12px; border: 1px dashed var(--border); overflow: hidden; background: rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: center;">
+                            <img id="grupo-foto-preview" src=""
+                                style="max-width: 100%; max-height: 100%; object-fit: contain; display: block;"
+                                onerror="this.style.display='none'" onload="this.style.display='block'">
+                            <span id="grupo-foto-placeholder" style="color: var(--text-muted); font-size: 0.8rem;">Sin
+                                imagen seleccionada</span>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="grupo-tipo">Tipo de Academia</label>
+                            <select id="grupo-tipo">
+                                <option value="Fútbol Base">Fútbol Base / Escuela</option>
+                                <option value="Alto Rendimiento">Alto Rendimiento</option>
+                                <option value="Porteros">Clínica de Porteros</option>
+                                <option value="Femenil">Academia Femenil</option>
+                                <option value="Fut Rapido">Fútbol Rápido / 7</option>
+                                <option value="Libre">Entrenamiento Libre</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="grupo-categoria">Categoría</label>
+                            <select id="grupo-categoria">
+                                <option value="Infantil">Infantil (6-12 años)</option>
+                                <option value="Juvenil">Juvenil (13-17 años)</option>
+                                <option value="Sub-23">Sub-23</option>
+                                <option value="Libre">Libre (Adultos)</option>
+                                <option value="Premium">Premium / Mixta</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="grupo-profesor">Profe / Entrenador</label>
+                            <select id="grupo-profesor">
+                                <option value="">Sin asignar...</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="grupo-capacidad">Cupo Máximo</label>
+                            <input type="number" id="grupo-capacidad" min="1" max="200" placeholder="Ej. 25">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab Horarios -->
+                <div id="grupo-tab-horarios" class="modal-tab-content">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Fecha de Inicio</label>
+                            <input type="date" id="grupo-fecha-inicio">
+                        </div>
+                        <div class="form-group">
+                            <label>Fecha de Fin (Opcional)</label>
+                            <input type="date" id="grupo-fecha-fin">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Días de Entrenamiento</label>
+                        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:5px;">
+                            <label
+                                style="display:flex;align-items:center;gap:4px;font-weight:normal;font-size:0.85rem;"><input
+                                    type="checkbox" value="Lu" class="grupo-day-cb">Lu</label>
+                            <label
+                                style="display:flex;align-items:center;gap:4px;font-weight:normal;font-size:0.85rem;"><input
+                                    type="checkbox" value="Ma" class="grupo-day-cb">Ma</label>
+                            <label
+                                style="display:flex;align-items:center;gap:4px;font-weight:normal;font-size:0.85rem;"><input
+                                    type="checkbox" value="Mi" class="grupo-day-cb">Mi</label>
+                            <label
+                                style="display:flex;align-items:center;gap:4px;font-weight:normal;font-size:0.85rem;"><input
+                                    type="checkbox" value="Ju" class="grupo-day-cb">Ju</label>
+                            <label
+                                style="display:flex;align-items:center;gap:4px;font-weight:normal;font-size:0.85rem;"><input
+                                    type="checkbox" value="Vi" class="grupo-day-cb">Vi</label>
+                            <label
+                                style="display:flex;align-items:center;gap:4px;font-weight:normal;font-size:0.85rem;"><input
+                                    type="checkbox" value="Sa" class="grupo-day-cb">Sa</label>
+                            <label
+                                style="display:flex;align-items:center;gap:4px;font-weight:normal;font-size:0.85rem;"><input
+                                    type="checkbox" value="Do" class="grupo-day-cb">Do</label>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="grupo-horario">Hora inicio - fin</label>
+                            <input type="text" id="grupo-horario" placeholder="Ej. 16:00 - 18:00">
+                        </div>
+                        <div class="form-group">
+                            <label for="grupo-cancha">Cancha Asignada</label>
+                            <select id="grupo-cancha">
+                                <option value="">-- Sin Cancha Asignada --</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab Finanzas -->
+                <div id="grupo-tab-finanzas" class="modal-tab-content">
+                    <div style="margin:10px 0 15px;border-bottom:1px solid var(--border);padding-bottom:5px;">
+                        <h4 style="color:var(--primary);margin:0;font-size:0.95rem;">💰 Costos y Cargos</h4>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="grupo-costo-inscripcion">Costo de Inscripción ($)</label>
+                            <input type="number" id="grupo-costo-inscripcion" min="0" step="0.01" value="0.00">
+                        </div>
+                        <div class="form-group">
+                            <label for="grupo-costo">Mensualidad ($) *</label>
+                            <input type="number" id="grupo-costo" required min="0" step="0.01" value="0.00">
+                        </div>
+                    </div>
+                    <div
+                        style="background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);border-radius:10px;padding:1rem;margin-top:1rem;">
+                        <p style="margin:0;font-size:0.85rem;color:var(--text-muted);">&#128161; <b>Tip:</b> La
+                            inscripción es un cargo único al inicio. La mensualidad se cobra mes a mes.</p>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary"
+                        onclick="Core.closeModal('modal-grupo-entrenamiento')">Cancelar</button>
+                    <button type="submit" class="btn-primary">Guardar Grupo</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Ticket Digital (Academia) -->
+<div id="modal-ticket-digital" class="modal">
+    <div class="modal-content"
+        style="max-width:400px; padding:0; background:linear-gradient(145deg, #1a1c1e, #111214); border:1px solid rgba(0,255,136,0.1);">
+        <div id="digital-ticket-content">
+            <!-- Cargado dinámicamente por EntrenamientosModule.showTicket -->
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Alumno de Entrenamiento -->
+<div id="modal-alumno-entrenamiento" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Inscribir Alumno</h2>
+            <button type="button" class="close-btn" onclick="Core.closeModal('modal-alumno-entrenamiento')">×</button>
+        </div>
+        <div class="modal-body">
+            <form id="form-alumno-entrenamiento" onsubmit="ui.entrenamientos.saveAlumno(event)">
+                <input type="hidden" id="alumno-id">
+                <div class="form-group" style="display:none;">
+                    <input type="hidden" id="alumno-grupo-id">
+                </div>
+                <div class="form-group">
+                    <label for="alumno-nombre">Nombre del Alumno*</label>
+                    <input type="text" id="alumno-nombre" required>
+                </div>
+                <div class="form-group">
+                    <label for="alumno-foto">Foto del Alumno (URL o Subir)</label>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="text" id="alumno-foto" placeholder="https://..." style="flex: 1;">
+                        <button type="button" class="btn-secondary"
+                            onclick="document.getElementById('global-file-upload').setAttribute('data-target', 'alumno-foto'); document.getElementById('global-file-upload').click();">
+                            Subir Foto
+                        </button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="alumno-fechanac">Fecha de Nacimiento</label>
+                    <input type="date" id="alumno-fechanac">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="alumno-tutor">Nombre del Tutor</label>
+                        <input type="text" id="alumno-tutor" placeholder="Opcional si es mayor de edad">
+                    </div>
+                    <div class="form-group">
+                        <label for="alumno-telefono">Teléfono (WhatsApp)</label>
+                        <input type="text" id="alumno-telefono">
+                    </div>
+                </div>
+                <!-- Campos de Aportación Inicial -->
+                <div style="margin:15px 0 10px; padding-top:10px; border-top:1px dashed var(--border);">
+                    <h4 style="color:var(--primary); margin-bottom:10px; font-size:0.9rem;">💰 Inscripción Inicial</h4>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="alumno-pago-inicial">Monto Pagado ($)</label>
+                            <input type="number" id="alumno-pago-inicial" min="0" step="0.01" value="0.00">
+                        </div>
+                        <div class="form-group">
+                            <label for="alumno-metodo-pago">Método de Aportación</label>
+                            <select id="alumno-metodo-pago">
+                                <option value="Efectivo">Efectivo</option>
+                                <option value="Transferencia">Transferencia</option>
+                                <option value="Tarjeta">Tarjeta</option>
+                                <option value="Depósito">Depósito</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary"
+                        onclick="Core.closeModal('modal-alumno-entrenamiento')">Cancelar</button>
+                    <button type="submit" class="btn-primary">Inscribir Alumno</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,1296 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <title>FutAdmin - Gestión Profesional</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <script>
+        window.USER_ROL = "{{ user_rol.lower() or 'invitado' }}";
+    </script>
+    <style>
+        .premium-tooltip {
+            pointer-events: none;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            transform: translateY(10px);
+            opacity: 0;
+            z-index: 10001 !important;
+        }
+        .premium-tooltip.fade-in {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .fade-in { animation: fadeIn 0.4s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .team-uid-badge {
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            background: rgba(0, 255, 136, 0.1);
+            color: var(--primary);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            border: 1px dashed rgba(0, 255, 136, 0.3);
+        }
+    </style>
+</head>
+
+<body class="dark-mode">
+    <div class="app-container">
+        <!-- Sidebar Principal -->
+        <aside class="sidebar">
+            <div class="logo-container">
+                <div class="logo-icon">⚽</div>
+                <h1>FutAdmin</h1>
+            </div>
+
+            <nav class="main-nav">
+                <div class="nav-section">
+                    <p class="section-title">ADMINISTRACIÓN</p>
+                    <ul>
+                        <li class="nav-item active" data-view="resumen">
+                            <a href="javascript:void(0)">📈 Estadísticas</a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/calendario">📅 Calendario de Partidos</a>
+                        </li>
+
+                        <li class="nav-item has-submenu" onclick="ui.toggleSubmenu(this)">
+                            <a href="javascript:void(0)">
+                                <span>🏆 Gestión de Ligas</span>
+                                <i class="arrow">▼</i>
+                            </a>
+                            <ul class="submenu">
+                                <li class="has-submenu" onclick="event.stopPropagation(); ui.toggleSubmenu(this)">
+                                    <div class="nav-item-row" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                                        <span onclick="event.stopPropagation(); ui.switchView('canchas', null, this.closest('.has-submenu'));">🔹 Sedes / Canchas</span>
+                                        <i class="arrow">▼</i>
+                                    </div>
+                                    <ul class="submenu-nested">
+                                        <li onclick="event.stopPropagation(); ui.switchView('arbitros', null, this)">🔸 Cuerpo Arbitral</li>
+                                    </ul>
+                                </li>
+                                <li onclick="event.stopPropagation(); ui.switchView('torneos', 'torneos-lista', this)">🔹 Ligas</li>
+                                <li onclick="event.stopPropagation(); ui.switchView('torneos', 'equipos', this)">🔹 Equipos</li>
+                                <li onclick="event.stopPropagation(); ui.switchView('torneos', 'jugadores', this)">🔹 Jugadores</li>
+                            </ul>
+                        </li>
+                        <li id="nav-item-entrenamientos" class="nav-item has-submenu" onclick="ui.toggleSubmenu(this)">
+                            <a href="javascript:void(0)">
+                                <span>⚽ Entrenamientos</span>
+                                <i class="arrow">▼</i>
+                            </a>
+                            <ul class="submenu">
+                                <li onclick="event.stopPropagation(); ui.switchView('entrenamientos', 'grupos', this)">🔹 Grupos / Categorías
+                                </li>
+                                <li onclick="event.stopPropagation(); ui.switchView('entrenamientos', 'alumnos', this)">🔹 Alumnos</li>
+                            </ul>
+                        </li>
+                        {% if user_rol.lower() in ['admin', 'ejecutivo', 'dueño_liga', 'super_arbitro', 'equipo'] %}
+                        <li class="nav-item has-submenu" onclick="ui.toggleSubmenu(this)">
+                            <a href="javascript:void(0)">
+                                <span>📝 Inscripciones y Aportaciones</span>
+                                <i class="arrow">▼</i>
+                            </a>
+                            <ul class="submenu">
+                                <li class="has-submenu" onclick="event.stopPropagation(); ui.toggleSubmenu(this)">
+                                    <div class="nav-item-row"
+                                        style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                                        <span
+                                            onclick="event.stopPropagation(); ui.switchView('inscripciones', null, this.closest('.has-submenu'));">🔹
+                                            Inscripciones</span>
+                                        <i class="arrow">▼</i>
+                                    </div>
+                                    <ul class="submenu-nested">
+                                        <li onclick="event.stopPropagation(); ui.switchView('arbitrajes', null, this)">
+                                            🔸 Arbitrajes</li>
+                                    </ul>
+                                </li>
+
+                                <li onclick="event.stopPropagation(); ui.switchView('pagos-academia', null, this)">🏫 Aportaciones Academia</li>
+                                <li onclick="event.stopPropagation(); ui.switchView('pagos-canchas', null, this)">🏟️ Aportaciones Sedes</li>
+                            </ul>
+                        </li>
+                        {% endif %}
+
+                    </ul>
+                </div>
+
+                {% if user_rol.lower() in ['admin', 'ejecutivo', 'colaborador'] %}
+                <div class="nav-section">
+                    <p class="section-title">CONFIGURACIÓN</p>
+                    <ul>
+                        <li class="nav-item has-submenu" onclick="ui.toggleSubmenu(this); ui.switchView('ajustes', 'users', this)">
+                            <a href="javascript:void(0)">
+                                <span>⚙️ Ajustes del Sistema</span>
+                                <i class="arrow">▼</i>
+                            </a>
+                            <ul class="submenu">
+                                <li onclick="event.stopPropagation(); ui.switchView('ajustes', 'payments', this)">🔹 Aportaciones Combos</li>
+                                <li onclick="event.stopPropagation(); ui.switchView('ajustes', 'resumenes', this)">🔹 Resumenes</li>
+                                <li onclick="event.stopPropagation(); ui.switchView('ajustes', 'privacidad', this)">🔹 Privacidad</li>
+                            </ul>
+                        </li>
+                        <li class="nav-item" onclick="ui.switchView('archivo', null, this)">
+                            <a href="javascript:void(0)">🗑️ Historial / Papelera</a>
+                        </li>
+                    </ul>
+                </div>
+                {% endif %}
+            </nav>
+        </aside>
+
+        <!-- Contenido Principal -->
+        <main class="content">
+            <header class="top-bar">
+                <div class="view-title">
+                    <h2 id="current-view-title">Resumen General</h2>
+                </div>
+                <div class="user-profile">
+            <div class="pago-status online">FutAdmin PRO</div>
+            <span class="user-name">{{ user_name or 'Usuario' }}</span>
+            <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 5px;">{{ (user_rol.lower() or 'Invitado') | upper }}</div>
+            <a href="/logout" class="btn-logout" style="color: #ef4444; font-size: 0.75rem; text-decoration: none; border: 1px solid rgba(239,68,68,0.2); padding: 2px 8px; border-radius: 4px; display: inline-block;">Cerrar Sesión</a>
+        </div>
+            </header>
+
+            <!-- Resumen General / Dashboard de Estadísticas -->
+            <div id="view-resumen" class="sub-view view-container active">
+                <div class="action-bar dashboard-header">
+                    <div class="flex-group">
+                        <select id="dashboard-league-filter" class="nav-select main-league-select"
+                            onchange="ui.dashboard.loadLeagueData()">
+                            <option value="all">📊 Resumen de Todas las Ligas</option>
+                        </select>
+                    </div>
+                    {% if user_rol.lower() in ['admin', 'ejecutivo', 'dueño_liga', 'super_arbitro', 'equipo'] %}
+                    <button class="btn-go-payments" onclick="ui.switchView('inscripciones', null, null)"
+                        title="Ir al módulo de Inscripciones y Aportaciones">
+                        💳 Inscripciones &amp; Aportaciones
+                    </button>
+                    {% endif %}
+                </div>
+
+                <!-- Tabs del Dashboard -->
+                <div class="content-tabs dashboard-tabs">
+                    <button class="content-tab active" data-dash-tab="resumen" onclick="ui.dashboard.switchTab('resumen')">
+                        INICIO</button>
+                    <button class="content-tab" data-dash-tab="tabla" onclick="ui.dashboard.switchTab('tabla')">
+                        CLASIFICACIÓN</button>
+                    <button class="content-tab" data-dash-tab="rol" onclick="ui.dashboard.switchTab('rol')">JORNADAS</button>
+                    <button class="content-tab" data-dash-tab="lideres" onclick="ui.dashboard.switchTab('lideres')">LÍDERES
+                    </button>
+                </div>
+
+                <!-- Contenido de Tabs -->
+                <div id="dash-view-resumen" class="dash-tab-content">
+                    <div class="welcome-banner">
+                        <!-- Cargado via JS -->
+                    </div>
+                    <div class="stats-grid" id="stats-dashboard">
+                        <!-- Stats cards via JS -->
+                    </div>
+
+                    <div id="map-dashboard-container" class="premium-card" style="margin-top: 2rem; overflow: hidden; border: 1px solid var(--border); border-radius: 24px; background: var(--card-bg); position: relative;">
+                        <div style="padding: 1.5rem 2rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.02);">
+                            <div>
+                                <h3 style="margin: 0; font-size: 1.25rem; color: #fff; font-weight: 700;">🌍 Cobertura Nacional</h3>
+                                <p style="margin: 5px 0 0 0; font-size: 0.85rem; color: var(--text-muted);">Distribución de sedes y equipos en tiempo real</p>
+                            </div>
+                            <div class="map-legend" style="display: flex; gap: 15px; font-size: 0.75rem;">
+                                <div style="display: flex; align-items: center; gap: 6px;">
+                                    <span style="width: 10px; height: 10px; border-radius: 50%; background: var(--primary); box-shadow: 0 0 8px var(--primary);"></span>
+                                    <span style="color: #fff;">Sedes</span>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 6px;">
+                                    <span style="width: 10px; height: 10px; border-radius: 50%; background: #3b82f6; box-shadow: 0 0 8px #3b82f6;"></span>
+                                    <span style="color: #fff;">Equipos</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="mexico-map" style="height: 850px; width: 100%; z-index: 1; background: #0B0E14;"></div>
+                    </div>
+                </div>
+
+                <div id="dash-view-tabla" class="dash-tab-content" style="display: none;">
+                    <div class="stat-card table-container">
+                        <div id="standings-table-container">
+                            <p class="text-muted">Cargando clasificación...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="dash-view-rol" class="dash-tab-content" style="display: none;">
+                    <div id="league-schedule-container" class="leagues-grid">
+                        <p class="text-muted">Cargando jornadas...</p>
+                    </div>
+                </div>
+
+                <div id="dash-view-lideres" class="dash-tab-content" style="display: none;">
+                    <div class="stats-grid" id="leaderboards-container">
+                        <p class="text-muted">Cargando líderes...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Módulo de Canchas -->
+            <div id="view-canchas" class="sub-view view-container" style="display: none;">
+                <div class="action-bar">
+                    <div style="display: flex; align-items: center; gap: 15px; flex: 1;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <h3>Sedes y Canchas Deportivas</h3>
+                        <span id="venue-counter-main" class="limit-badge"></span>
+                    </div>
+                        <div class="search-box-premium" style="flex: 1; max-width: 400px; position: relative;">
+                            <span style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); opacity: 0.5;">🔍</span>
+                            <input type="text" id="cancha-search-filter" placeholder="Buscar por nombre o correo..." 
+                                oninput="ui.canchas.filterCanchas()" 
+                                style="width: 100%; padding: 10px 15px 10px 45px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 12px; color: #fff; font-size: 0.9rem; outline: none; transition: all 0.2s;"
+                                onfocus="this.style.borderColor='var(--primary)'; this.style.boxShadow='0 0 0 3px rgba(0,255,136,0.1)';"
+                                onblur="this.style.borderColor='var(--border)'; this.style.boxShadow='none';">
+                        </div>
+                    </div>
+                    <button id="btn-nueva-cancha" class="btn-primary" onclick="ui.canchas.showModal()">+ Nueva Cancha</button>
+                </div>
+                <div class="leagues-grid" id="canchas-container">
+                    <!-- Cargado via JS -->
+                </div>
+            </div>
+
+            <!-- Módulo: Entrenamientos -->
+            {% include 'components/entrenamientos.html' %}
+
+            <!-- Módulo: Pagos de Canchas -->
+            {% include 'components/pagos_canchas.html' %}
+
+            <!-- Módulo: Ajustes del Sistema (Roles y Usuarios) -->
+            {% include 'components/settings.html' %}
+
+            <!-- Módulo de Torneos -->
+            <div id="view-torneos" class="sub-view view-container">
+                <!-- Se eliminan las content-tabs ya que ahora están en el sidebar -->
+
+                <!-- Pestaña: Gestión de Ligas -->
+                <div id="tab-torneos-lista" class="torneos-tab-content active">
+                    <div class="action-bar">
+                        <div class="flex-group">
+                        <div style="display:flex; align-items:center; gap:12px;">
+                            <h3>Ligas y Torneos Configurados</h3>
+                            <span id="league-counter-main" class="limit-badge"></span>
+                        </div>
+                            <select id="league-venue-filter" onchange="ui.leagues.loadLeagues()" class="nav-select" title="Filtrar por Sede">
+                                <option value="">Todas las Sedes</option>
+                            </select>
+                        </div>
+                        <button id="btn-nueva-liga" class="btn-primary" onclick="ui.leagues.showLeagueModal()">+ Nueva Liga /
+                            Torneo</button>
+                    </div>
+                    <div class="leagues-grid" id="leagues-container">
+                        <!-- Cargado via JS -->
+                    </div>
+                </div>
+
+                <!-- Pestaña: Gestión de Equipos -->
+                <div id="tab-equipos" class="torneos-tab-content" style="display: none;">
+                    <div class="action-bar">
+                        <div class="flex-group">
+                            <h3>Gestión de Equipos</h3>
+                            <select id="team-league-filter" onchange="ui.teams.loadEquipos()" class="nav-select">
+                                <option value="">Seleccionar Liga...</option>
+                            </select>
+                        </div>
+                        {% if user_rol.lower() not in ['resultados', 'arbitro'] %}
+                        <button class="btn-primary" onclick="ui.teams.showEquipoModal()">+ Nuevo Equipo</button>
+                        {% endif %}
+                    </div>
+                    <div class="leagues-grid" id="equipos-container">
+                        <p class="text-muted">Selecciona una liga para ver sus equipos.</p>
+                    </div>
+                </div>
+
+                <!-- Pestaña: Gestión de Jugadores -->
+                <div id="tab-jugadores" class="torneos-tab-content" style="display: none;">
+                    <div class="action-bar">
+                        <div class="flex-group">
+                            <h3>Base de Datos de Jugadores</h3>
+                            <select id="player-team-filter" onchange="ui.players.loadJugadores()" class="nav-select">
+                                <option value="">Seleccionar Equipo...</option>
+                            </select>
+                        </div>
+                        {% if user_rol.lower() not in ['resultados', 'arbitro'] %}
+                        <button class="btn-primary" onclick="ui.players.showJugadorModal()">+ Nuevo Jugador</button>
+                        {% endif %}
+                    </div>
+                    <div class="stats-grid" id="jugadores-container">
+                        <p class="text-muted">Selecciona un equipo para ver sus jugadores.</p>
+                    </div>
+                </div>
+
+            </div> <!-- Fin view-torneos -->
+
+            <div id="view-inscripciones" class="sub-view view-container" style="display: none;">
+                <div class="action-bar"
+                    style="background: rgba(255,255,255,0.03); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 2rem;">
+                    <div class="flex-group" style="gap: 20px;">
+                        <div>
+                            <p class="section-title" style="margin-bottom: 8px;">FILTRAR POR LIGA</p>
+                            <select id="inscripciones-league-filter" class="nav-select"
+                                style="min-width: 250px; background: var(--bg-card); border-color: var(--primary);"
+                                onchange="ui.finance.loadInscripciones()">
+                                <option value="">Cargando ligas...</option>
+                            </select>
+                        </div>
+                        <div>
+                            <p class="section-title" style="margin-bottom: 8px;">ESTADO DONACIÓN</p>
+                            <select id="inscripciones-status-filter" class="nav-select"
+                                style="min-width: 180px; background: var(--bg-card); border-color: var(--primary);"
+                                onchange="ui.finance.renderInscripcionesTable()">
+                                <option value="all">Todas</option>
+                                <option value="pending" selected>Pendientes</option>
+                                <option value="settled">Liquidadas</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button class="btn-primary" onclick="ui.finance.showInscripcionModal()"
+                        style="height: fit-content; align-self: flex-end;">+ Inscribir Equipo</button>
+                </div>
+                
+                <!-- Resumen de Cifras Rápidas -->
+                <div id="inscripciones-summary" class="stats-grid" style="margin-bottom: 2rem; display: none;">
+                    <!-- Se llena dinámicamente desde finance.js -->
+                </div>
+
+                <div id="inscripciones-container" class="leagues-grid">
+                    <div class="stat-card" style="text-align: center; padding: 3rem; grid-column: 1 / -1;">
+                        <span style="font-size: 3rem; display: block; margin-bottom: 1rem;">📋</span>
+                        <p class="text-muted">Selecciona una liga para gestionar equipos inscritos y pagos.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Nueva Vista: Arbitrajes (Pagos por Jornada) -->
+            <div id="view-arbitrajes" class="sub-view view-container" style="display: none;">
+                <div class="action-bar"
+                    style="background: rgba(255,255,255,0.03); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 2rem;">
+                    <div class="flex-group" style="gap: 20px;">
+                        <div>
+                            <p class="section-title" style="margin-bottom: 8px;">FILTRAR POR LIGA</p>
+                            <select id="arbitrajes-league-filter" class="nav-select"
+                                style="min-width: 250px; background: var(--bg-card); border-color: var(--primary);"
+                                onchange="ui.finance.loadArbitrajes()">
+                                <option value="">Cargando ligas...</option>
+                            </select>
+                        </div>
+                        <div>
+                            <p class="section-title" style="margin-bottom: 8px;">ESTADO DONACIÓN</p>
+                            <select id="arbitrajes-status-filter" class="nav-select"
+                                style="min-width: 180px; background: var(--bg-card); border-color: var(--primary);"
+                                onchange="ui.finance.loadArbitrajes()">
+                                <option value="all">Todas</option>
+                                <option value="pending" selected>Pendientes de hoy/semana</option>
+                                <option value="settled">Liquidadas</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Resumen de Arbitrajes -->
+                <div id="arbitrajes-summary" class="stats-grid" style="margin-bottom: 2rem; display: none;">
+                    <!-- Se llena dinámicamente -->
+                </div>
+                <div id="arbitrajes-container" class="leagues-grid">
+                    <div class="stat-card" style="text-align: center; padding: 3rem; grid-column: 1 / -1;">
+                        <span style="font-size: 3rem; display: block; margin-bottom: 1rem;">⚖️</span>
+                        <p class="text-muted">Selecciona una liga para gestionar pagos de arbitraje por jornada.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Nueva Vista: Cuerpo Arbitral (Gestión de Árbitros) -->
+            <div id="view-arbitros" class="sub-view view-container" style="display: none;">
+                <div class="action-bar"
+                    style="background: rgba(255,255,255,0.03); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center;">
+                    <h3 style="margin: 0;">Gestión de Cuerpo Arbitral</h3>
+                    {% if user_rol.lower() in ['admin', 'ejecutivo', 'dueño_liga', 'super_arbitro', 'equipo', 'dueno_cancha'] %}
+                    <button class="btn-primary" onclick="ui.arbitros.showArbitroModal()">+ Nuevo Árbitro</button>
+                    {% endif %}
+                </div>
+                <div id="arbitros-container" class="leagues-grid">
+                    <!-- Cargado via JS -->
+                </div>
+            </div>
+
+            <!-- Módulo: Pagos de Academia -->
+            <div id="view-pagos-academia" class="sub-view view-container" style="display: none;">
+                <!-- Barra de filtros -->
+                <div class="action-bar dashboard-header">
+                    <div class="flex-group" style="flex-wrap:wrap; gap: 12px;">
+                        <div>
+                            <label
+                                style="display:block; font-size:0.75rem; color:var(--text-muted); margin-bottom:4px;">GRUPO</label>
+                            <select id="pagos-academia-grupo" class="nav-select" style="min-width:220px;"
+                                onchange="ui.pagosAcademia.onGrupoChange()">
+                                <option value="">Cargando grupos...</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label
+                                style="display:block; font-size:0.75rem; color:var(--text-muted); margin-bottom:4px;">MODALIDAD</label>
+                            <select id="pagos-academia-modalidad" class="nav-select"
+                                onchange="ui.pagosAcademia.buildPeriodoSelect()">
+                                <option value="Mensual">Mensual</option>
+                                <option value="Quincenal">Quincenal</option>
+                                <option value="Semanal">Semanal</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label
+                                style="display:block; font-size:0.75rem; color:var(--text-muted); margin-bottom:4px;">PERÍODO</label>
+                            <select id="pagos-academia-periodo" class="nav-select" style="min-width:200px;"
+                                onchange="ui.pagosAcademia.loadResumen()">
+                                <!-- Llenado dinámico por JS -->
+                            </select>
+                        </div>
+                        <div>
+                            <label
+                                style="display:block; font-size:0.75rem; color:var(--text-muted); margin-bottom:4px;">ESTADO</label>
+                            <select id="pagos-academia-status-filter" class="nav-select" style="min-width:180px;"
+                                onchange="ui.pagosAcademia.loadResumen()">
+                                <option value="all">Todos los Alumnos</option>
+                                <option value="pending" selected>Pendientes de Donación</option>
+                                <option value="settled">Al Corriente</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Estadísticas de resumen del corte -->
+                <div id="pagos-academia-stats" class="stats-grid" style="margin-bottom: 1.5rem;"></div>
+
+                <!-- Tabla de semáforo de pagos -->
+                <div class="table-container fade-in-up">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Estado</th>
+                                <th>Alumno</th>
+                                <th>Tutor / Tel.</th>
+                                <th>Monto Pagado</th>
+                                <th>Método</th>
+                                <th>Fecha Aportación</th>
+                                <th>Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pagos-academia-list">
+                            <tr>
+                                <td colspan="7" style="text-align:center; padding: 2rem; color: var(--text-muted);">
+                                    Selecciona un grupo y período para ver el resumen de pagos.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Módulo: Historial / Papelera -->
+            <div id="view-archivo" class="sub-view view-container" style="display: none;">
+                <div class="action-bar">
+                    <div class="flex-group">
+                        <h3>Historial y Papelera de Ligas</h3>
+                        <p class="text-muted" style="font-size: 0.85rem;">Aquí puedes restaurar torneos finalizados para liberar slots o eliminarlos permanentemente.</p>
+                    </div>
+                </div>
+                <div class="leagues-grid" id="archivo-container">
+                    <!-- Cargado via JS -->
+                </div>
+            </div>
+
+            </section>
+        </main>
+    </div>
+
+    <!-- Modales -->
+    <div id="modal-container" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div style="display:flex; align-items:baseline; gap:12px;">
+                    <h3 id="modal-title">Nueva Liga</h3>
+                    <span id="league-counter-modal" class="limit-badge-modal"></span>
+                </div>
+                <button class="close-btn" onclick="Core.closeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="league-form">
+                    <input type="hidden" id="league-id" value="">
+
+                    <div class="modal-tabs">
+                        <button type="button" class="modal-tab active"
+                            onclick="ui.leagues.switchModalTab('general', this)">Información General</button>
+                        <button type="button" class="modal-tab"
+                            onclick="ui.leagues.switchModalTab('premios', this)">Premios</button>
+                        <button type="button" class="modal-tab"
+                            onclick="ui.leagues.switchModalTab('reglamento', this)">Reglamento</button>
+                        <button type="button" class="modal-tab"
+                            onclick="ui.leagues.switchModalTab('clausulas', this)">Cláusulas</button>
+                    </div>
+
+                    <!-- Tab: General -->
+                    <div id="modal-tab-general" class="modal-tab-content active">
+                        <div class="form-group">
+                            <label>Nombre de la Liga/Torneo</label>
+                            <input type="text" id="league-name" required placeholder="Ej. Torneo Apertura 2026">
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Tipo de Torneo</label>
+                                <select id="league-type" title="Tipo">
+                                    <option value="Relámpago">Torneo Relámpago</option>
+                                    <option value="Fut 7">Fútbol 7</option>
+                                    <option value="Fútbol Rápido">Fútbol Rápido</option>
+                                    <option value="Soccer">Soccer (Fut 11)</option>
+                                    <option value="Futsal">Futsal</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Formato de Competición</label>
+                                <select id="league-formato" title="Formato">
+                                    <option value="Liga">Liga (Todos vs Todos)</option>
+                                    <option value="Fase de Grupos">Fase de Grupos</option>
+                                    <option value="Eliminación Directa">Eliminación Directa</option>
+                                    <option value="Mixto">Mixto (Grupos + Eliminación)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Fecha de Inicio</label>
+                                <input type="date" id="league-date" required>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="league-cost-reg">Costo Inscripción ($)</label>
+                                <input type="number" id="league-cost-reg" value="0" step="0.01">
+                            </div>
+                            <div class="form-group">
+                                <label for="league-cost-ref">Costo Arbitraje ($)</label>
+                                <input type="number" id="league-cost-ref" value="0" step="0.01">
+                            </div>
+                        </div>
+
+                        <div
+                            style="margin: 20px 0 10px 0; border-bottom: 1px solid var(--border); padding-bottom: 5px;">
+                            <h4 style="color: var(--primary); margin: 0; font-size: 0.95rem;">⏱️ Parámetros de Partido
+                            </h4>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group" style="flex: 1;">
+                                <label>Tiempos</label>
+                                <input type="number" id="league-num-tiempos" value="2" min="1" max="4"
+                                    placeholder="Ej. 2">
+                            </div>
+                            <div class="form-group" style="flex: 1;">
+                                <label>Min. por Tiempo</label>
+                                <input type="number" id="league-duracion-tiempo" value="20" min="1"
+                                    placeholder="Ej. 20">
+                            </div>
+                            <div class="form-group" style="flex: 1;">
+                                <label>Descanso (Min)</label>
+                                <input type="number" id="league-descanso" value="10" min="0" placeholder="Ej. 10">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group" style="flex: 1;">
+                                <label>Jugadores p/Equipo</label>
+                                <input type="number" id="league-jugadores-totales" value="15" min="1" placeholder="Ej. 15">
+                            </div>
+                            <div class="form-group" style="flex: 1;">
+                                <label>Jugadores en Campo</label>
+                                <input type="number" id="league-jugadores-campo" value="7" min="1" placeholder="Ej. 7">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Árbitro Oficial (Opcional)</label>
+                            <select id="league-arbitro-id" title="Seleccionar Árbitro">
+                                <option value="">-- Sin Árbitro Asignado --</option>
+                            </select>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group" style="flex: 3;">
+                                <label>Días de Juego</label>
+                                <div id="league-dias-container"
+                                    style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 5px;">
+                                    <label
+                                        style="display: flex; align-items: center; gap: 4px; font-weight: normal; font-size: 0.85rem;"><input
+                                            type="checkbox" value="Lu" class="day-cb">Lu</label>
+                                    <label
+                                        style="display: flex; align-items: center; gap: 4px; font-weight: normal; font-size: 0.85rem;"><input
+                                            type="checkbox" value="Ma" class="day-cb">Ma</label>
+                                    <label
+                                        style="display: flex; align-items: center; gap: 4px; font-weight: normal; font-size: 0.85rem;"><input
+                                            type="checkbox" value="Mi" class="day-cb">Mi</label>
+                                    <label
+                                        style="display: flex; align-items: center; gap: 4px; font-weight: normal; font-size: 0.85rem;"><input
+                                            type="checkbox" value="Ju" class="day-cb">Ju</label>
+                                    <label
+                                        style="display: flex; align-items: center; gap: 4px; font-weight: normal; font-size: 0.85rem;"><input
+                                            type="checkbox" value="Vi" class="day-cb">Vi</label>
+                                    <label
+                                        style="display: flex; align-items: center; gap: 4px; font-weight: normal; font-size: 0.85rem;"><input
+                                            type="checkbox" value="Sa" class="day-cb">Sa</label>
+                                    <label
+                                        style="display: flex; align-items: center; gap: 4px; font-weight: normal; font-size: 0.85rem;"><input
+                                            type="checkbox" value="Do" class="day-cb">Do</label>
+                                </div>
+                            </div>
+                            <div class="form-group" style="flex: 2;">
+                                <label>Horario (De - A)</label>
+                                <div style="display: flex; gap: 5px; align-items: center;">
+                                    <input type="time" id="league-hora-inicio">
+                                    <span style="color: var(--text-muted);">a</span>
+                                    <input type="time" id="league-hora-fin">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="league-cancha">Cancha Regular / Sede</label>
+                            <select id="league-cancha">
+                                <option value="">-- Sin Cancha Asignada --</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="league-image">URL de Imagen/Logo del Torneo</label>
+                            <div style="display: flex; gap: 8px;">
+                                <input type="text" id="league-image" placeholder="https://ejemplo.com/logo.jpg" style="flex: 1;">
+                                <button type="button" class="btn-secondary"
+                                    onclick="document.getElementById('global-file-upload').setAttribute('data-target', 'league-image'); document.getElementById('global-file-upload').click();">Subir
+                                    Foto</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+
+
+                    <!-- Tab: Premios -->
+                    <div id="modal-tab-premios" class="modal-tab-content">
+                        <div class="template-actions">
+                            <button type="button" class="btn-template" onclick="ui.leagues.loadTemplate('premios')">✨
+                                Cargar Plantilla Estándar</button>
+                        </div>
+                        <div class="form-group">
+                            <label for="league-premios">Lista de Premios / Bolsa Acumulada</label>
+                            <textarea id="league-premios" class="full-textarea"
+                                placeholder="Ej. Campeón: $10,000 MXN..."></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Tab: Reglamento -->
+                    <div id="modal-tab-reglamento" class="modal-tab-content">
+                        <div class="template-actions">
+                            <button type="button" class="btn-template" onclick="ui.leagues.loadTemplate('reglamento')">✨
+                                Cargar Plantilla Estándar</button>
+                        </div>
+                        <div class="form-group">
+                            <label for="league-reglamento">Reglamento del Torneo</label>
+                            <textarea id="league-reglamento" class="full-textarea"
+                                placeholder="Escribe aquí las reglas oficiales..."></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Tab: Cláusulas -->
+                    <div id="modal-tab-clausulas" class="modal-tab-content">
+                        <div class="template-actions">
+                            <button type="button" class="btn-template" onclick="ui.leagues.loadTemplate('clausulas')">✨
+                                Cargar Plantilla Estándar</button>
+                        </div>
+                        <div class="form-group">
+                            <label for="league-clausulas">Cláusulas de Inscripción</label>
+                            <textarea id="league-clausulas" class="full-textarea"
+                                placeholder="Términos y condiciones para los equipos..."></textarea>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn-secondary" onclick="Core.closeModal()">Cancelar</button>
+                        <button type="submit" class="btn-primary">Guardar Configuración</button>
+                    </div>
+
+
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Nuevo Equipo -->
+    <div id="modal-equipo" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Nuevo Equipo</h3>
+                <button class="close-btn" onclick="Core.closeModal('modal-equipo')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="team-form">
+                    <input type="hidden" id="team-id" value="">
+                    <div class="form-group">
+                        <label for="team-torneo-id">Torneo Destino</label>
+                        <select id="team-torneo-id" required title="Seleccionar Torneo">
+                            <!-- Llenado via JS -->
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="team-name">Nombre del Equipo</label>
+                        <input type="text" id="team-name" required placeholder="Ej. Real Madrid">
+                    </div>
+                    <div class="form-group" id="team-uid-container">
+                        <label for="team-uid">🔑 Identificador de Acceso (UID)</label>
+                        <div style="display: flex; gap: 8px;">
+                            <input type="text" id="team-uid" style="background: rgba(255,255,255,0.05); color: var(--primary); font-family: monospace; font-weight: bold; border: 1px dashed var(--border); flex: 1;" placeholder="Clave de 15 caracteres para delegados">
+                            <button type="button" class="btn-secondary" onclick="ui.teams.generateNewUID()">🔄 Generar</button>
+                        </div>
+                        <p class="text-muted" style="font-size: 0.7rem; margin-top: 4px;">Este código permite al equipo gestionar su propia información en Telegram.</p>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group" style="flex: 1;">
+                            <label for="team-email">Correo Electrónico (Delegado)</label>
+                            <input type="email" id="team-email" placeholder="ejemplo@correo.com">
+                        </div>
+                        <div class="form-group" style="flex: 1; position: relative;">
+                            <label for="team-colonia">Buscar y Seleccionar Colonia</label>
+                             <input type="text" id="team-colonia" placeholder="Escribe para buscar..." 
+                                    style="position: relative; z-index: 5;"
+                                    title="Escribe al menos 3 letras para buscar la colonia.">
+                            <input type="hidden" id="team-colonia-geojson">
+                            <div id="team-colonia-suggestions" class="suggestions-dropdown custom-scrollbar" style="display: none; position: absolute; background: #2a2d32; width: 100%; border: 1px solid #3b82f6; z-index: 999999; max-height: 180px; overflow-y: auto; border-radius: 6px; top: 100%; box-shadow: 0 10px 25px rgba(0,0,0,0.8); margin-top: 4px;"></div>
+                        </div>
+                    </div>
+                    <div class="form-row" id="team-financial-fields">
+                        <div class="form-group">
+                            <label for="team-abono">Abono Inicial ($)</label>
+                            <input type="number" id="team-abono" value="0" step="0.01" placeholder="Ej. 500">
+                        </div>
+                        <div class="form-group">
+                            <label for="team-metodo">Método de Aportación</label>
+                            <select id="team-metodo">
+                                <option value="Efectivo">Efectivo</option>
+                                <option value="Transferencia">Transferencia</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group" style="flex: 2;">
+                            <label for="team-image">URL de Imagen/Escudo del Equipo</label>
+                            <div style="display: flex; gap: 8px;">
+                                <input type="text" id="team-image" placeholder="https://ejemplo.com/escudo.jpg"
+                                    style="flex: 1;">
+                                <button type="button" class="btn-secondary"
+                                    onclick="document.getElementById('global-file-upload').setAttribute('data-target', 'team-image'); document.getElementById('global-file-upload').click();">Subir
+                                    Foto</button>
+                            </div>
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label for="team-grupo">Grupo (A, B...)</label>
+                            <input type="text" id="team-grupo" placeholder="Ej: A" maxlength="10">
+                        </div>
+                    </div>
+
+
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn-secondary"
+                            onclick="Core.closeModal('modal-equipo')">Cancelar</button>
+                        <button type="submit" class="btn-primary">Registrar Equipo</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Nuevo Jugador -->
+    <div id="modal-jugador" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Nuevo Jugador</h3>
+                <button class="close-btn" onclick="Core.closeModal('modal-jugador')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="player-form">
+                    <input type="hidden" id="player-id" value="">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="player-equipo-id">Equipo</label>
+                            <select id="player-equipo-id" required title="Seleccionar Equipo">
+                                <!-- Llenado via JS -->
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="player-name">Nombre Completo</label>
+                            <input type="text" id="player-name" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="player-seudonimo">Seudónimo (Apodo)</label>
+                            <input type="text" id="player-seudonimo" placeholder="Ej. El Bicho / Junior">
+                        </div>
+                        <div class="form-group">
+                            <label for="player-phone">Teléfono</label>
+                            <input type="tel" id="player-phone" placeholder="Número de contacto">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group" style="flex: 2;">
+                            <label for="player-pos">Posición</label>
+                            <select id="player-pos">
+                                <option value="Delantero">Delantero</option>
+                                <option value="Medio">Medio</option>
+                                <option value="Defensa">Defensa</option>
+                                <option value="Portero">Portero</option>
+                                <option value="DT">Director Técnico (DT)</option>
+                                <option value="Auxiliar">Auxiliar Técnico</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label for="player-number">#</label>
+                            <input type="number" id="player-number" placeholder="00">
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label for="player-age">Edad</label>
+                            <input type="number" id="player-age" placeholder="00">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="player-image">URL de Foto del Jugador</label>
+                        <div style="display: flex; gap: 8px;">
+                            <input type="text" id="player-image" placeholder="https://ejemplo.com/foto.jpg"
+                                style="flex: 1;">
+                            <button type="button" class="btn-secondary"
+                                onclick="document.getElementById('global-file-upload').setAttribute('data-target', 'player-image'); document.getElementById('global-file-upload').click();">Subir
+                                Foto</button>
+                        </div>
+                    </div>
+                    <div class="form-group"
+                        style="background: rgba(0,255,136,0.05); padding: 12px; border-radius: 8px; border: 1px solid rgba(0,255,136,0.2); margin-top: 10px; display: flex; gap: 15px;">
+                        <label
+                            style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #fbbf24; font-weight: bold; margin: 0; flex: 1;">
+                            <input type="checkbox" id="player-es-capitan" style="width: 18px; height: 18px;">
+                            ©️ Capitán
+                        </label>
+                    </div>
+
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn-secondary"
+                            onclick="Core.closeModal('modal-jugador')">Cancelar</button>
+                        <button type="submit" class="btn-primary">Registrar Jugador</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Inscripción de Equipo -->
+    <div id="modal-inscripcion" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Inscribir Equipo al Torneo</h3>
+                <button class="close-btn" onclick="Core.closeModal('modal-inscripcion')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="inscripcion-form">
+                    <div class="form-group">
+                        <label for="ins-equipo-id">Seleccionar Equipo</label>
+                        <select id="ins-equipo-id" required>
+                            <!-- Llenado via JS -->
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="ins-monto-pactado">Costo Pactado ($)</label>
+                            <input type="number" id="ins-monto-pactado" required value="0">
+                        </div>
+                        <div class="form-group">
+                            <label for="ins-abono-inicial">Abono Inicial ($)</label>
+                            <input type="number" id="ins-abono-inicial" value="0" placeholder="Opcional">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="ins-metodo-pago">Método de Aportación / Donación (Si hay contribución)</label>
+                        <select id="ins-metodo-pago">
+                            <option value="Efectivo">Efectivo</option>
+                            <option value="Transferencia">Transferencia</option>
+                        </select>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn-secondary"
+                            onclick="Core.closeModal('modal-inscripcion')">Cancelar</button>
+                        <button type="submit" class="btn-primary">Confirmar Inscripción</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Registrar Aportación -->
+    <div id="modal-pago" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Registrar Aportación / Donación</h3>
+                <button class="close-btn" onclick="Core.closeModal('modal-pago')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="pago-form">
+                    <input type="hidden" id="dash-pago-id">
+                    <div id="dash-pago-equipo-info"
+                        style="padding: 1rem; margin-bottom: 1.5rem; background: rgba(0,255,136,0.05); border-radius: 12px; border: 1px solid var(--primary-glow);">
+                        <!-- Info del equipo via JS -->
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="dash-pago-tipo">Concepto de Donación</label>
+                            <select id="dash-pago-tipo" required>
+                                <option value="Inscripcion">Inscripción</option>
+                                <option value="Arbitraje">Arbitraje / Otros</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="dash-pago-monto">Monto ($)</label>
+                            <input type="number" id="dash-pago-monto" required placeholder="0.00">
+                        </div>
+                    </div>
+
+                    <!-- Selección de Partido Opcional para Arbitraje -->
+                    <div class="form-group" id="dash-pago-partido-container"
+                        style="display: none; margin-bottom: 1rem; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 8px; border: 1px dotted var(--border);">
+                        <label for="dash-pago-partido" style="color: var(--primary);">✅ Vincular a un partido específico
+                            (Opcional)</label>
+                        <select id="dash-pago-partido" class="select-field">
+                            <option value="">-- Sin vincular a partido específico --</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="dash-pago-metodo">Método de Donación</label>
+                        <select id="dash-pago-metodo">
+                            <option value="Efectivo">Efectivo</option>
+                            <option value="Transferencia">Transferencia</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="dash-pago-comentario">Nota / Folio seguimiento</label>
+                        <input type="text" id="dash-pago-comentario" placeholder="Ej. Aportación parcial jornada 1">
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn-secondary"
+                            onclick="Core.closeModal('modal-pago')">Cancelar</button>
+                        <button type="submit" class="btn-primary">Generar Ticket y Guardar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Gestión de Árbitros -->
+    <div id="modal-arbitro" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="arbitro-modal-title">Nuevo Miembro Arbitral</h3>
+                <button class="close-btn" onclick="Core.closeModal('modal-arbitro')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="arbitro-form">
+                    <input type="hidden" id="arbitro-id">
+                    <div class="form-group" id="arbitro-liga-container" style="display: none;">
+                        <label for="arbitro-liga-id">Vincular a Combo / Liga</label>
+                        <select id="arbitro-liga-id" class="nav-select">
+                            <!-- Llenado via JS -->
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="arbitro-nombre">Nombre Completo</label>
+                        <input type="text" id="arbitro-nombre" required placeholder="Ej. Juan Pérez">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group" style="flex: 1;">
+                            <label for="arbitro-nivel">Nivel de Arbitraje</label>
+                            <select id="arbitro-nivel" class="nav-select">
+                                <option value="Local">Cancha Local</option>
+                                <option value="Principal">Principal / Super</option>
+                                <option value="Estadístico">Solo Estadístico</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label for="arbitro-telefono">Teléfono / WhatsApp</label>
+                            <input type="text" id="arbitro-telefono" placeholder="10 dígitos">
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label for="arbitro-email">Correo Electrónico</label>
+                            <input type="email" id="arbitro-email" placeholder="email@ejemplo.com">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group" style="flex: 1;">
+                            <label for="arbitro-foto">Fotografía (Opcional)</label>
+                            <div style="display: flex; gap: 8px;">
+                                <input type="text" id="arbitro-foto" placeholder="URL o sube una..." style="flex: 1;">
+                                <button type="button" class="btn-secondary"
+                                    onclick="document.getElementById('global-file-upload').setAttribute('data-target', 'arbitro-foto'); document.getElementById('global-file-upload').click();">📸</button>
+                            </div>
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label for="arbitro-telegram">Telegram ID (Opcional)</label>
+                            <input type="text" id="arbitro-telegram" placeholder="Ej. 123456789">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="arbitro-password">Contraseña / PIN de Acceso</label>
+                        <input type="text" id="arbitro-password"
+                            placeholder="Para App de Árbitro. Dejar vacío para autogenerar.">
+                    </div>
+
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn-secondary"
+                            onclick="Core.closeModal('modal-arbitro')">Cancelar</button>
+                        <button type="submit" class="btn-primary">Guardar Árbitro</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Aportación de Academia -->
+    <div id="modal-pago-academia" class="modal">
+        <div class="modal-content" style="max-width: 450px;">
+            <div class="modal-header">
+                <h3>💰 Registrar Donación Academia</h3>
+                <button class="close-btn" onclick="Core.closeModal('modal-pago-academia')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="pago-academia-form">
+                    <input type="hidden" id="academy-pago-alumno-id">
+
+                    <div class="form-group"
+                        style="margin-bottom: 1.5rem; text-align: center; background: rgba(0,255,136,0.05); padding: 15px; border-radius: 12px; border: 1px solid rgba(0,255,136,0.1);">
+                        <span
+                            style="display:block; font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 5px;">Alumno</span>
+                        <strong id="academy-pago-alumno-nombre" style="font-size: 1.2rem; color: #fff;">—</strong>
+                        <div style="margin-top: 10px; display: flex; justify-content: center; gap: 20px;">
+                            <div>
+                                <span
+                                    style="display:block; font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase;">Período</span>
+                                <strong id="academy-pago-periodo-label" style="color: var(--primary);">—</strong>
+                            </div>
+                            <div>
+                                <span
+                                    style="display:block; font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase;">Sugerido</span>
+                                <strong id="academy-pago-monto-sugerido" style="color: #fff;">$0.00</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="academy-pago-monto">Monto Recibido ($)</label>
+                        <input type="number" id="academy-pago-monto" required min="1" step="0.01" class="form-control"
+                            style="font-size: 1.5rem; text-align: center; font-weight: 700; color: var(--primary); background: rgba(0,0,0,0.2);">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="academy-pago-metodo">Método de Donación</label>
+                        <select id="academy-pago-metodo" required class="form-control">
+                            <option value="Efectivo">💵 Efectivo</option>
+                            <option value="Transferencia">📱 Transferencia</option>
+                            <option value="Tarjeta">💳 Tarjeta Bancaria</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="academy-pago-comentario">Nota / Comentario (Opcional)</label>
+                        <input type="text" id="academy-pago-comentario" placeholder="Ej. Contribución por adelantado, folio 123..."
+                            class="form-control">
+                    </div>
+
+                    <div class="modal-footer" style="margin-top: 2rem;">
+                        <button type="button" class="btn-secondary"
+                            onclick="Core.closeModal('modal-pago-academia')">Cancelar</button>
+                        <button type="submit" class="btn-primary" style="flex: 1;">Confirmar Donación y Ticket</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Canchas -->
+    <div id="modal-cancha" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="cancha-modal-title">🏟️ Configurar Cancha</h3>
+                <span id="venue-counter-modal" class="plan-counter-badge">0 / 0</span>
+                <button class="close-btn" onclick="Core.closeModal('modal-cancha')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="cancha-form">
+                    <input type="hidden" id="cancha-id">
+                    <input type="hidden" id="cancha-liga-id">
+                    
+                    <div class="modal-tabs">
+                        <button type="button" class="modal-tab active" onclick="ui.canchas.switchModalTab('general', this)">Información General</button>
+                        <button type="button" class="modal-tab" onclick="ui.canchas.switchModalTab('rules', this)">📜 Reglas / Reglamento</button>
+                    </div>
+
+                    <!-- Tab: General -->
+                    <div id="cancha-tab-general" class="modal-tab-content active">
+                        <div class="form-group">
+                            <label for="cancha-nombre">Nombre de la Sede / Cancha</label>
+                            <input type="text" id="cancha-nombre" required placeholder="Ej. Polideportivo Norte">
+                        </div>
+
+                        <div class="form-section-title">👤 Responsable</div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="cancha-encargado">Nombre del Responsable</label>
+                                <input type="text" id="cancha-encargado" placeholder="Ej. Ing. Mario Casas">
+                            </div>
+                            <div class="form-group">
+                                <label for="cancha-telefono">Teléfono / WhatsApp</label>
+                                <input type="text" id="cancha-telefono" placeholder="WhatsApp / Tel">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="cancha-email">Correo Electrónico</label>
+                            <input type="email" id="cancha-email" placeholder="email@ejemplo.com">
+                        </div>
+
+                        <div class="form-section-title">⚙️ Configuración y Costos</div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="cancha-tipo">Tipo de Gestión</label>
+                                <select id="cancha-tipo" onchange="ui.canchas.toggleCostoField()">
+                                    <option value="Propia">🏟️ Propia</option>
+                                    <option value="Rentada">💸 Rentada</option>
+                                    <option value="Gratuita">🌳 Gratuita</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="cancha-modalidad">Modalidad Predeterminada</label>
+                                <select id="cancha-modalidad">
+                                    <option value="Fútbol 7">Fútbol 7</option>
+                                    <option value="Fútbol Rápido">Fútbol Rápido</option>
+                                    <option value="Soccer">Soccer (Fut 11)</option>
+                                    <option value="Futsal">Futsal</option>
+                                    <option value="Urbano">Urbano / Calle</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div id="container-costo-cancha" class="form-group">
+                            <label for="cancha-costo">Costo de Renta / Uso</label>
+                            <div style="display: flex; gap: 10px;">
+                                <input type="number" id="cancha-costo" step="0.01" value="0" style="flex: 1;">
+                                <select id="cancha-unidad-cobro" style="width: 140px;">
+                                    <option value="Partido">/ partido</option>
+                                    <option value="Hora">/ hora</option>
+                                    <option value="Dia">/ dia</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-section-title">📍 Ubicación y Otros</div>
+                        <div class="form-group">
+                            <label>Imagen de Referencia</label>
+                            <div style="display: flex; gap: 10px; align-items: center;">
+                                <input type="text" id="cancha-foto" placeholder="URL o sube una..." style="flex: 1;">
+                                <input type="file" id="cancha-upload" data-target="cancha-foto" style="display: none;" onchange="Core.handleGlobalFileUpload(event)">
+                                <button type="button" class="btn-secondary" onclick="document.getElementById('cancha-upload').click()">📸 Subir</button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="cancha-direccion">Calle y número</label>
+                            <input type="text" id="cancha-direccion" placeholder="Ej. Av. Universidad 100, Col. Centro">
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="cancha-estado">Estado</label>
+                                <select id="cancha-estado" onchange="ui.canchas.handleEstadoChange()">
+                                    <option value="">Selecciona Estado...</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="cancha-municipio">Municipio / Comunidad</label>
+                                <select id="cancha-municipio">
+                                    <option value="">Selecciona Municipio...</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tab: Rules -->
+                    <div id="cancha-tab-rules" class="modal-tab-content">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                            <label for="cancha-notas" style="margin: 0;">📋 Reglamento y Notas de la Sede</label>
+                            <button type="button" class="btn-secondary" style="font-size: 0.8rem; padding: 6px 12px;" onclick="ui.canchas.loadRulesTemplate()">
+                                ✨ Cargar Plantilla Base
+                            </button>
+                        </div>
+                        <div class="form-group">
+                            <textarea id="cancha-notas" class="full-textarea" rows="12" placeholder="Haz clic en 'Cargar Plantilla Base' para ver un ejemplo profesional..."></textarea>
+                            <div style="margin-top: 10px; padding: 12px; background: rgba(0, 255, 136, 0.05); border-radius: 8px; border-left: 3px solid var(--primary);">
+                                <p class="text-muted" style="font-size: 0.85rem; margin: 0; color: var(--primary);">
+                                    <b>Tip:</b> Este reglamento se adjunta automáticamente en los correos de confirmación y fichas de inscripción.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn-secondary" onclick="Core.closeModal('modal-cancha')">Cancelar</button>
+                        <button type="submit" class="btn-primary">Guardar Configuración</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Ticket Virtual (Visual) -->
+    <div id="modal-ticket" class="modal">
+        <div class="modal-content"
+            style="max-width: 500px; background: #fff; color: #000; border-radius: 12px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.5);">
+            <div id="ticket-visual-content" style="padding: 0;">
+                <!-- Contenido generado dinámicamente -->
+            </div>
+            <div class="modal-footer"
+                style="background: #fdfdfd; padding: 1.2rem; display: flex; gap: 10px; border-top: 1px solid #eee;">
+                <button type="button" class="btn-primary"
+                    style="flex: 2; border-radius: 50px; padding: 12px; background: linear-gradient(135deg, #0ea5e9, #0284c7); border: none; font-weight: 700; color: #fff; box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: transform 0.2s;"
+                    onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'"
+                    onclick="ui.finance.downloadTicketPDF()">
+                    <span style="font-size: 1.2rem;">📄</span> DESCARGAR FICHA TÉCNICA (PDF)
+                </button>
+                <button type="button" class="btn-secondary"
+                    style="flex: 1; border-radius: 50px; padding: 12px; background: #f0f0f0; border: 1px solid #ddd; color: #666; font-weight: 600; cursor: pointer;"
+                    onclick="Core.closeModal('modal-ticket')">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    </div>
+
+    <!-- Los modales de entrenamiento han sido movidos a components/entrenamientos.html -->
+
+    <input type="file" id="global-file-upload" style="display: none;" accept="image/*"
+        onchange="Core.handleGlobalFileUpload(event)">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="{{ url_for('static', filename='js/resources/mexico_geo.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/resources/mexico_geo_data.js') }}"></script>
+    <script type="module" src="{{ url_for('static', filename='js/main.js') }}?v=28"></script>
+</body>
+
+</html>

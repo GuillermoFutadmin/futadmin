@@ -1,0 +1,83 @@
+<div id="view-pagos-canchas" class="sub-view view-container" style="display: none;">
+    <div class="action-bar" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+        <h3>Administración de Aportaciones a Sedes/Canchas</h3>
+        <div class="flex-group">
+            <select id="pagos-canchas-status-filter" class="nav-select" onchange="ui.pagosCanchas.loadEstadosCuenta()" style="min-width: 180px;">
+                <option value="all">Todas las Sedes</option>
+                <option value="pending" selected>Con Donación Pendiente</option>
+                <option value="settled">Sin Pendientes</option>
+            </select>
+            <button class="btn-secondary" onclick="ui.pagosCanchas.loadEstadosCuenta()"><i class="fas fa-sync-alt"></i> Actualizar</button>
+        </div>
+    </div>
+
+    <!-- Resumen Total -->
+    <div class="stats-grid" style="margin-bottom: 20px;">
+        <div class="stat-card">
+            <h4>Aportación Pendiente Total</h4>
+            <div class="value" style="color: #ff4444;" id="pagos-canchas-deuda-total">$0.00</div>
+        </div>
+        <div class="stat-card">
+            <h4>Total Aportado</h4>
+            <div class="value" style="color: #00ff88;" id="pagos-canchas-pagado-total">$0.00</div>
+        </div>
+    </div>
+
+    <div class="leagues-grid" id="pagos-canchas-container">
+        <p class="text-muted">Cargando datos financieros...</p>
+    </div>
+</div>
+
+<!-- Modal Registrar Aportación a Cancha -->
+<div id="modal-pago-cancha" class="modal">
+    <div class="modal-content" style="max-width: 500px;">
+        <div class="modal-header">
+            <h3 id="venue-pago-title">💸 Aportar a Sede (Donación)</h3>
+            <button class="btn-icon" onclick="Core.closeModal('modal-pago-cancha')">❌</button>
+        </div>
+        <div class="modal-body">
+            <form id="form-pago-cancha" onsubmit="ui.pagosCanchas.guardarPago(event)">
+                <input type="hidden" id="venue-pago-id">
+
+                <div class="form-group">
+                    <label>Sede Receptora</label>
+                    <input type="text" id="venue-pago-nombre" readonly style="background: rgba(255,255,255,0.05);">
+                </div>
+
+                <div class="form-group">
+                    <label>Donación Pendiente Actual</label>
+                    <input type="text" id="venue-pago-saldo" readonly
+                        style="background: rgba(255,255,255,0.05); color: #ff4444; font-weight: bold;">
+                </div>
+
+                <div class="form-group">
+                    <label for="venue-pago-monto">Monto de Aportación ($)</label>
+                    <input type="number" id="venue-pago-monto" step="0.01" min="0.01" required placeholder="Ej. 1000">
+                </div>
+
+                <div class="form-group">
+                    <label>Comprobante de Aportación (URL o Foto)</label>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <input type="text" id="venue-pago-comprobante" placeholder="URL de la imagen..."
+                            style="flex: 1;">
+                        <input type="file" id="venue-pago-upload" data-target="venue-pago-comprobante"
+                            style="display: none;" onchange="Core.handleGlobalFileUpload(event)">
+                        <button type="button" class="btn-secondary"
+                            onclick="document.getElementById('venue-pago-upload').click()">📸 Subir</button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="venue-pago-notas">Notas / Concepto / Folio Seguimiento</label>
+                    <input type="text" id="venue-pago-notas" placeholder="Ej. Aportación para mantenimiento">
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary"
+                        onclick="Core.closeModal('modal-pago-cancha')">Cancelar</button>
+                    <button type="submit" class="btn-primary">Registrar Aportación</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

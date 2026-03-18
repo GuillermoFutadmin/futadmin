@@ -1,0 +1,58 @@
+# Archivos de Base de Datos (locales, no subir)
+*.db
+*.sqlite
+*.sqlite3
+instance/
+
+# Variables de entorno secretas (NUNCA subir al repo)
+.env
+*.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+*.egg-info/
+dist/
+build/
+
+# Archivos temporales y de debug
+*.pyc
+*.log
+tmp_*.py
+debug_*.py
+check_*.py
+verify_*.py
+fix_*.py
+migrate_*.py
+simulate_*.py
+test_*.py
+find_*.py
+apply_*.py
+update_*.py
+force_*.py
+add_*.py
+complete_*.py
+dump_*.py
+run_patch*.py
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
+# Uploads locales (las de producción van en la nube)
+static/uploads/*
+!static/uploads/.gitkeep
+
+# Cloudflare tunnel
+cloudflared.exe

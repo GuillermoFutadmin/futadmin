@@ -1,0 +1,1241 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>FutAdmin - Referee Pro</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0f172a;
+            --surface: rgba(30, 41, 59, 0.7);
+            --card: rgba(51, 65, 85, 0.4);
+            --primary: #00f2ff;
+            --secondary: #10b981;
+            --error: #ef4444;
+            --warning: #fbbf24;
+            --text: #f8fafc;
+            --muted: #94a3b8;
+            --radius: 16px;
+            --glass: blur(12px) saturate(180%);
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 16px;
+            line-height: 1.5;
+            overflow-x: hidden;
+            background: radial-gradient(circle at top right, #1e293b, #0f172a);
+            min-height: 100vh;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .header h3 {
+            margin: 0;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            font-size: 1.4rem;
+        }
+
+        .card {
+            background: var(--surface);
+            -webkit-backdrop-filter: var(--glass);
+            backdrop-filter: var(--glass);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: var(--radius);
+            padding: 20px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+            margin-bottom: 16px;
+            transition: transform 0.2s ease;
+        }
+
+        .card:active {
+            transform: scale(0.98);
+        }
+
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 12px;
+            font-family: 'Outfit', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), #0ea5e9);
+            color: #000;
+            box-shadow: 0 0 20px rgba(0, 242, 255, 0.3);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1.5px solid rgba(255, 255, 255, 0.2);
+            color: var(--text);
+        }
+
+        .btn-outline:active {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: var(--primary);
+        }
+
+        .status-badge {
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .teams {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+            margin: 15px 0;
+        }
+
+        .score {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: var(--primary);
+            background: rgba(0, 0, 0, 0.2);
+            padding: 8px 16px;
+            border-radius: 12px;
+            min-width: 90px;
+            text-align: center;
+        }
+
+        .event-log {
+            font-size: 0.85rem;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            background: rgba(0, 0, 0, 0.15);
+            padding: 15px;
+            border-radius: 12px;
+        }
+
+        .event-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 8px 12px;
+            border-radius: 8px;
+            border-left: 3px solid var(--primary);
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(20px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        #modal-players {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(8px);
+            z-index: 100;
+            display: none;
+            padding: 24px;
+            overflow-y: auto;
+        }
+
+        .player-item {
+            padding: 16px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.03);
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .check-btn {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            border: 2px solid var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+
+        .check-btn.checked {
+            background: var(--primary);
+            color: black;
+        }
+
+        .attendance-card {
+            margin-bottom: 24px;
+        }
+
+        .attendance-card h4 {
+            margin: 0 0 16px 0;
+            color: var(--secondary);
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Estilos para Modales */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(15, 23, 42, 0.98);
+            backdrop-filter: blur(10px);
+            z-index: 300;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--card-bg);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            width: 100%;
+            max-width: 400px;
+            padding: 24px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            color: var(--primary);
+            font-weight: 800;
+        }
+
+        .modal-body {
+            margin: 20px 0;
+        }
+
+        .modal-footer {
+            display: flex;
+            gap: 12px;
+        }
+
+        /* Detalles de Partido */
+        .details-modal-content {
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .detail-section {
+            margin-bottom: 20px;
+        }
+
+        .detail-section h4 {
+            color: var(--primary);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            border-bottom: 1px solid rgba(0, 242, 255, 0.2);
+            padding-bottom: 8px;
+            margin-bottom: 12px;
+        }
+
+        .detail-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 0.9rem;
+        }
+
+        .detail-min {
+            background: rgba(0, 242, 255, 0.1);
+            color: var(--primary);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 0.75rem;
+            min-width: 32px;
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="login-view">
+        <div class="card" style="text-align: center; margin-top: 20vh;">
+            <h2 style="margin: 0; font-weight: 800; color: var(--primary);">FUTADMIN</h2>
+            <div style="font-size: 4rem; margin: 1.5rem 0; filter: drop-shadow(0 0 10px var(--primary));">⚽</div>
+            <div id="login-form" style="display: none;">
+                <p style="color: var(--muted);">Contraseña de Árbitro</p>
+                <input type="password" id="ref-password" placeholder="••••" class="btn btn-outline"
+                    style="text-align:center; margin-bottom:16px; font-size: 1.5rem; letter-spacing: 0.2em;">
+                <button class="btn btn-primary" onclick="attemptLogin()">ACCEDER</button>
+            </div>
+            <div id="auth-status" style="color: var(--muted); margin-top: 10px;">Validando acceso...</div>
+            <div id="auth-error" style="color: var(--error); margin-top: 10px; font-weight: 600;"></div>
+        </div>
+    </div>
+
+    <div id="tournament-view">
+        <div class="header">
+            <h3>Torneos Activos</h3>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span class="status-badge" style="background: var(--secondary); color: #000;">PRO</span>
+                <button class="btn btn-outline" onclick="logout()"
+                    style="width: auto; padding: 4px 8px; font-size: 0.7rem; border-color: var(--error); color: var(--error);">SALIR</button>
+            </div>
+        </div>
+        <div id="tournaments-container">
+            <!-- Torneos se cargarán aquí -->
+        </div>
+    </div>
+
+    <div id="list-view">
+        <div class="header">
+            <button class="btn btn-outline" onclick="showTournaments()"
+                style="padding: 6px 12px; width: auto; font-size: 0.8rem;">← VOLVER</button>
+            <h3 id="selected-torneo-name">PARTIDOS</h3>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span id="ref-name" class="status-badge"
+                    style="border: 1px solid var(--primary); color: var(--primary);">...</span>
+                <button class="btn btn-outline" onclick="logout()"
+                    style="width: auto; padding: 4px 8px; font-size: 0.7rem; border-color: var(--error); color: var(--error);">SALIR</button>
+            </div>
+        </div>
+        <div id="matches-container">
+            <!-- Partidos se cargarán aquí -->
+        </div>
+    </div>
+
+    <div id="match-view">
+        <div class="header">
+            <button class="btn btn-outline" onclick="showList()" style="width: auto; padding: 6px 12px;">←
+                VOLVER</button>
+            <span id="match-status-header" class="status-badge"
+                style="background: var(--primary); color: #000;">ESTADO</span>
+        </div>
+
+        <div class="card" style="padding: 30px 20px; border-bottom: 4px solid var(--primary);">
+            <div id="match-torneo-info"
+                style="text-align: center; font-size: 0.75rem; color: var(--muted); margin-bottom: 15px; text-transform: uppercase; letter-spacing: 0.1em;">
+                TORNEO</div>
+            <div class="teams">
+                <div style="flex: 1; text-align: center; font-weight: 600; font-size: 1.1rem; color: var(--secondary);"
+                    id="local-name">LOCAL</div>
+                <div class="score" id="live-score">0 - 0</div>
+                <div style="flex: 1; text-align: center; font-weight: 600; font-size: 1.1rem; color: var(--secondary);"
+                    id="visitante-name">VISITANTE</div>
+            </div>
+
+            <div id="timer-container"
+                style="position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                <div id="timer-display"
+                    style="text-align: center; font-size: 3.5rem; font-weight: 800; margin-top: 15px; color: var(--text); font-variant-numeric: tabular-nums; text-shadow: 0 0 20px rgba(248, 250, 252, 0.2);">
+                    00:00</div>
+                <button id="btn-pause" class="btn btn-outline" onclick="togglePause()"
+                    style="position: absolute; right: 0; bottom: 0; width: auto; padding: 4px 10px; font-size: 0.7rem; border-color: var(--secondary); color: var(--secondary); display: none;">⏸
+                    PAUSA</button>
+            </div>
+            <div id="extra-time-badge"
+                style="text-align: center; font-size: 0.9rem; color: var(--warning); display: none;">+0 MIN</div>
+        </div>
+
+        <div id="controls-panel" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 24px;">
+            <button class="btn btn-primary" onclick="openCheckIn()" id="btn-pre-start" style="grid-column: 1 / -1;">📋
+                PASE DE LISTA</button>
+            <button class="btn btn-primary" onclick="gameAction('Inicio')" id="btn-start"
+                style="grid-column: 1 / -1; background: linear-gradient(135deg, #22c55e, #10b981);">🚀 INICIAR
+                PARTIDO</button>
+
+            <button class="btn btn-outline" onclick="recordGoal('local')" id="btn-goal-l"
+                style="border-color: var(--secondary);">⚽ GOL LOCAL</button>
+            <button class="btn btn-outline" onclick="recordGoal('visitante')" id="btn-goal-v"
+                style="border-color: var(--secondary);">⚽ GOL VIS.</button>
+
+            <button class="btn btn-outline" onclick="openPlayerList('Amarilla')"
+                style="border-color: var(--warning); color: var(--warning);">🟨 AMARILLA</button>
+            <button class="btn btn-outline" onclick="openPlayerList('Roja')"
+                style="border-color: var(--error); color: var(--error);">🟥 ROJA</button>
+
+            <button class="btn btn-outline" onclick="gameAction('Medio Tiempo')" id="btn-halftime"
+                style="grid-column: 1 / -1; border-color: var(--primary); color: var(--primary);">⏳ MEDIO TIEMPO /
+                COBRO</button>
+
+            <div style="grid-column: 1 / -1; display: flex; gap: 8px; margin-top: 8px;">
+                <input type="number" id="extra-minutes" value="0" class="btn btn-outline"
+                    style="flex: 0.8; text-align: center;" placeholder="+ MIN">
+                <button class="btn btn-outline" onclick="recordPenaltyGoal('local')"
+                    style="flex: 1; font-size: 0.8rem; border-color: #a78bfa; color: #a78bfa;">⚽ PENAL L</button>
+                <button class="btn btn-outline" onclick="recordPenaltyGoal('visitante')"
+                    style="flex: 1; font-size: 0.8rem; border-color: #a78bfa; color: #a78bfa;">⚽ PENAL V</button>
+            </div>
+
+            <button class="btn btn-primary" onclick="openPenaltiesModal()" id="btn-penalties"
+                style="grid-column: 1 / -1; border: 1px dashed #a78bfa; background: rgba(167, 139, 250, 0.1); color: #a78bfa; font-size: 0.85rem; font-weight: 700; height: 50px;">⚽
+                DEFINICIÓN POR PENALES</button>
+
+            <button class="btn btn-outline" onclick="gameAction('Fin')" id="btn-end"
+                style="grid-column: 1 / -1; margin-top: 12px; border-color: var(--error); color: var(--error);">🏁
+                FINALIZAR PARTIDO</button>
+        </div>
+
+        <div class="event-log" id="event-log">
+            <!-- Eventos -->
+        </div>
+    </div>
+
+    <!-- Vista de Pase de Lista (Check-in) -->
+    <div id="checkin-view">
+        <div class="header">
+            <button class="btn btn-outline" onclick="showMatchView()" style="width: auto; padding: 6px 12px;">←
+                VOLVER</button>
+            <h3>PASE DE LISTA</h3>
+            <button class="btn btn-primary" onclick="showMatchView()"
+                style="width: auto; padding: 6px 12px;">LISTO</button>
+        </div>
+        <div id="checkin-container" style="padding-bottom: 30px;">
+            <!-- Jugadores -->
+        </div>
+    </div>
+
+    <!-- Vista de Medio Tiempo / Cobro de Arbitraje -->
+    <div id="halftime-view">
+        <div class="header">
+            <h3>⏳ MEDIO TIEMPO</h3>
+            <button class="btn btn-outline" onclick="showMatchView()"
+                style="width: auto; padding: 6px 12px;">CERRAR</button>
+        </div>
+
+        <div class="card" style="border-left: 4px solid var(--warning);">
+            <h4 style="color: var(--warning); margin-top: 0; font-weight: 800;">💵 COBRO DE ARBITRAJE</h4>
+            <div id="payment-forms-container">
+                <!-- Dinámico -->
+            </div>
+        </div>
+
+        <button class="btn btn-primary" onclick="gameAction('Reanudación')" id="btn-resume"
+            style="margin-top: 10px; background: linear-gradient(135deg, var(--secondary), #059669);">▶️ REANUDAR
+            PARTIDO</button>
+    </div>
+
+    <!-- Modal para seleccionar jugador -->
+    <div id="modal-players">
+        <div class="header">
+            <h3 id="modal-title" style="color: var(--primary);">SELECCIONAR JUGADOR</h3>
+            <button class="btn btn-outline" onclick="closePlayerList()"
+                style="width: auto; padding: 6px 12px;">CERRAR</button>
+        </div>
+        <div id="players-container" style="margin-top: 20px;"></div>
+    </div>
+
+    <div id="modal-note"
+        style="position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(15,23,42,0.98); backdrop-filter: blur(10px); z-index:200; display:none; padding:24px;">
+        <div class="header">
+            <h3 id="note-modal-title" style="color: var(--warning);">MOTIVO DE SANCIÓN</h3>
+        </div>
+        <div class="card" style="margin-top: 20px;">
+            <textarea id="card-note-text" class="btn btn-outline"
+                style="width:100%; height:150px; text-align:left; padding:15px; background: rgba(0,0,0,0.2);"
+                placeholder="Ej. Reincidencia, Falta táctica, Protesta..."></textarea>
+        </div>
+        <div style="display:flex; gap:12px; margin-top: 20px;">
+            <button class="btn btn-outline" style="flex: 1;" onclick="closeNoteModal()">OMITIR</button>
+            <button class="btn btn-primary" style="flex: 2;" onclick="confirmCardWithNote()">CONFIRMAR</button>
+        </div>
+    </div>
+
+    <!-- Modal de Detalles de Partido -->
+    <div id="modal-match-details" class="modal">
+        <div class="modal-content details-modal-content">
+            <div class="modal-header">
+                <h3 id="details-modal-title">DETALLES</h3>
+            </div>
+            <div class="modal-body" id="details-modal-body">
+                <!-- Info de goles y tarjetas -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="closeMatchDetailsModal()">CERRAR</button>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+        tg.ready();
+
+        let currentReferee = null;
+        let activeMatch = null;
+        let matchPlayers = { local: [], visitante: [] };
+        let matchSeconds = 0;
+        let timerInterval = null;
+        let isTimerPaused = false;
+        let selectedTorneoId = null;
+        let currentMatches = [];
+
+        function showView(id) {
+            const views = ['login-view', 'tournament-view', 'list-view', 'match-view', 'checkin-view', 'halftime-view'];
+            views.forEach(v => {
+                const el = document.getElementById(v);
+                if (el) el.style.display = (v === id) ? 'block' : 'none';
+            });
+            if (id === 'match-view') document.getElementById('modal-players').style.display = 'none';
+        }
+
+        async function init() {
+            showView('login-view');
+            const stored = localStorage.getItem('ref_auth');
+            if (stored) {
+                const authData = JSON.parse(stored);
+                if (Date.now() - authData.time < 24 * 60 * 60 * 1000) {
+                    const ok = await login(authData.password);
+                    if (ok) return;
+                }
+            }
+            document.getElementById('auth-status').style.display = 'none';
+            document.getElementById('login-form').style.display = 'block';
+        }
+
+        function logout() {
+            if (!confirm("¿Deseas cerrar sesión?")) return;
+            localStorage.removeItem('ref_auth');
+            currentReferee = null;
+            selectedTorneoId = null;
+            currentMatches = [];
+            showView('login-view');
+            document.getElementById('login-form').style.display = 'block';
+            document.getElementById('auth-status').style.display = 'none';
+            tg.HapticFeedback.notificationOccurred('warning');
+        }
+
+        async function attemptLogin() {
+            const password = document.getElementById('ref-password').value;
+            if (!password) return alert("Ingresa tu contraseña");
+            const ok = await login(password);
+            if (ok) {
+                localStorage.setItem('ref_auth', JSON.stringify({ password, time: Date.now() }));
+            } else {
+                document.getElementById('auth-error').innerText = "Credenciales incorrectas.";
+            }
+        }
+
+        async function login(password) {
+            const user = tg.initDataUnsafe?.user;
+            const telegram_id = user?.id || '5825342439'; // Using user's confirmed ID for testing
+
+            try {
+                const res = await fetch('/api/telegram/verify_referee', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ telegram_id, password })
+                });
+                const data = await res.json();
+                if (data.authenticated) {
+                    currentReferee = data.referee;
+                    document.getElementById('ref-name').innerText = currentReferee.nombre;
+                    showTournaments();
+                    return true;
+                }
+                document.getElementById('auth-error').innerText = data.error || "Error de autenticación.";
+                return false;
+            } catch (e) {
+                document.getElementById('auth-error').innerText = "Error de conexión.";
+                return false;
+            }
+        }
+
+        async function showTournaments() {
+            showView('tournament-view');
+            try {
+                const res = await fetch('/api/telegram/tournaments');
+                const tournaments = await res.json();
+                const container = document.getElementById('tournaments-container');
+                container.innerHTML = tournaments.map(t => `
+                    <div class="card" onclick="selectTournament(${t.id}, '${t.nombre}')" style="padding: 20px; text-align: center; border-left: 4px solid var(--primary);">
+                        <h4 style="margin:0;">${t.nombre}</h4>
+                    </div>
+                `).join('');
+                if (tournaments.length === 0) {
+                    container.innerHTML = '<p style="text-align:center;">No hay torneos activos.</p>';
+                }
+            } catch (e) {
+                alert("Error al cargar torneos");
+            }
+        }
+
+        function selectTournament(id, name) {
+            selectedTorneoId = id;
+            document.getElementById('selected-torneo-name').innerText = name;
+            loadMatches();
+        }
+
+        async function loadMatches() {
+            showView('list-view');
+            const user = tg.initDataUnsafe?.user;
+            const telegram_id = user?.id || '5825342439';
+            try {
+                const res = await fetch(`/api/telegram/matches?telegram_id=${telegram_id}&torneo_id=${selectedTorneoId}`);
+                currentMatches = await res.json();
+                const container = document.getElementById('matches-container');
+                container.innerHTML = currentMatches.map((m, index) => {
+                    const isMyMatch = m.arbitro_id === currentReferee.id;
+                    const isPlayable = m.estado !== 'Played' && m.estado !== 'Cancelled';
+                    const canAdopt = !m.arbitro_id && isPlayable;
+                    const canOpen = isPlayable;
+                    let statusColor = 'var(--muted)';
+                    if (m.estado === 'Live') statusColor = 'var(--error)';
+                    if (m.estado === 'HalfTime') statusColor = 'var(--warning)';
+                    if (m.estado === 'Scheduled') statusColor = 'var(--secondary)';
+
+                    return `
+                    <div class="card" onclick="${canOpen ? `openMatchByIndex(${index})` : ''}"
+                         ondblclick="${m.estado === 'Played' ? `showMatchDetails(${m.id})` : ''}"
+                         style="border-left: 4px solid ${isMyMatch ? 'var(--primary)' : 'rgba(255,255,255,0.1)'}; padding: 15px;">
+                        <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                            <span style="font-size: 0.75rem; font-weight: 800; color: var(--muted); letter-spacing: 0.05em;">JORNADA ${m.jornada}</span>
+                            <span class="status-badge" style="color: ${statusColor}; border: 1px solid ${statusColor}; background: transparent;">${m.estado === 'Live' ? 'EN VIVO' : m.estado === 'HalfTime' ? 'MEDIO TIEMPO' : m.estado === 'Scheduled' ? 'PROGRAMADO' : m.estado === 'Played' ? 'FINALIZADO' : m.estado}</span>
+                        </div>
+                        <div class="teams" style="margin: 8px 0;">
+                            <span style="font-weight: 600; font-size: 1rem;">${m.equipo_local}</span>
+                            <span class="score" style="font-size: 1.1rem; min-width: 60px; padding: 4px 10px;">${m.goles_local || 0} - ${m.goles_visitante || 0}</span>
+                            <span style="font-weight: 600; font-size: 1rem;">${m.equipo_visitante}</span>
+                        </div>
+                        <div style="display:flex; justify-content: space-between; align-items: flex-end; margin-top: 12px;">
+                            <div style="font-size: 0.75rem; color: var(--muted); line-height: 1.4;">📅 ${m.fecha || ''} <span style="color: var(--text);">${m.hora || ''}</span><br>👤 ${m.arbitro_nombre || 'POR ASIGNAR'}</div>
+                            ${canAdopt ? `<button class="btn btn-primary" onclick="event.stopPropagation(); adoptMatch(${m.id})" style="padding: 6px 12px; font-size: 0.7rem; width: auto; border-radius: 8px;">ADOPTAR</button>` : ''}
+                        </div>
+                    </div>
+                `}).join('');
+            } catch (e) { alert("Error al cargar partidos"); }
+        }
+
+        async function adoptMatch(id) {
+            if (!confirm("¿Deseas adoptar este partido? Te asignarás como el árbitro oficial.")) return;
+            const user = tg.initDataUnsafe?.user;
+            const telegram_id = user?.id || '5825342439';
+            try {
+                const res = await fetch(`/api/telegram/match/${id}/adopt`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ telegram_id })
+                });
+                if (res.ok) {
+                    tg.HapticFeedback.notificationOccurred('success');
+                    loadMatches();
+                }
+            } catch (e) { alert("Error al adoptar partido"); }
+        }
+
+        async function showMatchDetails(matchId) {
+            try {
+                const res = await fetch(`/api/partido/${matchId}/detalles`);
+                const data = await res.json();
+
+                const modal = document.getElementById('modal-match-details');
+                const body = document.getElementById('details-modal-body');
+
+                let html = '';
+
+                // Goles
+                html += '<div class="detail-section"><h4>⚽ Goles</h4>';
+                if (data.goles && data.goles.length > 0) {
+                    html += data.goles.map(g => `
+                        <div class="detail-row">
+                            <span class="detail-min">${g.minuto}'</span>
+                            <span style="flex:1"><b>${g.jugador}</b></span>
+                            <span style="color:var(--muted); font-size:0.8rem;">${g.equipo}</span>
+                        </div>
+                    `).join('');
+                } else {
+                    html += '<div style="color:var(--muted); font-size:0.9rem;">Sin goles registrados.</div>';
+                }
+                html += '</div>';
+
+                // Tarjetas
+                html += '<div class="detail-section"><h4>🃏 Tarjetas</h4>';
+                if (data.tarjetas && data.tarjetas.length > 0) {
+                    html += data.tarjetas.map(t => `
+                        <div class="detail-row">
+                            <span class="detail-min">${t.minuto}'</span>
+                            <span style="font-size:1.2rem;">${t.tipo === 'Amarilla' ? '🟨' : '🟥'}</span>
+                            <span style="flex:1"><b>${t.jugador}</b></span>
+                            <span style="color:var(--muted); font-size:0.8rem;">${t.equipo}</span>
+                        </div>
+                    `).join('');
+                } else {
+                    html += '<div style="color:var(--muted); font-size:0.9rem;">Sin tarjetas registradas.</div>';
+                }
+                html += '</div>';
+
+                // Árbitro
+                html += `
+                    <div style="margin-top:20px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.1); display:flex; align-items:center; gap:10px;">
+                        <span style="font-size:1.2rem;">👤</span>
+                        <div style="flex:1">
+                            <div style="font-size:0.7rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.05em;">Árbitro</div>
+                            <div style="color:var(--primary); font-weight:800;">${data.arbitro || 'No asignado'}</div>
+                        </div>
+                    </div>
+                `;
+
+                body.innerHTML = html;
+                modal.classList.add('active');
+                tg.HapticFeedback.impactOccurred('light');
+            } catch (e) {
+                alert("Error al cargar detalles del partido.");
+            }
+        }
+
+        function closeMatchDetailsModal() {
+            document.getElementById('modal-match-details').classList.remove('active');
+        }
+
+        function openMatchByIndex(index) {
+            openMatch(currentMatches[index]);
+        }
+
+        async function openMatch(matchData) {
+            activeMatch = matchData;
+            showView('match-view');
+
+            document.getElementById('local-name').innerText = activeMatch.equipo_local;
+            document.getElementById('visitante-name').innerText = activeMatch.equipo_visitante;
+            document.getElementById('live-score').innerText = `${activeMatch.goles_local || 0} - ${activeMatch.goles_visitante || 0}`;
+            document.getElementById('match-status-header').innerText = activeMatch.estado === 'Live' ? 'EN VIVO' : activeMatch.estado === 'HalfTime' ? 'MEDIO TIEMPO' : activeMatch.estado === 'Scheduled' ? 'PROGRAMADO' : activeMatch.estado === 'Played' ? 'FINALIZADO' : activeMatch.estado;
+            document.getElementById('match-torneo-info').innerText = activeMatch.torneo_name + " - Jornada " + activeMatch.jornada;
+
+            updateControlsVisibility();
+
+            // Cargar jugadores
+            matchPlayers = { local: [], visitante: [] }; // Reset
+            try {
+                const res = await fetch(`/api/partido/${activeMatch.id}/players`);
+                matchPlayers = await res.json();
+            } catch (e) { console.error("Error cargando jugadores:", e); }
+
+            // Restaurar estado del cronómetro
+            loadTimerState();
+        }
+
+        function saveTimerState() {
+            if (!activeMatch) return;
+            const state = {
+                seconds: matchSeconds,
+                paused: isTimerPaused,
+                timestamp: Date.now()
+            };
+            localStorage.setItem(`timer_${activeMatch.id}`, JSON.stringify(state));
+        }
+
+        function loadTimerState() {
+            if (!activeMatch) return;
+            const saved = localStorage.getItem(`timer_${activeMatch.id}`);
+            if (saved) {
+                const state = JSON.parse(saved);
+                // Si el partido está en vivo, recuperamos los segundos. 
+                // Podríamos calcular el tiempo transcurrido desde el timestamp si quisiéramos ser más exactos,
+                // pero por ahora simplemente recuperamos el valor guardado.
+                matchSeconds = state.seconds || 0;
+                isTimerPaused = state.paused || false;
+                updateTimerDisplay();
+                updatePauseButtonUI();
+            } else {
+                matchSeconds = 0;
+                isTimerPaused = false;
+            }
+        }
+
+        function updateControlsVisibility() {
+            const isLive = activeMatch.estado === 'Live';
+            const isScheduled = activeMatch.estado === 'Scheduled';
+            const isHalfTime = activeMatch.estado === 'HalfTime';
+
+            document.getElementById('btn-pre-start').style.display = isScheduled ? 'block' : 'none';
+            document.getElementById('btn-start').style.display = isScheduled ? 'block' : 'none';
+            document.getElementById('btn-pause').style.display = isLive ? 'block' : 'none';
+
+            const toToggle = ['btn-goal-l', 'btn-goal-v', 'btn-halftime', 'btn-end', 'extra-minutes', 'btn-penalties'];
+            toToggle.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.style.display = (isLive) ? 'block' : 'none';
+            });
+
+            // Specific grid-column cases
+            if (document.getElementById('btn-halftime')) document.getElementById('btn-halftime').style.display = isLive ? 'block' : 'none';
+            if (document.getElementById('btn-end')) document.getElementById('btn-end').style.display = isLive ? 'block' : 'none';
+
+            // Special handling for the penalty/extra time row parent if needed
+            const penaltyRow = document.getElementById('extra-minutes').parentElement;
+            if (penaltyRow) penaltyRow.style.display = (isLive || isHalfTime) ? 'flex' : 'none';
+
+            // Card buttons are always visible if game is live or halftime
+            const cardButtons = document.querySelectorAll('button[onclick*="openPlayerList"]');
+            cardButtons.forEach(btn => btn.style.display = (isLive || isHalfTime) ? 'block' : 'none');
+
+            if (isLive && !timerInterval) {
+                startTimer();
+            } else if (!isLive) {
+                stopTimer();
+            }
+
+            if (isHalfTime) {
+                renderPaymentForms();
+                showView('halftime-view');
+            }
+        }
+
+        function startTimer() {
+            // No reseteamos matchSeconds aquí para permitir persistencia
+            isTimerPaused = false;
+            updateTimerDisplay();
+            updatePauseButtonUI();
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                if (!isTimerPaused) {
+                    matchSeconds++;
+                    updateTimerDisplay();
+                    if (matchSeconds % 5 === 0) saveTimerState(); // Guardar cada 5 segundos
+                }
+            }, 1000);
+        }
+
+        function stopTimer() {
+            clearInterval(timerInterval);
+            timerInterval = null;
+            isTimerPaused = false;
+        }
+
+        function togglePause() {
+            isTimerPaused = !isTimerPaused;
+            updatePauseButtonUI();
+            saveTimerState();
+            tg.HapticFeedback.impactOccurred('medium');
+        }
+
+        function updatePauseButtonUI() {
+            const btn = document.getElementById('btn-pause');
+            if (isTimerPaused) {
+                btn.innerText = '▶️ REANUDAR';
+                btn.style.color = 'var(--primary)';
+                btn.style.borderColor = 'var(--primary)';
+            } else {
+                btn.innerText = '⏸ PAUSA';
+                btn.style.color = 'var(--secondary)';
+                btn.style.borderColor = 'var(--secondary)';
+            }
+        }
+
+        function updateTimerDisplay() {
+            const m = Math.floor(matchSeconds / 60);
+            const s = matchSeconds % 60;
+            document.getElementById('timer-display').innerText = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        }
+
+        async function gameAction(type) {
+            const extra = document.getElementById('extra-minutes').value;
+
+            const data = {
+                tipo: type,
+                minuto: Math.floor(matchSeconds / 60),
+                nota: type === 'Fin' ? `Tiempo extra: ${extra} min` : ''
+            };
+            const ok = await sendEvent(data);
+            if (ok) {
+                if (type === 'Inicio') {
+                    activeMatch.estado = 'Live';
+                    matchSeconds = 0;
+                    isTimerPaused = false;
+                    localStorage.removeItem(`timer_${activeMatch.id}`);
+                    startTimer();
+                }
+                if (type === 'Medio Tiempo') activeMatch.estado = 'HalfTime';
+                if (type === 'Reanudación') {
+                    activeMatch.estado = 'Live';
+                    showView('match-view');
+                }
+                if (type === 'Fin') activeMatch.estado = 'Played';
+                document.getElementById('match-status-header').innerText = activeMatch.estado;
+                updateControlsVisibility();
+                logEvent(type, null, data.minuto);
+            }
+        }
+
+        function openPenaltiesModal() {
+            document.getElementById('pen-local-name').innerText = activeMatch.equipo_local;
+            document.getElementById('pen-visitante-name').innerText = activeMatch.equipo_visitante;
+
+            const select = document.getElementById('pen-winner-select');
+            select.innerHTML = `
+                <option value="${activeMatch.equipo_local_id}">${activeMatch.equipo_local}</option>
+                <option value="${activeMatch.equipo_visitante_id}">${activeMatch.equipo_visitante}</option>
+            `;
+
+            document.getElementById('penalties-modal').classList.add('active');
+        }
+
+        async function confirmPenalties() {
+            const pl = document.getElementById('pen-local-score').value;
+            const pv = document.getElementById('pen-visitante-score').value;
+            const winnerId = document.getElementById('pen-winner-select').value;
+            const extra = document.getElementById('extra-minutes').value;
+
+            if (pl === pv) {
+                alert("En penales debe haber un ganador.");
+                return;
+            }
+
+            const data = {
+                tipo: 'Fin',
+                minuto: Math.floor(matchSeconds / 60),
+                nota: `Penales: ${pl}-${pv}. Tiempo extra: ${extra} min`,
+                penales_local: parseInt(pl),
+                penales_visitante: parseInt(pv),
+                ganador_id: parseInt(winnerId)
+            };
+
+            const ok = await sendEvent(data);
+            if (ok) {
+                activeMatch.estado = 'Played';
+                document.getElementById('penalties-modal').classList.remove('active');
+                document.getElementById('match-status-header').innerText = activeMatch.estado;
+                updateControlsVisibility();
+                logEvent('Fin', null, data.minuto);
+                tg.HapticFeedback.notificationOccurred('success');
+            }
+        }
+
+        function renderPaymentForms() {
+            const container = document.getElementById('payment-forms-container');
+            const cost = activeMatch.costo_arbitraje || 0;
+
+            container.innerHTML = `
+                <div style="margin-bottom:15px; padding:10px; background:rgba(255,255,255,0.05); border-radius:8px;">
+                    <p style="font-size:0.9rem; margin-bottom:5px;">${activeMatch.equipo_local}</p>
+                    <div style="display:flex; gap:5px;">
+                        <input type="number" id="pay-amount-local" value="${cost}" class="btn" style="flex:1; text-align:left; padding:5px;">
+                        <button class="btn btn-primary" onclick="submitPayment('local')" style="width:auto; padding:5px 10px;">Cobrar</button>
+                    </div>
+                </div>
+                <div style="padding:10px; background:rgba(255,255,255,0.05); border-radius:8px;">
+                    <p style="font-size:0.9rem; margin-bottom:5px;">${activeMatch.equipo_visitante}</p>
+                    <div style="display:flex; gap:5px;">
+                        <input type="number" id="pay-amount-visitante" value="${cost}" class="btn" style="flex:1; text-align:left; padding:5px;">
+                        <button class="btn btn-primary" onclick="submitPayment('visitante')" style="width:auto; padding:5px 10px;">Cobrar</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        async function submitPayment(side) {
+            const teamId = side === 'local' ? activeMatch.equipo_local_id : activeMatch.equipo_visitante_id;
+            const amount = document.getElementById(`pay-amount-${side}`).value;
+
+            try {
+                const res = await fetch(`/api/telegram/match/${activeMatch.id}/payment`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ equipo_id: teamId, monto: amount, metodo: 'Efectivo' })
+                });
+                if (res.ok) {
+                    alert("Pago registrado correctamente");
+                    tg.HapticFeedback.notificationOccurred('success');
+                }
+            } catch (e) { alert("Error al registrar pago"); }
+        }
+
+        async function recordPenaltyGoal(side) {
+            const teamId = side === 'local' ? activeMatch.equipo_local_id : activeMatch.equipo_visitante_id;
+            openPlayerList('Gol Penales', teamId);
+        }
+
+        async function recordGoal(side) {
+            const teamId = side === 'local' ? activeMatch.equipo_local_id : activeMatch.equipo_visitante_id;
+            openPlayerList('Gol', teamId);
+        }
+
+        let pendingEventType = null;
+        let pendingTeamId = null;
+
+        function openPlayerList(eventType, teamId = null) {
+            pendingEventType = eventType;
+            pendingTeamId = teamId;
+
+            document.getElementById('modal-players').style.display = 'block';
+            const container = document.getElementById('players-container');
+            const title = document.getElementById('modal-title');
+            title.innerText = `SELECCIONAR JUGADOR (${eventType.toUpperCase()})`;
+
+            let html = '';
+
+            if (!teamId || teamId === activeMatch.equipo_local_id) {
+                html += `<div style="color:var(--primary); font-weight:bold; margin: 10px 0;">${activeMatch.equipo_local}</div>`;
+                html += (matchPlayers.local || []).map(p => `
+                    <div class="player-item" onclick="initEventDetails(${p.id}, ${activeMatch.equipo_local_id}, '${p.nombre}')">
+                        <span>#${p.numero || '?'} ${p.nombre}</span>
+                        <span>➔</span>
+                    </div>
+                `).join('');
+            }
+
+            if (!teamId || teamId === activeMatch.equipo_visitante_id) {
+                html += `<div style="color:var(--primary); font-weight:bold; margin: 20px 0 10px 0;">${activeMatch.equipo_visitante}</div>`;
+                html += (matchPlayers.visitante || []).map(p => `
+                    <div class="player-item" onclick="initEventDetails(${p.id}, ${activeMatch.equipo_visitante_id}, '${p.nombre}')">
+                        <span>#${p.numero || '?'} ${p.nombre}</span>
+                        <span>➔</span>
+                    </div>
+                `).join('');
+            }
+
+            container.innerHTML = html || '<div style="text-align:center; padding:20px; color:var(--muted);">No hay jugadores registrados</div>';
+        }
+
+        function closePlayerList() {
+            document.getElementById('modal-players').style.display = 'none';
+        }
+
+        let pendingEventData = null;
+        async function initEventDetails(playerId, equipoId, playerName) {
+            closePlayerList();
+            pendingEventData = { playerId, equipoId, playerName };
+            const title = document.getElementById('note-modal-title');
+            title.innerText = `${pendingEventType} - ${playerName}`;
+            title.style.color = pendingEventType.includes('Roja') ? 'var(--error)' :
+                pendingEventType.includes('Amarilla') ? 'var(--warning)' :
+                    'var(--primary)';
+
+            document.getElementById('card-note-text').value = '';
+            document.getElementById('modal-note').style.display = 'block';
+        }
+
+        function closeNoteModal() {
+            document.getElementById('modal-note').style.display = 'none';
+        }
+
+        async function confirmCardWithNote() {
+            const note = document.getElementById('card-note-text').value;
+            const isPenalty = pendingEventType === 'Gol Penales';
+            const data = {
+                tipo: pendingEventType,
+                equipo_id: pendingEventData.equipoId,
+                jugador_id: pendingEventData.playerId,
+                minuto: isPenalty ? 0 : Math.floor(matchSeconds / 60),
+                nota: note
+            };
+            const ok = await sendEvent(data);
+            if (ok) {
+                closeNoteModal();
+                tg.HapticFeedback.notificationOccurred('success');
+
+                // Update Local Score State
+                if (pendingEventType === 'Gol' || isPenalty) {
+                    if (pendingEventData.equipoId === activeMatch.equipo_local_id) {
+                        activeMatch.goles_local = (activeMatch.goles_local || 0) + 1;
+                    } else {
+                        activeMatch.goles_visitante = (activeMatch.goles_visitante || 0) + 1;
+                    }
+                    document.getElementById('live-score').innerText = `${activeMatch.goles_local} - ${activeMatch.goles_visitante}`;
+                }
+
+                let logType = pendingEventType;
+                if (pendingEventType === 'Gol') logType = '⚽ GOL';
+                if (isPenalty) logType = '⚽ GOL (P)';
+                if (pendingEventType === 'Amarilla') logType = '🟨 Tarjeta';
+                if (pendingEventType === 'Roja') logType = '🟥 Tarjeta';
+
+                logEvent(logType, pendingEventData.playerName, data.minuto);
+            }
+        }
+
+        async function openCheckIn() {
+            if (!matchPlayers || (!matchPlayers.local.length && !matchPlayers.visitante.length)) {
+                alert("Cargando lista de jugadores, por favor espera un momento...");
+                return;
+            }
+
+            showView('checkin-view');
+            const container = document.getElementById('checkin-container');
+
+            let html = `<div style="padding:10px; color:var(--primary); font-weight:bold;">${activeMatch.equipo_local}</div>`;
+            html += (matchPlayers.local || []).map(p => `
+                <div class="player-item" onclick="togglePresence(${p.id}, ${activeMatch.equipo_local_id}, this)">
+                    <span>#${p.numero || '?'} ${p.nombre}</span>
+                    <span class="presence-indicator" style="color: ${p.presente ? 'var(--primary)' : 'var(--muted)'}">
+                        ${p.presente ? '✅ PRESENTE' : '❌ Ausente'}
+                    </span>
+                </div>
+            `).join('');
+
+            html += `<div style="padding:10px; color:var(--primary); font-weight:bold; margin-top:20px;">${activeMatch.equipo_visitante}</div>`;
+            html += (matchPlayers.visitante || []).map(p => `
+                <div class="player-item" onclick="togglePresence(${p.id}, ${activeMatch.equipo_visitante_id}, this)">
+                    <span>#${p.numero || '?'} ${p.nombre}</span>
+                    <span class="presence-indicator" style="color: ${p.presente ? 'var(--primary)' : 'var(--muted)'}">
+                        ${p.presente ? '✅ PRESENTE' : '❌ Ausente'}
+                    </span>
+                </div>
+            `).join('');
+
+            container.innerHTML = html;
+        }
+
+        async function togglePresence(playerId, equipoId, el) {
+            const indicator = el.querySelector('.presence-indicator');
+            const isPresent = indicator.innerText.includes('PRESENTE');
+            const newStatus = !isPresent;
+
+            try {
+                const res = await fetch(`/api/telegram/match/${activeMatch.id}/checkin`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ jugador_id: playerId, equipo_id: equipoId, presente: newStatus })
+                });
+                if (res.ok) {
+                    indicator.innerText = newStatus ? '✅ PRESENTE' : '❌ Ausente';
+                    indicator.style.color = newStatus ? 'var(--primary)' : 'var(--muted)';
+
+                    // Actualizar estado en memoria
+                    const list = matchPlayers.local.some(p => p.id === playerId) ? matchPlayers.local : matchPlayers.visitante;
+                    const player = list.find(p => p.id === playerId);
+                    if (player) player.presente = newStatus;
+
+                    tg.HapticFeedback.impactOccurred('light');
+                } else {
+                    const err = await res.json();
+                    alert("Error servidor: " + (err.error || "Desconocido"));
+                }
+            } catch (e) { alert("Error de red al registrar asistencia"); }
+        }
+
+        function showMatchView() { showView('match-view'); }
+
+        async function sendEvent(payload) {
+            const user = tg.initDataUnsafe?.user;
+            const payloadWithAuth = {
+                ...payload,
+                telegram_id: user?.id || '5825342439' // Fallback for test ID
+            };
+
+            try {
+                const res = await fetch(`/api/telegram/match/${activeMatch.id}/event`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payloadWithAuth)
+                });
+                return res.ok;
+            } catch (e) {
+                alert("Error al enviar evento");
+                return false;
+            }
+        }
+
+        function logEvent(type, subject, min) {
+            const container = document.getElementById('event-log');
+            const div = document.createElement('div');
+            div.className = 'event-item';
+            div.innerHTML = `<strong>${min}'</strong> - ${type} ${subject ? ': ' + subject : ''}`;
+            container.prepend(div);
+        }
+
+
+        function showList() {
+            stopTimer(); // Si volvemos a la lista, paramos visualmente el timer
+            showView('list-view');
+            loadMatches(); // Recargar para ver scores actualizados
+        }
+
+        init();
+    </script>
+    <!-- Modal de Penales -->
+    <div id="penalties-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Definición por Penales</h3>
+            </div>
+            <div class="modal-body">
+                <p style="font-size: 0.9rem; color: var(--muted); margin-bottom: 15px;">El partido terminó en empate.
+                    Registra el resultado de los penales.</p>
+                <div style="display: flex; justify-content: space-between; align-items: center; gap: 20px;">
+                    <div style="text-align: center; flex: 1;">
+                        <span id="pen-local-name"
+                            style="font-weight: bold; display: block; margin-bottom: 10px;">Local</span>
+                        <input type="number" id="pen-local-score" class="btn"
+                            style="width: 60px; text-align: center; font-size: 1.5rem;" value="0">
+                    </div>
+                    <div style="font-size: 1.2rem; font-weight: bold;">VS</div>
+                    <div style="text-align: center; flex: 1;">
+                        <span id="pen-visitante-name"
+                            style="font-weight: bold; display: block; margin-bottom: 10px;">Visita</span>
+                        <input type="number" id="pen-visitante-score" class="btn"
+                            style="width: 60px; text-align: center; font-size: 1.5rem;" value="0">
+                    </div>
+                </div>
+                <div style="margin-top: 20px;">
+                    <label style="font-size: 0.8rem; color: var(--muted);">Ganador que avanza:</label>
+                    <select id="pen-winner-select" class="btn" style="width: 100%; margin-top: 5px; text-align: left;">
+                        <!-- Opciones via JS -->
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="confirmPenalties()">CONFIRMAR Y FINALIZAR</button>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

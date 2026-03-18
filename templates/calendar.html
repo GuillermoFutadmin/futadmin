@@ -1,0 +1,2412 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FutAdmin – Calendario de Partidos</title>
+    <meta name="description" content="Calendario interactivo de partidos y gestor de roles para torneos FutAdmin">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+
+    <style>
+        /* =========================================================
+           DESIGN TOKENS
+        ========================================================= */
+        :root {
+            /* === Matches FutAdmin dashboard palette (style.css) === */
+            --bg: #121212;
+            --surface: #1a1a1a;
+            --card: rgba(255, 255, 255, 0.05);
+            --card-hover: rgba(255, 255, 255, 0.08);
+            --border: rgba(255, 255, 255, 0.12);
+            --primary: #00ff88;
+            --primary-dim: rgba(0, 255, 136, 0.12);
+            --primary-glow: rgba(0, 255, 136, 0.30);
+            --accent: #00ff88;
+            --accent-dim: rgba(0, 255, 136, 0.12);
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --success: #10b981;
+            --text: #ffffff;
+            --text-muted: rgba(255, 255, 255, 0.55);
+            --radius: 14px;
+            --radius-sm: 8px;
+            --shadow: 0 8px 32px rgba(0, 0, 0, 0.55);
+            --transition: 0.22s cubic-bezier(.4, 0, .2, 1);
+        }
+
+        /* =========================================================
+           RESET & BASE
+        ========================================================= */
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            /* Same background as main panel: photo + dark overlay, fixed */
+            background:
+                linear-gradient(rgba(18, 18, 18, 0.82), rgba(18, 18, 18, 0.88)),
+                url('/static/fotos/canchapasto.png');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        button {
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        input,
+        select,
+        textarea {
+            font-family: inherit;
+        }
+
+        /* =========================================================
+           LAYOUT
+        ========================================================= */
+        .page-header {
+            background: rgba(26, 26, 26, 0.92);
+            /* --surface with alpha */
+            border-bottom: 1px solid var(--border);
+            padding: 0 2rem;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            -webkit-backdrop-filter: blur(12px);
+            backdrop-filter: blur(12px);
+        }
+
+        .header-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header-brand h1 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header-brand a {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            padding: 6px 14px;
+            border: 1px solid var(--border);
+            border-radius: 50px;
+            transition: var(--transition);
+        }
+
+        .header-brand a:hover {
+            background: var(--card-hover);
+            color: var(--text);
+        }
+
+        .page-body {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 0;
+            min-height: calc(100vh - 64px);
+        }
+
+        /* =========================================================
+           SIDEBAR PANEL
+        ========================================================= */
+        .side-panel {
+            background: #1a1a1a;
+            /* same as --sidebar-bg */
+            border-right: 1px solid var(--border);
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            overflow-y: auto;
+        }
+
+        .panel-section h3 {
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 0.75rem;
+        }
+
+        .view-toggle {
+            display: inline-flex;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 50px;
+            padding: 3px;
+            gap: 2px;
+        }
+
+        .view-toggle button {
+            padding: 6px 14px;
+            border: none;
+            border-radius: 50px;
+            background: transparent;
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            font-weight: 600;
+            transition: var(--transition);
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .view-toggle button.active {
+            background: var(--primary);
+            color: #000;
+            font-weight: 700;
+        }
+
+        .select-field {
+            width: 100%;
+            padding: 10px 14px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text);
+            font-size: 0.9rem;
+            outline: none;
+            transition: var(--transition);
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%236b7280' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            padding-right: 36px;
+        }
+
+        .select-field:focus {
+            border-color: var(--primary);
+        }
+
+        .select-field option {
+            background-color: #1a1a1a;
+            color: var(--text);
+        }
+
+        /* =========================================================
+           BUTTONS
+        ========================================================= */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 18px;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: var(--transition);
+            white-space: nowrap;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), #00c46a);
+            color: #000;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 20px var(--primary-glow);
+        }
+
+        .btn-accent {
+            background: linear-gradient(135deg, var(--accent), #2563eb);
+            color: #fff;
+        }
+
+        .btn-accent:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 16px rgba(59, 130, 246, 0.35);
+        }
+
+        .btn-ghost {
+            background: var(--card);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .btn-ghost:hover {
+            background: var(--card-hover);
+            border-color: var(--primary);
+        }
+
+        .btn-danger {
+            background: rgba(239, 68, 68, 0.12);
+            color: var(--danger);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        .btn-danger:hover {
+            background: rgba(239, 68, 68, 0.2);
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 0.8rem;
+        }
+
+        .btn-full {
+            width: 100%;
+        }
+
+        /* =========================================================
+           STATS MINI
+        ========================================================= */
+        .mini-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .mini-stat {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 10px 14px;
+        }
+
+        .mini-stat span {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            display: block;
+        }
+
+        .mini-stat strong {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        /* =========================================================
+           MAIN CONTENT AREA
+        ========================================================= */
+        .main-content {
+            padding: 1.5rem;
+            overflow-y: auto;
+        }
+
+        /* =========================================================
+           CALENDAR GRID
+        ========================================================= */
+        #view-calendar {
+            display: block;
+        }
+
+        #view-schedule {
+            display: none;
+        }
+
+        .calendar-nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+        }
+
+        .calendar-nav h2 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            text-transform: capitalize;
+        }
+
+        .calendar-nav-btns {
+            display: flex;
+            gap: 8px;
+        }
+
+        .cal-nav-btn {
+            width: 36px;
+            height: 36px;
+            border: 1px solid var(--border);
+            background: var(--card);
+            color: var(--text);
+            border-radius: var(--radius-sm);
+            font-size: 1rem;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .cal-nav-btn:hover {
+            background: var(--card-hover);
+            border-color: var(--primary);
+        }
+
+        .calendar-weekdays {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+            margin-bottom: 4px;
+        }
+
+        .calendar-weekdays span {
+            text-align: center;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+            padding: 6px 0;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+        }
+
+        .cal-day {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            min-height: 150px;
+            padding: 8px;
+            transition: var(--transition);
+            position: relative;
+            cursor: pointer;
+        }
+
+        .cal-day:hover {
+            border-color: var(--primary);
+            background: var(--card-hover);
+        }
+
+        .cal-day.other-month {
+            opacity: 0.3;
+            cursor: default;
+        }
+
+        .cal-day.other-month:hover {
+            border-color: var(--border);
+            background: var(--card);
+        }
+
+        .cal-day.today {
+            border-color: var(--accent);
+            background: var(--accent-dim);
+        }
+
+        .cal-day.has-matches {
+            border-color: rgba(0, 232, 122, 0.4);
+        }
+
+        .day-number {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+
+        .cal-day.today .day-number {
+            color: var(--accent);
+            font-weight: 700;
+        }
+
+        .match-chip {
+            background: var(--primary-dim);
+            border: 1px solid rgba(0, 232, 122, 0.3);
+            border-radius: 4px;
+            padding: 3px 6px;
+            font-size: 0.65rem;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 3px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            transition: var(--transition);
+        }
+
+        .match-chip:hover {
+            background: rgba(0, 232, 122, 0.2);
+        }
+
+        .match-chip.played {
+            background: rgba(16, 185, 129, 0.15);
+            border-color: rgba(16, 185, 129, 0.4);
+            color: var(--success);
+        }
+
+        .match-chip.cancelled {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: rgba(239, 68, 68, 0.3);
+            color: var(--danger);
+            text-decoration: line-through;
+        }
+
+        .match-chip.training-chip {
+            cursor: default;
+        }
+
+        .match-chip.training-chip:hover {
+            transform: none !important;
+            box-shadow: none !important;
+        }
+
+        .match-chip.overlap-warning {
+            animation: pulse-danger 2s infinite;
+            position: relative;
+            z-index: 2;
+        }
+
+        @keyframes pulse-danger {
+            0% {
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+            }
+
+            70% {
+                box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+            }
+        }
+
+        /* Checkbox Switch Premium Style */
+        .switch-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--card);
+            padding: 10px 14px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            margin-top: 5px;
+        }
+
+        .switch-container label {
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 38px;
+            height: 20px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--border);
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 14px;
+            width: 14px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked+.slider {
+            background-color: var(--primary);
+        }
+
+        input:checked+.slider:before {
+            transform: translateX(18px);
+        }
+
+        .more-matches {
+            font-size: 0.6rem;
+            color: var(--text-muted);
+            text-align: center;
+            padding: 2px;
+        }
+
+        /* =========================================================
+           SCHEDULE / LIST VIEW
+        ========================================================= */
+        .round-block {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            margin-bottom: 1rem;
+            overflow: hidden;
+        }
+
+        .round-header {
+            background: var(--surface);
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .round-header h3 {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .round-header span {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .match-row {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr auto;
+            align-items: center;
+            gap: 1rem;
+            padding: 14px 20px;
+            border-bottom: 1px solid var(--border);
+            transition: var(--transition);
+        }
+
+        .match-row:last-child {
+            border-bottom: none;
+        }
+
+        .match-row:hover {
+            background: var(--card-hover);
+        }
+
+        .team-cell {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .team-cell.right {
+            justify-content: flex-end;
+            flex-direction: row-reverse;
+        }
+
+        .team-shield {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            object-fit: cover;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+
+        .team-shield-placeholder {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent), var(--primary));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            flex-shrink: 0;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .team-name {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .score-display {
+            text-align: center;
+            min-width: 80px;
+        }
+
+        .score-display .score {
+            font-size: 1.4rem;
+            font-weight: 900;
+            color: var(--text);
+            letter-spacing: 2px;
+        }
+
+        .score-display .vs-text {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .score-display .match-time {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+
+        .match-actions {
+            display: flex;
+            gap: 6px;
+        }
+
+        .match-meta {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            padding: 3px 10px;
+            border-radius: 50px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .badge-scheduled {
+            background: rgba(245, 158, 11, 0.12);
+            color: var(--warning);
+            border: 1px solid rgba(245, 158, 11, 0.25);
+        }
+
+        .badge-played {
+            background: rgba(16, 185, 129, 0.12);
+            color: var(--success);
+            border: 1px solid rgba(16, 185, 129, 0.25);
+        }
+
+        .badge-cancelled {
+            background: rgba(239, 68, 68, 0.12);
+            color: var(--danger);
+            border: 1px solid rgba(239, 68, 68, 0.25);
+        }
+
+        .referee-tag {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* =========================================================
+           EMPTY STATES
+        ========================================================= */
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--text-muted);
+        }
+
+        .empty-state .icon {
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .empty-state h3 {
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+            color: var(--text);
+        }
+
+        .empty-state p {
+            font-size: 0.9rem;
+            max-width: 380px;
+            margin: 0 auto 1.5rem;
+        }
+
+        /* =========================================================
+           MODAL
+        ========================================================= */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.65);
+            -webkit-backdrop-filter: blur(4px);
+            backdrop-filter: blur(4px);
+            z-index: 500;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .modal-overlay.open {
+            display: flex;
+        }
+
+        .modal-box {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            width: 100%;
+            max-width: 520px;
+            box-shadow: var(--shadow);
+            animation: modalIn 0.25s cubic-bezier(.34, 1.56, .64, 1);
+        }
+
+        @keyframes modalIn {
+            from {
+                opacity: 0;
+                transform: scale(0.92) translateY(-16px);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        .modal-header {
+            padding: 20px 24px 16px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .modal-header h3 {
+            font-size: 1.05rem;
+            font-weight: 700;
+        }
+
+        .modal-close {
+            width: 32px;
+            height: 32px;
+            border: none;
+            background: var(--card);
+            color: var(--text-muted);
+            border-radius: 50%;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+        }
+
+        .modal-close:hover {
+            background: var(--danger);
+            color: #fff;
+        }
+
+        .modal-body {
+            padding: 20px 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .modal-footer {
+            padding: 16px 24px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        /* =========================================================
+           FORM ELEMENTS
+        ========================================================= */
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-group label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .form-input {
+            padding: 10px 14px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text);
+            font-size: 0.9rem;
+            outline: none;
+            transition: var(--transition);
+            width: 100%;
+        }
+
+        .form-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-dim);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .matchup-display {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            font-size: 1rem;
+            font-weight: 700;
+        }
+
+        .matchup-display .vs {
+            color: var(--primary);
+            font-size: 0.75rem;
+            letter-spacing: 0.1em;
+        }
+
+        /* =========================================================
+           TOAST
+        ========================================================= */
+        #toast-container {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .toast {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 14px 20px;
+            font-size: 0.9rem;
+            min-width: 280px;
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: toastIn 0.3s ease;
+        }
+
+        .toast.success {
+            border-color: rgba(16, 185, 129, 0.4);
+        }
+
+        .toast.error {
+            border-color: rgba(239, 68, 68, 0.4);
+        }
+
+        @keyframes toastIn {
+            from {
+                opacity: 0;
+                transform: translateX(24px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        /* =========================================================
+           LOADING SKELETON
+        ========================================================= */
+        .skeleton {
+            background: linear-gradient(90deg, var(--card) 25%, var(--card-hover) 50%, var(--card) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.4s infinite;
+            border-radius: 6px;
+        }
+
+        @keyframes shimmer {
+            to {
+                background-position: -200% 0;
+            }
+        }
+
+        /* =========================================================
+           SCROLLBAR
+        ========================================================= */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
+        }
+
+        /* =========================================================
+           RESPONSIVE
+        ========================================================= */
+        @media (max-width: 900px) {
+            .page-body {
+                grid-template-columns: 1fr;
+            }
+
+            .side-panel {
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+            }
+        }
+
+        @media (max-width: 600px) {
+            .match-row {
+                grid-template-columns: 1fr;
+                gap: 0.5rem;
+            }
+
+            .calendar-grid .cal-day {
+                min-height: 60px;
+            }
+
+            .match-chip {
+                display: none;
+            }
+
+            .more-matches {
+                font-size: 0.7rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- ========================================================= -->
+    <!-- PAGE HEADER                                               -->
+    <!-- ========================================================= -->
+    <header class="page-header">
+        <div class="header-brand">
+            <span style="font-size: 1.5rem;">⚽</span>
+            <h1>FutAdmin · Calendario de Partidos</h1>
+            <a href="/">← Volver al Panel</a>
+        </div>
+        <div id="header-torneo-name" style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;"></div>
+    </header>
+
+    <!-- ========================================================= -->
+    <!-- PAGE BODY                                                  -->
+    <!-- ========================================================= -->
+    <div class="page-body">
+
+        <!-- ---- SIDEBAR PANEL ---- -->
+        <aside class="side-panel">
+
+            <!-- Tournament & View Type -->
+            <div class="panel-section">
+                <h3>Vistas</h3>
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    <button id="btn-view-schedule" class="btn btn-ghost btn-full"
+                        onclick="CalendarApp.switchView('schedule')">📋 Ver Rol de Partidos</button>
+                    <button id="btn-view-calendar-main" class="btn btn-ghost btn-full active"
+                        onclick="CalendarApp.switchView('calendar')" style="display:none;">📅 Volver al
+                        Calendario</button>
+                </div>
+            </div>
+
+            <!-- Tournament Selector -->
+            <div class="panel-section">
+                <h3>Torneo</h3>
+                <select id="torneo-select" class="select-field" onchange="CalendarApp.onTorneoChange()"
+                    title="Seleccionar torneo">
+                    <option value="">— Seleccionar torneo —</option>
+                </select>
+            </div>
+
+            <!-- Round Filter (schedule view) -->
+            <div class="panel-section" id="round-filter-section" style="display:none;">
+                <h3>Filtrar por Jornada</h3>
+                <select id="round-select" class="select-field" onchange="CalendarApp.filterByRound()"
+                    title="Filtrar por jornada">
+                    <option value="">Todas las jornadas</option>
+                </select>
+            </div>
+
+            <!-- Actions -->
+            <div class="panel-section">
+                <h3>Acciones</h3>
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    <button class="btn btn-primary btn-full" onclick="CalendarApp.promptGenerateFixtures()">
+                        🎲 Generar Rol Automático
+                    </button>
+                    <button class="btn btn-accent btn-full" onclick="CalendarApp.autoScheduleAll()">
+                        📅 Auto-Programar Horarios
+                    </button>
+                    <button class="btn btn-ghost btn-full" onclick="CalendarApp.refreshData()">
+                        🔄 Actualizar
+                    </button>
+                </div>
+            </div>
+
+            <!-- Academia Filters -->
+            <div class="panel-section">
+                <h3>Academia</h3>
+                <div style="margin-bottom: 12px;">
+                    <span
+                        style="font-size: 0.65rem; color: var(--text-muted); display: block; margin-bottom: 4px; text-transform: uppercase;">Filtrar
+                        por Categoría</span>
+                    <select id="category-select" class="select-field" onchange="CalendarApp.onCategoryChange()">
+                        <option value="all">Todas las categorías</option>
+                    </select>
+                </div>
+                <div class="switch-container">
+                    <label for="toggle-training">👟 Ver Entrenamientos</label>
+                    <label class="switch">
+                        <input type="checkbox" id="toggle-training" onchange="CalendarApp.toggleTraining()">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Mini Stats -->
+            <div class="panel-section">
+                <h3>Estadísticas</h3>
+                <div class="mini-stats">
+                    <div class="mini-stat">
+                        <span>Total Partidos</span>
+                        <strong id="stat-total">0</strong>
+                    </div>
+                    <div class="mini-stat">
+                        <span>Jornadas</span>
+                        <strong id="stat-rounds">0</strong>
+                    </div>
+                    <div class="mini-stat">
+                        <span>Jugados</span>
+                        <strong id="stat-played" style="color: var(--success);">0</strong>
+                    </div>
+                    <div class="mini-stat">
+                        <span>Pendientes</span>
+                        <strong id="stat-pending" style="color: var(--warning);">0</strong>
+                    </div>
+                </div>
+            </div>
+
+        </aside>
+
+        <!-- ---- MAIN CONTENT ---- -->
+        <main class="main-content">
+
+            <!-- CALENDAR VIEW -->
+            <div id="view-calendar">
+                <div class="calendar-nav">
+                    <div style="display: flex; align-items: center; gap: 20px;">
+                        <h2 id="cal-month-label" style="margin-bottom:0;">Cargando...</h2>
+                        <div class="view-toggle" id="header-view-toggle">
+                            <button id="btn-view-day" onclick="CalendarApp.changeCalView('day')">☀️ Día</button>
+                            <button id="btn-view-week" onclick="CalendarApp.changeCalView('week')">📅 Sem</button>
+                            <button id="btn-view-month" class="active" onclick="CalendarApp.changeCalView('month')">🗓
+                                Mes</button>
+                            <button id="btn-view-year" onclick="CalendarApp.changeCalView('year')">🗓 Año</button>
+                        </div>
+                    </div>
+                    <div class="calendar-nav-btns">
+                        <button class="cal-nav-btn" onclick="CalendarApp.prevMonth()">‹</button>
+                        <button class="cal-nav-btn" onclick="CalendarApp.goToToday()" title="Hoy"
+                            style="font-size:0.75rem; width:56px;">Hoy</button>
+                        <button class="cal-nav-btn" onclick="CalendarApp.nextMonth()">›</button>
+                    </div>
+                </div>
+
+                <div class="calendar-weekdays">
+                    <span>Dom</span><span>Lun</span><span>Mar</span><span>Mié</span>
+                    <span>Jue</span><span>Vie</span><span>Sáb</span>
+                </div>
+
+                <div class="calendar-grid" id="calendar-grid">
+                    <!-- Rendered by JS -->
+                </div>
+            </div>
+
+            <!-- SCHEDULE VIEW -->
+            <div id="view-schedule" style="display:none;">
+                <div id="schedule-container">
+                    <!-- Rendered by JS -->
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- MODAL: EDIT MATCH                                         -->
+    <!-- ========================================================= -->
+    <div class="modal-overlay" id="modal-edit-match">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>✏️ Editar Partido</h3>
+                <button class="modal-close" onclick="CalendarApp.closeModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <!-- Matchup display -->
+                <div class="matchup-display">
+                    <span id="edit-local-name" style="flex:1; text-align:right;">—</span>
+                    <span class="vs">VS</span>
+                    <span id="edit-visitante-name" style="flex:1;">—</span>
+                </div>
+
+                <!-- Date & Time -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="edit-fecha">Fecha del Partido</label>
+                        <input type="date" id="edit-fecha" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-hora">Hora de Inicio</label>
+                        <div style="display: flex; gap: 8px;">
+                            <input type="time" id="edit-hora" class="form-input" style="flex: 1;">
+                            <button type="button" class="btn btn-primary" onclick="CalendarApp.autoSuggestSchedule()"
+                                title="Sugerir siguiente horario en base a duración y partidos de esta cancha"
+                                style="padding: 0 12px;">✨ Auto</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Venue -->
+                <div class="form-group">
+                    <label for="edit-cancha">Cancha / Campo</label>
+                    <input type="text" id="edit-cancha" class="form-input" placeholder="Ej. Cancha A, Duela Norte…">
+                </div>
+
+                <!-- Referee -->
+                <div class="form-group">
+                    <label for="edit-arbitro">Árbitro Asignado</label>
+                    <select id="edit-arbitro" class="form-input select-field" title="Asignar Árbitro"
+                        style="background-image: none;">
+                        <option value="">— Sin árbitro asignado —</option>
+                    </select>
+                </div>
+
+                <!-- Score / Result (only shown when editing a played match) -->
+                <div id="edit-score-section">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="edit-goles-local">Goles (Local)</label>
+                            <input type="number" id="edit-goles-local" class="form-input" min="0" placeholder="0">
+                        </div>
+                        <div class="form-group">
+                            <label for="edit-goles-visitante">Goles (Visitante)</label>
+                            <input type="number" id="edit-goles-visitante" class="form-input" min="0" placeholder="0">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Status -->
+                <div class="form-group">
+                    <label for="edit-estado">Estado del Partido</label>
+                    <select id="edit-estado" class="form-input select-field" style="background-image: none;">
+                        <option value="Scheduled">🕐 Programado</option>
+                        <option value="Played">✅ Jugado</option>
+                        <option value="Cancelled">❌ Cancelado</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-danger btn-sm" onclick="CalendarApp.deleteMatch()">🗑 Eliminar</button>
+                <button class="btn btn-ghost" onclick="CalendarApp.closeModal()">Cancelar</button>
+                <button class="btn btn-primary" onclick="CalendarApp.saveMatch()">💾 Guardar Cambios</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- MODAL: ASSIGN DATE (click on calendar day)                -->
+    <!-- ========================================================= -->
+    <div class="modal-overlay" id="modal-day-matches">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3 id="day-modal-title">Partidos del día</h3>
+                <button class="modal-close" onclick="CalendarApp.closeDayModal()">✕</button>
+            </div>
+            <div class="modal-body" id="day-modal-body" style="max-height: 400px; overflow-y: auto;">
+                <!-- Rendered by JS -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-ghost" onclick="CalendarApp.closeDayModal()">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- TOAST CONTAINER                                           -->
+    <!-- ========================================================= -->
+    <div id="toast-container"></div>
+
+    <!-- ========================================================= -->
+    <!-- ISOLATED CALENDAR SCRIPT (no external module dependencies)-->
+    <!-- ========================================================= -->
+    <script>
+        /**
+         * CalendarApp – FutAdmin Match Calendar
+         * ======================================
+         * Fully self-contained module. No dependencies outside this file.
+         * International coding standards (English identifiers/comments).
+         *
+         * Architecture:
+         *  - State object holds all reactive data
+         *  - Pure render functions rebuild the DOM from state
+         *  - All API calls are centralised in the 'api' helper
+         */
+        const CalendarApp = (() => {
+
+            // ----------------------------------------------------------
+            // STATE
+            // ----------------------------------------------------------
+            const state = {
+                currentView: 'calendar',  // 'calendar' | 'schedule'
+                calendarViewType: 'month', // 'day' | 'week' | 'month' | 'year'
+                torneoId: null,
+                torneos: [],
+                matches: [],              // Partido[] for selected tournament
+                arbitros: [],
+                year: new Date().getFullYear(),
+                month: new Date().getMonth(), // 0-indexed
+                focusDate: new Date(),        // Used for day/week navigation
+                showTraining: false,
+                trainingCategory: 'all',
+                trainingCategories: [],
+                editingMatchId: null,
+                colors: [
+                    '#00ff88', '#3b82f6', '#f59e0b', '#ef4444',
+                    '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16',
+                    '#facc15', '#fb923c'
+                ]
+            };
+
+            function getTorneoColor(torneoId) {
+                if (!torneoId) return 'var(--primary)';
+                const idx = parseInt(torneoId) % state.colors.length;
+                return state.colors[idx];
+            }
+
+            // ----------------------------------------------------------
+            // API HELPERS
+            // ----------------------------------------------------------
+            const API_BASE = '';  // same origin
+
+            function getCsrfToken() {
+                return document.querySelector('meta[name="csrf-token"]')?.content || '';
+            }
+
+            async function api(method, path, body = null) {
+                const opts = {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                };
+                if (body) opts.body = JSON.stringify(body);
+                const res = await fetch(API_BASE + path, opts);
+                if (!res.ok) {
+                    const err = await res.json().catch(() => ({}));
+                    throw new Error(err.error || `HTTP ${res.status}`);
+                }
+                return res.json();
+            }
+
+            // ----------------------------------------------------------
+            // INIT
+            // ----------------------------------------------------------
+            async function init() {
+                await Promise.all([loadTorneos(), loadArbitros(), loadCategories()]);
+                renderCalendar();
+            }
+
+            async function loadTorneos() {
+                try {
+                    state.torneos = await api('GET', '/api/torneos');
+                    const sel = document.getElementById('torneo-select');
+                    sel.innerHTML = '<option value="">— Seleccionar torneo —</option>' +
+                        '<option value="all" style="font-weight:bold; color:var(--primary);">🌐 Ver todos (Ligas + Academia)</option>' +
+                        state.torneos.map(t => `<option value="${t.id}">${t.nombre} (${t.tipo})</option>`).join('');
+                } catch (e) {
+                    toast('No se pudieron cargar los torneos', 'error');
+                }
+            }
+
+            async function loadArbitros() {
+                try {
+                    state.arbitros = await api('GET', '/api/arbitros');
+                } catch (e) {
+                    console.warn('Could not load referees:', e);
+                }
+            }
+
+            async function loadCategories() {
+                try {
+                    state.trainingCategories = await api('GET', '/api/entrenamientos/categorias');
+                    const sel = document.getElementById('category-select');
+                    if (sel) {
+                        sel.innerHTML = '<option value="all">Todas las categorías</option>' +
+                            state.trainingCategories.map(c => `<option value="${c}">${c}</option>`).join('');
+                    }
+                } catch (e) {
+                    console.warn('Could not load categories:', e);
+                }
+            }
+
+            async function loadMatches() {
+                try {
+                    const tid = state.torneoId;
+                    const category = state.trainingCategory || 'all';
+
+                    let url;
+                    if (!tid) {
+                        if (state.showTraining) {
+                            url = `/api/calendar/all?training=true&torneo_id=none&categoria=${category}`;
+                        } else {
+                            state.matches = [];
+                            updateStats();
+                            buildRoundFilter();
+                            return;
+                        }
+                    } else {
+                        url = `/api/calendar/all?torneo_id=${tid}&training=${state.showTraining}&categoria=${category}`;
+                    }
+
+                    state.matches = await api('GET', url);
+                    updateStats();
+                    buildRoundFilter();
+                } catch (e) {
+                    toast('No se pudieron cargar las actividades', 'error');
+                }
+            }
+
+            // ----------------------------------------------------------
+            // STATS & ROUND FILTER
+            // ----------------------------------------------------------
+            function updateStats() {
+                const m = state.matches;
+                const isAll = state.torneoId === 'all';
+
+                // For 'all', jornada doesn't make total sense across tournaments, but we can show total tournaments or max jornada
+                const tournaments = isAll ? new Set(m.map(p => p.torneo_id)).size : 1;
+                const rounds = m.length ? Math.max(...m.map(p => p.jornada)) : 0;
+
+                const played = m.filter(p => p.estado === 'Jugado').length;
+                document.getElementById('stat-total').textContent = m.length;
+
+                // If 'all', maybe change label to 'Torneos' ?
+                const roundLabel = document.querySelector('.mini-stat:nth-child(2) span');
+                if (isAll) {
+                    roundLabel.textContent = 'Torneos';
+                    document.getElementById('stat-rounds').textContent = tournaments;
+                } else {
+                    roundLabel.textContent = 'Jornadas';
+                    document.getElementById('stat-rounds').textContent = rounds;
+                }
+
+                document.getElementById('stat-played').textContent = played;
+                document.getElementById('stat-pending').textContent = m.filter(p => p.estado === 'Scheduled').length;
+            }
+
+            function buildRoundFilter() {
+                const t = state.torneos.find(t => t.id === state.torneoId);
+                const formato = t ? t.formato : 'Liga';
+
+                let rounds;
+                const sel = document.getElementById('round-select');
+                if (!sel) return;
+
+                if (formato === "Eliminación Directa") {
+                    rounds = [...new Set(state.matches.map(p => p.fase))];
+                    sel.innerHTML = '<option value="">Todas las fases</option>' +
+                        rounds.map(r => `<option value="${r}">${r}</option>`).join('');
+                } else if (formato === "Fase de Grupos") {
+                    rounds = [...new Set(state.matches.map(p => p.equipo_local_grupo))].filter(Boolean).sort();
+                    sel.innerHTML = '<option value="">Todos los grupos</option>' +
+                        rounds.map(r => `<option value="${r}">${r}</option>`).join('');
+                } else {
+                    rounds = [...new Set(state.matches.map(p => p.jornada))].sort((a, b) => a - b);
+                    sel.innerHTML = '<option value="">Todas las jornadas</option>' +
+                        rounds.map(r => `<option value="${r}">Jornada ${r}</option>`).join('');
+                }
+            }
+
+            function onCategoryChange() {
+                const sel = document.getElementById('category-select');
+                state.trainingCategory = sel.value;
+                loadMatches().then(() => renderCalendar());
+            }
+
+            function onTorneoChange() {
+                const sel = document.getElementById('torneo-select');
+                const val = sel.value;
+                state.torneoId = (val === 'all') ? val : (val ? parseInt(val) : null);
+                loadMatches().then(() => renderCalendar());
+            }
+
+            // ----------------------------------------------------------
+            // VIEW SWITCHING
+            // ----------------------------------------------------------
+            function switchView(view) {
+                state.currentView = view;
+                document.getElementById('view-calendar').style.display = view === 'calendar' ? 'block' : 'none';
+                document.getElementById('view-schedule').style.display = view === 'schedule' ? 'block' : 'none';
+
+                // Sidebar UI adjustments
+                document.getElementById('btn-view-calendar-main').style.display = view === 'schedule' ? 'block' : 'none';
+                document.getElementById('btn-view-schedule').style.display = view === 'calendar' ? 'block' : 'none';
+
+                document.getElementById('round-filter-section').style.display = view === 'schedule' ? 'block' : 'none';
+
+                if (view === 'calendar') renderCalendar();
+                if (view === 'schedule') renderSchedule();
+            }
+
+            function changeCalView(viewType) {
+                state.calendarViewType = viewType;
+                state.currentView = 'calendar';
+
+                // Update buttons
+                ['day', 'week', 'month', 'year'].forEach(v => {
+                    const btn = document.getElementById(`btn-view-${v}`);
+                    if (btn) btn.classList.toggle('active', v === viewType);
+                });
+
+                renderCalendar();
+            }
+
+            // ----------------------------------------------------------
+            // TOURNAMENT CHANGE
+            // ----------------------------------------------------------
+            async function onTorneoChange() {
+                const val = document.getElementById('torneo-select').value;
+                state.torneoId = val === 'all' ? 'all' : (val ? parseInt(val) : null);
+
+                const t = state.torneos.find(t => t.id === state.torneoId);
+                let headerName = '';
+                if (state.torneoId === 'all') headerName = '🌐 Ligas e Inteligencia de Horarios';
+                else if (state.torneoId === 'academia') headerName = '👟 Academia (Control de Horarios)';
+                else if (t) headerName = `🏆 ${t.nombre}`;
+
+                document.getElementById('header-torneo-name').textContent = headerName;
+
+                await loadMatches();
+
+                if (state.currentView === 'calendar') renderCalendar();
+                else renderSchedule();
+            }
+
+            async function refreshData() {
+                await loadMatches();
+                if (state.currentView === 'calendar') renderCalendar();
+                else renderSchedule();
+                toast('Datos actualizados ✓', 'success');
+            }
+
+            // ----------------------------------------------------------
+            // CALENDAR RENDER
+            // ----------------------------------------------------------
+            function renderCalendar() {
+                const grid = document.getElementById('calendar-grid');
+                grid.innerHTML = '';
+
+                if (state.calendarViewType === 'month') {
+                    renderMonthView();
+                } else if (state.calendarViewType === 'week') {
+                    renderWeekView();
+                } else if (state.calendarViewType === 'day') {
+                    renderDayView();
+                } else if (state.calendarViewType === 'year') {
+                    renderYearView();
+                }
+            }
+
+            function getMonthNames() {
+                return ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+                    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+            }
+
+            function getMatchChipsHtml(matches) {
+                let html = '';
+
+                // Helper to check if two time ranges (HH:MM) overlap
+                const overlaps = (startA, endA, startB, endB) => {
+                    if (!startA || !startB) return false;
+                    const val = t => parseInt(t.replace(':', ''));
+                    const sA = val(startA);
+                    const sB = val(startB);
+                    // If end is missing, assume 1 hour duration
+                    const getE = (s, e) => e ? val(e) : (s + 100);
+                    const eA = getE(sA, endA);
+                    const eB = getE(sB, endB);
+                    return sA < eB && eA > sB;
+                };
+
+                matches.forEach(p => {
+                    const isAll = state.torneoId === 'all' || state.torneoId === 'academia';
+                    const isTraining = p.type === 'Training';
+                    const color = isTraining ? (p.color || '#3b82f6') : getTorneoColor(p.torneo_id);
+
+                    // Lupa control: Detect overlap with ANY other match on same court
+                    const hasOverlap = p.hora && p.cancha && matches.some(other =>
+                        other.id !== p.id &&
+                        other.cancha === p.cancha &&
+                        overlaps(p.hora, p.hora_fin, other.hora, other.hora_fin)
+                    );
+
+                    let cls = p.estado === 'Played' ? 'played' : p.estado === 'Cancelled' ? 'cancelled' : '';
+                    if (isTraining) cls += ' training-chip';
+                    if (hasOverlap) cls += ' overlap-warning';
+
+                    let style = `border-left: 4px solid ${hasOverlap ? 'var(--danger)' : color};`;
+                    if (isAll || isTraining) style += ` background: ${hasOverlap ? '#ef444420' : color + '10'};`;
+
+                    const fullTime = p.hora_fin ? `${p.hora} - ${p.hora_fin}` : (p.horario_texto || p.hora);
+                    const timeStr = p.hora ? `<span style="font-weight:bold; color:${hasOverlap ? 'var(--danger)' : color}; font-size:0.7rem;">${p.hora}</span> ` : '';
+                    const tagText = isTraining ? (p.categoria || 'Academia') : (p.torneo_name || 'Torneo');
+                    const overlapIcon = hasOverlap ? `<span title="¡TRASLAPE! Misma cancha y horario." style="color:var(--danger); font-size:0.8rem; margin-right:4px;">⚠️</span>` : '';
+
+                    const torneoTag = `<div style="font-size:0.5rem; opacity:0.8; margin-bottom:1px; color:${hasOverlap ? 'var(--danger)' : color}; text-transform:uppercase; font-weight:700;">${overlapIcon}${tagText}</div>`;
+
+                    const onclick = isTraining ? '' : `onclick="event.stopPropagation(); CalendarApp.openEditModal(${p.id});"`;
+                    const label = isTraining ? p.equipo_local : `${p.equipo_local.split(' ')[0]} vs ${p.equipo_visitante.split(' ')[0]}`;
+
+                    const fullTooltip = `${hasOverlap ? '⚠️ TRASLAPE DETECTADO: ' : ''}${isTraining ? p.title : label}\nHorario: ${fullTime}\nCancha: ${p.cancha || 'N/A'}`;
+
+                    html += `<div class="match-chip ${cls}" style="${style}" ${onclick} title="${fullTooltip}">
+                        ${torneoTag}
+                        <div style="display:flex; align-items:center; gap:4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                            ${timeStr} ${label}
+                        </div>
+                    </div>`;
+                });
+                return html;
+            }
+
+            function renderMonthView() {
+                const { year, month } = state;
+                const monthNames = getMonthNames();
+                document.getElementById('cal-month-label').textContent = `${monthNames[month]} ${year}`;
+
+                const grid = document.getElementById('calendar-grid');
+                grid.style.display = 'grid';
+                grid.style.gridTemplateColumns = 'repeat(7, 1fr)';
+
+                const firstDay = new Date(year, month, 1).getDay();
+                const daysInMonth = new Date(year, month + 1, 0).getDate();
+                const daysInPrev = new Date(year, month, 0).getDate();
+                const today = new Date();
+
+                const matchByDate = {};
+                state.matches.forEach(p => { if (p.fecha) (matchByDate[p.fecha] = matchByDate[p.fecha] || []).push(p); });
+
+                const totalCells = Math.ceil((firstDay + daysInMonth) / 7) * 7;
+
+                for (let i = 0; i < totalCells; i++) {
+                    let day, dateObj, isCurrentMonth = true;
+                    if (i < firstDay) {
+                        day = daysInPrev - firstDay + 1 + i;
+                        dateObj = new Date(year, month - 1, day);
+                        isCurrentMonth = false;
+                    } else if (i >= firstDay + daysInMonth) {
+                        day = i - firstDay - daysInMonth + 1;
+                        dateObj = new Date(year, month + 1, day);
+                        isCurrentMonth = false;
+                    } else {
+                        day = i - firstDay + 1;
+                        dateObj = new Date(year, month, day);
+                    }
+
+                    const dateStr = formatDate(dateObj);
+                    const dayMatches = matchByDate[dateStr] || [];
+                    const isToday = dateObj.toDateString() === today.toDateString();
+
+                    const cell = document.createElement('div');
+                    cell.className = `cal-day ${isCurrentMonth ? '' : 'other-month'} ${isToday ? 'today' : ''} ${dayMatches.length ? 'has-matches' : ''}`;
+
+                    let chipsHtml = getMatchChipsHtml(dayMatches.slice(0, 5));
+                    if (dayMatches.length > 5) chipsHtml += `<div class="more-matches">+${dayMatches.length - 5} más</div>`;
+
+                    cell.innerHTML = `<div class="day-number">${day}</div>${chipsHtml}`;
+                    if (isCurrentMonth) cell.addEventListener('click', () => openDayModal(dateStr, dateObj, dayMatches));
+                    grid.appendChild(cell);
+                }
+            }
+
+            function renderWeekView() {
+                const { focusDate } = state;
+                const startOfWeek = new Date(focusDate);
+                startOfWeek.setDate(focusDate.getDate() - focusDate.getDay()); // Sunday
+
+                const endOfFortnight = new Date(startOfWeek);
+                endOfFortnight.setDate(startOfWeek.getDate() + 13);
+
+                const monthNames = getMonthNames();
+                document.getElementById('cal-month-label').textContent =
+                    `${startOfWeek.getDate()} ${monthNames[startOfWeek.getMonth()]} - ${endOfFortnight.getDate()} ${monthNames[endOfFortnight.getMonth()]}`;
+
+                const grid = document.getElementById('calendar-grid');
+                grid.style.display = 'grid';
+                grid.style.gridTemplateColumns = 'repeat(7, 1fr)';
+                grid.style.gap = '10px';
+
+                const matchByDate = {};
+                state.matches.forEach(p => { if (p.fecha) (matchByDate[p.fecha] = matchByDate[p.fecha] || []).push(p); });
+
+                const todayStr = new Date().toDateString();
+
+                for (let i = 0; i < 14; i++) {
+                    const dateObj = new Date(startOfWeek);
+                    dateObj.setDate(startOfWeek.getDate() + i);
+                    const dateStr = formatDate(dateObj);
+                    const dayMatches = matchByDate[dateStr] || [];
+
+                    const cell = document.createElement('div');
+                    cell.className = `cal-day ${dateObj.toDateString() === todayStr ? 'today' : ''} has-matches`;
+                    cell.style.minHeight = '300px';
+
+                    const dayNames = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+                    cell.innerHTML = `
+                        <div class="day-header" style="text-align:center; padding:10px; border-bottom:1px solid var(--border);">
+                            <div style="font-size:0.8rem; opacity:0.7;">${dayNames[i % 7]}</div>
+                            <div style="font-size:1.5rem; font-weight:bold;">${dateObj.getDate()}</div>
+                        </div>
+                        <div style="padding:10px;">
+                            ${getMatchChipsHtml(dayMatches)}
+                        </div>
+                    `;
+                    cell.addEventListener('click', () => openDayModal(dateStr, dateObj, dayMatches));
+                    grid.appendChild(cell);
+                }
+            }
+
+            function renderDayView() {
+                const { focusDate } = state;
+                const dateStr = formatDate(focusDate);
+                const monthNames = getMonthNames();
+                const dayNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+
+                document.getElementById('cal-month-label').textContent = `${dayNames[focusDate.getDay()]}, ${focusDate.getDate()} de ${monthNames[focusDate.getMonth()]} ${focusDate.getFullYear()}`;
+
+                const grid = document.getElementById('calendar-grid');
+                grid.style.display = 'block';
+
+                const dayMatches = state.matches.filter(p => p.fecha === dateStr).sort((a, b) => (a.hora || '').localeCompare(b.hora || ''));
+
+                if (dayMatches.length === 0) {
+                    grid.innerHTML = `<div style="text-align:center; padding:100px; color:var(--text-muted);">No hay partidos programados para este día.</div>`;
+                    return;
+                }
+
+                let html = `<div style="max-width:800px; margin: 0 auto; display: flex; flex-direction: column; gap: 15px; padding: 20px;">`;
+                dayMatches.forEach(p => {
+                    const t = state.torneos.find(tor => tor.id === p.torneo_id);
+                    const dur = t ? (t.num_tiempos * t.duracion_tiempo + t.descanso) : 60;
+                    html += `
+                        <div class="match-row" onclick="CalendarApp.openEditModal(${p.id})" style="background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px; display:grid; grid-template-columns: 100px 1fr 150px; align-items:center; cursor:pointer;">
+                            <div style="font-size:1.2rem; font-weight:bold; color:var(--primary);">${p.hora || '--:--'}</div>
+                            <div>
+                                <div style="font-weight:bold; font-size:1.1rem;">${p.equipo_local} vs ${p.equipo_visitante}</div>
+                                <div style="font-size:0.85rem; color:var(--text-muted);">Cancha: ${p.cancha || 'N/A'} | Duración: ${dur} min</div>
+                            </div>
+                            <div style="text-align:right;">
+                                <span class="badge badge-${p.estado.toLowerCase() === 'played' ? 'success' : 'warning'}">${p.estado}</span>
+                            </div>
+                        </div>
+                    `;
+                });
+                html += `</div>`;
+                grid.innerHTML = html;
+            }
+
+            function renderYearView() {
+                document.getElementById('cal-month-label').textContent = `Año ${state.year}`;
+                const grid = document.getElementById('calendar-grid');
+                grid.style.display = 'grid';
+                grid.style.gridTemplateColumns = 'repeat(4, 1fr)';
+                grid.style.gap = '20px';
+                grid.style.padding = '20px';
+
+                const monthNames = getMonthNames();
+                const matchByMonth = {};
+                state.matches.forEach(p => {
+                    if (p.fecha) {
+                        const m = new Date(p.fecha).getMonth();
+                        const y = new Date(p.fecha).getFullYear();
+                        if (y === state.year) (matchByMonth[m] = matchByMonth[m] || []).push(p);
+                    }
+                });
+
+                for (let m = 0; m < 12; m++) {
+                    const monthMatches = matchByMonth[m] || [];
+                    const card = document.createElement('div');
+                    card.className = 'cal-day';
+                    card.style.minHeight = '150px';
+                    card.style.display = 'flex';
+                    card.style.flexDirection = 'column';
+                    card.style.justifyContent = 'center';
+                    card.style.alignItems = 'center';
+                    card.style.textAlign = 'center';
+
+                    card.innerHTML = `
+                        <div style="font-weight:bold; color:var(--primary); margin-bottom:10px;">${monthNames[m]}</div>
+                        <div style="font-size:2rem; font-weight:bold;">${monthMatches.length}</div>
+                        <div style="font-size:0.8rem; opacity:0.7;">Partidos</div>
+                    `;
+                    card.onclick = () => {
+                        state.month = m;
+                        state.calendarViewType = 'month';
+                        changeCalView('month');
+                    };
+                    grid.appendChild(card);
+                }
+            }
+
+            // ----------------------------------------------------------
+            // DAY MODAL (click on a calendar day)
+            // ----------------------------------------------------------
+            function openDayModal(dateStr, dateObj, dayMatches) {
+                const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+                document.getElementById('day-modal-title').textContent =
+                    `📅 ${dateObj.toLocaleDateString('es-MX', options)}`;
+
+                const body = document.getElementById('day-modal-body');
+
+                if (!state.torneoId) {
+                    body.innerHTML = `<p style="color:var(--text-muted); text-align:center; padding:2rem;">
+                Selecciona un torneo primero para ver o asignar partidos.</p>`;
+                    return;
+                }
+
+                let html = '';
+
+                // 1. Mostrar Partidos ya programados
+                if (dayMatches.length > 0) {
+                    html += `<h4 style="margin-bottom:10px; color:var(--text);">Partidos Programados (${dayMatches.length})</h4>
+                    <div style="display:flex; flex-direction:column; gap:8px; margin-bottom: 20px;">
+                    ${dayMatches.map(p => {
+                        const badge = badgeHtml(p.estado);
+                        const score = p.estado === 'Played'
+                            ? `<strong style="color:var(--primary)">${p.goles_local ?? '?'} – ${p.goles_visitante ?? '?'}</strong>`
+                            : `<span style="color:var(--text-muted);">vs</span>`;
+                        return `<div style="background:var(--card); border:1px solid var(--border); border-radius:8px; padding:12px 16px;">
+                        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
+                            <span style="font-size:0.75rem; font-weight:700; color:var(--text-muted);">Jornada ${p.jornada}</span>
+                            ${badge}
+                        </div>
+                        <div style="display:flex; align-items:center; gap:12px; font-weight:700; font-size:0.95rem;">
+                            <span>${p.equipo_local}</span>
+                            ${score}
+                            <span>${p.equipo_visitante}</span>
+                        </div>
+                        ${p.arbitro ? `<div style="font-size:0.75rem; color:var(--text-muted); margin-top:4px;">🏳 ${p.arbitro}</div>` : ''}
+                        ${p.hora ? `<div style="font-size:0.75rem; color:var(--text-muted);">⏰ ${p.hora}</div>` : ''}
+                        <button class="btn btn-ghost btn-sm" style="margin-top:8px; width:100%;"
+                            onclick="CalendarApp.closeDayModal(); CalendarApp.openEditModal(${p.id});">
+                            ✏️ Editar partido
+                        </button>
+                    </div>`;
+                    }).join('')}
+                    </div>`;
+                }
+
+                // 2. Mostrar Partidos Sin Programar
+                const unscheduled = state.matches.filter(p => !p.fecha);
+                html += `<h4 style="margin-bottom:10px; color:var(--text); ${dayMatches.length > 0 ? 'border-top:1px solid var(--border); padding-top:15px;' : ''}">Partidos Sin Fecha (${unscheduled.length})</h4>`;
+
+                if (unscheduled.length === 0) {
+                    html += `<p style="color:var(--text-muted); font-size:0.85rem; text-align:center;">Todos los partidos ya tienen fecha asignada.</p>`;
+                } else {
+                    html += `<p style="color:var(--text-muted); font-size:0.85rem; margin-bottom:1rem;">Asigna un partido a este día:</p>
+                    <div style="display:flex; flex-direction:column; gap:8px;">
+                    ${unscheduled.map(p => `
+                        <div style="display:flex; align-items:center; justify-content:space-between;
+                                    background:rgba(255,255,255,0.02); border:1px dashed var(--border);
+                                    border-radius:8px; padding:10px 14px;">
+                            <div>
+                                <div style="font-weight:600; font-size:0.9rem;">${p.equipo_local} vs ${p.equipo_visitante}</div>
+                                <div style="font-size:0.75rem; color:var(--text-muted);">Jornada ${p.jornada} · ${p.arbitro || 'Sin árbitro'}</div>
+                            </div>
+                            <button class="btn btn-primary btn-sm" onclick="CalendarApp.assignDate(${p.id}, '${dateStr}')">
+                                Asignar
+                            </button>
+                        </div>`).join('')}
+                    </div>`;
+                }
+
+                body.innerHTML = html;
+
+                document.getElementById('modal-day-matches').classList.add('open');
+            }
+
+            function closeDayModal() {
+                document.getElementById('modal-day-matches').classList.remove('open');
+            }
+
+            async function assignDate(matchId, dateStr) {
+                try {
+                    await api('PUT', `/api/partidos/${matchId}`, { fecha: dateStr });
+                    toast(`Fecha asignada: ${dateStr}`, 'success');
+                    closeDayModal();
+                    await loadMatches();
+                    renderCalendar();
+                } catch (e) {
+                    toast(`Error: ${e.message}`, 'error');
+                }
+            }
+
+            // ----------------------------------------------------------
+            // SCHEDULE LIST RENDER
+            // ----------------------------------------------------------
+            function renderSchedule() {
+                const container = document.getElementById('schedule-container');
+
+                if (!state.torneoId) {
+                    container.innerHTML = emptyState('🏆', 'Selecciona un Torneo', 'Elige un torneo del panel lateral para ver el rol de partidos.');
+                    return;
+                }
+
+                const t = state.torneos.find(torneo => torneo.id === state.torneoId);
+                const formato = t ? t.formato : 'Liga';
+                const filterVal = document.getElementById('round-select').value || null;
+
+                let matches = state.matches;
+                if (filterVal) {
+                    if (formato === "Eliminación Directa") {
+                        matches = matches.filter(p => p.fase === filterVal);
+                    } else if (formato === "Fase de Grupos") {
+                        matches = matches.filter(p => p.equipo_local_grupo === filterVal);
+                    } else {
+                        matches = matches.filter(p => p.jornada === parseInt(filterVal));
+                    }
+                }
+
+                if (matches.length === 0) {
+                    container.innerHTML = emptyState('🎲', 'Sin Partidos Generados',
+                        'El rol aún no ha sido generado. Haz clic en "Generar Rol Automático" para crear los enfrentamientos.',
+                        `<button class="btn btn-primary" onclick="CalendarApp.promptGenerateFixtures()">🎲 Generar Rol Automático</button>`);
+                    return;
+                }
+
+                // Grouping logic depends on format
+                const groups = {};
+                matches.forEach(p => {
+                    let key = "";
+                    if (formato === "Eliminación Directa") key = p.fase || "Eliminatoria";
+                    else if (formato === "Fase de Grupos") key = p.equipo_local_grupo || "Sin Grupo";
+                    else key = `Jornada ${p.jornada}`;
+
+                    (groups[key] = groups[key] || []).push(p);
+                });
+
+                // Inline CSS addition for group grid if we want that look
+                const isGroupView = (formato === "Fase de Grupos" && !filterVal);
+                if (isGroupView) {
+                    container.style.display = 'grid';
+                    container.style.gridTemplateColumns = 'repeat(auto-fill, minmax(320px, 1fr))';
+                    container.style.gap = '20px';
+                    container.style.width = '100%';
+                    container.style.overflowX = 'visible';
+                } else {
+                    container.style.display = 'block';
+                }
+
+                container.innerHTML = Object.keys(groups).sort().map(groupKey => {
+                    const groupMatches = groups[groupKey];
+                    const played = groupMatches.filter(p => p.estado === 'Played').length;
+
+                    return `<div class="round-block" style="${isGroupView ? 'margin-bottom:0; height:100%;' : ''}">
+                        <div class="round-header">
+                            <h3>⚽ ${groupKey}</h3>
+                            <span>${played}/${groupMatches.length} jugados</span>
+                        </div>
+                        ${groupMatches.map(p => matchRowHtml(p, isGroupView)).join('')}
+                    </div>`;
+                }).join('');
+            }
+
+            function matchRowHtml(p, compact = false) {
+                const score = p.estado === 'Played'
+                    ? `<div class="score" style="${compact ? 'font-size:1.2rem; line-height:1;' : ''}">${p.goles_local ?? '?'} – ${p.goles_visitante ?? '?'}</div>`
+                    : `<div class="vs-text" style="${compact ? 'font-size:0.7rem; margin:5px 0;' : ''}">VS</div>`;
+
+                const localInitial = (p.equipo_local || '?')[0].toUpperCase();
+                const visitorInitial = (p.equipo_visitante || '?')[0].toUpperCase();
+
+                const localShield = p.equipo_local_escudo
+                    ? `<img src="${p.equipo_local_escudo}"   class="team-shield" style="${compact ? 'width:28px; height:28px;' : ''}" alt="${p.equipo_local}" onerror="this.style.display='none'">`
+                    : `<div class="team-shield-placeholder" style="${compact ? 'width:28px; height:28px; font-size:0.75rem;' : ''}">${localInitial}</div>`;
+                const visitorShield = p.equipo_visitante_escudo
+                    ? `<img src="${p.equipo_visitante_escudo}" class="team-shield" style="${compact ? 'width:28px; height:28px;' : ''}" alt="${p.equipo_visitante}" onerror="this.style.display='none'">`
+                    : `<div class="team-shield-placeholder" style="${compact ? 'width:28px; height:28px; font-size:0.75rem;' : ''}">${visitorInitial}</div>`;
+
+                if (compact) {
+                    return `
+                    <div class="match-row" style="display:flex; flex-direction:column; padding: 12px; gap: 8px;">
+                        <!-- Match Header: Status and Edit -->
+                        <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+                            ${badgeHtml(p.estado)}
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                ${p.hora ? `<span style="font-size:0.65rem; color:var(--text-muted); font-weight:600;">⏰ ${p.hora}</span>` : ''}
+                                <button class="btn btn-ghost btn-sm" style="padding:4px 8px; font-size:0.7rem; height:24px;" onclick="CalendarApp.openEditModal(${p.id})">✏️ Editar</button>
+                            </div>
+                        </div>
+
+                        <!-- Match Core: Teams side by side -->
+                        <div style="display:grid; grid-template-columns: 1fr auto 1fr; align-items:center; gap:10px; background: rgba(255,255,255,0.03); border-radius: 8px; padding: 8px 4px;">
+                            <div style="display:flex; flex-direction:column; align-items:center; text-align:center; gap:4px;">
+                                ${localShield}
+                                <span class="team-name" style="font-size:0.75rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%;">${p.equipo_local}</span>
+                            </div>
+                            <div class="score-display">
+                                ${score}
+                            </div>
+                            <div style="display:flex; flex-direction:column; align-items:center; text-align:center; gap:4px;">
+                                ${visitorShield}
+                                <span class="team-name" style="font-size:0.75rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%;">${p.equipo_visitante}</span>
+                            </div>
+                        </div>
+
+                        <!-- Match Footer: Extra info -->
+                        ${p.arbitro || p.cancha ? `
+                        <div style="display:flex; flex-wrap:wrap; gap:8px; justify-content:center; font-size:0.6rem; color:var(--text-muted); background:rgba(0,0,0,0.1); padding:4px; border-radius:4px;">
+                            ${p.arbitro ? `<span>🏳 ${p.arbitro}</span>` : ''}
+                            ${p.cancha ? `<span>📍 ${p.cancha}</span>` : ''}
+                        </div>` : ''}
+                    </div>`;
+                }
+
+                return `<div class="match-row">
+            <div class="team-cell">
+                ${localShield}
+                <span class="team-name">${p.equipo_local}</span>
+            </div>
+
+            <div class="score-display">
+                ${score}
+                ${p.fecha ? `<div class="match-time">${formatDateDisplay(p.fecha)}</div>` : '<div class="vs-text">Sin fecha</div>'}
+                ${p.hora ? `<div class="match-time">⏰ ${p.hora}</div>` : ''}
+            </div>
+
+            <div class="team-cell right">
+                <span class="team-name">${p.equipo_visitante}</span>
+                ${visitorShield}
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:6px; align-items:flex-end;">
+                ${badgeHtml(p.estado)}
+                ${p.arbitro ? `<div class="referee-tag">🏳 ${p.arbitro}</div>` : ''}
+                ${p.cancha ? `<div class="referee-tag">📍 ${p.cancha}</div>` : ''}
+                <button class="btn btn-ghost btn-sm" onclick="CalendarApp.openEditModal(${p.id})">✏️ Editar</button>
+            </div>
+        </div>`;
+            }
+
+            function filterByRound() {
+                renderSchedule();
+            }
+
+            // ----------------------------------------------------------
+            // EDIT MODAL
+            // ----------------------------------------------------------
+            function openEditModal(matchId) {
+                const p = state.matches.find(m => m.id === matchId);
+                if (!p) return;
+                state.editingMatchId = matchId;
+
+                document.getElementById('edit-local-name').textContent = p.equipo_local;
+                document.getElementById('edit-visitante-name').textContent = p.equipo_visitante;
+                document.getElementById('edit-fecha').value = p.fecha || '';
+                document.getElementById('edit-hora').value = p.hora || '';
+                document.getElementById('edit-cancha').value = p.cancha || '';
+                document.getElementById('edit-goles-local').value = p.goles_local ?? '';
+                document.getElementById('edit-goles-visitante').value = p.goles_visitante ?? '';
+                document.getElementById('edit-estado').value = p.estado || 'Scheduled';
+
+                // Populate referee select
+                const arbSel = document.getElementById('edit-arbitro');
+                arbSel.innerHTML = '<option value="">— Sin árbitro asignado —</option>' +
+                    state.arbitros.map(a => `<option value="${a.id}" ${a.id === p.arbitro_id ? 'selected' : ''}>${a.nombre} (${a.nivel})</option>`).join('');
+
+                document.getElementById('modal-edit-match').classList.add('open');
+            }
+
+            function closeModal() {
+                document.getElementById('modal-edit-match').classList.remove('open');
+                state.editingMatchId = null;
+            }
+
+            async function saveMatch() {
+                if (!state.editingMatchId) return;
+                const payload = {
+                    fecha: document.getElementById('edit-fecha').value || null,
+                    hora: document.getElementById('edit-hora').value || null,
+                    cancha: document.getElementById('edit-cancha').value || null,
+                    arbitro_id: parseInt(document.getElementById('edit-arbitro').value) || null,
+                    goles_local: document.getElementById('edit-goles-local').value !== '' ? parseInt(document.getElementById('edit-goles-local').value) : null,
+                    goles_visitante: document.getElementById('edit-goles-visitante').value !== '' ? parseInt(document.getElementById('edit-goles-visitante').value) : null,
+                    estado: document.getElementById('edit-estado').value,
+                };
+
+                try {
+                    await api('PUT', `/api/partidos/${state.editingMatchId}`, payload);
+                    toast('Partido actualizado correctamente ✓', 'success');
+                    closeModal();
+                    await loadMatches();
+                    if (state.currentView === 'calendar') renderCalendar();
+                    else renderSchedule();
+                } catch (e) {
+                    toast(`Error al guardar: ${e.message}`, 'error');
+                }
+            }
+
+            async function deleteMatch() {
+                if (!state.editingMatchId) return;
+                if (!confirm('¿Eliminar este partido permanentemente?')) return;
+                try {
+                    await api('DELETE', `/api/partidos/${state.editingMatchId}`);
+                    toast('Partido eliminado', 'success');
+                    closeModal();
+                    await loadMatches();
+                    if (state.currentView === 'calendar') renderCalendar();
+                    else renderSchedule();
+                } catch (e) {
+                    toast(`Error: ${e.message}`, 'error');
+                }
+            }
+
+            // ----------------------------------------------------------
+            // FIXTURE GENERATOR
+            // ----------------------------------------------------------
+            async function promptGenerateFixtures() {
+                if (!state.torneoId) {
+                    toast('Selecciona un torneo primero.', 'error');
+                    return;
+                }
+                const t = state.torneos.find(t => t.id === state.torneoId);
+                const existing = state.matches.length;
+
+                let msg = `¿Generar nuevo rol para "${t?.nombre}"?`;
+                if (existing > 0) {
+                    msg += `\n\nEste torneo ya tiene ${existing} partido(s). Se eliminarán y regenerarán.`;
+                }
+
+                if (!confirm(msg)) return;
+
+                // Definir tamaño de grupos si es Fase de Grupos
+                let teamsPerGroup = 4;
+                if (t && t.formato === "Fase de Grupos") {
+                    let sizeInput = prompt('¿De cuántos equipos deseas los grupos?\n\n(Ej: 3, 4, 5... El sistema repartirá los equipos automáticamente)', '4');
+                    if (sizeInput === null) return;
+                    teamsPerGroup = parseInt(sizeInput) || 4;
+                }
+
+                // Definir tipo de rol mediante prompt numérico
+                let eleccion = prompt('¿Qué tipo de rol deseas generar?\n\nEscribe el número:\n1 - Solo IDA (Mundial)\n2 - IDA Y VUELTA (Liga/Champions)\n\n(Cualquier otro valor cancelará la operación)', '1');
+
+                if (eleccion === null) return;
+
+                let tipo = 'ida';
+                if (eleccion === '2') {
+                    tipo = 'doble';
+                } else if (eleccion !== '1') {
+                    toast('Operación cancelativa: Selección no válida.', 'warning');
+                    return;
+                }
+
+                try {
+                    const reset = existing > 0;
+                    const result = await api('POST', `/api/torneos/${state.torneoId}/generar_rol?reset=${reset}&tipo=${tipo}&teams_per_group=${teamsPerGroup}`);
+                    toast(`✅ ${result.message}`, 'success');
+                    await loadMatches();
+                    if (state.currentView === 'calendar') renderCalendar();
+                    else renderSchedule();
+                } catch (e) {
+                    toast(`Error al generar el rol: ${e.message}`, 'error');
+                }
+            }
+
+            // ----------------------------------------------------------
+            // CALENDAR NAVIGATION
+            // ----------------------------------------------------------
+            function prevMonth() {
+                if (state.calendarViewType === 'month') {
+                    if (state.month === 0) { state.month = 11; state.year--; }
+                    else state.month--;
+                } else if (state.calendarViewType === 'week') {
+                    state.focusDate.setDate(state.focusDate.getDate() - 7);
+                    state.year = state.focusDate.getFullYear();
+                    state.month = state.focusDate.getMonth();
+                } else if (state.calendarViewType === 'day') {
+                    state.focusDate.setDate(state.focusDate.getDate() - 1);
+                    state.year = state.focusDate.getFullYear();
+                    state.month = state.focusDate.getMonth();
+                } else if (state.calendarViewType === 'year') {
+                    state.year--;
+                }
+                renderCalendar();
+            }
+
+            function nextMonth() {
+                if (state.calendarViewType === 'month') {
+                    if (state.month === 11) { state.month = 0; state.year++; }
+                    else state.month++;
+                } else if (state.calendarViewType === 'week') {
+                    state.focusDate.setDate(state.focusDate.getDate() + 7);
+                    state.year = state.focusDate.getFullYear();
+                    state.month = state.focusDate.getMonth();
+                } else if (state.calendarViewType === 'day') {
+                    state.focusDate.setDate(state.focusDate.getDate() + 1);
+                    state.year = state.focusDate.getFullYear();
+                    state.month = state.focusDate.getMonth();
+                } else if (state.calendarViewType === 'year') {
+                    state.year++;
+                }
+                renderCalendar();
+            }
+
+            function goToToday() {
+                const now = new Date();
+                state.year = now.getFullYear();
+                state.month = now.getMonth();
+                state.focusDate = new Date();
+                renderCalendar();
+            }
+
+            // ----------------------------------------------------------
+            // UTILITIES
+            // ----------------------------------------------------------
+            function formatDate(d) {
+                const y = d.getFullYear();
+                const m = String(d.getMonth() + 1).padStart(2, '0');
+                const dd = String(d.getDate()).padStart(2, '0');
+                return `${y}-${m}-${dd}`;
+            }
+
+            function formatDateDisplay(dateStr) {
+                const [y, m, d] = dateStr.split('-');
+                const date = new Date(parseInt(y), parseInt(m) - 1, parseInt(d));
+                return date.toLocaleDateString('es-MX', { month: 'short', day: 'numeric' });
+            }
+
+            function badgeHtml(estado) {
+                const map = {
+                    'Scheduled': 'badge-scheduled',
+                    'Played': 'badge-played',
+                    'Cancelled': 'badge-cancelled',
+                };
+                const labels = { 'Scheduled': 'Programado', 'Played': 'Jugado', 'Cancelled': 'Cancelado' };
+                return `<span class="badge ${map[estado] || 'badge-scheduled'}">${labels[estado] || 'Programado'}</span>`;
+            }
+
+            function emptyState(icon, title, desc, extra = '') {
+                return `<div class="empty-state">
+            <div class="icon">${icon}</div>
+            <h3>${title}</h3>
+            <p>${desc}</p>
+            ${extra}
+        </div>`;
+            }
+
+            function toast(msg, type = 'success') {
+                const container = document.getElementById('toast-container');
+                const el = document.createElement('div');
+                el.className = `toast ${type}`;
+                el.innerHTML = `<span>${type === 'success' ? '✅' : '❌'}</span> ${msg}`;
+                container.appendChild(el);
+                setTimeout(() => el.remove(), 4000);
+            }
+
+            // Close modals on overlay click
+            document.getElementById('modal-edit-match').addEventListener('click', function (e) {
+                if (e.target === this) closeModal();
+            });
+            document.getElementById('modal-day-matches').addEventListener('click', function (e) {
+                if (e.target === this) closeDayModal();
+            });
+
+            // Keyboard: ESC closes modals
+            document.addEventListener('keydown', e => {
+                if (e.key === 'Escape') {
+                    closeModal();
+                    closeDayModal();
+                }
+            });
+
+            // ----------------------------------------------------------
+            // PUBLIC API
+            // ----------------------------------------------------------
+            // ----------------------------------------------------------
+            // NEW: AUTO-SUGGEST SCHEDULE
+            // ----------------------------------------------------------
+            function autoSuggestSchedule() {
+                if (!state.torneoId) return;
+
+                const fecha = document.getElementById('edit-fecha').value;
+                const cancha = document.getElementById('edit-cancha').value;
+                const horaInput = document.getElementById('edit-hora');
+
+                if (!fecha || !cancha) {
+                    toast('Por favor, selecciona una Fecha y escribe una Cancha primero para calcular el horario.', 'warning');
+                    return;
+                }
+
+                // Find the tournament details to get parameters
+                // Wait, tournament info is not fully in state. We need to fetch it or get it from active tournaments.
+                // We can fetch it quickly
+                fetch(`/api/torneos`)
+                    .then(res => res.json())
+                    .then(torneos => {
+                        const torneo = torneos.find(t => t.id === state.torneoId);
+                        if (!torneo) {
+                            toast('No se encontró información del torneo.', 'error');
+                            return;
+                        }
+
+                        // Calculate total match duration in minutes
+                        const tiempos = parseInt(torneo.num_tiempos) || 2;
+                        const duracion = parseInt(torneo.duracion_tiempo) || 20;
+                        const descanso = parseInt(torneo.descanso) || 10;
+                        const totalMinutos = (tiempos * duracion) + descanso; // Base duration
+
+                        // Get all matches for THIS day and THIS court in state.matches
+                        const matchesOnDayAndCourt = state.matches.filter(m =>
+                            m.fecha === fecha &&
+                            m.cancha === cancha &&
+                            m.hora && // Must have a time
+                            m.id !== state.editingMatchId // Exclude current match if it already has a time
+                        );
+
+                        if (matchesOnDayAndCourt.length === 0) {
+                            // No matches yet on this court today. Use the tournament's start time if available.
+                            let initTime = '17:00'; // Default fallback
+                            if (torneo.horario_juego && torneo.horario_juego.includes('a')) {
+                                const parts = torneo.horario_juego.split('a').map(p => p.trim());
+                                if (parts[0] && parts[0].includes(':')) {
+                                    initTime = parts[0];
+                                }
+                            } else if (torneo.horario_juego && torneo.horario_juego.includes('-')) {
+                                const parts = torneo.horario_juego.split('-').map(p => p.trim());
+                                if (parts[0] && parts[0].includes(':')) {
+                                    initTime = parts[0];
+                                }
+                            }
+                            horaInput.value = initTime;
+                            toast(`Sugerencia: Hora de inicio general (${initTime})`, 'success');
+                            return;
+                        }
+
+                        // There are matches! Find the latest one.
+                        // Sort by time
+                        matchesOnDayAndCourt.sort((a, b) => a.hora.localeCompare(b.hora));
+                        const lastMatch = matchesOnDayAndCourt[matchesOnDayAndCourt.length - 1];
+
+                        // Add totalMinutos to lastMatch's time
+                        const [hours, minutes] = lastMatch.hora.split(':').map(Number);
+                        let dateObj = new Date();
+                        dateObj.setHours(hours, minutes, 0);
+                        dateObj.setMinutes(dateObj.getMinutes() + totalMinutos);
+
+                        // Format back to HH:MM
+                        const nextHour = String(dateObj.getHours()).padStart(2, '0');
+                        const nextMinute = String(dateObj.getMinutes()).padStart(2, '0');
+
+                        horaInput.value = `${nextHour}:${nextMinute}`;
+                        toast(`Sugerencia: Siguiente horario (${nextHour}:${nextMinute})`, 'success');
+                    })
+                    .catch(e => toast('Error al sugerir horario', 'error'));
+            }
+
+            async function autoScheduleAll() {
+                if (!state.torneoId) {
+                    toast('Por favor, selecciona un torneo primero', 'warning');
+                    return;
+                }
+
+                if (!confirm('¿Deseas programar automáticamente TODOS los partidos basándose en los días y horas del torneo? Esto sobrescribirá fechas y horas existentes.')) {
+                    return;
+                }
+
+                try {
+                    const res = await api('POST', `/api/torneos/${state.torneoId}/auto_schedule`);
+                    toast(`¡Listo! Se programaron ${res.scheduled_count} partidos.`, 'success');
+                    await refreshData();
+                } catch (e) {
+                    toast(e.message || 'Error al auto-programar', 'error');
+                }
+            }
+
+            // ----------------------------------------------------------
+            // INIT ON LOAD
+            // ----------------------------------------------------------
+            init();
+
+            return {
+                init, // Expose init again
+                switchView,
+                changeCalView,
+                prevMonth,
+                nextMonth,
+                goToToday,
+                onTorneoChange,
+                onCategoryChange,
+                filterByRound,
+                refreshData,
+                promptGenerateFixtures,
+                openEditModal,
+                saveMatch,
+                deleteMatch,
+                closeModal,
+                openDayModal,
+                closeDayModal,
+                autoSuggestSchedule,
+                autoScheduleAll,
+                toggleTraining: function () {
+                    state.showTraining = document.getElementById('toggle-training').checked;
+                    loadMatches().then(() => renderCalendar());
+                }
+            };
+
+        })();
+
+        // Boot
+        document.addEventListener('DOMContentLoaded', () => CalendarApp.init());
+    </script>
+
+</body>
+
+</html>

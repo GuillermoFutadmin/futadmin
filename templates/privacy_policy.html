@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aviso de Privacidad - FutAdmin</title>
+    <style>
+        body { font-family: 'Inter', sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 40px auto; padding: 20px; }
+        h1, h2 { color: #00ff88; }
+        .container { background: #f9f9f9; padding: 30px; border-radius: 12px; border: 1px solid #eee; }
+        .back-link { display: inline-block; margin-bottom: 20px; color: #00bfff; text-decoration: none; }
+        .privacy-dynamic-content { white-space: pre-wrap; word-break: break-word; }
+    </style>
+</head>
+<body>
+    <a href="/login" class="back-link">← Volver al inicio</a>
+    <div class="container">
+        {% if content %}
+            <div class="privacy-dynamic-content">{{ content|safe }}</div>
+        {% else %}
+            <h1>Aviso de Privacidad Integral</h1>
+            <p><strong>FutAdmin Professional</strong> (en adelante "La Plataforma"), con domicilio para oir y recibir notificaciones en la República Mexicana, es responsable del tratamiento de sus datos personales.</p>
+            
+            <h2>1. Datos que recabamos</h2>
+            <p>Para el funcionamiento de la gestión deportiva, recabamos:</p>
+            <ul>
+                <li>Nombre completo de jugadores, árbitros y administradores.</li>
+                <li>Correo electrónico y teléfono.</li>
+                <li>Fotografías de perfil (opcional).</li>
+                <li>Registros de pagos y asistencia.</li>
+            </ul>
+
+            <h2>2. Finalidades del tratamiento</h2>
+            <p>Sus datos serán utilizados exclusivamente para:</p>
+            <ul>
+                <li>Gestión de ligas, torneos y estadísticas deportivas.</li>
+                <li>Comunicación de resultados y roles de juego vía Telegram o Web.</li>
+                <li>Control de inscripciones y cobros de sucursal.</li>
+            </ul>
+
+            <h2>3. Derechos ARCO</h2>
+            <p>Usted tiene derecho a conocer qué datos tenemos de usted, para qué los utilizamos y las condiciones del uso que les damos (Acceso). Asimismo, es su derecho solicitar la corrección de su información personal en caso de que esté desactualizada, sea inexacta o incompleta (Rectificación); que la eliminemos de nuestros registros o bases de datos cuando considere que la misma no está siendo utilizada adecuadamente (Cancelación); así como oponerse al uso de sus datos personales para fines específicos (Oposición). Estos derechos se conocen como derechos ARCO.</p>
+            
+            <p>En FutAdmin, implementamos el <strong>Derecho al Olvido</strong> a través de la anonimización de datos para no afectar la integridad de las ligas históricas.</p>
+
+            <h2>4. Consentimiento</h2>
+            <p>Al marcar la casilla de aceptación en nuestra pantalla de inicio o al registrarse, usted otorga su consentimiento expreso para el tratamiento de su información bajo los términos aquí descritos.</p>
+        {% endif %}
+        
+        <p><small>Última actualización: {{ now.strftime('%d de %B de %Y') if now else '15 de marzo de 2026' }}.</small></p>
+    </div>
+</body>
+</html>
