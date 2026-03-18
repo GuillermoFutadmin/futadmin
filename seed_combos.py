@@ -3,7 +3,7 @@ import uuid
 import random
 # Quitamos el import de app para evitar circularidad al ser llamado desde app.py
 from flask import current_app
-from models import db, Liga, Torneo, Equipo, Jugador, Cancha
+from models import db, Liga, Torneo, Equipo, Jugador, Cancha, Inscripcion, Pago
 
 def seed_data():
     # Usamos db.session directamente, asumiendo que ya hay un context (lo hay al ser llamado vía API)
@@ -77,37 +77,63 @@ def seed_data():
         for i in range(num_equipos):
             nombre_eq = pool_nombres[i] if i < len(pool_nombres) else f"Equipo {idx+1}-{i+1}"
             
-            if Equipo.query.filter_by(nombre=nombre_eq, torneo_id=torneo.id).first():
-                continue
-
-            equipo = Equipo(
-                nombre=nombre_eq,
-                torneo_id=torneo.id,
-                liga_id=liga.id,
-                uid=f"EQ-{uuid.uuid4().hex[:8].upper()}",
-                email=f"delegado_{uuid.uuid4().hex[:4]}@mail.com"
-            )
-            db.session.add(equipo)
-            db.session.flush()
-
-            # 4. Inyectar jugadores
-            num_jugadores = random.randint(10, 15)
-            for j in range(num_jugadores):
-                nom = random.choice(nombres_personas)
-                ape = random.choice(apellidos)
-                pos = random.choice(posiciones)
-                
-                jugador = Jugador(
-                    nombre=f"{nom} {ape}",
-                    posicion=pos,
-                    numero=random.randint(1, 99),
-                    edad=random.randint(18, 45),
-                    equipo_id=equipo.id,
+            equipo = Equipo.query.filter_by(nombre=nombre_eq, torneo_id=torneo.id).first()
+            if not equipo:
+                equipo = Equipo(
+                    nombre=nombre_eq,
+                    torneo_id=torneo.id,
                     liga_id=liga.id,
-                    es_capitan=(j == 0),
-                    es_portero=(pos == "Portero")
+                    uid=f"EQ-{uuid.uuid4().hex[:8].upper()}",
+                    email=f"delegado_{uuid.uuid4().hex[:4]}@mail.com"
                 )
-                db.session.add(jugador)
+                db.session.add(equipo)
+                db.session.flush()
+
+                # Solo inyectar jugadores si el equipo es nuevo
+                num_jugadores = random.randint(10, 15)
+                for j in range(num_jugadores):
+                    nom = random.choice(nombres_personas)
+                    ape = random.choice(apellidos)
+                    pos = random.choice(posiciones)
+                    
+                    jugador = Jugador(
+                        nombre=f"{nom} {ape}",
+                        posicion=pos,
+                        numero=random.randint(1, 99),
+                        edad=random.randint(18, 45),
+                        equipo_id=equipo.id,
+                        liga_id=liga.id,
+                        es_capitan=(j == 0),
+                        es_portero=(pos == "Portero")
+                    )
+                    db.session.add(jugador)
+
+            # Verificar si ya tiene inscripción (ya sea nuevo o existente)
+            inscripcion = Inscripcion.query.filter_by(torneo_id=torneo.id, equipo_id=equipo.id).first()
+            if not inscripcion:
+                monto_inscripcion = random.choice([500, 800, 1000, 1500])
+                inscripcion = Inscripcion(
+                    torneo_id=torneo.id,
+                    equipo_id=equipo.id,
+                    monto_pactado_inscripcion=monto_inscripcion,
+                    liga_id=liga.id
+                )
+                db.session.add(inscripcion)
+                db.session.flush()
+
+                # Generar un pago parcial o total aleatorio
+                monto_pago = random.choice([0, monto_inscripcion / 2, monto_inscripcion])
+                if monto_pago > 0:
+                    pago = Pago(
+                        inscripcion_id=inscripcion.id,
+                        monto=monto_pago,
+                        tipo='Inscripcion',
+                        metodo=random.choice(['Efectivo', 'Transferencia']),
+                        comentario='Abono inicial de inscripción (Semilla)',
+                        liga_id=liga.id,
+                        torneo_id=torneo.id
+                    )
+                    db.session.add(pago)
 
     db.session.commit()
     print("¡Inyección de datos (Exclusividad Protegida) completada!")
