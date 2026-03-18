@@ -2,7 +2,7 @@ import os
 import uuid
 import random
 from app import app
-from models import db, Liga, Torneo, Equipo, Jugador
+from models import db, Liga, Torneo, Equipo, Jugador, Cancha
 
 def seed_data():
     with app.app_context():
@@ -30,14 +30,33 @@ def seed_data():
         for liga in recent_ligas:
             print(f"Procesando Liga: {liga.nombre} (ID: {liga.id})")
             
-            # 1. Crear Torneo si no tiene ninguno activo
+            # 1. Crear Sede (Cancha)
+            cancha = Cancha.query.filter_by(liga_id=liga.id).first()
+            if not cancha:
+                cancha = Cancha(
+                    nombre=f"Unidad Deportiva {liga.nombre}",
+                    liga_id=liga.id,
+                    direccion="Av. Principal #123, Col. Centro",
+                    municipio="Ciudad de México",
+                    estado="CDMX",
+                    tipo="Propia",
+                    modalidad="Fútbol 7"
+                )
+                db.session.add(cancha)
+                db.session.flush()
+                print(f"  - Creada Sede: {cancha.nombre}")
+            else:
+                print(f"  - Usando Sede existente: {cancha.nombre}")
+
+            # 2. Crear Torneo si no tiene ninguno activo
             torneo = Torneo.query.filter_by(liga_id=liga.id, archived=False).first()
             if not torneo:
                 torneo = Torneo(
                     nombre=f"Torneo Apertura - {liga.nombre}",
                     liga_id=liga.id,
                     tipo="Liga",
-                    activo=True
+                    activo=True,
+                    cancha=cancha.nombre
                 )
                 db.session.add(torneo)
                 db.session.flush()
@@ -45,7 +64,7 @@ def seed_data():
             else:
                 print(f"  - Usando Torneo existente: {torneo.nombre}")
 
-            # 2. Inyectar entre 15 y 25 equipos
+            # 3. Inyectar entre 15 y 25 equipos
             num_equipos = random.randint(15, 25)
             # Evitar nombres duplicados en la misma liga
             pool_nombres = random.sample(nombres_equipos, min(num_equipos, len(nombres_equipos)))
@@ -67,7 +86,7 @@ def seed_data():
                 db.session.add(equipo)
                 db.session.flush()
 
-                # 3. Inyectar 10-15 jugadores por equipo
+                # 4. Inyectar 10-15 jugadores por equipo
                 num_jugadores = random.randint(10, 15)
                 for j in range(num_jugadores):
                     nom = random.choice(nombres_personas)
