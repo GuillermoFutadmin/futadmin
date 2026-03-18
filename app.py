@@ -118,6 +118,19 @@ def get_all_equipos():
     equipos = query.all()
     return jsonify([{"id": e.id, "nombre": e.nombre} for e in equipos])
 
+@app.route('/api/admin/seed_data')
+def admin_seed_data():
+    # Solo el administrador global puede poblar datos de prueba
+    if session.get('user_rol') != 'admin':
+        return jsonify({"error": "No autorizado"}), 403
+    
+    try:
+        from seed_combos import seed_data
+        seed_data()
+        return jsonify({"success": "Inyección de 3 combos más recientes completada exitosamente.", "tip": "Recuerda dar F5 para ver los equipos nuevos."}), 200
+    except Exception as e:
+        return jsonify({"error": f"Fallo al inyectar: {str(e)}"}), 500
+
 @app.route('/api/debug_prod')
 def debug_prod():
     # Ruta de diagnóstico que combina info básica (pública) y stats (admin)
