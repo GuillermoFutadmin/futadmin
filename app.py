@@ -27,8 +27,9 @@ print(f"DATABASE_URI Configurada: {db_url[:40]}...")
 if db_url.startswith("sqlite"):
     print("ADVERTENCIA: Usando SQLite. Si estás en Railway, verifica que DATABASE_URL esté ligada.")
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SESSION_COOKIE_SECURE'] = os.getenv('SSL_REQUIRED', 'False') == 'True'
+app.config['SESSION_COOKIE_SECURE'] = True # Forzar Secure en Railway (HTTPS)
 app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['PERMANENT_SESSION_LIFETIME'] = 86400
 app.config['UPLOAD_FOLDER'] = os.path.join(BASE_DIR, 'static', 'uploads')
 app.config['TELEGRAM_BOT_TOKEN'] = os.getenv('TELEGRAM_BOT_TOKEN')
