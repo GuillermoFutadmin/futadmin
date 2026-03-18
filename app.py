@@ -95,6 +95,10 @@ def check_login():
     
     # Permitir si el usuario está en sesión
     if 'user_id' not in session:
+        # Exenciones para la App de Telegram (tienen su propia auth)
+        if request.path == '/telegram_app' or request.path.startswith('/api/telegram/'):
+            return
+
         print(f"DEBUG AUTH: 401 en {request.path} - Session: {list(session.keys())}")
         if request.path.startswith('/api/'):
             return jsonify({"error": "No autenticado"}), 401
