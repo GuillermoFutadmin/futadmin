@@ -7,7 +7,8 @@ def init():
     with app.app_context():
         try:
             print("--- Iniciando Script de Inicialización ---")
-            print(f"DATABASE_URL: {os.getenv('SQLALCHEMY_DATABASE_URI')[:20]}...")
+            db_url = os.getenv('SQLALCHEMY_DATABASE_URI') or "None"
+            print(f"DATABASE_URL: {db_url[:30]}...")
             
             print("Paso 1: Creando tablas en PostgreSQL...")
             db.create_all()
