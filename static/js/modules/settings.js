@@ -161,8 +161,8 @@ export class SettingsModule {
 
                     // Opcional: Ticket
                     setTimeout(() => {
-                        if (confirm('Combo Creado. ¿Deseas imprimir las credenciales de los nuevos accesos?')) {
-                            this.printComboTicket(res.liga, data, res.pago);
+                        if (confirm('Combo Creado. ¿Deseas imprimir el ticket con todas las credenciales y accesos?')) {
+                            this.printComboTicket(res.liga, data, res.pago, res.cuentas);
                         }
                     }, 500);
                 } else {
@@ -216,29 +216,71 @@ export class SettingsModule {
         }
     }
 
-    printComboTicket(liga, owner, pago) {
-        const ticketHtml = `
-            <div style="font-family: 'Courier New', monospace; padding: 20px; color: #000; width: 300px; margin: 0 auto;">
-                <h2 style="text-align:center; margin:0;">FUTADMIN</h2>
-                <p style="text-align:center; font-size: 0.8rem; margin: 5px 0;">Activación de Combo</p>
-                <hr style="border-top: 1px dashed #000;">
-                <p><strong>FOLIO:</strong> ${liga.id}P${pago.id}</p>
-                <p><strong>FECHA:</strong> ${new Date().toLocaleDateString()}</p>
-                <hr style="border-top: 1px dashed #000;">
-                <p><strong>LIGA:</strong> ${liga.nombre}</p>
-                <p><strong>PLAN:</strong> ${owner.owner_rol.toUpperCase()}</p>
-                <p><strong>PAGO:</strong> $${pago.monto.toFixed(2)}</p>
-                <hr style="border-top: 1px dashed #000;">
-                <p style="text-align:center;"><strong>CREDENCIALES</strong></p>
+    printComboTicket(liga, owner, pago, cuentas = []) {
+        const domain = window.location.origin;
+        const vencimiento = liga.vencimiento || 'Pendiente';
+        
+        // Formatear cuentas para el ticket
+        const cuentasHtml = cuentas.length > 0 
+            ? cuentas.map(c => `
+                <div style="margin-bottom: 8px; border-bottom: 1px solid #eee; padding-bottom: 4px;">
+                    <div style="font-size: 0.75rem; color: #666;">${c.rol.toUpperCase()}</div>
+                    <div style="font-size: 0.85rem;"><strong>U:</strong> ${c.email}</div>
+                    <div style="font-size: 0.85rem;"><strong>P:</strong> ${owner.owner_pass}</div>
+                </div>
+            `).join('')
+            : `
                 <p><strong>USR:</strong> ${owner.owner_email}</p>
                 <p><strong>PASS:</strong> ${owner.owner_pass}</p>
-                <hr style="border-top: 1px dashed #000;">
-                <p style="text-align:center; font-size:0.7rem;">Favor de conservar su ticket.</p>
-                <p style="text-align:center; font-weight:bold;">¡Éxito Ing!</p>
+            `;
+
+        const ticketHtml = `
+            <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 30px; color: #333; width: 380px; margin: 0 auto; background: #fff; line-height: 1.4;">
+                <div style="text-align:center; margin-bottom: 20px;">
+                    <h1 style="margin:0; font-size: 24px; letter-spacing: 2px;">FUTADMIN</h1>
+                    <p style="font-size: 0.9rem; color: #666; margin: 5px 0;">Comprobante de Activación</p>
+                </div>
+                
+                <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                    <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 5px;">
+                        <span>FOLIO: <strong>${liga.id}P${pago.id}</strong></span>
+                        <span>FECHA: ${new Date().toLocaleDateString()}</span>
+                    </div>
+                    <div style="font-size: 1rem; border-top: 1px solid #ddd; padding-top: 10px; margin-top: 5px;">
+                        <div style="margin-bottom: 5px;">LIGA: <strong>${liga.nombre}</strong></div>
+                        <div style="margin-bottom: 5px;">PLAN: <span style="text-transform: uppercase;">${owner.owner_rol.replace('_', ' ')}</span></div>
+                        <div>VENCIMIENTO: <strong style="color: #d32f2f;">${vencimiento}</strong></div>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 25px;">
+                    <h3 style="font-size: 0.9rem; border-bottom: 2px solid #333; padding-bottom: 5px; margin-bottom: 15px; text-align: center; text-transform: uppercase;">Credenciales de Acceso</h3>
+                    ${cuentasHtml}
+                </div>
+
+                <div style="background: #e3f2fd; padding: 15px; border-radius: 8px; margin-bottom: 20px; font-size: 0.8rem;">
+                    <h4 style="margin: 0 0 8px 0; color: #1976d2;">📖 Manual Rápido</h4>
+                    <ul style="padding-left: 15px; margin: 0;">
+                        <li style="margin-bottom: 4px;">Accede desde: <strong>${domain}</strong></li>
+                        <li style="margin-bottom: 4px;">Usa tu cuenta secundaria (Lector) para pantallas de resultados.</li>
+                        <li>Configura tus Torneos y Sedes desde el panel de Ajustes.</li>
+                    </ul>
+                </div>
+
+                <div style="font-size: 0.75rem; color: #666; text-align: justify; border-top: 1px solid #eee; padding-top: 15px;">
+                    <h4 style="margin: 0 0 5px 0; font-size: 0.8rem; color: #333;">🔒 Aviso de Privacidad y Alcance</h4>
+                    <p style="margin: 0 0 8px 0;">Esta aplicación gestiona datos deportivos y administrativos. Los datos personales son utilizados únicamente para el funcionamiento del sistema. 
+                    <strong>La app permite:</strong> Registrar pagos, programar partidos, capturar estadísticas en vivo vía Telegram y generar reportes. 
+                    <strong>La app NO:</strong> Procesa pagos bancarios directamente ni almacena información financiera sensible fuera de los registros administrativos proporcionados.</p>
+                </div>
+
+                <div style="text-align:center; margin-top: 30px; font-size: 0.8rem; color: #999;">
+                    <p>Gracias por confiar en FutAdmin.<br>Tus datos están seguros y respaldados.</p>
+                </div>
             </div>
         `;
         const pw = window.open('', '_blank');
-        pw.document.write('<html><head><title>Ticket FutAdmin</title></head><body>' + ticketHtml + '</body></html>');
+        pw.document.write('<html><head><title>Ticket de Activación - FutAdmin</title></head><body style="background:#f0f2f5;">' + ticketHtml + '</body></html>');
         pw.document.close();
         pw.print();
     }

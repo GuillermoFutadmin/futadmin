@@ -399,10 +399,18 @@ def handle_combo_creation():
         
         db.session.commit()
         
+        # Preparar lista de cuentas para el ticket
+        cuentas_ticket = [{"email": data['owner_email'], "rol": rol_owner}]
+        for prefijo, sub_nombre, sub_rol, sub_nivel in subcuentas_cfg:
+            u_sub = Usuario.query.filter_by(liga_id=nueva_liga.id, rol=sub_rol, nombre=sub_nombre).first()
+            if u_sub:
+                cuentas_ticket.append({"email": u_sub.email, "rol": sub_rol})
+
         return jsonify({
             'success': True, 
             'liga': nueva_liga.to_dict(),
             'pago': nuevo_pago.to_dict(),
+            'cuentas': cuentas_ticket,
             'msg': 'Combo y acceso creados exitosamente'
         }), 201
         
