@@ -1451,6 +1451,7 @@ export class SettingsModule {
                             <button onclick="ui.settings.downloadComboPDF('${l.id}')" class="btn-icon" title="Descargar Historial PDF" style="background: rgba(255,255,255,0.05); color: var(--text); border: 1px solid var(--border); width: 30px; height: 30px; border-radius: 8px; cursor: pointer;">📄</button>
                             ${window.USER_ROL !== 'resultados' && window.USER_ROL !== 'arbitro' ? `
                             <button onclick="ui.settings.filterPaymentsByLiga('${l.nombre}')" class="btn-icon" title="Ver Historial en pantalla" style="background: rgba(255,255,255,0.05); color: var(--text); border: 1px solid var(--border); width: 30px; height: 30px; border-radius: 8px; cursor: pointer;">📋</button>
+                            <button onclick="ui.settings.deleteCombo(${l.id}, '${l.nombre.replace(/'/g, "\\'")}')" class="btn-icon" title="Eliminar Combo" style="background: rgba(239,68,68,0.1); color: #ef4444; border: 1px solid rgba(239,68,68,0.2); width: 30px; height: 30px; border-radius: 8px; cursor: pointer;">🗑️</button>
                             ` : ''}
                         </div>
                     </td>
