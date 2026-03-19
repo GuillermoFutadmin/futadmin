@@ -26,11 +26,12 @@ class PagosAcademiaModule {
     async loadGruposSelect() {
         try {
             const res = await fetch('/api/entrenamientos/grupos');
-            const grupos = await res.json();
+            const data = await res.json();
+            const items = Array.isArray(data) ? data : (data.items || []);
             const sel = document.getElementById('pagos-academia-grupo');
             if (!sel) return;
             sel.innerHTML = '<option value="">— Selecciona un Grupo —</option>' +
-                grupos.map(g => `<option value="${g.id}">${g.nombre}</option>`).join('');
+                items.map(g => `<option value="${g.id}">${g.nombre}</option>`).join('');
         } catch (e) { console.error(e); }
     }
 

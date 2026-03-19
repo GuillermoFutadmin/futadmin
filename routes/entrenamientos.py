@@ -1,5 +1,6 @@
 from flask import Blueprint, request, jsonify, session
 from models import db, GrupoEntrenamiento, AlumnoEntrenamiento, Pago, Arbitro, Cancha, apply_liga_filter, Usuario
+from utils import paginate_query
 from flask_bcrypt import Bcrypt
 
 bcrypt = Bcrypt()
@@ -63,8 +64,8 @@ def handle_grupos_entrenamiento():
     # GET
     query = GrupoEntrenamiento.query
     query = apply_liga_filter(query, GrupoEntrenamiento)
-    grupos = query.order_by(GrupoEntrenamiento.id.desc()).all()
-    return jsonify([g.to_dict() for g in grupos])
+    query = query.order_by(GrupoEntrenamiento.id.desc())
+    return paginate_query(query)
 
 @entrenamientos_bp.route('/grupos/<int:id>', methods=['PUT', 'DELETE'])
 def handle_grupo_id(id):
@@ -180,8 +181,8 @@ def handle_alumnos_entrenamiento():
     query = apply_liga_filter(query, AlumnoEntrenamiento)
     if grupo_id:
         query = query.filter_by(grupo_id=grupo_id)
-    alumnos = query.order_by(AlumnoEntrenamiento.nombre).all()
-    return jsonify([a.to_dict() for a in alumnos])
+    query = query.order_by(AlumnoEntrenamiento.nombre)
+    return paginate_query(query)
 
 @entrenamientos_bp.route('/alumnos/<int:id>', methods=['PUT', 'DELETE'])
 def handle_alumno_id(id):

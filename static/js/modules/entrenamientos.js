@@ -1,6 +1,18 @@
 class EntrenamientosModule {
     constructor() {
         this.currentGrupoId = null;
+        this.paginationGrupos = null;
+        this.paginationAlumnos = null;
+    }
+
+    async changeGruposPage(page) {
+        await this.loadGrupos(page);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    async changeAlumnosPage(page) {
+        await this.loadAlumnos(page);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     init() {
@@ -20,18 +32,19 @@ class EntrenamientosModule {
     }
 
     // --- Grupos de Entrenamiento ---
-    async loadGrupos() {
+    async loadGrupos(page = 1) {
         try {
-            const res = await fetch('/api/entrenamientos/grupos');
-            const grupos = await res.json();
-            this.renderGrupos(grupos);
+            const res = await fetch(`/api/entrenamientos/grupos?page=${page}`);
+            const data = await res.json();
+            this.paginationGrupos = data.pagination;
+            this.renderGrupos(data.items, this.paginationGrupos);
             this.loadProfesoresSelect();
         } catch (e) {
             console.error("Error al cargar grupos de entrenamiento:", e);
         }
     }
 
-    renderGrupos(grupos) {
+    renderGrupos(grupos, pagination) {
         const container = document.getElementById('grupos-entrenamiento-list');
         if (!container) return;
 
@@ -110,17 +123,34 @@ class EntrenamientosModule {
                 </div>
             </div>`;
         }).join('');
+
+        if (pagination && pagination.total_pages > 1) {
+            container.innerHTML += `
+                <div class="pagination-controls">
+                    <button class="btn-pagination" ${!pagination.has_prev ? 'disabled' : ''} 
+                        onclick="ui.entrenamientos.changeGruposPage(${pagination.page - 1})">
+                        &laquo; Anterior
+                    </button>
+                    <span class="pagination-info">Página ${pagination.page} de ${pagination.total_pages}</span>
+                    <button class="btn-pagination" ${!pagination.has_next ? 'disabled' : ''} 
+                        onclick="ui.entrenamientos.changeGruposPage(${pagination.page + 1})">
+                        Siguiente &raquo;
+                    </button>
+                </div>
+            `;
+        }
     }
 
     async loadProfesoresSelect() {
         try {
             const res = await fetch('/api/arbitros');
-            const profes = await res.json();
+            const response = await res.json();
+            const profes = response.items || response || [];
             const select = document.getElementById('grupo-profesor');
             if (select) {
                 const current = select.value;
                 select.innerHTML = '<option value="">Sin asignar...</option>' +
-                    profes.map(p => `<option value="${p.id}">${p.nombre}</option>`).join('');
+                    (Array.isArray(profes) ? profes.map(p => `<option value="${p.id}">${p.nombre}</option>`).join('') : '');
                 if (current) select.value = current;
             }
         } catch (e) { console.error(e); }
@@ -298,16 +328,17 @@ class EntrenamientosModule {
         this.loadGrupos();
     }
 
-    async loadAlumnos() {
+    async loadAlumnos(page = 1) {
         if (!this.currentGrupoId) return;
         try {
-            const res = await fetch(`/api/entrenamientos/alumnos?grupo_id=${this.currentGrupoId}`);
-            const alumnos = await res.json();
-            this.renderAlumnos(alumnos);
+            const res = await fetch(`/api/entrenamientos/alumnos?grupo_id=${this.currentGrupoId}&page=${page}`);
+            const data = await res.json();
+            this.paginationAlumnos = data.pagination;
+            this.renderAlumnos(data.items, this.paginationAlumnos);
         } catch (e) { console.error("Error cargando alumnos:", e); }
     }
 
-    renderAlumnos(alumnos) {
+    renderAlumnos(alumnos, pagination) {
         const container = document.getElementById('alumnos-entrenamiento-list');
         if (!container) return;
 
@@ -362,6 +393,22 @@ class EntrenamientosModule {
                 </div>
             </div>`;
         }).join('');
+
+        if (pagination && pagination.total_pages > 1) {
+            container.innerHTML += `
+                <div class="pagination-controls">
+                    <button class="btn-pagination" ${!pagination.has_prev ? 'disabled' : ''} 
+                        onclick="ui.entrenamientos.changeAlumnosPage(${pagination.page - 1})">
+                        &laquo; Anterior
+                    </button>
+                    <span class="pagination-info">Página ${pagination.page} de ${pagination.total_pages}</span>
+                    <button class="btn-pagination" ${!pagination.has_next ? 'disabled' : ''} 
+                        onclick="ui.entrenamientos.changeAlumnosPage(${pagination.page + 1})">
+                        Siguiente &raquo;
+                    </button>
+                </div>
+            `;
+        }
     }
 
     openAlumnoModal() {

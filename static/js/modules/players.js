@@ -7,9 +7,10 @@ export class PlayersModule {
 
     async populateTeamSelects() {
         try {
-            const equipos = await Core.fetchAPI('/api/equipos');
+            const response = await Core.fetchAPI('/api/equipos');
+            const equipos = response.items || response;
             const options = '<option value="">Seleccionar Equipo...</option>' +
-                equipos.map(e => `<option value="${e.id}">${e.nombre}</option>`).join('');
+                (Array.isArray(equipos) ? equipos.map(e => `<option value="${e.id}">${e.nombre}</option>`).join('') : '');
 
             const filterSelect = document.getElementById('player-team-filter');
             const modalSelect = document.getElementById('player-equipo-id');
@@ -41,7 +42,13 @@ export class PlayersModule {
     }
 
 
-    async loadJugadores() {
+    async changePage(page) {
+        if (page < 1 || (this.pagination && page > this.pagination.total_pages)) return;
+        this.loadJugadores(page);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    async loadJugadores(page = 1) {
         const equipoId = document.getElementById('player-team-filter').value;
         const container = document.getElementById('jugadores-container');
         if (!container) return;
@@ -49,12 +56,18 @@ export class PlayersModule {
             container.innerHTML = '<p class="text-muted">Selecciona un equipo para ver sus jugadores.</p>';
             return;
         }
-        container.innerHTML = '<p>Cargando jugadores...</p>';
-        const userRol = (window.USER_ROL || '').toLowerCase();
-        const isReader = ['resultados', 'arbitro', 'solo vista'].includes(userRol);
+        if (page === 1) {
+            container.innerHTML = '<p>Cargando jugadores...</p>';
+        } else {
+            container.innerHTML = `<p>Cargando página ${page}...</p>`;
+        }
 
         try {
-            const jugadores = await Core.fetchAPI(`/api/jugadores?equipo_id=${equipoId}`);
+            const isReader = ['resultados', 'arbitro', 'invitado'].includes(window.USER_ROL);
+            const response = await Core.fetchAPI(`/api/jugadores?equipo_id=${equipoId}&page=${page}`);
+            const jugadores = response.items || response;
+            this.pagination = response.pagination || null;
+
             container.innerHTML = jugadores.length ? jugadores.map(j => `
                 <div class="stat-card" style="padding: 1.5rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; position: relative; min-height: 140px; margin-bottom: 1rem; overflow: hidden; border-left: 4px solid ${j.color || 'var(--primary)'};">
                     <div style="flex: 1; text-align: left;">
@@ -91,6 +104,23 @@ export class PlayersModule {
                     </div>
                 </div>
             `).join('') : '<p>No hay jugadores registrados en este equipo.</p>';
+
+            // Agregar Controles de Paginación
+            if (this.pagination && this.pagination.total_pages > 1) {
+                container.innerHTML += `
+                    <div class="pagination-controls">
+                        <button class="btn-pagination" ${!this.pagination.has_prev ? 'disabled' : ''} 
+                            onclick="ui.players.loadJugadores(${this.pagination.page - 1})">
+                            &laquo; Anterior
+                        </button>
+                        <span class="pagination-info">Página ${this.pagination.page} de ${this.pagination.total_pages}</span>
+                        <button class="btn-pagination" ${!this.pagination.has_next ? 'disabled' : ''} 
+                            onclick="ui.players.loadJugadores(${this.pagination.page + 1})">
+                            Siguiente &raquo;
+                        </button>
+                    </div>
+                `;
+            }
         } catch (error) {
             container.innerHTML = '<p class="error">Error al cargar jugadores.</p>';
         }
@@ -98,8 +128,8 @@ export class PlayersModule {
 
     async editJugador(id) {
         try {
-            const jugadores = await Core.fetchAPI('/api/jugadores');
-            const j = jugadores.find(jug => jug.id === id);
+            // Optimización: Fetch directo por ID
+            const j = await Core.fetchAPI(`/api/jugadores/${id}`);
             if (j) {
                 document.getElementById('player-id').value = j.id;
                 document.getElementById('player-name').value = j.nombre;

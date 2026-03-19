@@ -5,6 +5,7 @@ canchas_bp = Blueprint('canchas', __name__)
 
 @canchas_bp.route('/api/canchas', methods=['GET'])
 def get_canchas():
+    from utils import paginate_query
     query = Cancha.query
     query = apply_liga_filter(query, Cancha)
     
@@ -14,8 +15,8 @@ def get_canchas():
         if user_id:
             query = query.filter_by(dueno_id=user_id)
             
-    canchas = query.order_by(Cancha.nombre).all()
-    return jsonify([c.to_dict() for c in canchas])
+    # Soporte para paginación
+    return paginate_query(query, items_per_page=12)
 
 @canchas_bp.route('/api/canchas', methods=['POST'])
 def add_cancha():

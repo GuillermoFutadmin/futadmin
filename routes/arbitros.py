@@ -1,5 +1,6 @@
 from flask import Blueprint, jsonify, request, session
 from models import db, Arbitro, Usuario, Cancha, Torneo, Partido, Inscripcion, Pago, EventoPartido, AsistenciaPartido, Equipo, Jugador, apply_liga_filter, bcrypt, Liga
+from utils import paginate_query
 from datetime import datetime, date
 import secrets
 import os
@@ -116,8 +117,7 @@ def handle_arbitros():
 
         query = Arbitro.query
         query = apply_liga_filter(query, Arbitro)
-        arbitros = query.all()
-        return jsonify([a.to_dict() for a in arbitros])
+        return paginate_query(query)
 
 @arbitros_bp.route('/api/arbitros/<int:id>', methods=['DELETE', 'PUT'])
 def handle_arbitro_single(id):

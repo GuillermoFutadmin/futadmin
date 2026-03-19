@@ -832,7 +832,11 @@ def get_liga_id():
     rol = str(session.get('user_rol') or '').lower()
     if rol in ['admin', 'ejecutivo']:
         return None
-    return session.get('liga_id')
+    val = session.get('liga_id')
+    try:
+        return int(val) if val is not None else None
+    except (ValueError, TypeError):
+        return None
 
 def apply_liga_filter(query, model, ignore_archived=False):
     """Aplica el filtro de liga_id o cancha_id si corresponde con blindaje por liga."""

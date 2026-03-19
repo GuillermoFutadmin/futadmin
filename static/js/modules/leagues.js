@@ -43,8 +43,9 @@ export class LeaguesModule {
 
         select.innerHTML = '<option value="">Cargando...</option>';
         try {
-            const arbitros = await Core.fetchAPI('/api/arbitros');
-            this.cachedArbitros = arbitros.filter(a => a.activo);
+            const response = await Core.fetchAPI('/api/arbitros');
+            const arbitros = response.items || response;
+            this.cachedArbitros = Array.isArray(arbitros) ? arbitros.filter(a => a.activo) : [];
             this.filterOfficialReferees(null, selectedId);
         } catch (error) {
             console.error('Error loading referees', error);
@@ -306,8 +307,9 @@ export class LeaguesModule {
 
     async editLeague(id) {
         try {
-            const torneos = await Core.fetchAPI('/api/torneos');
-            const t = torneos.find(torneo => torneo.id === id);
+            const response = await Core.fetchAPI('/api/torneos');
+            const torneos = response.items || response;
+            const t = Array.isArray(torneos) ? torneos.find(torneo => torneo.id === id) : null;
 
             if (t) {
                 document.getElementById('modal-title').innerText = 'Editar Liga';
@@ -390,7 +392,9 @@ export class LeaguesModule {
         container.innerHTML = '<p>Cargando torneos...</p>';
 
         try {
-            const torneos = await Core.fetchAPI('/api/torneos');
+            const response = await Core.fetchAPI('/api/torneos');
+            const torneos = response.items || response;
+            this.pagination = response.pagination || null;
             
             // Poblar filtro de sedes si está vacío (excluyendo la opción por defecto)
             const venueFilter = document.getElementById('league-venue-filter');
@@ -418,6 +422,7 @@ export class LeaguesModule {
             this.renderLeagues(filtered);
             this.checkLimits();
         } catch (error) {
+            console.error('Error loading leagues:', error);
             container.innerHTML = '<p class="error">Error al conectar con el servidor.</p>';
         }
     }
@@ -551,6 +556,52 @@ export class LeaguesModule {
                 </div>
             </div>
         `).join('');
+
+        // Agregar Controles de Paginación si existen
+        if (this.pagination && this.pagination.total_pages > 1) {
+            container.innerHTML += `
+                <div class="pagination-controls">
+                    <button class="btn-pagination" ${!this.pagination.has_prev ? 'disabled' : ''} 
+                            onclick="ui.leagues.changePage(${this.pagination.page - 1})">
+                        &laquo; Anterior
+                    </button>
+                    <span class="pagination-info">Página ${this.pagination.page} de ${this.pagination.total_pages}</span>
+                    <button class="btn-pagination" ${!this.pagination.has_next ? 'disabled' : ''} 
+                            onclick="ui.leagues.changePage(${this.pagination.page + 1})">
+                        Siguiente &raquo;
+                    </button>
+                </div>
+            `;
+        }
+    }
+
+    async changePage(page) {
+        if (page < 1 || (this.pagination && page > this.pagination.total_pages)) return;
+        
+        // Cargar torneos con el parámetro de página
+        const container = document.getElementById('leagues-container');
+        if (!container) return;
+        container.innerHTML = '<p>Cargando página ' + page + '...</p>';
+
+        try {
+            const response = await Core.fetchAPI(`/api/torneos?page=${page}`);
+            const torneos = response.items || response;
+            this.pagination = response.pagination || null;
+            
+            // Re-aplicar filtros si es necesario
+            const venueFilter = document.getElementById('league-venue-filter');
+            const selectedVenue = venueFilter ? venueFilter.value : '';
+            
+            let filtered = torneos;
+            if (selectedVenue) {
+                filtered = torneos.filter(t => t.cancha && t.cancha.trim() === selectedVenue.trim());
+            }
+
+            this.renderLeagues(filtered);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        } catch (error) {
+            console.error('Error changing page:', error);
+        }
     }
 
     goToEquipos(torneoId) {

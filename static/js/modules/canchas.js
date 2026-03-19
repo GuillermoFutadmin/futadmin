@@ -7,20 +7,21 @@ export class CanchasModule {
         document.addEventListener('futadmin:limitsLoaded', () => this.checkLimits());
     }
 
-    async loadCanchas() {
+    async loadCanchas(page = 1) {
         const container = document.getElementById('canchas-container');
         if (!container) return;
         
         container.innerHTML = '<div class="loading-premium"><span>⌛</span> Cargando sedes...</div>';
         
         try {
-            const data = await Core.fetchAPI('/api/canchas');
-            this.canchas = data; // Guardar referencia para filtrado
-            this.renderCanchas(data);
-            this.checkLimits(); // Keep checkLimits call
+            const data = await Core.fetchAPI(`/api/canchas?page=${page}`);
+            this.canchas = data.items || data;
+            this.pagination = data.pagination || null;
+            this.renderCanchas(this.canchas);
+            this.checkLimits();
         } catch (e) {
             container.innerHTML = '<div class="error-premium">Error al cargar sedes</div>';
-            Core.showNotification('No se pudieron cargar las canchas', 'error'); // Keep notification
+            Core.showNotification('No se pudieron cargar las canchas', 'error');
         }
     }
 
@@ -223,6 +224,22 @@ export class CanchasModule {
             </div>
             `;
         }).join('');
+
+        if (this.pagination && this.pagination.total_pages > 1) {
+            container.innerHTML += `
+                <div class="pagination-controls">
+                    <button class="btn-pagination" ${!this.pagination.has_prev ? 'disabled' : ''} 
+                        onclick="ui.canchas.loadCanchas(${this.pagination.page - 1})">
+                        &laquo; Anterior
+                    </button>
+                    <span class="pagination-info">Página ${this.pagination.page} de ${this.pagination.total_pages}</span>
+                    <button class="btn-pagination" ${!this.pagination.has_next ? 'disabled' : ''} 
+                        onclick="ui.canchas.loadCanchas(${this.pagination.page + 1})">
+                        Siguiente &raquo;
+                    </button>
+                </div>
+            `;
+        }
     }
 
     goToLeagues(canchaNombre) {

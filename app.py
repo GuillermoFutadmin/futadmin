@@ -61,6 +61,7 @@ talisman = Talisman(app,
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 from models import db, bcrypt, Torneo, Equipo, Jugador, Inscripcion, Pago, GrupoEntrenamiento, AlumnoEntrenamiento, Partido, EventoPartido, Arbitro, Cancha, Usuario, apply_liga_filter, get_liga_id, check_torneos_limit, get_role_limits, Liga, PagoCombo, Configuracion, LigaExpansion
+from utils import paginate_query
 from routes.entrenamientos import entrenamientos_bp
 from routes.canchas import canchas_bp
 from routes.pagos_cancha import pagos_cancha_bp
@@ -114,7 +115,7 @@ def check_login():
 
 # Los modelos han sido movidos a models.py
 
-# --- Helper para Multi-tenancy ---
+
 
 # Helpers moved to models.py and imported above
 
@@ -350,21 +351,23 @@ def handle_equipos():
             "ticket": ticket_data
         }), 201
     
-    torneo_id = request.args.get('torneo_id')
+    torneo_id = request.args.get('torneo_id', type=int)
     query = Equipo.query
     query = apply_liga_filter(query, Equipo)
     
     if torneo_id:
         query = query.filter_by(torneo_id=torneo_id)
     
-    equipos = query.all()
     rol = session.get('user_rol')
-    return jsonify([e.to_dict(user_rol=rol) for e in equipos])
+    return paginate_query(query, renderer=lambda e: e.to_dict(user_rol=rol))
 
-@app.route('/api/equipos/<int:id>', methods=['DELETE', 'PUT'])
+@app.route('/api/equipos/<int:id>', methods=['GET', 'DELETE', 'PUT'])
 @csrf.exempt
 def handle_equipo_single(id):
     equipo = apply_liga_filter(Equipo.query, Equipo).filter_by(id=id).first_or_404()
+    if request.method == 'GET':
+        rol = session.get('user_rol')
+        return jsonify(equipo.to_dict(user_rol=rol))
     if request.method == 'DELETE':
         db.session.delete(equipo)
         db.session.commit()
@@ -410,11 +413,11 @@ def handle_jugadores():
         
         # Manejo de campos numéricos para evitar errores de tipo en PostgreSQL
         numero = data.get('numero')
-        edad = data.get('edad')
         
         # Normalizar Seudónimo a None si está vacío
         seudonimo = data.get('seudonimo')
         if seudonimo == "": seudonimo = None
+        
         try:
             # Heredar liga_id del equipo o de la sesión
             equipo = db.session.get(Equipo, data.get('equipo_id'))
@@ -426,7 +429,6 @@ def handle_jugadores():
                 telefono=data.get('telefono'),
                 posicion=data.get('posicion'),
                 numero=int(numero) if numero and str(numero).isdigit() else None,
-                edad=int(edad) if edad and str(edad).isdigit() else None,
                 foto_url=data.get('foto_url'),
                 es_portero=data.get('es_portero', False),
                 es_capitan=data.get('es_capitan', False),
@@ -463,32 +465,21 @@ def handle_jugadores():
             print(f"Error POST /api/jugadores: {e}")
             return jsonify({"error": str(e)}), 500
     
-    equipo_id = request.args.get('equipo_id')
+    equipo_id = request.args.get('equipo_id', type=int)
     query = Jugador.query
     query = apply_liga_filter(query, Jugador)
     
     if equipo_id:
-        query = query.filter_by(equipo_id=equipo_id)
+        query = query.filter(Jugador.equipo_id == equipo_id)
     
-    jugadores = query.all()
-        
-    return jsonify([{
-        "id": j.id, 
-        "nombre": j.nombre, 
-        "posicion": j.posicion, 
-        "numero": j.numero,
-        "edad": j.edad,
-        "foto_url": j.foto_url,
-        "es_portero": j.es_portero,
-        "es_capitan": j.es_capitan,
-        "equipo_id": j.equipo_id,
-        "color": j.color
-    } for j in jugadores])
+    return paginate_query(query, renderer=lambda j: j.to_dict())
 
-@app.route('/api/jugadores/<int:id>', methods=['DELETE', 'PUT'])
+@app.route('/api/jugadores/<int:id>', methods=['GET', 'DELETE', 'PUT'])
 @csrf.exempt
 def handle_jugador_single(id):
     jugador = apply_liga_filter(Jugador.query, Jugador).filter_by(id=id).first_or_404()
+    if request.method == 'GET':
+        return jsonify(jugador.to_dict())
     if request.method == 'DELETE':
         db.session.delete(jugador)
         db.session.commit()
@@ -506,9 +497,7 @@ def handle_jugador_single(id):
         
         # Manejo de campos numéricos
         numero = data.get('numero')
-        edad = data.get('edad')
         jugador.numero = int(numero) if numero and str(numero).isdigit() else (None if numero == "" else jugador.numero)
-        jugador.edad = int(edad) if edad and str(edad).isdigit() else (None if edad == "" else jugador.edad)
         
         jugador.foto_url = data.get('foto_url', jugador.foto_url)
         jugador.es_portero = data.get('es_portero', jugador.es_portero)
@@ -618,12 +607,12 @@ def handle_inscripciones():
         }), 201
 
     # GET handling
-    torneo_id = request.args.get('torneo_id')
+    torneo_id = request.args.get('torneo_id', type=int)
     if not torneo_id:
         return jsonify({"error": "Se requiere ID de torneo"}), 400
         
     # Sincronización Automática: Asegurar que todos los equipos del torneo tengan una Inscripcion
-    torneo = Torneo.query.get(torneo_id)
+    torneo = db.session.get(Torneo, torneo_id)
     if torneo:
         equipos_sin_ins = Equipo.query.filter(
             Equipo.torneo_id == torneo_id,
@@ -664,11 +653,11 @@ def handle_inscripciones():
         except:
             return jsonify({"error": "ID de torneo inválido"}), 400
 
-    inscripciones = query.all()
-    res = []
+    # Define t_id and costo_arbitraje here, as they are used in the renderer
+    t_id = int(torneo_id)
     costo_arbitraje = float(torneo.costo_arbitraje or 0) if torneo else 0
 
-    for ins in inscripciones:
+    def renderer_ins(ins):
         # Calcular totales de pago
         pagado_ins = db.session.query(db.func.sum(Pago.monto)).filter_by(inscripcion_id=ins.id, tipo='Inscripcion').scalar() or 0
         pagado_arb = db.session.query(db.func.sum(Pago.monto)).filter_by(inscripcion_id=ins.id, tipo='Arbitraje').scalar() or 0
@@ -725,16 +714,15 @@ def handle_inscripciones():
                 "saldo": costo_arbitraje - float(monto_pagado_partido)
             })
 
-        res.append({
+        return {
             "id": ins.id,
-            "torneo_id": int(torneo_id),
+            "torneo_id": t_id,
             "equipo_id": ins.equipo_id,
             "equipo_nombre": ins.equipo.nombre if ins.equipo else f"Equipo {ins.equipo_id}",
             "monto_pactado": ins.monto_pactado_inscripcion,
             "pagado_inscripcion": float(pagado_ins),
             "pagado_arbitraje": float(pagado_arb),
             "saldo_inscripcion": float(ins.monto_pactado_inscripcion - pagado_ins),
-            # Datos de arbitraje por partido (resumen)
             "partidos_jugados": partidos_jugados,
             "partidos_programados": partidos_programados,
             "partidos_pendientes": partidos_pendientes,
@@ -743,15 +731,16 @@ def handle_inscripciones():
             "saldo_arbitraje": saldo_arb,
             "detalle_partidos": detalle_partidos,
             "historial_pagos": [{
-                "id": p.id,
-                "monto": p.monto,
-                "tipo": p.tipo,
-                "fecha": p.fecha.strftime('%d/%m/%Y') if p.fecha else "—",
-                "metodo": p.metodo,
-                "partido_id": p.partido_id
-            } for p in pagos_lista]
-        })
-    return jsonify(res)
+                "id": pg.id,
+                "monto": pg.monto,
+                "tipo": pg.tipo,
+                "fecha": pg.fecha.strftime('%d/%m/%Y') if pg.fecha else "??",
+                "metodo": pg.metodo,
+                "partido_id": pg.partido_id
+            } for pg in pagos_lista]
+        }
+
+    return paginate_query(query, renderer=renderer_ins)
 
 @app.route('/api/inscripciones/<int:inscripcion_id>', methods=['PUT', 'PATCH'])
 @csrf.exempt
@@ -864,37 +853,7 @@ def handle_pagos():
 
 # --- API Routes: Matches ---
 
-@app.route('/api/partidos', methods=['GET'])
-def get_partidos():
-    torneo_id = request.args.get('torneo_id')
-    fecha = request.args.get('fecha')   # YYYY-MM-DD
-    jornada = request.args.get('jornada')
-    start_date_str = request.args.get('start_date')
-    end_date_str = request.args.get('end_date')
-    
-    query = Partido.query
-    query = apply_liga_filter(query, Partido)
-
-    if torneo_id:
-        query = query.filter_by(torneo_id=torneo_id)
-    if jornada:
-        query = query.filter_by(jornada=int(jornada))
-    if fecha:
-        try:
-            fecha_dt = datetime.strptime(fecha, '%Y-%m-%d').date()
-            query = query.filter_by(fecha=fecha_dt)
-        except ValueError:
-            pass
-    elif start_date_str and end_date_str:
-        try:
-            start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
-            end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
-            query = query.filter(Partido.fecha.between(start_date, end_date))
-        except ValueError:
-            pass
-
-    partidos = query.order_by(Partido.fecha, Partido.hora, Partido.id).all()
-    return jsonify([p.to_dict() for p in partidos])
+# La función get_partidos ha sido consolidada en una versión única y paginada más adelante en el archivo.
 
 @app.route('/api/partidos/<int:id>', methods=['PUT', 'DELETE'])
 @csrf.exempt
@@ -1077,6 +1036,19 @@ def expand_training_dates(grupo):
         
     return sessions
 
+@app.route('/api/entrenamientos/grupos', methods=['GET'])
+def get_training_groups():
+    """Returns training groups with pagination and league filter."""
+    torneo_id = request.args.get('torneo_id', type=int)
+    
+    query = GrupoEntrenamiento.query.filter_by(activo=True)
+    query = apply_liga_filter(query, GrupoEntrenamiento)
+    
+    if torneo_id:
+        query = query.filter_by(torneo_id=torneo_id)
+        
+    return paginate_query(query)
+
 @app.route('/api/calendar/all', methods=['GET'])
 def get_calendar_all():
     """Returns both matches and training sessions for the calendar."""
@@ -1117,6 +1089,51 @@ def get_training_categories():
     cats = db.session.query(GrupoEntrenamiento.categoria).filter(GrupoEntrenamiento.categoria != None).distinct().all()
     return jsonify([c[0] for c in cats if c[0]])
 
+@app.route('/api/partidos', methods=['GET'])
+def get_partidos():
+    """Returns all matches, with pagination and filtering."""
+    query = Partido.query
+    query = apply_liga_filter(query, Partido)
+
+    torneo_id = request.args.get('torneo_id', type=int)
+    if torneo_id:
+        query = query.filter_by(torneo_id=torneo_id)
+
+    estado = request.args.get('estado')
+    if estado:
+        query = query.filter_by(estado=estado)
+
+    jornada = request.args.get('jornada', type=int)
+    if jornada:
+        query = query.filter_by(jornada=jornada)
+
+    fecha = request.args.get('fecha')
+    if fecha:
+        try:
+            fecha_dt = datetime.strptime(fecha, '%Y-%m-%d').date()
+            query = query.filter_by(fecha=fecha_dt)
+        except ValueError:
+            pass
+
+    start_date_str = request.args.get('start_date')
+    end_date_str = request.args.get('end_date')
+    if start_date_str and end_date_str:
+        try:
+            start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+            end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+            query = query.filter(Partido.fecha.between(start_date, end_date))
+        except ValueError:
+            pass
+
+    # Soporte para filtrar por equipo específico en el listado general
+    equipo_id = request.args.get('equipo_id', type=int)
+    if equipo_id:
+        from sqlalchemy import or_
+        query = query.filter(or_(Partido.equipo_local_id == equipo_id, Partido.equipo_visitante_id == equipo_id))
+
+    query = query.order_by(Partido.fecha.desc(), Partido.hora.desc(), Partido.id.desc())
+    return paginate_query(query)
+
 @app.route('/api/partidos_equipo', methods=['GET'])
 def get_partidos_equipo():
     """Returns matches for a specific team (whether home or away)."""
@@ -1124,11 +1141,12 @@ def get_partidos_equipo():
     if not equipo_id:
         return jsonify({"error": "Se requiere equipo_id"}), 400
         
-    partidos = Partido.query.filter(
+    query = Partido.query.filter(
         or_(Partido.equipo_local_id == equipo_id, Partido.equipo_visitante_id == equipo_id)
-    ).order_by(Partido.id).all()
+    ).order_by(Partido.fecha.desc(), Partido.id.desc())
     
-    return jsonify([p.to_dict() for p in partidos])
+    return paginate_query(query)
+
 # --- API Route: Detalles del Partido (Goles y Tarjetas) ---
 
 @app.route('/api/partido/<int:partido_id>/detalles', methods=['GET'])
@@ -1751,8 +1769,7 @@ def handle_torneos():
     
     query = Torneo.query
     query = apply_liga_filter(query, Torneo)
-    torneos = query.all()
-    return jsonify([t.to_dict() for t in torneos])
+    return paginate_query(query)
 
 @app.route('/api/torneos/<int:id>', methods=['GET', 'DELETE', 'PATCH', 'PUT'])
 @csrf.exempt

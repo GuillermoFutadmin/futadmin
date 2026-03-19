@@ -5,13 +5,18 @@ export class ArbitrosModule {
         this.ui = ui;
         this.ligas = [];
         this.arbitros = []; // Caché local para evitar fetch redundantes
+        this.pagination = null;
     }
 
-    async loadArbitros() {
+    async changePage(page) {
+        await this.loadArbitros(page);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    async loadArbitros(page = 1) {
         const container = document.getElementById('arbitros-container');
         if (!container) return;
         
-        // No borrar todo de inmediato para evitar parpadeo si ya tenemos datos
         if (this.arbitros.length === 0) {
             container.innerHTML = '<p>Cargando cuerpo arbitral...</p>';
         }
@@ -23,14 +28,16 @@ export class ArbitrosModule {
         }
 
         try {
-            const response = await fetch('/api/arbitros');
+            const response = await fetch(`/api/arbitros?page=${page}`);
             if (!response.ok) {
                 this.arbitros = [];
                 this.renderPlaceholder(container);
                 return;
             }
-            this.arbitros = await response.json();
-            this.renderArbitros(this.arbitros);
+            const data = await response.json();
+            this.arbitros = data.items;
+            this.pagination = data.pagination;
+            this.renderArbitros(this.arbitros, this.pagination);
         } catch (error) {
             container.innerHTML = '<p class="error">Error al conectar con el servidor.</p>';
         }
@@ -135,6 +142,22 @@ export class ArbitrosModule {
             ${itemsHtml}
             `;
         }).join('');
+
+        if (this.pagination && this.pagination.total_pages > 1) {
+            container.innerHTML += `
+                <div class="pagination-controls">
+                    <button class="btn-pagination" ${!this.pagination.has_prev ? 'disabled' : ''} 
+                        onclick="ui.arbitros.changePage(${this.pagination.page - 1})">
+                        &laquo; Anterior
+                    </button>
+                    <span class="pagination-info">Página ${this.pagination.page} de ${this.pagination.total_pages}</span>
+                    <button class="btn-pagination" ${!this.pagination.has_next ? 'disabled' : ''} 
+                        onclick="ui.arbitros.changePage(${this.pagination.page + 1})">
+                        Siguiente &raquo;
+                    </button>
+                </div>
+            `;
+        }
     }
 
     showArbitroModal(ligaId = null) {

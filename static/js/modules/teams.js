@@ -8,8 +8,16 @@ export class TeamsModule {
 
     async populateLeagueSelects() {
         try {
-            const torneos = await Core.fetchAPI('/api/torneos');
-            const active = torneos.filter(t => t.activo);
+            const response = await Core.fetchAPI('/api/torneos');
+            const torneos = response.items || response;
+
+            const select = document.getElementById('inhouse-torneo-id');
+            if (select) {
+                select.innerHTML = '<option value="">Seleccionar Torneo...</option>' +
+                    (Array.isArray(torneos) ? torneos.map(t => `<option value="${t.id}">${t.nombre}</option>`).join('') : '');
+            }
+
+            const active = Array.isArray(torneos) ? torneos.filter(t => t.activo) : [];
             const options = '<option value="">Seleccionar Liga...</option>' +
                 active.map(t => `<option value="${t.id}">${t.nombre}</option>`).join('');
 
@@ -66,8 +74,8 @@ export class TeamsModule {
 
     async editEquipo(id) {
         try {
-            const equipos = await Core.fetchAPI('/api/equipos');
-            const e = equipos.find(eq => eq.id === id);
+            // Optimización: Fetch directo por ID en lugar de cargar toda la lista
+            const e = await Core.fetchAPI(`/api/equipos/${id}`);
             if (e) {
                 document.getElementById('team-id').value = e.id;
                 document.getElementById('team-name').value = e.nombre;
@@ -116,7 +124,13 @@ export class TeamsModule {
         } catch (e) { console.error(e); }
     }
 
-    async loadEquipos() {
+    async changePage(page) {
+        if (page < 1 || (this.pagination && page > this.pagination.total_pages)) return;
+        this.loadEquipos(page);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    async loadEquipos(page = 1) {
         const torneoId = document.getElementById('team-league-filter').value;
         const container = document.getElementById('equipos-container');
         if (!container) return;
@@ -127,16 +141,23 @@ export class TeamsModule {
         const userRol = (window.USER_ROL || '').toLowerCase();
         const isReader = ['resultados', 'arbitro', 'solo vista'].includes(userRol);
 
-        container.innerHTML = `
-            ${!isReader ? `
-            <div style="margin-bottom: 20px; display: flex; gap: 10px;">
-                <button class="btn-primary" onclick="ui.teams.autoDistribuir()" style="background: var(--primary); color: #000; border: none; padding: 8px 16px; border-radius: 8px; font-weight: bold; cursor: pointer;">🎲 Auto-Distribuir Grupos</button>
-            </div>` : ''}
-            <p>Cargando equipos...</p>
-        `;
+        if (page === 1) {
+            container.innerHTML = `
+                ${!isReader ? `
+                <div style="margin-bottom: 20px; display: flex; gap: 10px;">
+                    </div>` : ''}
+                <p>Cargando equipos...</p>
+            `;
+        } else {
+            container.innerHTML = `<p>Cargando página ${page}...</p>`;
+        }
+
         try {
-            const equipos = await Core.fetchAPI(`/api/equipos?torneo_id=${torneoId}`);
-            container.innerHTML = equipos.length ? equipos.map(e => `
+            const response = await Core.fetchAPI(`/api/equipos?torneo_id=${torneoId}&page=${page}`);
+            const equipos = response.items || response;
+            this.pagination = response.pagination || null;
+
+            let html = equipos.length ? equipos.map(e => `
                 <div class="league-card" style="padding: 1.5rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; cursor: pointer; min-height: 140px; border-left: 4px solid ${e.color || 'var(--primary)'};" onclick="ui.teams.goToJugadores(${e.id})">
                     <div style="flex: 1; text-align: left;">
                         <h4 style="margin: 0 0 0.2rem 0; font-size: 1.4rem; color: ${e.color || 'var(--primary)'}; text-shadow: 0 0 10px ${e.color ? e.color + '33' : 'transparent'};" 
@@ -173,6 +194,28 @@ export class TeamsModule {
                     </div>
                 </div>
             `).join('') : '<p>No hay equipos registrados en este torneo.</p>';
+
+            if (page === 1) {
+                container.innerHTML = html;
+            } else {
+                container.innerHTML = html;
+            }
+
+            if (this.pagination && this.pagination.total_pages > 1) {
+                container.innerHTML += `
+                    <div class="pagination-controls">
+                        <button class="btn-pagination" ${!this.pagination.has_prev ? 'disabled' : ''} 
+                            onclick="ui.teams.changePage(${this.pagination.page - 1})">
+                            &laquo; Anterior
+                        </button>
+                        <span class="pagination-info">Página ${this.pagination.page} de ${this.pagination.total_pages}</span>
+                        <button class="btn-pagination" ${!this.pagination.has_next ? 'disabled' : ''} 
+                            onclick="ui.teams.changePage(${this.pagination.page + 1})">
+                            Siguiente &raquo;
+                        </button>
+                    </div>
+                `;
+            }
         } catch (error) {
             container.innerHTML = '<p class="error">Error al cargar equipos.</p>';
         }
@@ -313,8 +356,9 @@ export class TeamsModule {
                     let ciudad = 'Tijuana'; // Fallback
                     if (selectTorneo && selectTorneo.value) {
                         try {
-                            const torneos = await Core.fetchAPI('/api/torneos');
-                            const currentTorneo = torneos.find(t => String(t.id) === String(selectTorneo.value));
+                            const response = await Core.fetchAPI('/api/torneos');
+                            const torneos = response.items || response;
+                            const currentTorneo = Array.isArray(torneos) ? torneos.find(t => String(t.id) === String(selectTorneo.value)) : null;
                             if (currentTorneo && currentTorneo.cancha_municipio) {
                                 ciudad = currentTorneo.cancha_municipio;
                             }

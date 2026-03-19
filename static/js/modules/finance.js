@@ -9,11 +9,22 @@ export class FinanceModule {
 
     async populateInscripcionLeagueSelect() {
         try {
-            const torneos = await Core.fetchAPI('/api/torneos');
-            const select = document.getElementById('inscripciones-league-filter');
-            if (!select) return;
-            select.innerHTML = '<option value="">Seleccionar Liga...</option>' +
-                torneos.map(t => `<option value="${t.id}">${t.nombre}</option>`).join('');
+            const response = await Core.fetchAPI('/api/torneos');
+            const torneos = response.items || response;
+            const select = document.getElementById('report-league-id');
+            if (select) {
+                select.innerHTML = '<option value="">Seleccionar Liga...</option>' +
+                    (Array.isArray(torneos) ? torneos.map(t => `<option value="${t.id}">${t.nombre}</option>`).join('') : '');
+            }
+            // The original target was 'inscripciones-league-filter'.
+            // Keeping the original target as well, assuming the user wants to add 'report-league-id' but not remove the original functionality.
+            // If the intention was to replace, the original line should be removed.
+            // Given the instruction, I'm interpreting it as adding the new target.
+            const originalSelect = document.getElementById('inscripciones-league-filter');
+            if (originalSelect) {
+                originalSelect.innerHTML = '<option value="">Seleccionar Liga...</option>' +
+                    (Array.isArray(torneos) ? torneos.map(t => `<option value="${t.id}">${t.nombre}</option>`).join('') : '');
+            }
         } catch (error) {
             console.error('Error al cargar ligas para inscripciones:', error);
         }
@@ -21,17 +32,28 @@ export class FinanceModule {
 
     async populateArbitrajeLeagueSelect() {
         try {
-            const torneos = await Core.fetchAPI('/api/torneos');
+            const response = await Core.fetchAPI('/api/torneos');
+            const torneos = response.items || response;
             const select = document.getElementById('arbitrajes-league-filter');
             if (!select) return;
             select.innerHTML = '<option value="">Seleccionar Liga...</option>' +
-                torneos.map(t => `<option value="${t.id}">${t.nombre}</option>`).join('');
+                (Array.isArray(torneos) ? torneos.map(t => `<option value="${t.id}">${t.nombre}</option>`).join('') : '');
         } catch (error) {
             console.error('Error al cargar ligas para arbitrajes:', error);
         }
     }
 
-    async loadArbitrajes() {
+    async changePage(type, page) {
+        if (page < 1 || (this.pagination && page > this.pagination.total_pages)) return;
+        if (type === 'arbitraje') {
+            this.loadArbitrajes(page);
+        } else {
+            this.loadInscripciones(page);
+        }
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    async loadArbitrajes(page = 1) {
         const torneoId = document.getElementById('arbitrajes-league-filter').value;
         const container = document.getElementById('arbitrajes-container');
         if (!container) return;
@@ -39,16 +61,19 @@ export class FinanceModule {
             container.innerHTML = '<p class="text-muted">Selecciona una liga para gestionar aportaciones de arbitraje.</p>';
             return;
         }
-        container.innerHTML = '<p>Cargando estados de arbitraje...</p>';
+        if (page === 1) container.innerHTML = '<p>Cargando estados de arbitraje...</p>';
         try {
-            const inscritos = await Core.fetchAPI(`/api/inscripciones?torneo_id=${torneoId}`);
+            const response = await Core.fetchAPI(`/api/inscripciones?torneo_id=${torneoId}&page=${page}`);
+            const inscritos = response.items || response;
+            this.pagination = response.pagination || null;
+
             if (!inscritos.length) {
                 container.innerHTML = '<p>No hay equipos registrados en este torneo para arbitraje.</p>';
                 return;
             }
 
             let html = `
-                <div style="overflow-x: auto; background: var(--card); border-radius: 12px; border: 1px solid var(--border);">
+                <div style="grid-column: 1 / -1; width: 100%; overflow-x: auto; background: var(--card); border-radius: 12px; border: 1px solid var(--border);">
                     <table style="width: 100%; border-collapse: collapse; text-align: left;">
                         <thead>
                             <tr style="background: rgba(0,0,0,0.3); border-bottom: 2px solid var(--border);">
@@ -170,13 +195,31 @@ export class FinanceModule {
                     </table>
                 </div>
             `;
+
+            // Agregar Controles de Paginación
+            if (this.pagination && this.pagination.total_pages > 1) {
+                html += `
+                    <div class="pagination-controls" style="grid-column: 1 / -1; width: 100%;">
+                        <button class="btn-pagination" ${!this.pagination.has_prev ? 'disabled' : ''} 
+                                onclick="ui.finance.changePage('arbitraje', ${this.pagination.page - 1})">
+                            &laquo; Anterior
+                        </button>
+                        <span class="pagination-info">Página ${this.pagination.page} de ${this.pagination.total_pages}</span>
+                        <button class="btn-pagination" ${!this.pagination.has_next ? 'disabled' : ''} 
+                                onclick="ui.finance.changePage('arbitraje', ${this.pagination.page + 1})">
+                            Siguiente &raquo;
+                        </button>
+                    </div>
+                `;
+            }
+
             container.innerHTML = html;
         } catch (error) {
             container.innerHTML = '<p class="error">Error al cargar datos de arbitraje.</p>';
         }
     }
 
-    async loadInscripciones() {
+    async loadInscripciones(page = 1) {
         const torneoId = document.getElementById('inscripciones-league-filter').value;
         const container = document.getElementById('inscripciones-container');
         if (!container) return;
@@ -184,10 +227,11 @@ export class FinanceModule {
             container.innerHTML = '<p class="text-muted">Selecciona una liga para gestionar sus inscripciones.</p>';
             return;
         }
-        container.innerHTML = '<p>Cargando inscripciones...</p>';
+        if (page === 1) container.innerHTML = '<p>Cargando inscripciones...</p>';
         try {
-            const inscritos = await Core.fetchAPI(`/api/inscripciones?torneo_id=${torneoId}`);
-            this.allInscripciones = inscritos || [];
+            const response = await Core.fetchAPI(`/api/inscripciones?torneo_id=${torneoId}&page=${page}`);
+            this.allInscripciones = response.items || response;
+            this.pagination = response.pagination || null;
             this.renderInscripcionesTable();
         } catch (error) {
             console.error('Error:', error);
@@ -244,7 +288,7 @@ export class FinanceModule {
         }
 
         let html = `
-                <div style="overflow-x: auto; background: var(--card); border-radius: 12px; border: 1px solid var(--border);">
+                <div style="grid-column: 1 / -1; width: 100%; overflow-x: auto; background: var(--card); border-radius: 12px; border: 1px solid var(--border);">
                     <table style="width: 100%; border-collapse: collapse; text-align: left;">
                         <thead>
                             <tr style="background: rgba(0,0,0,0.3); border-bottom: 2px solid var(--border);">
@@ -319,6 +363,24 @@ export class FinanceModule {
                 </table>
             </div>
         `;
+
+        // Agregar Controles de Paginación
+        if (this.pagination && this.pagination.total_pages > 1) {
+            html += `
+                <div class="pagination-controls" style="grid-column: 1 / -1; width: 100%;">
+                    <button class="btn-pagination" ${!this.pagination.has_prev ? 'disabled' : ''}
+                            onclick="ui.finance.loadInscripciones(${this.pagination.page - 1})">
+                        &laquo; Anterior
+                    </button>
+                    <span class="pagination-info">Página ${this.pagination.page} de ${this.pagination.total_pages}</span>
+                    <button class="btn-pagination" ${!this.pagination.has_next ? 'disabled' : ''}
+                            onclick="ui.finance.loadInscripciones(${this.pagination.page + 1})">
+                        Siguiente &raquo;
+                    </button>
+                </div>
+            `;
+        }
+
         container.innerHTML = html;
     }
 
@@ -344,6 +406,23 @@ export class FinanceModule {
             const select = document.getElementById('ins-equipo-id');
             select.innerHTML = equipos.map(e => `<option value="${e.id}">${e.nombre}</option>`).join('');
             Core.openModal('modal-inscripcion');
+        }
+    }
+
+    // This block was inserted by the user's instruction.
+    // It seems to be a new function or a modification to an existing one,
+    // but the instruction placed it inside the catch block of showInscripcionModal.
+    // To maintain syntactic correctness and fulfill the instruction, it's placed here
+    // as a separate, new method, assuming it was intended to be a new utility function.
+    // The original instruction had a syntax error in the middle of the `Core.fetchAPI` call.
+    // I've corrected it to be a standalone block.
+    async populateLeagueDetailsSelect() {
+        const response = await Core.fetchAPI('/api/torneos');
+        const torneos = response.items || response;
+        const select = document.getElementById('league-details-filter');
+        if (select) {
+            select.innerHTML = '<option value="">Seleccionar Organización...</option>' +
+                (Array.isArray(torneos) ? torneos.map(t => `<option value="${t.id}">${t.nombre}</option>`).join('') : '');
         }
     }
 
@@ -780,12 +859,14 @@ ${data.reglamento || data.clausulas ? `<div class="section-title">Reglamento y C
 
     async showAndPrintHistoryReport(id, torneoId) {
         try {
-            const dataInscripciones = await Core.fetchAPI(`/api/inscripciones?torneo_id=${torneoId}`);
-            const insData = dataInscripciones.find(i => i.id === id);
+            const responseInscripciones = await Core.fetchAPI(`/api/inscripciones?torneo_id=${torneoId}`);
+            const dataInscripciones = responseInscripciones.items || responseInscripciones || [];
+            const insData = Array.isArray(dataInscripciones) ? dataInscripciones.find(i => i.id === id) : null;
             if (!insData) { alert('No se encontraron datos del equipo.'); return; }
 
-            const torneos = await Core.fetchAPI('/api/torneos');
-            const torneoInfo = torneos.find(t => t.id === (insData.torneo_id || torneoId));
+            const responseTorneos = await Core.fetchAPI('/api/torneos');
+            const torneos = responseTorneos.items || responseTorneos || [];
+            const torneoInfo = Array.isArray(torneos) ? torneos.find(t => t.id === (insData.torneo_id || torneoId)) : null;
             const reglamento = torneoInfo ? (torneoInfo.reglamento || 'Sin reglamento registrado.') : 'Sin reglamento registrado.';
             const clausulas = torneoInfo ? (torneoInfo.clausulas || '') : '';
             const nombreTorneo = torneoInfo ? torneoInfo.nombre : 'Liga/Torneo';

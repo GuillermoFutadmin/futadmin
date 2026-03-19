@@ -286,7 +286,14 @@ export class AnalyticsModule {
         `;
     }
 
-    async showReport(type, subFilter = 'all') {
+    async changePage(page) {
+        if (page < 1 || (this.pagination && page > this.pagination.total_pages)) return;
+        this.showReport(this._activeReport, this._lastSubFilter || 'all', page);
+        const pane = document.getElementById('resumen-detail-pane');
+        if (pane) pane.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    async showReport(type, subFilter = 'all', page = 1) {
         this._activeReport = type;
         this._lastSubFilter = subFilter;
         const pane = document.getElementById('resumen-detail-pane');
@@ -310,7 +317,7 @@ export class AnalyticsModule {
         `;
 
         try {
-            const params = `?start_date=${this._reportStartDate}&end_date=${this._reportEndDate}`;
+            const params = `?start_date=${this._reportStartDate}&end_date=${this._reportEndDate}&page=${page}`;
             
             if (type === 'sedes') {
                 const data = await Core.fetchAPI('/api/admin/dashboard-stats' + params);
@@ -325,12 +332,14 @@ export class AnalyticsModule {
                 const data = await Core.fetchAPI('/api/corte-diario' + params);
                 this.renderCorteReport(pane, data, subFilter);
             } else if (type === 'partidos') {
-                const list = await Core.fetchAPI('/api/partidos' + params);
+                const response = await Core.fetchAPI('/api/partidos' + params);
+                const list = response.items || response || [];
+                this.pagination = response.pagination || null;
                 pane.innerHTML = this._renderSimpleTable(
                     '📅 Partidos del Periodo',
                     '#6366f1',
-                    (list || []).length === 0 ? '<tr><td colspan="4" style="padding:1rem;text-align:center;opacity:0.5;">Sin partidos programados en este rango</td></tr>' :
-                    (list || []).map(p => `<tr>
+                    list.length === 0 ? '<tr><td colspan="4" style="padding:1rem;text-align:center;opacity:0.5;">Sin partidos programados en este rango</td></tr>' :
+                    list.map(p => `<tr>
                         <td>${p.torneo_name || p.liga_nombre || '—'}</td>
                         <td style="font-weight:700;">${p.equipo_local || '—'} <span style="opacity:0.5;font-weight:400;">vs</span> ${p.equipo_visitante || '—'}</td>
                         <td>${p.fecha || '—'} ${p.hora || ''}</td>
@@ -340,8 +349,9 @@ export class AnalyticsModule {
                     `${(list || []).length} partidos en total`
                 );
             } else if (type === 'jugadores') {
-                const jugadores = await Core.fetchAPI('/api/jugadores');
-                const list = (jugadores || []);
+                const response = await Core.fetchAPI('/api/jugadores?page=' + page);
+                const list = response.items || response || [];
+                this.pagination = response.pagination || null;
                 pane.innerHTML = this._renderSimpleTable(
                     '🛡️ Jugadores Registrados',
                     '#3b82f6',
@@ -362,8 +372,9 @@ export class AnalyticsModule {
                     `${list.length} jugadores en la red`
                 );
             } else if (type === 'entrenamientos') {
-                const grupos = await Core.fetchAPI('/api/entrenamientos/grupos');
-                const list = (grupos || []);
+                const response = await Core.fetchAPI('/api/entrenamientos/grupos' + params);
+                const list = response.items || response || [];
+                this.pagination = response.pagination || null;
                 pane.innerHTML = this._renderSimpleTable(
                     '🏃 Entrenamientos Activos',
                     '#ec4899',
@@ -371,10 +382,26 @@ export class AnalyticsModule {
                     list.map(g => `<tr>
                         <td>${g.nombre || '—'}</td>
                         <td>${g.cancha || '—'}</td>
-                        <td>${g.alumnos_count ?? '—'}</td>
+                        <td>${g.alumnos_count ?? '0'} alumnos</td>
                     </tr>`).join(''),
                     ['Grupo', 'Sede', 'Alumnos'],
-                    `${list.length} grupos activos`
+                    `${(list || []).length} grupos activos`
+                );
+            } else if (type === 'arbitros') {
+                const response = await Core.fetchAPI('/api/arbitros' + params);
+                const list = response.items || response || [];
+                this.pagination = response.pagination || null;
+                pane.innerHTML = this._renderSimpleTable(
+                    '⚖️ Cuerpo Arbitral',
+                    '#f97316',
+                    list.length === 0 ? '<tr><td colspan="3" style="padding:1rem;text-align:center;opacity:0.5;">Sin árbitros registrados</td></tr>' :
+                    list.map(a => `<tr>
+                        <td style="font-weight:700;">${a.nombre || '—'}</td>
+                        <td>${a.email || a.telefono || '—'}</td>
+                        <td><span class="badge" style="background:#f9731622;color:#f97316;">${a.nivel || 'Local'}</span></td>
+                    </tr>`).join(''),
+                    ['Nombre completo', 'Contacto', 'Nivel'],
+                    `${(list || []).length} árbitros registrados`
                 );
             } else if (type === 'alertas') {
                 const data = await Core.fetchAPI('/api/admin/payment-alerts');
@@ -412,8 +439,9 @@ export class AnalyticsModule {
                     `${operative.length} alertas de equipos encontradas`
                 );
             } else if (type === 'equipos') {
-                const equipos = await Core.fetchAPI('/api/equipos');
-                const list = (equipos || []);
+                const response = await Core.fetchAPI('/api/equipos?page=' + page);
+                const list = response.items || response || [];
+                this.pagination = response.pagination || null;
                 pane.innerHTML = this._renderSimpleTable(
                     '🛡️ Equipos Activos (Identidad Única)',
                     '#22c55e',
@@ -486,8 +514,9 @@ export class AnalyticsModule {
                     `${subscription.length + upcoming.length} suscripciones en revisión`
                 );
             } else if (type === 'torneos') {
-                const torneos = await Core.fetchAPI('/api/torneos');
-                const list = (torneos || []);
+                const response = await Core.fetchAPI('/api/torneos?page=' + page);
+                const list = response.items || response || [];
+                this.pagination = response.pagination || null;
                 pane.innerHTML = this._renderSimpleTable(
                     '🏆 Torneos y Competiciones',
                     '#a855f7',
@@ -499,21 +528,6 @@ export class AnalyticsModule {
                     </tr>`).join(''),
                     ['Torneo', 'Organizador / Liga', 'Estatus'],
                     `${list.length} torneos registrados`
-                );
-            } else if (type === 'arbitros') {
-                const arbitros = await Core.fetchAPI('/api/arbitros');
-                const list = (arbitros || []);
-                pane.innerHTML = this._renderSimpleTable(
-                    '⚖️ Cuerpo Arbitral',
-                    '#f97316',
-                    list.length === 0 ? '<tr><td colspan="3" style="padding:1rem;text-align:center;opacity:0.5;">Sin árbitros registrados</td></tr>' :
-                    list.map(a => `<tr>
-                        <td>${a.nombre || '—'}</td>
-                        <td>${a.telefono || '—'}</td>
-                        <td style="color:#22c55e;font-weight:700;">ACTIVO</td>
-                    </tr>`).join(''),
-                    ['Nombre completo', 'Contacto', 'Estado'],
-                    `${list.length} árbitros registrados`
                 );
             } else if (type === 'ligas') {
                 const ligasList = await this.ui.settings.loadLigas();
@@ -531,9 +545,14 @@ export class AnalyticsModule {
                     `${list.length} ligas operando en el sistema`
                 );
             }
-        } catch (e) {
-            console.error('Error al cargar reporte:', e);
-            pane.innerHTML = `<p class="text-error" style="padding:2rem;">Error al cargar el reporte detallado. Revisa la conexión con el servidor.</p>`;
+        } catch (error) {
+            console.error("Error generating report:", error);
+            pane.innerHTML = `<div class="error-state" style="padding:4rem;text-align:center;">
+                <span style="font-size:3rem;">❌</span>
+                <h3>Error al Generar Reporte</h3>
+                <p>${error.message || 'Error de conexión con el servidor'}</p>
+                <button class="btn-primary" style="margin-top:1rem;" onclick="ui.analytics.showReport('${type}')">Reintentar</button>
+            </div>`;
         }
     }
 
@@ -799,12 +818,21 @@ export class AnalyticsModule {
                             onkeyup="ui.analytics.filterReportTable(this.value)">
                     </div>
                 </div>
-                <div class="premium-table-container">
-                    <table class="premium-table" id="active-report-table">
-                        <thead><tr>${headers}</tr></thead>
-                        <tbody>${rows}</tbody>
-                    </table>
-                </div>
+                
+                ${this.pagination && this.pagination.total_pages > 1 ? `
+                    <div class="pagination-controls">
+                        <button class="btn-pagination" ${!this.pagination.has_prev ? 'disabled' : ''} 
+                                onclick="ui.analytics.changePage(${this.pagination.page - 1})">
+                            &laquo; Anterior
+                        </button>
+                        <span class="pagination-info">Página ${this.pagination.page} de ${this.pagination.total_pages}</span>
+                        <button class="btn-pagination" ${!this.pagination.has_next ? 'disabled' : ''} 
+                                onclick="ui.analytics.changePage(${this.pagination.page + 1})">
+                            Siguiente &raquo;
+                        </button>
+                    </div>
+                ` : ''}
+
                 <div style="margin-top:1.5rem; text-align:right;">
                     <button class="btn-dashboard btn-primary" onclick="ui.analytics.exportCurrentReport()" style="padding:0.6rem 1.5rem; border-radius:10px;">
                         <span style="font-size:1rem; margin-right:8px;">📄</span> GENERAR PDF PROFESIONAL

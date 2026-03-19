@@ -20,18 +20,21 @@ export class DashboardModule {
 
     async populateLeagueFilter() {
         try {
-            const torneos = await Core.fetchAPI('/api/torneos');
+            const response = await Core.fetchAPI('/api/torneos');
+            const torneos = response.items || response;
             const select = document.getElementById('dashboard-league-filter');
             if (!select) return;
 
             // Mantener la opción "all" y agregar las demás
             select.innerHTML = '<option value="all">📊 Resumen de Todas las Ligas</option>';
-            torneos.forEach(t => {
-                const opt = document.createElement('option');
-                opt.value = t.id;
-                opt.textContent = `🏆 ${t.nombre}`;
-                select.appendChild(opt);
-            });
+            if (Array.isArray(torneos)) {
+                torneos.forEach(t => {
+                    const opt = document.createElement('option');
+                    opt.value = t.id;
+                    opt.textContent = `🏆 ${t.nombre}`;
+                    select.appendChild(opt);
+                });
+            }
         } catch (e) { console.error("Error al cargar el filtro de ligas:", e); }
     }
 
