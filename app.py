@@ -1648,7 +1648,8 @@ def auto_schedule_torneo(torneo_id):
             
             day_current_min[w_day] += match_duration_total
             day_match_count[w_day] += 1
-            current_w_idx += 1
+            # Eliminado: current_w_idx += 1 
+            # Esto permite que el sistema llene un día completo antes de saltar al siguiente.
 
         # Advance current_date to the NEXT week
         current_date = min(day_dates.values()) + timedelta(days=7)
