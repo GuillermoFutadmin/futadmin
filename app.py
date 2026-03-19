@@ -106,7 +106,7 @@ LAST_STATS_ERROR = "No errors yet"
 @app.before_request
 def check_login():
     # Rutas que no requieren login
-    public_routes = ['users.login_view', 'users.login', 'users.privacy_view', 'static', 'healthcheck', 'debug_stats']
+    public_routes = ['users.login_view', 'users.login', 'users.privacy_view', 'static', 'healthcheck', 'debug_stats', 'diag_db']
     if request.endpoint in public_routes or not request.endpoint:
         return
     
@@ -141,6 +141,31 @@ def handle_exception(e):
 
 
 # Helpers moved to models.py and imported above
+
+@app.route('/diag_db')
+def diag_db():
+    """Endpoint de diagnóstico público para contar registros sin filtros de liga."""
+    try:
+        from sqlalchemy import text
+        with db.engine.connect() as con:
+            torneos_total = con.execute(text("SELECT COUNT(*) FROM torneos")).scalar()
+            torneos_archived = con.execute(text("SELECT COUNT(*) FROM torneos WHERE archived = TRUE")).scalar()
+            torneos_null = con.execute(text("SELECT COUNT(*) FROM torneos WHERE archived IS NULL")).scalar()
+            equipos_total = con.execute(text("SELECT COUNT(*) FROM equipos")).scalar()
+            jugadores_total = con.execute(text("SELECT COUNT(*) FROM jugadores")).scalar()
+            ligas_total = con.execute(text("SELECT COUNT(*) FROM ligas")).scalar()
+        return jsonify({
+            "torneos_total": torneos_total,
+            "torneos_archived_true": torneos_archived,
+            "torneos_archived_null": torneos_null,
+            "equipos_total": equipos_total,
+            "jugadores_total": jugadores_total,
+            "ligas_total": ligas_total,
+            "last_error": LAST_STATS_ERROR
+        })
+    except Exception as e:
+        import traceback
+        return jsonify({"error": str(e), "trace": traceback.format_exc()}), 500
 
 @app.route('/api/all_equipos', methods=['GET'])
 def get_all_equipos():
