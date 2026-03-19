@@ -2341,7 +2341,17 @@ def calendario():
                           user_rol=session.get('user_rol'))
 
 @app.route('/api/stats')
+@csrf.exempt
 def get_stats():
+    import traceback
+    try:
+        return _get_stats_impl()
+    except Exception as e:
+        tb = traceback.format_exc()
+        print(f"ERROR /api/stats: {e}\n{tb}")
+        return jsonify({"error": str(e), "trace": tb}), 500
+
+def _get_stats_impl():
     query_t = Torneo.query.filter_by(activo=True)
     query_t = apply_liga_filter(query_t, Torneo)
     active_tournaments = query_t.all()
