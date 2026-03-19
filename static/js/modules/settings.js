@@ -664,9 +664,13 @@ export class SettingsModule {
         const liga = this.ligas.find(l => l.id == ligaId);
         if (!liga) return;
 
-        const payments = (this.payments || []).filter(p => p.liga_id == ligaId);
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
+        Core.showNotification('Cargando motor de reporte...', 'info');
+        try {
+            await Core.loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+            
+            const payments = (this.payments || []).filter(p => p.liga_id == ligaId);
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
         
         // Colores y Estilos
         const primary = [59, 130, 246]; // Azul
@@ -799,7 +803,11 @@ export class SettingsModule {
             });
         }
 
-        doc.save(`Estado_Cuenta_${liga.nombre.replace(/\s+/g, '_')}.pdf`);
+            doc.save(`Estado_Cuenta_${liga.nombre.replace(/\s+/g, '_')}.pdf`);
+        } catch (error) {
+            console.error('Error generating PDF:', error);
+            Core.showNotification('Error al generar el PDF', 'error');
+        }
     }
 
     async handleComboPaymentSubmit(e) {
