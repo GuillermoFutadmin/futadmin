@@ -2352,17 +2352,31 @@ def get_stats():
         return jsonify({"error": str(e), "trace": tb}), 500
 
 def _get_stats_impl():
-    query_t = Torneo.query.filter_by(activo=True)
-    query_t = apply_liga_filter(query_t, Torneo)
-    active_tournaments = query_t.all()
+    # --- Torneos activos (protegidos en caso de que columnas opcionales no existan) ---
+    try:
+        query_t = Torneo.query.filter_by(activo=True)
+        query_t = apply_liga_filter(query_t, Torneo)
+        active_tournaments = query_t.all()
+    except Exception as et:
+        print(f"WARN get_stats torneos query: {et}")
+        # Fallback sin filtro de archived
+        try:
+            active_tournaments = Torneo.query.filter(Torneo.activo == True).all()
+        except Exception as et2:
+            print(f"WARN get_stats torneos fallback: {et2}")
+            active_tournaments = []
     
     torneos_detalle = []
     
     for t in active_tournaments:
-        partidos = Partido.query.filter_by(torneo_id=t.id).all()
-        jornadas_totales = len(set(p.jornada for p in partidos))
-        jugados = sum(1 for p in partidos if p.estado == 'Played')
-        pendientes = len(partidos) - jugados
+        try:
+            partidos = Partido.query.filter_by(torneo_id=t.id).all()
+            jornadas_totales = len(set(p.jornada for p in partidos))
+            jugados = sum(1 for p in partidos if p.estado == 'Played')
+            pendientes = len(partidos) - jugados
+        except Exception as ep:
+            print(f"WARN get_stats partidos torneo {t.id}: {ep}")
+            jornadas_totales = jugados = pendientes = 0
         
         torneos_detalle.append({
             "id": t.id,
@@ -2374,11 +2388,19 @@ def _get_stats_impl():
         })
 
     # Stats generales filtradas
-    query_j = Jugador.query
-    query_j = apply_liga_filter(query_j, Jugador)
+    try:
+        query_j = Jugador.query
+        query_j = apply_liga_filter(query_j, Jugador)
+    except Exception as ej:
+        print(f"WARN get_stats jugador filter: {ej}")
+        query_j = Jugador.query
     
-    query_e = Equipo.query
-    query_e = apply_liga_filter(query_e, Equipo)
+    try:
+        query_e = Equipo.query
+        query_e = apply_liga_filter(query_e, Equipo)
+    except Exception as ee:
+        print(f"WARN get_stats equipo filter: {ee}")
+        query_e = Equipo.query
 
     # Limits and current counts
     user_rol = session.get('user_rol')
