@@ -69,13 +69,13 @@
     
     <!-- Pestaña: Aportaciones de Combos -->
     <div id="settings-tab-payments" class="settings-tab-content animate-in slideInRight" style="display: none;">
-        <div class="action-bar" style="background: rgba(255,255,255,0.03); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center;">
+        <div class="action-bar" style="background: rgba(255,255,255,0.03); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 2rem; display: flex; flex-direction: column; gap: 15px;">
             <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%;">
                 <div>
                     <h3 style="margin: 0;">Resumen de Suscripciones y Cobros</h3>
                     <p class="text-muted" style="margin-top: 5px; font-size: 0.9rem;">Estado actual de cuentas maestras y montos mensuales.</p>
                 </div>
-                <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 8px;">
+                <div style="display: flex; flex-direction: column; align-items: flex-end;">
                     <select id="settings-combo-status-limit" class="nav-select" 
                         style="min-width: 100px; background: rgba(0,0,0,0.2); border-color: var(--border); font-size: 0.8rem; height: 32px;"
                         onchange="ui.settings.updateItemsPerPage(this.value)">
@@ -86,7 +86,8 @@
                     </select>
                 </div>
             </div>
-            <div id="combo-payment-actions" style="display: flex; gap: 10px; align-items: center;">
+            
+            <div id="combo-payment-actions" style="display: flex; gap: 10px; align-items: center; justify-content: flex-end; width: 100%;">
                 <input type="text" id="combo-status-search" placeholder="🔍 Buscar organización..." 
                     style="background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 20px; padding: 6px 15px 6px 35px; color: var(--text); font-size: 0.85rem; width: 220px;"
                     onkeyup="ui.settings.renderComboStatus()">
