@@ -436,10 +436,21 @@ export class SettingsModule {
                         </div>
                     </td>
                     <td>
-                        <button class="btn-icon" onclick="ui.settings.editUser(${u.id})" title="Editar" 
-                            style="background: rgba(255,255,255,0.05); width: 36px; height: 36px; border-radius: 10px; border: 1px solid var(--border); transition: 0.3s;">
-                            ✏️
-                        </button>
+                        <div style="display:flex; gap:6px;">
+                            <button class="btn-icon" onclick="ui.settings.editUser(${u.id})" title="Editar Perfil" 
+                                style="background: rgba(255,255,255,0.05); width: 34px; height: 34px; border-radius: 8px; border: 1px solid var(--border); transition: 0.3s; display: flex; align-items: center; justify-content: center; font-size: 0.9rem;">
+                                ✏️
+                            </button>
+                            <button class="btn-icon" onclick="ui.settings.toggleUserStatus(${u.id}, '${u.nombre.replace(/'/g, "\\'")}', ${u.activo})" 
+                                title="${u.activo ? 'Bloquear Acceso' : 'Reactivar Acceso'}"
+                                style="background: rgba(255,255,255,0.05); width: 34px; height: 34px; border-radius: 8px; border: 1px solid var(--border); transition: 0.3s; display: flex; align-items: center; justify-content: center; font-size: 0.9rem;">
+                                ${u.activo ? '🚫' : '✅'}
+                            </button>
+                            <button class="btn-icon" onclick="ui.settings.deleteUser(${u.id})" title="Eliminar Permanente" 
+                                style="background: rgba(255,68,68,0.1); width: 34px; height: 34px; border-radius: 8px; border: 1px solid rgba(255,68,68,0.2); color: #ff4444; transition: 0.3s; display: flex; align-items: center; justify-content: center; font-size: 0.9rem;">
+                                🗑️
+                            </button>
+                        </div>
                     </td>
                 </tr>
             `;
@@ -1291,14 +1302,14 @@ export class SettingsModule {
         const user = this.users.find(u => u.id === userId);
         if (!user) return;
 
-        if (!confirm(`¿Estás seguro de que deseas eliminar el acceso de "${user.nombre}"?\nEsta acción es irreversible.`)) return;
+        if (!confirm(`¿Estás seguro de que deseas eliminar permanentemente el acceso de "${user.nombre}"?\nEsta acción es irreversible.`)) return;
 
         try {
             const result = await Core.fetchAPI(`/api/users/${userId}`, { method: 'DELETE' });
             if (result.success) {
                 Core.showNotification('Acceso eliminado correctamente');
                 await this.loadUsers();
-                await this.ui.loadInitialStats(); // Refresh limits
+                if (window.FutAdminLimits) await this.ui.loadInitialStats(); // Refresh limits if applicable
                 if (document.getElementById('settings-tab-linked').style.display !== 'none') {
                     this.renderLinkedAccounts();
                 }
@@ -1308,6 +1319,32 @@ export class SettingsModule {
         } catch (error) {
             console.error('Error deleting user:', error);
             alert('Error al eliminar el usuario.');
+        }
+    }
+
+    async toggleUserStatus(userId, userName, currentStatus) {
+        const action = currentStatus ? 'BLOQUEAR' : 'REACTIVAR';
+        if (!confirm(`¿Deseas ${action} el acceso para "${userName}"?`)) return;
+
+        try {
+            const result = await Core.fetchAPI(`/api/users/${userId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ activo: !currentStatus })
+            });
+
+            if (result.success) {
+                Core.showNotification(`Usuario ${currentStatus ? 'bloqueado' : 'reactivado'} correctamente`);
+                await this.loadUsers();
+                if (document.getElementById('settings-tab-linked').style.display !== 'none') {
+                    this.renderLinkedAccounts();
+                }
+            } else {
+                alert('Error: ' + result.error);
+            }
+        } catch (error) {
+            console.error('Error toggling user status:', error);
+            alert('Error al cambiar el estatus del usuario.');
         }
     }
 
