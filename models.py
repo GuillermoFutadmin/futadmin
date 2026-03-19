@@ -851,8 +851,8 @@ def apply_liga_filter(query, model, ignore_archived=False):
     
     # 1.5 FILTRO DE ARCHIVADO (Solo para Torneos)
     if model.__tablename__ == 'torneos' and not ignore_archived:
-        # Por defecto no mostramos los archivados en la app normal
-        query = query.filter(model.archived == False)
+        # Por defecto no mostramos los archivados en la app normal (incluyendo los que tienen NULL por la migración reciente)
+        query = query.filter(or_(model.archived == False, model.archived == None))
     
     # 2. FILTRO DE SEDE ES RESTRICTIVO (Para perfiles locales)
     # Si el usuario es 'arbitro', 'entrenador' o no es nivel liga, debe estar limitado a su sede.
