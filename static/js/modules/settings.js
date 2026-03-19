@@ -9,6 +9,9 @@ export class SettingsModule {
         this.users = [];
         this.ligas = [];
         this.payments = [];
+        this.statusPage = 1;
+        this.paymentsPage = 1;
+        this.itemsPerPage = 10;
         document.addEventListener('futadmin:limitsLoaded', () => this.checkLimits());
     }
 
@@ -1361,31 +1364,48 @@ export class SettingsModule {
         if (!container) return;
 
         const statusFilter = document.getElementById('settings-combo-status-filter')?.value || 'all';
+        const searchTerm = document.getElementById('combo-status-search')?.value.toLowerCase() || '';
 
         const now = new Date();
         const currentMonthSp = this.getMesEspanol(now).toLowerCase();
         const currentMonthEn = now.toLocaleString('en-US', { month: 'long', year: 'numeric' }).toLowerCase();
 
-        let filtered = this.ligas;
-        if (statusFilter !== 'all') {
-            filtered = this.ligas.filter(l => {
-                const hasPayments = l.ultimo_pago && l.ultimo_pago.mes;
-                const mesPagado = hasPayments ? l.ultimo_pago.mes.toLowerCase() : "";
-                const isPaid = hasPayments && (
-                    mesPagado.includes(currentMonthSp) || 
-                    mesPagado.includes(currentMonthEn) ||
-                    mesPagado.includes("marzo")
-                );
-                return statusFilter === 'pending' ? !isPaid : isPaid;
-            });
-        }
+        // 1. Aplicar Filtros
+        let filtered = this.ligas.filter(l => {
+            // Filtro por texto
+            const matchesSearch = l.nombre.toLowerCase().includes(searchTerm) || 
+                                 l.paquete.toLowerCase().includes(searchTerm);
+            if (!matchesSearch) return false;
 
-        if (filtered.length === 0) {
-            container.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 2rem;">No hay organizaciones que coincidan con el filtro "${statusFilter}".</td></tr>`;
+            // Filtro por estatus
+            if (statusFilter === 'all') return true;
+            
+            const hasPayments = l.ultimo_pago && l.ultimo_pago.mes;
+            const mesPagado = hasPayments ? l.ultimo_pago.mes.toLowerCase() : "";
+            const isPaid = hasPayments && (
+                mesPagado.includes(currentMonthSp) || 
+                mesPagado.includes(currentMonthEn) ||
+                mesPagado.includes("marzo")
+            );
+            return statusFilter === 'pending' ? !isPaid : isPaid;
+        });
+
+        // 2. Paginación
+        const totalItems = filtered.length;
+        const totalPages = Math.ceil(totalItems / this.itemsPerPage);
+        if (this.statusPage > totalPages && totalPages > 0) this.statusPage = totalPages;
+        
+        const start = (this.statusPage - 1) * this.itemsPerPage;
+        const paginated = filtered.slice(start, start + this.itemsPerPage);
+
+        // 3. Renderizar Contenido
+        if (paginated.length === 0) {
+            container.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 2rem;">No hay organizaciones que coincidan con los criterios.</td></tr>`;
+            this.renderPagination('settings-combo-status-pagination', 0, 0, 'status');
             return;
         }
 
-        container.innerHTML = filtered.map(l => {
+        container.innerHTML = paginated.map(l => {
             // Calcular consumo del mes basado en el vencimiento cumulative
             let consumptionHtml = '';
             let isPaid = false;
@@ -1466,5 +1486,92 @@ export class SettingsModule {
                 </tr>
             `;
         }).join('');
+
+        this.renderPagination('settings-combo-status-pagination', this.statusPage, totalPages, 'status');
+    }
+
+    renderComboPayments() {
+        const container = document.getElementById('settings-combo-payments-list');
+        if (!container) return;
+
+        const searchTerm = document.getElementById('combo-payment-search')?.value.toLowerCase() || '';
+
+        const filtered = this.payments.filter(p => 
+            p.liga_nombre.toLowerCase().includes(searchTerm) || 
+            p.mes_pagado.toLowerCase().includes(searchTerm) ||
+            p.metodo.toLowerCase().includes(searchTerm)
+        );
+
+        // Paginación
+        const totalItems = filtered.length;
+        const totalPages = Math.ceil(totalItems / this.itemsPerPage);
+        if (this.paymentsPage > totalPages && totalPages > 0) this.paymentsPage = totalPages;
+
+        const start = (this.paymentsPage - 1) * this.itemsPerPage;
+        const paginated = filtered.slice(start, start + this.itemsPerPage);
+
+        if (paginated.length === 0) {
+            container.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 3rem; color: var(--text-muted);">
+                ${searchTerm ? 'No se encontraron pagos con ese criterio.' : 'No hay registros de pagos.'}
+            </td></tr>`;
+            this.renderPagination('settings-combo-payments-pagination', 0, 0, 'payments');
+            return;
+        }
+
+        container.innerHTML = paginated.map(p => `
+            <tr>
+                <td>${p.fecha}</td>
+                <td>
+                    <div style="font-weight:600;">${p.liga_nombre}</div>
+                    <div style="font-size:0.75rem; color:var(--text-muted);">${p.notas || ''}</div>
+                </td>
+                <td><span class="badge" style="background: rgba(0,255,136,0.1); color: #00ff88;">${p.mes_pagado || 'N/A'}</span></td>
+                <td style="font-weight:700; color: #00ff88;">$${p.monto.toFixed(2)}</td>
+                <td>${p.metodo}</td>
+                <td>
+                    ${p.comprobante_url ? `<a href="${p.comprobante_url}" target="_blank" class="btn-icon" title="Ver Comprobante">📄</a>` : '—'}
+                </td>
+            </tr>
+        `).join('');
+
+        this.renderPagination('settings-combo-payments-pagination', this.paymentsPage, totalPages, 'payments');
+    }
+
+    renderPagination(containerId, currentPage, totalPages, type) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+
+        if (totalPages <= 1) {
+            container.innerHTML = '';
+            return;
+        }
+
+        container.innerHTML = `
+            <div class="pagination-controls" style="display: flex; justify-content: center; align-items: center; gap: 15px; margin-top: 1rem;">
+                <button class="btn-pagination" ${currentPage <= 1 ? 'disabled' : ''} 
+                    onclick="ui.settings.changePage('${type}', ${currentPage - 1})"
+                    style="background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: var(--text); padding: 5px 12px; border-radius: 6px; cursor: ${currentPage <= 1 ? 'not-allowed' : 'pointer'}; opacity: ${currentPage <= 1 ? '0.5' : '1'};">
+                    Anterior
+                </button>
+                <span class="pagination-info" style="font-size: 0.9rem; color: var(--text-muted);">
+                    Página <b>${currentPage}</b> de ${totalPages}
+                </span>
+                <button class="btn-pagination" ${currentPage >= totalPages ? 'disabled' : ''} 
+                    onclick="ui.settings.changePage('${type}', ${currentPage + 1})"
+                    style="background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: var(--text); padding: 5px 12px; border-radius: 6px; cursor: ${currentPage >= totalPages ? 'not-allowed' : 'pointer'}; opacity: ${currentPage >= totalPages ? '0.5' : '1'};">
+                    Siguiente
+                </button>
+            </div>
+        `;
+    }
+
+    changePage(type, page) {
+        if (type === 'status') {
+            this.statusPage = page;
+            this.renderComboStatus();
+        } else if (type === 'payments') {
+            this.paymentsPage = page;
+            this.renderComboPayments();
+        }
     }
 }
