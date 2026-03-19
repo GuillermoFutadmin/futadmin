@@ -1503,12 +1503,15 @@ export class SettingsModule {
         if (!container) return;
 
         const searchTerm = document.getElementById('combo-payment-search')?.value.toLowerCase() || '';
+        const methodFilter = document.getElementById('settings-combo-payments-filter')?.value || 'all';
 
-        const filtered = this.payments.filter(p => 
-            p.liga_nombre.toLowerCase().includes(searchTerm) || 
-            p.mes_pagado.toLowerCase().includes(searchTerm) ||
-            p.metodo.toLowerCase().includes(searchTerm)
-        );
+        const filtered = this.payments.filter(p => {
+            const matchesSearch = p.liga_nombre.toLowerCase().includes(searchTerm) || 
+                                p.mes_pagado.toLowerCase().includes(searchTerm) ||
+                                p.metodo.toLowerCase().includes(searchTerm);
+            const matchesMethod = methodFilter === 'all' || p.metodo === methodFilter;
+            return matchesSearch && matchesMethod;
+        });
 
         // Paginación
         const limit = parseInt(document.getElementById('settings-combo-payments-limit')?.value) || this.paymentsLimit;
