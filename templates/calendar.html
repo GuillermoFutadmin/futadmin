@@ -1357,7 +1357,10 @@
 
             async function loadTorneos() {
                 try {
-                    state.torneos = await api('GET', '/api/torneos');
+                    const res = await api('GET', '/api/torneos?per_page=100');
+                    // Soporte compatible con paginación {items: []} o arrays planos
+                    state.torneos = res.items || res;
+                    
                     const sel = document.getElementById('torneo-select');
                     sel.innerHTML = '<option value="">— Seleccionar torneo —</option>' +
                         '<option value="all" style="font-weight:bold; color:var(--primary);">🌐 Ver todos (Ligas + Academia)</option>' +
@@ -2289,10 +2292,11 @@
                 // Find the tournament details to get parameters
                 // Wait, tournament info is not fully in state. We need to fetch it or get it from active tournaments.
                 // We can fetch it quickly
-                fetch(`/api/torneos`)
+                fetch(`/api/torneos?per_page=100`)
                     .then(res => res.json())
-                    .then(torneos => {
-                        const torneo = torneos.find(t => t.id === state.torneoId);
+                    .then(torneosRes => {
+                        const torneosList = torneosRes.items || torneosRes;
+                        const torneo = torneosList.find(t => t.id === state.torneoId);
                         if (!torneo) {
                             toast('No se encontró información del torneo.', 'error');
                             return;
