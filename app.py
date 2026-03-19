@@ -1207,7 +1207,13 @@ def get_training_categories():
 @app.route('/api/partidos', methods=['GET'])
 def get_partidos():
     """Returns all matches, with pagination and filtering."""
-    query = Partido.query
+    from sqlalchemy.orm import joinedload
+    query = Partido.query.options(
+        joinedload(Partido.torneo),
+        joinedload(Partido.equipo_local),
+        joinedload(Partido.equipo_visitante),
+        joinedload(Partido.arbitro)
+    )
     query = apply_liga_filter(query, Partido)
 
     torneo_id = request.args.get('torneo_id', type=int)
@@ -1312,8 +1318,9 @@ def generar_rol(torneo_id):
     try:
         partidos_existentes = Partido.query.filter_by(torneo_id=torneo_id).all()
         for p in partidos_existentes:
-            # NO eliminar partidos jugados o en curso
-            if p.estado in ['Played', 'Live']:
+            # NO eliminar partidos jugados, en curso o con marcador registrado
+            has_score = p.goles_local is not None or p.goles_visitante is not None
+            if p.estado in ['Played', 'Live'] or has_score:
                 continue
             
             # ELIMINACIÓN EN CASCADA MANUAL: Borrar eventos asociados
@@ -1340,7 +1347,9 @@ def generar_rol(torneo_id):
     # Mapa de partidos que ya existen y no queremos duplicar
     partidos_protegidos = {
         (p.equipo_local_id, p.equipo_visitante_id, p.jornada, p.fase) 
-        for p in Partido.query.filter_by(torneo_id=torneo_id).filter(Partido.estado.in_(['Played', 'Live'])).all()
+        for p in Partido.query.filter_by(torneo_id=torneo_id).filter(
+            or_(Partido.estado.in_(['Played', 'Live']), Partido.goles_local != None, Partido.goles_visitante != None)
+        ).all()
     }
 
     if formato == "Liga":
@@ -1611,7 +1620,8 @@ def auto_schedule_torneo(torneo_id):
         
         # Primero, identificar partidos que NO se mueven para ocupar sus horarios
         for p in jornada_matches:
-            if p.estado != 'Scheduled':
+            has_score = p.goles_local is not None or p.goles_visitante is not None
+            if p.estado != 'Scheduled' or has_score:
                 for w_day, d_date in day_dates.items():
                     if p.fecha == d_date and p.hora:
                         p_min = get_minutes(p.hora)
@@ -1620,7 +1630,7 @@ def auto_schedule_torneo(torneo_id):
                         day_match_count[w_day] += 1
 
         # Segundo, programar los que SÍ son pendientes
-        pending_matches = [p for p in jornada_matches if p.estado == 'Scheduled']
+        pending_matches = [p for p in jornada_matches if p.estado == 'Scheduled' and p.goles_local is None and p.goles_visitante is None]
         current_w_idx = 0
         
         for p in pending_matches:
@@ -2510,24 +2520,27 @@ def _get_stats_impl():
             active_tournaments = []
     
     torneos_detalle = []
+    from sqlalchemy import func
+    
+    # Optimizamos: Obtenemos conteos agrupados en lugar de traer todos los objetos Partido
+    stats_query = db.session.query(
+        Partido.torneo_id,
+        func.count(Partido.id).label('total'),
+        func.count(Partido.id).filter(Partido.estado == 'Played').label('jugados'),
+        func.count(distinct(Partido.jornada)).label('jornadas')
+    ).group_by(Partido.torneo_id).filter(Partido.torneo_id.in_([t.id for t in active_tournaments])).all()
+    
+    stats_map = {s.torneo_id: s for s in stats_query}
     
     for t in active_tournaments:
-        try:
-            partidos = Partido.query.filter_by(torneo_id=t.id).all()
-            jornadas_totales = len(set(p.jornada for p in partidos))
-            jugados = sum(1 for p in partidos if p.estado == 'Played')
-            pendientes = len(partidos) - jugados
-        except Exception as ep:
-            print(f"WARN get_stats partidos torneo {t.id}: {ep}")
-            jornadas_totales = jugados = pendientes = 0
-        
+        s = stats_map.get(t.id)
         torneos_detalle.append({
             "id": t.id,
             "nombre": t.nombre,
             "tipo": t.tipo,
-            "jornadas_totales": jornadas_totales,
-            "partidos_jugados": jugados,
-            "partidos_pendientes": pendientes
+            "jornadas_totales": s.jornadas if s else 0,
+            "partidos_jugados": s.jugados if s else 0,
+            "partidos_pendientes": (s.total - s.jugados) if s else 0
         })
 
     # Stats generales filtradas

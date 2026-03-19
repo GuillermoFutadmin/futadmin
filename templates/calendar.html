@@ -388,7 +388,7 @@
         }
 
         .cal-day {
-            background: var(--card);
+            background: rgba(18, 18, 18, 0.75); /* Darker and more opaque for better contrast */
             border: 1px solid var(--border);
             border-radius: var(--radius-sm);
             min-height: 150px;
@@ -396,11 +396,13 @@
             transition: var(--transition);
             position: relative;
             cursor: pointer;
+            -webkit-backdrop-filter: blur(4px);
+            backdrop-filter: blur(4px);
         }
 
         .cal-day:hover {
             border-color: var(--primary);
-            background: var(--card-hover);
+            background: rgba(18, 18, 18, 0.9);
         }
 
         .cal-day.other-month {
@@ -1325,13 +1327,13 @@
                 <div class="form-group">
                     <label>Días Permitidos para Jugar</label>
                     <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:10px; margin-top:5px; font-size:0.85em;">
-                        <label><input type="checkbox" name="sched_days" value="1"> Lun</label>
-                        <label><input type="checkbox" name="sched_days" value="2"> Mar</label>
-                        <label><input type="checkbox" name="sched_days" value="3"> Mié</label>
-                        <label><input type="checkbox" name="sched_days" value="4"> Jue</label>
-                        <label><input type="checkbox" name="sched_days" value="5"> Vie</label>
-                        <label><input type="checkbox" name="sched_days" value="6" checked> Sáb</label>
-                        <label><input type="checkbox" name="sched_days" value="0" checked> Dom</label>
+                        <label><input type="checkbox" name="sched_days" value="0"> Lun</label>
+                        <label><input type="checkbox" name="sched_days" value="1"> Mar</label>
+                        <label><input type="checkbox" name="sched_days" value="2"> Mié</label>
+                        <label><input type="checkbox" name="sched_days" value="3"> Jue</label>
+                        <label><input type="checkbox" name="sched_days" value="4"> Vie</label>
+                        <label><input type="checkbox" name="sched_days" value="5" checked> Sáb</label>
+                        <label><input type="checkbox" name="sched_days" value="6" checked> Dom</label>
                     </div>
                 </div>
 

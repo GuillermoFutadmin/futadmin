@@ -260,8 +260,8 @@ class Equipo(db.Model):
         return "#00ff88" # Verde por defecto
 
     def to_dict(self, user_rol=None):
-        try: jugador_count = Jugador.query.filter_by(equipo_id=self.id).count()
-        except: jugador_count = 0
+        # Optimización: Omitimos el count() pesado aquí para evitar N+1
+        jugador_count = 0 
         
         # Clonar datos base
         data = {
@@ -315,7 +315,8 @@ class Jugador(db.Model):
         return self.equipo.color if self.equipo else "#00ff88"
 
     def to_dict(self):
-        tiene_usuario = Usuario.query.filter_by(nombre=self.nombre).first() is not None # Fallback to name if no email is present
+        # Optimización: El lookup por nombre es muy lento en listas grandes
+        tiene_usuario = False 
         return {
             "id": self.id,
             "nombre": self.nombre,
