@@ -300,11 +300,14 @@ class Jugador(db.Model):
     telefono = db.Column(db.String(15))
     posicion = db.Column(db.String(50))
     numero = db.Column(db.Integer)
-    edad = db.Column(db.Integer)
+    fecha_nacimiento = db.Column(db.Date, nullable=True)
     foto_url = db.Column(db.String(255))
+    firma_tutor_url = db.Column(db.String(255), nullable=True)  # Firma digital del tutor (solo menores)
     es_portero = db.Column(db.Boolean, default=False)
     es_capitan = db.Column(db.Boolean, default=False)
     equipo_id = db.Column(db.Integer, db.ForeignKey('equipos.id'), nullable=False)
+    
+    liga = db.relationship('Liga', backref='jugadores_list', lazy=True)
 
     @property
     def color(self):
@@ -320,8 +323,9 @@ class Jugador(db.Model):
             "telefono": self.telefono or "",
             "posicion": self.posicion or "",
             "numero": self.numero,
-            "edad": self.edad,
+            "fecha_nacimiento": self.fecha_nacimiento.strftime('%Y-%m-%d') if self.fecha_nacimiento else "",
             "foto_url": self.foto_url or "",
+            "firma_tutor_url": self.firma_tutor_url or "",
             "es_portero": self.es_portero,
             "es_capitan": self.es_capitan,
             "equipo_id": self.equipo_id,
@@ -478,6 +482,9 @@ class Partido(db.Model):
     penales_local = db.Column(db.Integer, nullable=True)
     penales_visitante = db.Column(db.Integer, nullable=True)
     ganador_id = db.Column(db.Integer, db.ForeignKey('equipos.id'), nullable=True)
+    timer_started_at = db.Column(db.BigInteger, nullable=True)  # Unix ms when timer started
+    tiempo_corrido_segundos = db.Column(db.Integer, default=0)  # Acumulado al hacer pausa/medio tiempo
+    periodo_actual = db.Column(db.Integer, default=1)  # 1 = primer tiempo, 2 = segundo tiempo
     
     torneo = db.relationship('Torneo', backref='partidos', lazy=True)
     equipo_local = db.relationship('Equipo', foreign_keys=[equipo_local_id], lazy=True)
@@ -485,11 +492,12 @@ class Partido(db.Model):
     arbitro = db.relationship('Arbitro', backref=db.backref('partidos_rel', lazy=True), lazy=True)
 
     def to_dict(self):
+        t = self.torneo
         return {
             "id": self.id,
             "liga_id": self.liga_id,
             "torneo_id": self.torneo_id,
-            "torneo_name": self.torneo.nombre if self.torneo else "",
+            "torneo_name": t.nombre if t else "",
             "jornada": self.jornada,
             "equipo_local_id": self.equipo_local_id,
             "equipo_visitante_id": self.equipo_visitante_id,
@@ -499,6 +507,7 @@ class Partido(db.Model):
             "equipo_visitante_escudo": self.equipo_visitante.escudo_url if self.equipo_visitante else "",
             "arbitro_id": self.arbitro_id,
             "arbitro": self.arbitro.nombre if self.arbitro else "",
+            "arbitro_nombre": self.arbitro.nombre if self.arbitro else "POR ASIGNAR",
             "fecha": self.fecha.strftime('%Y-%m-%d') if self.fecha else "",
             "hora": self.hora or "",
             "cancha": self.cancha or "",
@@ -508,8 +517,18 @@ class Partido(db.Model):
             "fase": self.fase or "Regular",
             "penales_local": self.penales_local,
             "penales_visitante": self.penales_visitante,
-            "ganador_id": self.ganador_id
+            "ganador_id": self.ganador_id,
+            # Torneo timing settings
+            "duracion_tiempo": t.duracion_tiempo if t else 20,
+            "descanso": t.descanso if t else 10,
+            "num_tiempos": t.num_tiempos if t else 2,
+            "costo_arbitraje": t.costo_arbitraje if t else 0,
+            # Server-side timer
+            "timer_started_at": self.timer_started_at,
+            "tiempo_corrido_segundos": self.tiempo_corrido_segundos or 0,
+            "periodo_actual": self.periodo_actual or 1,
         }
+
 
 class Arbitro(db.Model):
     __tablename__ = 'arbitros'

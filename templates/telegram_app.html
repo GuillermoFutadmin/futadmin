@@ -310,6 +310,58 @@
             min-width: 32px;
             text-align: center;
         }
+
+        /* ── Firma Digital del Tutor ─────────────────────── */
+        .sig-section {
+            margin-top: 12px;
+            border-top: 1px dashed rgba(251, 191, 36, 0.4);
+            padding-top: 10px;
+        }
+        .sig-label {
+            font-size: 0.65rem;
+            font-weight: 800;
+            color: var(--warning);
+            letter-spacing: 0.08em;
+            margin-bottom: 6px;
+            display: block;
+        }
+        .sig-canvas-wrap {
+            background: #f8fafc;
+            border-radius: 8px;
+            overflow: hidden;
+            touch-action: none;
+            border: 1.5px solid rgba(251, 191, 36, 0.6);
+            position: relative;
+            height: 120px;
+        }
+        .sig-canvas-wrap canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+        .sig-placeholder {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #94a3b8;
+            font-size: 0.75rem;
+            pointer-events: none;
+            text-align: center;
+            padding: 0 20px;
+        }
+        .sig-actions {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 5px;
+        }
+        .sig-hint {
+            font-size: 0.6rem;
+            color: var(--muted);
+            margin-top: 4px;
+            text-align: center;
+        }
     </style>
 </head>
 
@@ -319,9 +371,17 @@
             <h2 style="margin: 0; font-weight: 800; color: var(--primary);">FUTADMIN</h2>
             <div style="font-size: 4rem; margin: 1.5rem 0; filter: drop-shadow(0 0 10px var(--primary));">⚽</div>
             <div id="login-form" style="display: none;">
-                <p style="color: var(--muted);">Contraseña de Árbitro</p>
-                <input type="password" id="ref-password" placeholder="••••" class="btn btn-outline"
-                    style="text-align:center; margin-bottom:16px; font-size: 1.5rem; letter-spacing: 0.2em;">
+                <p style="color: var(--muted); margin-bottom: 20px;">INICIA SESIÓN CON TUS DATOS DEL PANEL</p>
+                <div style="text-align: left; margin-bottom: 15px;">
+                    <label style="font-size: 0.7rem; color: var(--muted); margin-left: 5px;">EMAIL / USUARIO</label>
+                    <input type="text" id="ref-email" placeholder="ejemplo@email.com" class="btn btn-outline"
+                        style="text-align:left; margin-top:5px; font-size: 1rem; border-color:rgba(255,255,255,0.1);">
+                </div>
+                <div style="text-align: left; margin-bottom: 25px;">
+                    <label style="font-size: 0.7rem; color: var(--muted); margin-left: 5px;">CONTRASEÑA</label>
+                    <input type="password" id="ref-password" placeholder="••••" class="btn btn-outline"
+                        style="text-align:left; margin-top:5px; font-size: 1rem; letter-spacing: 0.2em; border-color:rgba(255,255,255,0.1);">
+                </div>
                 <button class="btn btn-primary" onclick="attemptLogin()">ACCEDER</button>
             </div>
             <div id="auth-status" style="color: var(--muted); margin-top: 10px;">Validando acceso...</div>
@@ -329,15 +389,44 @@
         </div>
     </div>
 
-    <div id="tournament-view">
-        <div class="header">
-            <h3>Torneos Activos</h3>
-            <div style="display: flex; align-items: center; gap: 8px;">
-                <span class="status-badge" style="background: var(--secondary); color: #000;">PRO</span>
-                <button class="btn btn-outline" onclick="logout()"
-                    style="width: auto; padding: 4px 8px; font-size: 0.7rem; border-color: var(--error); color: var(--error);">SALIR</button>
+    <div id="menu-view" class="view" style="display: none; padding: 20px;">
+        <div class="header" style="margin-bottom: 30px;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <div style="font-size: 2.5rem;">⚽</div>
+                <div>
+                    <h3 style="margin:0;">MENU PRINCIPAL</h3>
+                    <div style="font-size: 0.7rem; color: var(--muted);" id="user-info-detail"></div>
+                </div>
             </div>
+            <button class="btn btn-outline" onclick="logout()" style="width: auto; padding: 6px 12px; border-color: var(--error); color: var(--error);">SALIR</button>
         </div>
+
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+            <button class="btn btn-primary" id="btn-menu-matches" onclick="showTournamentsFromMenu()" style="padding: 25px; font-size: 1rem; display: none;">
+                <div style="font-size: 1.5rem; margin-bottom: 8px;">🏟️</div>
+                GESTIONAR PARTIDO
+            </button>
+            
+            <button class="btn btn-primary" id="btn-menu-payments" onclick="showPayments()" style="padding: 25px; font-size: 1rem; background: linear-gradient(135deg, #3b82f6, #2563eb); display: none;">
+                <div style="font-size: 1.5rem; margin-bottom: 8px;">💳</div>
+                SISTEMA DE PAGOS
+            </button>
+            
+            <button class="btn btn-primary" id="btn-menu-roster" onclick="showRosterEdit()" style="padding: 25px; font-size: 1rem; background: linear-gradient(135deg, #8b5cf6, #7c3aed); display: none;">
+                <div style="font-size: 1.5rem; margin-bottom: 8px;">📝</div>
+                INGRESAR PLANTILLA
+            </button>
+
+            <button class="btn btn-outline" id="btn-menu-ids" onclick="showUniqueIds()" style="margin-top: 20px; font-size: 0.8rem; border-style: dashed; display: none;">
+                🔍 CONSULTAR IDS UNICOS (ADMIN)
+            </button>
+        </div>
+    </div>
+
+    <div id="tournament-view" class="view" style="display: none;">
+        <div class="header">
+            <button class="btn btn-outline" onclick="showMenu()" style="width: auto; padding: 6px 12px;">← MENU</button>
+            <h3>Torneos Activos</h3>
         <div id="tournaments-container">
             <!-- Torneos se cargarán aquí -->
         </div>
@@ -349,8 +438,10 @@
                 style="padding: 6px 12px; width: auto; font-size: 0.8rem;">← VOLVER</button>
             <h3 id="selected-torneo-name">PARTIDOS</h3>
             <div style="display: flex; align-items: center; gap: 8px;">
-                <span id="ref-name" class="status-badge"
-                    style="border: 1px solid var(--primary); color: var(--primary);">...</span>
+                <div style="display:flex; flex-direction:column; align-items:flex-end;">
+                    <span id="ref-name" style="font-size:0.7rem; color:var(--text); font-weight:600;">...</span>
+                    <span id="user-role-badge" style="display:none; font-size:0.5rem; background:rgba(255,255,255,0.1); color:var(--muted); padding:1px 4px; border-radius:3px; font-weight:800; text-transform:uppercase;"></span>
+                </div>
                 <button class="btn btn-outline" onclick="logout()"
                     style="width: auto; padding: 4px 8px; font-size: 0.7rem; border-color: var(--error); color: var(--error);">SALIR</button>
             </div>
@@ -362,78 +453,65 @@
 
     <div id="match-view">
         <div class="header">
-            <button class="btn btn-outline" onclick="showList()" style="width: auto; padding: 6px 12px;">←
-                VOLVER</button>
-            <span id="match-status-header" class="status-badge"
-                style="background: var(--primary); color: #000;">ESTADO</span>
+            <button class="btn btn-outline" onclick="showList()" style="width: auto; padding: 6px 12px;">← VOLVER</button>
+            <span id="match-status-header" class="status-badge" style="background: var(--primary); color: #000;">ESTADO</span>
         </div>
 
-        <div class="card" style="padding: 30px 20px; border-bottom: 4px solid var(--primary);">
-            <div id="match-torneo-info"
-                style="text-align: center; font-size: 0.75rem; color: var(--muted); margin-bottom: 15px; text-transform: uppercase; letter-spacing: 0.1em;">
-                TORNEO</div>
+        <div class="card" style="padding: 20px; border-bottom: 4px solid var(--primary);">
+            <div id="match-torneo-info" style="text-align: center; font-size: 0.7rem; color: var(--muted); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.1em;">TORNEO</div>
+            
+            <!-- Score -->
             <div class="teams">
-                <div style="flex: 1; text-align: center; font-weight: 600; font-size: 1.1rem; color: var(--secondary);"
-                    id="local-name">LOCAL</div>
-                <div class="score" id="live-score">0 - 0</div>
-                <div style="flex: 1; text-align: center; font-weight: 600; font-size: 1.1rem; color: var(--secondary);"
-                    id="visitante-name">VISITANTE</div>
+                <div style="flex: 1; text-align: center;">
+                    <div style="font-weight: 600; font-size: 0.95rem; color: var(--secondary);" id="local-name">LOCAL</div>
+                </div>
+                <div class="score" id="live-score" style="min-width: 80px;">0 - 0</div>
+                <div style="flex: 1; text-align: center;">
+                    <div style="font-weight: 600; font-size: 0.95rem; color: var(--secondary);" id="visitante-name">VISITANTE</div>
+                </div>
             </div>
 
-            <div id="timer-container"
-                style="position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-                <div id="timer-display"
-                    style="text-align: center; font-size: 3.5rem; font-weight: 800; margin-top: 15px; color: var(--text); font-variant-numeric: tabular-nums; text-shadow: 0 0 20px rgba(248, 250, 252, 0.2);">
-                    00:00</div>
-                <button id="btn-pause" class="btn btn-outline" onclick="togglePause()"
-                    style="position: absolute; right: 0; bottom: 0; width: auto; padding: 4px 10px; font-size: 0.7rem; border-color: var(--secondary); color: var(--secondary); display: none;">⏸
-                    PAUSA</button>
+            <!-- Period indicator -->
+            <div id="period-indicator" style="text-align:center; font-size: 0.65rem; color: var(--muted); font-weight:800; letter-spacing:2px; margin-top:8px; display:none;">1er TIEMPO</div>
+            
+            <!-- Timer -->
+            <div style="position: relative; display: flex; flex-direction: column; align-items: center; margin-top:5px;">
+                <div id="timer-display" style="text-align: center; font-size: 3.5rem; font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums; text-shadow: 0 0 20px rgba(248, 250, 252, 0.2);">00:00</div>
+                <div id="match-duration-hint" style="font-size: 0.6rem; color: var(--muted);"></div>
+                <button id="btn-pause" class="btn btn-outline" onclick="togglePause()" style="position: absolute; right: 0; bottom: 0; width: auto; padding: 4px 10px; font-size: 0.7rem; border-color: var(--secondary); color: var(--secondary); display: none;">⏸ PAUSA</button>
             </div>
-            <div id="extra-time-badge"
-                style="text-align: center; font-size: 0.9rem; color: var(--warning); display: none;">+0 MIN</div>
         </div>
 
-        <div id="controls-panel" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 24px;">
-            <button class="btn btn-primary" onclick="openCheckIn()" id="btn-pre-start" style="grid-column: 1 / -1;">📋
-                PASE DE LISTA</button>
-            <button class="btn btn-primary" onclick="gameAction('Inicio')" id="btn-start"
-                style="grid-column: 1 / -1; background: linear-gradient(135deg, #22c55e, #10b981);">🚀 INICIAR
-                PARTIDO</button>
+        <div id="controls-panel" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 18px;">
+            <!-- Pre-start: Attendance + Start -->
+            <button class="btn btn-outline" onclick="openCheckIn()" id="btn-pre-start" style="grid-column: 1 / -1; border-color: var(--secondary); color: var(--secondary);">📋 PASE DE LISTA (ASISTENCIA)</button>
+            <button class="btn btn-primary" onclick="gameAction('Inicio')" id="btn-start" style="grid-column: 1 / -1; background: linear-gradient(135deg, #22c55e, #10b981); font-weight:900; height:55px;">🚀 INICIAR PARTIDO</button>
 
-            <button class="btn btn-outline" onclick="recordGoal('local')" id="btn-goal-l"
-                style="border-color: var(--secondary);">⚽ GOL LOCAL</button>
-            <button class="btn btn-outline" onclick="recordGoal('visitante')" id="btn-goal-v"
-                style="border-color: var(--secondary);">⚽ GOL VIS.</button>
+            <!-- Live controls -->
+            <button class="btn btn-outline" onclick="recordGoal('local')" id="btn-goal-l" style="border-color: var(--secondary); font-weight:800;">⚽ GOL LOCAL</button>
+            <button class="btn btn-outline" onclick="recordGoal('visitante')" id="btn-goal-v" style="border-color: var(--secondary); font-weight:800;">⚽ GOL VIS.</button>
 
-            <button class="btn btn-outline" onclick="openPlayerList('Amarilla')"
-                style="border-color: var(--warning); color: var(--warning);">🟨 AMARILLA</button>
-            <button class="btn btn-outline" onclick="openPlayerList('Roja')"
-                style="border-color: var(--error); color: var(--error);">🟥 ROJA</button>
+            <button class="btn btn-outline" onclick="openPlayerList('Amarilla')" style="border-color: var(--warning); color: var(--warning);">🟨 AMARILLA</button>
+            <button class="btn btn-outline" onclick="openPlayerList('Roja')" style="border-color: var(--error); color: var(--error);">🟥 ROJA</button>
 
-            <button class="btn btn-outline" onclick="gameAction('Medio Tiempo')" id="btn-halftime"
-                style="grid-column: 1 / -1; border-color: var(--primary); color: var(--primary);">⏳ MEDIO TIEMPO /
-                COBRO</button>
-
-            <div style="grid-column: 1 / -1; display: flex; gap: 8px; margin-top: 8px;">
-                <input type="number" id="extra-minutes" value="0" class="btn btn-outline"
-                    style="flex: 0.8; text-align: center;" placeholder="+ MIN">
-                <button class="btn btn-outline" onclick="recordPenaltyGoal('local')"
-                    style="flex: 1; font-size: 0.8rem; border-color: #a78bfa; color: #a78bfa;">⚽ PENAL L</button>
-                <button class="btn btn-outline" onclick="recordPenaltyGoal('visitante')"
-                    style="flex: 1; font-size: 0.8rem; border-color: #a78bfa; color: #a78bfa;">⚽ PENAL V</button>
+            <div style="grid-column: 1 / -1; display: flex; gap: 8px;">
+                <button class="btn btn-outline" onclick="recordPenaltyGoal('local')" style="flex:1; font-size: 0.8rem; border-color: #a78bfa; color: #a78bfa;">⚽ PENAL L</button>
+                <button class="btn btn-outline" onclick="recordPenaltyGoal('visitante')" style="flex:1; font-size: 0.8rem; border-color: #a78bfa; color: #a78bfa;">⚽ PENAL V</button>
+                <input type="number" id="extra-minutes" value="0" class="btn btn-outline" style="flex: 0.6; text-align: center; font-size:0.8rem;" placeholder="+MIN">
             </div>
 
-            <button class="btn btn-primary" onclick="openPenaltiesModal()" id="btn-penalties"
-                style="grid-column: 1 / -1; border: 1px dashed #a78bfa; background: rgba(167, 139, 250, 0.1); color: #a78bfa; font-size: 0.85rem; font-weight: 700; height: 50px;">⚽
-                DEFINICIÓN POR PENALES</button>
+            <button class="btn btn-outline" onclick="gameAction('Medio Tiempo')" id="btn-halftime" style="grid-column: 1 / -1; border-color: var(--primary); color: var(--primary); font-weight:800;">⏳ MEDIO TIEMPO</button>
 
-            <button class="btn btn-outline" onclick="gameAction('Fin')" id="btn-end"
-                style="grid-column: 1 / -1; margin-top: 12px; border-color: var(--error); color: var(--error);">🏁
-                FINALIZAR PARTIDO</button>
+            <!-- 2nd half button (only visible during HalfTime state visually; handled by updateControlsVisibility) -->
+            <button class="btn btn-primary" onclick="gameAction('Reanudación')" id="btn-second-half" style="grid-column: 1 / -1; background: linear-gradient(135deg, var(--secondary), #059669); font-weight:900; height:55px; display:none;">▶️ INICIAR 2DO TIEMPO</button>
+
+            <button class="btn btn-primary" onclick="openPenaltiesModal()" id="btn-penalties" style="grid-column: 1 / -1; border: 1px dashed #a78bfa; background: rgba(167, 139, 250, 0.1); color: #a78bfa; font-size: 0.85rem; font-weight: 700; height: 50px;">⚽ DEFINICIÓN POR PENALES</button>
+
+            <button class="btn btn-outline" onclick="confirmEndMatch()" id="btn-end" style="grid-column: 1 / -1; margin-top: 8px; border-color: var(--error); color: var(--error); font-weight:800;">🏁 FINALIZAR PARTIDO</button>
         </div>
 
         <div class="event-log" id="event-log">
-            <!-- Eventos -->
+            <!-- Live Events -->
         </div>
     </div>
 
@@ -455,30 +533,153 @@
     <div id="halftime-view">
         <div class="header">
             <h3>⏳ MEDIO TIEMPO</h3>
-            <button class="btn btn-outline" onclick="showMatchView()"
-                style="width: auto; padding: 6px 12px;">CERRAR</button>
+            <button class="btn btn-outline" onclick="showMatchView()" style="width: auto; padding: 6px 12px;">CERRAR</button>
         </div>
 
-        <div class="card" style="border-left: 4px solid var(--warning);">
+        <div class="card" style="border-left: 4px solid var(--warning); margin-bottom:16px;">
             <h4 style="color: var(--warning); margin-top: 0; font-weight: 800;">💵 COBRO DE ARBITRAJE</h4>
             <div id="payment-forms-container">
                 <!-- Dinámico -->
             </div>
         </div>
 
+        <div class="card" style="border-left: 4px solid var(--primary); text-align:center;">
+            <div style="font-size:0.7rem; color:var(--muted); font-weight:800; letter-spacing:2px;">DESCANSO</div>
+            <div id="halftime-countdown" style="font-size:3rem; font-weight:900; color:var(--primary); margin:10px 0;">10:00</div>
+            <div style="font-size:0.65rem; color:var(--muted);">minutos de descanso configurados</div>
+        </div>
+
         <button class="btn btn-primary" onclick="gameAction('Reanudación')" id="btn-resume"
-            style="margin-top: 10px; background: linear-gradient(135deg, var(--secondary), #059669);">▶️ REANUDAR
-            PARTIDO</button>
+            style="margin-top: 16px; background: linear-gradient(135deg, var(--secondary), #059669); font-weight:900; height:55px;">▶️ INICIAR 2DO TIEMPO</button>
     </div>
 
     <!-- Modal para seleccionar jugador -->
     <div id="modal-players">
-        <div class="header">
             <h3 id="modal-title" style="color: var(--primary);">SELECCIONAR JUGADOR</h3>
             <button class="btn btn-outline" onclick="closePlayerList()"
                 style="width: auto; padding: 6px 12px;">CERRAR</button>
         </div>
         <div id="players-container" style="margin-top: 20px;"></div>
+    </div>
+
+    <!-- VISTA: Submenú (Jugados/Pendientes, Inscripción/Arbitraje) -->
+    <div id="submenu-view" class="view" style="display:none; padding:20px;">
+        <div class="header" style="margin-bottom:20px;">
+            <button class="btn btn-outline" onclick="showView('menu-view')" style="width: auto; padding: 6px 12px;">← VOLVER</button>
+            <h3 id="submenu-title">OPCIONES</h3>
+            <div style="width:40px;"></div>
+        </div>
+        <div id="submenu-container" style="display: flex; flex-direction: column; gap: 15px;">
+            <!-- Botones dinámicos -->
+        </div>
+    </div>
+
+    <!-- VISTA: Seleccion Jerárquica (Drilldown) -->
+    <div id="drilldown-view" style="display:none;">
+        <div class="header">
+            <button class="btn btn-outline" id="drilldown-back" onclick="drilldownBack()" style="width: auto; padding: 6px 12px;">← VOLVER</button>
+            <h3 id="drilldown-title">SELECCIONAR</h3>
+            <div style="width:40px;"></div>
+        </div>
+        
+        <!-- Input para UID (Solo en modo Roster) -->
+        <div id="uid-input-container" style="display:none; padding: 0 15px 15px 15px;">
+            <div style="display:flex; gap:8px;">
+                <input type="text" id="direct-uid-input" placeholder="INGRESA ID UNICO (UID)" class="btn btn-outline" style="flex:1; text-align:left; font-size:0.9rem; border-color:var(--primary);">
+                <button class="btn btn-primary" onclick="lookupByUid()" style="width:auto; padding:0 15px;">BUSCAR</button>
+            </div>
+            <div style="font-size:0.6rem; color:var(--muted); margin-top:5px; text-align:center;">Opción rápida para dueños de equipos</div>
+        </div>
+
+        <div id="drilldown-container" style="display: flex; flex-direction: column; gap: 10px; padding: 15px;">
+            <!-- Opciones dinámicas -->
+        </div>
+    </div>
+
+    <!-- MODAL: Editar Jugador (Formulario de Futbolista) -->
+    <div id="modal-edit-player" style="position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(15,23,42,0.98); backdrop-filter: blur(12px); z-index:300; display:none; padding:20px; overflow-y:auto;">
+        <div class="header" style="position:sticky; top:0; background:rgba(15,23,42,0.5); padding:10px 0; z-index:10;">
+            <h3 style="color:var(--secondary); margin:0;">DATOS DEL FUTBOLISTA</h3>
+            <button class="btn btn-outline" onclick="closePlayerEdit()" style="width: auto; padding: 6px 12px; border-color:var(--error); color:var(--error);">CERRAR</button>
+        </div>
+        
+        <div class="card" style="margin-top:20px; padding:20px; border-top: 4px solid var(--secondary);">
+            <div style="display:flex; flex-direction:column; align-items:center; gap:10px; margin-bottom:25px;">
+                <div id="player-photo-preview" style="width:120px; height:120px; border-radius:15px; background:rgba(255,255,255,0.05); border:2px dashed var(--secondary); overflow:hidden; display:flex; align-items:center; justify-content:center;">
+                    <span style="font-size:3rem;">👤</span>
+                </div>
+                <div style="display:flex; gap:10px; width:100%; justify-content:center;">
+                    <button class="btn btn-outline" onclick="document.getElementById('edit-photo-camera').click()" style="width:auto; padding:8px 12px; border-color:var(--secondary); color:var(--secondary); font-size:0.75rem;">
+                        📷 CÁMARA
+                    </button>
+                    <button class="btn btn-outline" onclick="document.getElementById('edit-photo-gallery').click()" style="width:auto; padding:8px 12px; border-color:var(--secondary); color:var(--secondary); font-size:0.75rem;">
+                        🖼️ GALERÍA
+                    </button>
+                </div>
+                <input type="file" id="edit-photo-camera" accept="image/*" capture="environment" style="display:none;" onchange="handlePhotoSelect(this)">
+                <input type="file" id="edit-photo-gallery" accept="image/*" style="display:none;" onchange="handlePhotoSelect(this)">
+                <input type="hidden" id="edit-player-photo-url">
+            </div>
+
+            <div style="margin-bottom:15px;">
+                <label style="font-size:0.7rem; color:var(--muted); font-weight:700;">NOMBRE COMPLETO</label>
+                <input type="text" id="edit-player-name" class="btn btn-outline" style="text-align:left; margin-top:5px; width:100%; border-color:rgba(255,255,255,0.1);">
+            </div>
+
+            <div style="margin-bottom:15px; display:none;">
+                <label style="font-size:0.7rem; color:var(--muted); font-weight:700;">CURP / ID ÚNICO</label>
+                <input type="text" id="edit-player-curp" class="btn btn-outline" placeholder="ID DE PLANTILLA" style="text-align:left; margin-top:5px; width:100%; border-color:rgba(255,255,255,0.1);">
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom:15px;">
+                <div>
+                    <label style="font-size:0.7rem; color:var(--muted); font-weight:700;">NÚMERO</label>
+                    <input type="number" id="edit-player-number" class="btn btn-outline" style="text-align:left; margin-top:5px; width:100%; border-color:rgba(255,255,255,0.1);">
+                </div>
+                <div>
+                    <label style="font-size:0.7rem; color:var(--muted); font-weight:700;">POSICIÓN</label>
+                    <select id="edit-player-pos" class="btn btn-outline" style="text-align:left; margin-top:5px; width:100%; height:45px; background:rgba(0,0,0,0.2); color:white; border-color:rgba(255,255,255,0.1);">
+                        <option value="Portero">Portero</option>
+                        <option value="Defensa">Defensa</option>
+                        <option value="Mediocampista">Mediocampista</option>
+                        <option value="Delantero">Delantero</option>
+                    </select>
+                </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom:20px;">
+                <div>
+                    <label style="font-size:0.7rem; color:var(--muted); font-weight:700;">FECHA NACIMIENTO</label>
+                    <input type="date" id="edit-player-birth" class="btn btn-outline" onchange="checkMinorStatus('edit')" style="text-align:left; margin-top:5px; width:100%; border-color:rgba(255,255,255,0.1);">
+                </div>
+                <div>
+                    <label style="font-size:0.7rem; color:var(--muted); font-weight:700;">TELÉFONO</label>
+                    <input type="tel" id="edit-player-phone" class="btn btn-outline" placeholder="10 DÍGITOS" style="text-align:left; margin-top:5px; width:100%; border-color:rgba(255,255,255,0.1);">
+                </div>
+            </div>
+
+            <div id="minor-auth-container-edit" style="display:none; margin-bottom:15px; padding:12px; background:rgba(251, 191, 36, 0.08); border:1px solid var(--warning); border-radius:8px;">
+                <!-- Disclaimer + checkbox -->
+                <label style="display:flex; align-items:start; gap:8px; font-size:0.7rem; color:var(--text); cursor:pointer; line-height:1.3;">
+                    <input type="checkbox" id="minor-auth-check-edit" style="width:18px; height:18px; margin-top:2px; accent-color:var(--warning);">
+                    <span>⚠️ Mentir en temas legales de un menor es delito y es responsabilidad total del Entrenador o Dueño de Liga. FutAdmin solo provee la herramienta digital. <strong>Confirmo autorización para subir foto.</strong></span>
+                </label>
+                <!-- Firma del tutor -->
+                <div class="sig-section">
+                    <span class="sig-label">✍️ FIRMA DEL TUTOR / REPRESENTANTE LEGAL</span>
+                    <div class="sig-canvas-wrap">
+                        <canvas id="sig-canvas-edit"></canvas>
+                        <div class="sig-placeholder" id="sig-placeholder-edit">Firme aquí con el dedo</div>
+                    </div>
+                    <div class="sig-actions">
+                        <button class="btn btn-outline" onclick="clearSigCanvas('edit')" style="width:auto; padding:4px 10px; font-size:0.65rem; border-color:var(--warning); color:var(--warning);">🗑️ Limpiar</button>
+                    </div>
+                    <div class="sig-hint">La firma se guardará como respaldo digital del consentimiento</div>
+                </div>
+            </div>
+
+            <button class="btn btn-primary" id="btn-save-player" onclick="savePlayerChanges()" style="font-weight:800;">GUARDAR CAMBIOS</button>
+        </div>
     </div>
 
     <div id="modal-note"
@@ -518,7 +719,7 @@
         tg.expand();
         tg.ready();
 
-        let currentReferee = null;
+        let currentUser = null;
         let activeMatch = null;
         let matchPlayers = { local: [], visitante: [] };
         let matchSeconds = 0;
@@ -528,7 +729,7 @@
         let currentMatches = [];
 
         function showView(id) {
-            const views = ['login-view', 'tournament-view', 'list-view', 'match-view', 'checkin-view', 'halftime-view'];
+            const views = ['login-view', 'menu-view', 'tournament-view', 'list-view', 'match-view', 'checkin-view', 'halftime-view', 'registration-view', 'payments-view', 'ids-lookup-view', 'drilldown-view', 'submenu-view'];
             views.forEach(v => {
                 const el = document.getElementById(v);
                 if (el) el.style.display = (v === id) ? 'block' : 'none';
@@ -536,13 +737,33 @@
             if (id === 'match-view') document.getElementById('modal-players').style.display = 'none';
         }
 
+        function showMenu() {
+            showView('menu-view');
+            const rol = currentUser.rol;
+            
+            // Visibility Rules based on latest requirements
+            // GESTIONAR PARTIDO: admin, ejecutivo, dueño_liga, super_arbitro, equipo, arbitro
+            const canManage = ['admin', 'ejecutivo', 'dueño_liga', 'super_arbitro', 'equipo', 'arbitro'].includes(rol);
+            // SISTEMA DE PAGOS: admin, ejecutivo, dueño_liga, super_arbitro, equipo, arbitro
+            const canPay = ['admin', 'ejecutivo', 'dueño_liga', 'super_arbitro', 'equipo', 'arbitro'].includes(rol);
+            // INGRESAR PLANTILLA: admin, ejecutivo, dueño_liga, super_arbitro, equipo, espectador, resultados
+            const canRoster = ['admin', 'ejecutivo', 'dueño_liga', 'super_arbitro', 'equipo', 'espectador', 'resultados'].includes(rol);
+            // CONSULTAR IDS: admin, ejecutivo, dueño_liga
+            const isAdmin = ['admin', 'ejecutivo', 'dueño_liga'].includes(rol);
+
+            document.getElementById('btn-menu-matches').style.display = canManage ? 'block' : 'none';
+            document.getElementById('btn-menu-payments').style.display = canPay ? 'block' : 'none';
+            document.getElementById('btn-menu-roster').style.display = canRoster ? 'block' : 'none';
+            document.getElementById('btn-menu-ids').style.display = isAdmin ? 'block' : 'none';
+        }
+
         async function init() {
             showView('login-view');
             const stored = localStorage.getItem('ref_auth');
             if (stored) {
                 const authData = JSON.parse(stored);
-                if (Date.now() - authData.time < 24 * 60 * 60 * 1000) {
-                    const ok = await login(authData.password);
+                if (Date.now() - authData.time < 30 * 24 * 60 * 60 * 1000) { // 30 días
+                    const ok = await login(authData.email, authData.password);
                     if (ok) return;
                 }
             }
@@ -563,31 +784,45 @@
         }
 
         async function attemptLogin() {
+            const email = document.getElementById('ref-email').value;
             const password = document.getElementById('ref-password').value;
             if (!password) return alert("Ingresa tu contraseña");
-            const ok = await login(password);
+            
+            const ok = await login(email, password);
             if (ok) {
-                localStorage.setItem('ref_auth', JSON.stringify({ password, time: Date.now() }));
-            } else {
-                document.getElementById('auth-error').innerText = "Credenciales incorrectas.";
+                localStorage.setItem('ref_auth', JSON.stringify({ email, password, time: Date.now() }));
             }
         }
 
-        async function login(password) {
+        async function login(email, password) {
             const user = tg.initDataUnsafe?.user;
-            const telegram_id = user?.id || '5825342439'; // Using user's confirmed ID for testing
+            const telegram_id = user?.id || '5825342439';
 
             try {
-                const res = await fetch('/api/telegram/verify_referee', {
+                const res = await fetch('/api/telegram/verify_user', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ telegram_id, password })
+                    body: JSON.stringify({ telegram_id, email, password })
                 });
                 const data = await res.json();
                 if (data.authenticated) {
-                    currentReferee = data.referee;
-                    document.getElementById('ref-name').innerText = currentReferee.nombre;
-                    showTournaments();
+                    currentUser = data.user;
+                    const refNameEl = document.getElementById('ref-name');
+                    if (refNameEl) refNameEl.innerText = currentUser.nombre;
+                    
+                    const infoDetail = document.getElementById('user-info-detail');
+                    if (infoDetail) infoDetail.innerText = `${currentUser.nombre} | ${currentUser.rol}`;
+
+                    const roleBadge = document.getElementById('user-role-badge');
+                    if (roleBadge) {
+                        roleBadge.innerText = currentUser.rol;
+                        roleBadge.style.display = 'inline-block';
+                        if (currentUser.rol === 'dueño_liga') { roleBadge.style.background = '#3b82f6'; }
+                        else if (currentUser.rol === 'super_arbitro') { roleBadge.style.background = '#8b5cf6'; }
+                        else if (currentUser.rol === 'equipo') { roleBadge.style.background = '#10b981'; }
+                        else if (currentUser.rol === 'admin') { roleBadge.style.background = '#ef4444'; }
+                    }
+                    showMenu();
                     return true;
                 }
                 document.getElementById('auth-error').innerText = data.error || "Error de autenticación.";
@@ -601,7 +836,8 @@
         async function showTournaments() {
             showView('tournament-view');
             try {
-                const res = await fetch('/api/telegram/tournaments');
+                const url = `/api/telegram/tournaments?liga_id=${currentUser.liga_id || ''}&rol=${currentUser.rol}`;
+                const res = await fetch(url);
                 const tournaments = await res.json();
                 const container = document.getElementById('tournaments-container');
                 container.innerHTML = tournaments.map(t => `
@@ -617,10 +853,31 @@
             }
         }
 
+        let rosterMode = false;
         function selectTournament(id, name) {
             selectedTorneoId = id;
             document.getElementById('selected-torneo-name').innerText = name;
-            loadMatches();
+            if (rosterMode) {
+                loadTeamsForRoster();
+            } else {
+                loadMatches();
+            }
+        }
+
+        async function loadTeamsForRoster() {
+            showView('list-view');
+            document.getElementById('selected-torneo-name').innerText = "SELECCIONAR EQUIPO";
+            try {
+                const res = await fetch(`/api/telegram/tournaments/teams?torneo_id=${selectedTorneoId}`);
+                const teams = await res.json();
+                const container = document.getElementById('matches-container');
+                container.innerHTML = teams.map(t => `
+                    <div class="card" onclick="openRoster(${t.id})" style="padding: 15px; border-left: 4px solid var(--primary);">
+                        <div style="font-weight: 600;">${t.nombre}</div>
+                        <div style="font-size: 0.7rem; color: var(--muted);">ID: ${t.uid || 'N/A'}</div>
+                    </div>
+                `).join('');
+            } catch (e) { alert("Error al cargar equipos"); }
         }
 
         async function loadMatches() {
@@ -628,22 +885,23 @@
             const user = tg.initDataUnsafe?.user;
             const telegram_id = user?.id || '5825342439';
             try {
-                const res = await fetch(`/api/telegram/matches?telegram_id=${telegram_id}&torneo_id=${selectedTorneoId}`);
+                const url = `/api/telegram/matches?telegram_id=${telegram_id}&torneo_id=${selectedTorneoId}&rol=${currentUser.rol}&equipo_id=${currentUser.equipo_id || ''}&estado=${matchStatusFilter}`;
+                const res = await fetch(url);
                 currentMatches = await res.json();
                 const container = document.getElementById('matches-container');
                 container.innerHTML = currentMatches.map((m, index) => {
-                    const isMyMatch = m.arbitro_id === currentReferee.id;
+                    const isMyMatch = m.arbitro_id === currentUser.id;
+                    const canEdit = ['admin', 'ejecutivo', 'dueño_liga', 'super_arbitro', 'arbitro'].includes(currentUser.rol);
                     const isPlayable = m.estado !== 'Played' && m.estado !== 'Cancelled';
-                    const canAdopt = !m.arbitro_id && isPlayable;
-                    const canOpen = isPlayable;
+                    const isReferee = currentUser.rol === 'arbitro';
+                    const canAdopt = !m.arbitro_id && isPlayable && isReferee;
+                    const canOpen = isPlayable && canEdit;
                     let statusColor = 'var(--muted)';
                     if (m.estado === 'Live') statusColor = 'var(--error)';
                     if (m.estado === 'HalfTime') statusColor = 'var(--warning)';
                     if (m.estado === 'Scheduled') statusColor = 'var(--secondary)';
-
                     return `
-                    <div class="card" onclick="${canOpen ? `openMatchByIndex(${index})` : ''}"
-                         ondblclick="${m.estado === 'Played' ? `showMatchDetails(${m.id})` : ''}"
+                    <div class="card" onclick="${m.estado === 'Played' ? `showMatchDetails(${m.id})` : (canOpen ? `openMatchByIndex(${index})` : '')}"
                          style="border-left: 4px solid ${isMyMatch ? 'var(--primary)' : 'rgba(255,255,255,0.1)'}; padding: 15px;">
                         <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
                             <span style="font-size: 0.75rem; font-weight: 800; color: var(--muted); letter-spacing: 0.05em;">JORNADA ${m.jornada}</span>
@@ -682,7 +940,7 @@
 
         async function showMatchDetails(matchId) {
             try {
-                const res = await fetch(`/api/partido/${matchId}/detalles`);
+                const res = await fetch(`/api/telegram/match/${matchId}/detalles`);
                 const data = await res.json();
 
                 const modal = document.getElementById('modal-match-details');
@@ -750,167 +1008,191 @@
 
         async function openMatch(matchData) {
             activeMatch = matchData;
+            stopTimer();
+            isTimerPaused = false;
             showView('match-view');
 
             document.getElementById('local-name').innerText = activeMatch.equipo_local;
             document.getElementById('visitante-name').innerText = activeMatch.equipo_visitante;
             document.getElementById('live-score').innerText = `${activeMatch.goles_local || 0} - ${activeMatch.goles_visitante || 0}`;
-            document.getElementById('match-status-header').innerText = activeMatch.estado === 'Live' ? 'EN VIVO' : activeMatch.estado === 'HalfTime' ? 'MEDIO TIEMPO' : activeMatch.estado === 'Scheduled' ? 'PROGRAMADO' : activeMatch.estado === 'Played' ? 'FINALIZADO' : activeMatch.estado;
             document.getElementById('match-torneo-info').innerText = activeMatch.torneo_name + " - Jornada " + activeMatch.jornada;
 
             updateControlsVisibility();
 
-            // Cargar jugadores
-            matchPlayers = { local: [], visitante: [] }; // Reset
+            // Load players for check-in and event recording
+            matchPlayers = { local: [], visitante: [] };
             try {
                 const res = await fetch(`/api/partido/${activeMatch.id}/players`);
                 matchPlayers = await res.json();
             } catch (e) { console.error("Error cargando jugadores:", e); }
-
-            // Restaurar estado del cronómetro
-            loadTimerState();
         }
 
-        function saveTimerState() {
-            if (!activeMatch) return;
-            const state = {
-                seconds: matchSeconds,
-                paused: isTimerPaused,
-                timestamp: Date.now()
-            };
-            localStorage.setItem(`timer_${activeMatch.id}`, JSON.stringify(state));
+        // ===== SERVER-SYNCED TIMER SYSTEM =====
+        // Uses server's timer_started_at (Unix ms) to calculate real elapsed time,
+        // so the timer stays accurate even after the app is closed and reopened.
+
+        function calcElapsedSeconds() {
+            if (!activeMatch) return 0;
+            const snap = activeMatch.tiempo_corrido_segundos || 0;
+            if (activeMatch.timer_started_at && (activeMatch.estado === 'Live')) {
+                const nowMs = Date.now();
+                const serverElapsed = Math.floor((nowMs - activeMatch.timer_started_at) / 1000);
+                return snap + serverElapsed;
+            }
+            return snap;
         }
 
-        function loadTimerState() {
-            if (!activeMatch) return;
-            const saved = localStorage.getItem(`timer_${activeMatch.id}`);
-            if (saved) {
-                const state = JSON.parse(saved);
-                // Si el partido está en vivo, recuperamos los segundos. 
-                // Podríamos calcular el tiempo transcurrido desde el timestamp si quisiéramos ser más exactos,
-                // pero por ahora simplemente recuperamos el valor guardado.
-                matchSeconds = state.seconds || 0;
-                isTimerPaused = state.paused || false;
-                updateTimerDisplay();
-                updatePauseButtonUI();
-            } else {
-                matchSeconds = 0;
-                isTimerPaused = false;
-            }
-        }
-
-        function updateControlsVisibility() {
-            const isLive = activeMatch.estado === 'Live';
-            const isScheduled = activeMatch.estado === 'Scheduled';
-            const isHalfTime = activeMatch.estado === 'HalfTime';
-
-            document.getElementById('btn-pre-start').style.display = isScheduled ? 'block' : 'none';
-            document.getElementById('btn-start').style.display = isScheduled ? 'block' : 'none';
-            document.getElementById('btn-pause').style.display = isLive ? 'block' : 'none';
-
-            const toToggle = ['btn-goal-l', 'btn-goal-v', 'btn-halftime', 'btn-end', 'extra-minutes', 'btn-penalties'];
-            toToggle.forEach(id => {
-                const el = document.getElementById(id);
-                if (el) el.style.display = (isLive) ? 'block' : 'none';
-            });
-
-            // Specific grid-column cases
-            if (document.getElementById('btn-halftime')) document.getElementById('btn-halftime').style.display = isLive ? 'block' : 'none';
-            if (document.getElementById('btn-end')) document.getElementById('btn-end').style.display = isLive ? 'block' : 'none';
-
-            // Special handling for the penalty/extra time row parent if needed
-            const penaltyRow = document.getElementById('extra-minutes').parentElement;
-            if (penaltyRow) penaltyRow.style.display = (isLive || isHalfTime) ? 'flex' : 'none';
-
-            // Card buttons are always visible if game is live or halftime
-            const cardButtons = document.querySelectorAll('button[onclick*="openPlayerList"]');
-            cardButtons.forEach(btn => btn.style.display = (isLive || isHalfTime) ? 'block' : 'none');
-
-            if (isLive && !timerInterval) {
-                startTimer();
-            } else if (!isLive) {
-                stopTimer();
-            }
-
-            if (isHalfTime) {
-                renderPaymentForms();
-                showView('halftime-view');
-            }
+        function updateTimerDisplay() {
+            const total = calcElapsedSeconds();
+            const m = Math.floor(total / 60);
+            const s = total % 60;
+            document.getElementById('timer-display').innerText =
+                `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
         }
 
         function startTimer() {
-            // No reseteamos matchSeconds aquí para permitir persistencia
-            isTimerPaused = false;
-            updateTimerDisplay();
-            updatePauseButtonUI();
             if (timerInterval) clearInterval(timerInterval);
-            timerInterval = setInterval(() => {
-                if (!isTimerPaused) {
-                    matchSeconds++;
-                    updateTimerDisplay();
-                    if (matchSeconds % 5 === 0) saveTimerState(); // Guardar cada 5 segundos
-                }
-            }, 1000);
+            timerInterval = setInterval(updateTimerDisplay, 1000);
+            updateTimerDisplay();
         }
 
         function stopTimer() {
             clearInterval(timerInterval);
             timerInterval = null;
-            isTimerPaused = false;
         }
 
         function togglePause() {
+            // Pause/resume not tracked server-side in this flow; visually toggle
             isTimerPaused = !isTimerPaused;
             updatePauseButtonUI();
-            saveTimerState();
             tg.HapticFeedback.impactOccurred('medium');
         }
 
         function updatePauseButtonUI() {
             const btn = document.getElementById('btn-pause');
+            if (!btn) return;
             if (isTimerPaused) {
+                clearInterval(timerInterval);
                 btn.innerText = '▶️ REANUDAR';
                 btn.style.color = 'var(--primary)';
                 btn.style.borderColor = 'var(--primary)';
             } else {
+                startTimer();
                 btn.innerText = '⏸ PAUSA';
                 btn.style.color = 'var(--secondary)';
                 btn.style.borderColor = 'var(--secondary)';
             }
         }
 
-        function updateTimerDisplay() {
-            const m = Math.floor(matchSeconds / 60);
-            const s = matchSeconds % 60;
-            document.getElementById('timer-display').innerText = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        // Half-time countdown
+        let halftimeCountdownInterval = null;
+        function startHalftimeCountdown() {
+            clearInterval(halftimeCountdownInterval);
+            const descansoSec = (activeMatch.descanso || 10) * 60;
+            let remaining = descansoSec;
+            function tick() {
+                const m = Math.floor(remaining / 60);
+                const s = remaining % 60;
+                const el = document.getElementById('halftime-countdown');
+                if (el) el.innerText = `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+                if (remaining <= 0) { clearInterval(halftimeCountdownInterval); return; }
+                remaining--;
+            }
+            tick();
+            halftimeCountdownInterval = setInterval(tick, 1000);
+        }
+
+        function updateControlsVisibility() {
+            const isLive = activeMatch.estado === 'Live';
+            const isScheduled = activeMatch.estado === 'Scheduled';
+            const isHalfTime = activeMatch.estado === 'HalfTime';
+            
+            const isStaff = ['admin', 'ejecutivo', 'dueño_liga', 'super_arbitro', 'arbitro'].includes(currentUser.rol);
+
+            const safe = (id) => document.getElementById(id);
+
+            // Pre-start buttons
+            if (safe('btn-pre-start')) safe('btn-pre-start').style.display = (isScheduled && isStaff) ? 'block' : 'none';
+            if (safe('btn-start')) safe('btn-start').style.display = (isScheduled && isStaff) ? 'block' : 'none';
+
+            // Pause button
+            if (safe('btn-pause')) safe('btn-pause').style.display = (isLive && isStaff) ? 'block' : 'none';
+
+            // Live controls
+            ['btn-goal-l','btn-goal-v','btn-halftime','btn-end','btn-penalties'].forEach(id => {
+                if (safe(id)) safe(id).style.display = (isLive && isStaff) ? 'block' : 'none';
+            });
+
+            // Card buttons + penalty row (by class/attribute)
+            const cardButtons = document.querySelectorAll('button[onclick*="openPlayerList"]');
+            cardButtons.forEach(btn => btn.style.display = (isLive && isStaff) ? 'block' : 'none');
+            // penalty row (the div containing PENAL L, PENAL V)
+            const penaltyRow = safe('extra-minutes') ? safe('extra-minutes').closest('div') : null;
+            if (penaltyRow) penaltyRow.style.display = (isLive && isStaff) ? 'flex' : 'none';
+
+            // HalfTime: show 2nd half button in match view, hide live controls
+            if (safe('btn-second-half')) safe('btn-second-half').style.display = (isHalfTime && isStaff) ? 'block' : 'none';
+
+            // Period indicator
+            const pi = safe('period-indicator');
+            if (pi) {
+                if (isLive || isHalfTime) {
+                    const p = activeMatch.periodo_actual || 1;
+                    pi.innerText = p === 1 ? '1er TIEMPO' : '2do TIEMPO';
+                    pi.style.display = 'block';
+                } else {
+                    pi.style.display = 'none';
+                }
+            }
+
+            // Duration hint
+            const dh = safe('match-duration-hint');
+            if (dh && activeMatch.duracion_tiempo) {
+                dh.innerText = `${activeMatch.duracion_tiempo} min por tiempo • descanso ${activeMatch.descanso} min`;
+            }
+
+            // Match status header
+            const statusMap = { Live: 'EN VIVO', HalfTime: 'MEDIO TIEMPO', Scheduled: 'PROGRAMADO', Played: 'FINALIZADO' };
+            const sh = safe('match-status-header');
+            if (sh) sh.innerText = statusMap[activeMatch.estado] || activeMatch.estado;
+
+            if (isLive && !timerInterval) startTimer();
+            else if (!isLive) stopTimer();
+
+            if (isHalfTime) {
+                if (isStaff) renderPaymentForms();
+                startHalftimeCountdown();
+                showView('halftime-view');
+            }
+        }
+
+        // (updatePauseButtonUI and updateTimerDisplay are defined above in the server-synced timer section)
+
+        function confirmEndMatch() {
+            if (!confirm('ATENCIÓN: ¿Seguro que deseas FINALIZAR el partido? Esta acción no se puede deshacer.')) return;
+            gameAction('Fin');
         }
 
         async function gameAction(type) {
-            const extra = document.getElementById('extra-minutes').value;
+            const extra = document.getElementById('extra-minutes') ? document.getElementById('extra-minutes').value : 0;
+            const currentMinute = Math.floor(calcElapsedSeconds() / 60);
 
             const data = {
                 tipo: type,
-                minuto: Math.floor(matchSeconds / 60),
+                minuto: currentMinute,
                 nota: type === 'Fin' ? `Tiempo extra: ${extra} min` : ''
             };
-            const ok = await sendEvent(data);
-            if (ok) {
-                if (type === 'Inicio') {
-                    activeMatch.estado = 'Live';
-                    matchSeconds = 0;
-                    isTimerPaused = false;
-                    localStorage.removeItem(`timer_${activeMatch.id}`);
-                    startTimer();
+            const result = await sendEvent(data);
+            if (result) {
+                // Server returns updated match state - sync it
+                if (result.match) {
+                    activeMatch = { ...activeMatch, ...result.match };
                 }
-                if (type === 'Medio Tiempo') activeMatch.estado = 'HalfTime';
-                if (type === 'Reanudación') {
-                    activeMatch.estado = 'Live';
-                    showView('match-view');
-                }
-                if (type === 'Fin') activeMatch.estado = 'Played';
-                document.getElementById('match-status-header').innerText = activeMatch.estado;
+                document.getElementById('live-score').innerText = `${activeMatch.goles_local || 0} - ${activeMatch.goles_visitante || 0}`;
+                if (type === 'Reanudación') showView('match-view');
                 updateControlsVisibility();
-                logEvent(type, null, data.minuto);
+                logEvent(type, null, currentMinute);
+                tg.HapticFeedback.notificationOccurred('success');
             }
         }
 
@@ -947,55 +1229,158 @@
                 ganador_id: parseInt(winnerId)
             };
 
-            const ok = await sendEvent(data);
-            if (ok) {
-                activeMatch.estado = 'Played';
+            const result = await sendEvent(data);
+            if (result) {
+                if (result.match) activeMatch = { ...activeMatch, ...result.match };
                 document.getElementById('penalties-modal').classList.remove('active');
-                document.getElementById('match-status-header').innerText = activeMatch.estado;
                 updateControlsVisibility();
-                logEvent('Fin', null, data.minuto);
+                logEvent('Fin (Penales)', null, data.minuto);
                 tg.HapticFeedback.notificationOccurred('success');
             }
         }
+
+        // Photo URLs for each team's arbitraje payment
+        let arbPhotoUrl = { local: null, visitante: null };
 
         function renderPaymentForms() {
             const container = document.getElementById('payment-forms-container');
             const cost = activeMatch.costo_arbitraje || 0;
 
-            container.innerHTML = `
-                <div style="margin-bottom:15px; padding:10px; background:rgba(255,255,255,0.05); border-radius:8px;">
-                    <p style="font-size:0.9rem; margin-bottom:5px;">${activeMatch.equipo_local}</p>
-                    <div style="display:flex; gap:5px;">
-                        <input type="number" id="pay-amount-local" value="${cost}" class="btn" style="flex:1; text-align:left; padding:5px;">
-                        <button class="btn btn-primary" onclick="submitPayment('local')" style="width:auto; padding:5px 10px;">Cobrar</button>
+            function teamCard(side, teamId, teamName) {
+                const sideId = side; // 'local' or 'visitante'
+                return `
+                <div style="border:1px solid rgba(255,255,255,0.08); border-radius:14px; padding:16px; margin-bottom:16px; background:rgba(255,255,255,0.03);">
+                    <div style="font-size:0.65rem; color:var(--muted); font-weight:800; letter-spacing:2px; margin-bottom:10px;">${teamName}</div>
+
+                    <!-- Photo comprobante -->
+                    <div style="display:flex; flex-direction:column; align-items:center; gap:8px; margin-bottom:12px;">
+                        <div id="arb-photo-preview-${sideId}" style="width:100%; height:120px; border-radius:10px; background:rgba(255,255,255,0.04); border:2px dashed rgba(255,255,255,0.12); overflow:hidden; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+                            <span style="font-size:2rem; color:var(--muted);">📷</span>
+                        </div>
+                        <div style="display:flex; gap:8px; width:100%;">
+                            <button class="btn btn-outline" onclick="document.getElementById('arb-photo-cam-${sideId}').click()" style="flex:1; padding:8px; font-size:0.7rem; border-color:var(--secondary); color:var(--secondary);">📷 CÁMARA</button>
+                            <button class="btn btn-outline" onclick="document.getElementById('arb-photo-gal-${sideId}').click()" style="flex:1; padding:8px; font-size:0.7rem;">🖼️ GALERÍA</button>
+                        </div>
+                        <input type="file" id="arb-photo-cam-${sideId}" accept="image/*" capture="environment" style="display:none;" onchange="handleArbPhoto(this, '${sideId}')">
+                        <input type="file" id="arb-photo-gal-${sideId}" accept="image/*" style="display:none;" onchange="handleArbPhoto(this, '${sideId}')">
                     </div>
-                </div>
-                <div style="padding:10px; background:rgba(255,255,255,0.05); border-radius:8px;">
-                    <p style="font-size:0.9rem; margin-bottom:5px;">${activeMatch.equipo_visitante}</p>
-                    <div style="display:flex; gap:5px;">
-                        <input type="number" id="pay-amount-visitante" value="${cost}" class="btn" style="flex:1; text-align:left; padding:5px;">
-                        <button class="btn btn-primary" onclick="submitPayment('visitante')" style="width:auto; padding:5px 10px;">Cobrar</button>
+
+                    <!-- Monto -->
+                    <div style="margin-bottom:10px;">
+                        <label style="font-size:0.6rem; color:var(--muted);">MONTO A COBRAR</label>
+                        <input type="number" id="arb-amount-${sideId}" value="${cost}" class="btn btn-outline" style="text-align:left; margin-top:4px;">
                     </div>
-                </div>
-            `;
+
+                    <!-- Método -->
+                    <div style="margin-bottom:14px;">
+                        <label style="font-size:0.6rem; color:var(--muted);">MÉTODO DE PAGO</label>
+                        <select id="arb-method-${sideId}" class="btn btn-outline" style="text-align:left; margin-top:4px; cursor:pointer;">
+                            <option value="Efectivo">💵 Efectivo</option>
+                            <option value="Transferencia">📲 Transferencia</option>
+                            <option value="Tarjeta">💳 Tarjeta</option>
+                        </select>
+                    </div>
+
+                    <button id="arb-submit-btn-${sideId}" class="btn btn-primary"
+                        onclick="submitMatchPayment('${sideId}', ${teamId})"
+                        style="background:linear-gradient(135deg, var(--warning), #f59e0b); color:#000; font-weight:900; height:48px;">
+                        💵 COBRAR ARBITRAJE
+                    </button>
+                </div>`;
+            }
+
+            container.innerHTML =
+                teamCard('local', activeMatch.equipo_local_id, activeMatch.equipo_local) +
+                teamCard('visitante', activeMatch.equipo_visitante_id, activeMatch.equipo_visitante);
         }
 
-        async function submitPayment(side) {
-            const teamId = side === 'local' ? activeMatch.equipo_local_id : activeMatch.equipo_visitante_id;
-            const amount = document.getElementById(`pay-amount-${side}`).value;
+        async function handleArbPhoto(input, side) {
+            if (!input.files || !input.files[0]) return;
+            const preview = document.getElementById(`arb-photo-preview-${side}`);
+            preview.innerHTML = '<div style="color:var(--muted); font-size:0.8rem;">Subiendo...</div>';
+            try {
+                const compressed = await compressImage(input.files[0]);
+                const formData = new FormData();
+                formData.append('file', compressed, 'comprobante.jpg');
+                const res = await fetch('/api/telegram/upload_photo', { method: 'POST', body: formData });
+                const data = await res.json();
+                if (data.url) {
+                    arbPhotoUrl[side] = data.url;
+                    preview.innerHTML = `<img src="${data.url}" style="width:100%; height:100%; object-fit:cover;">`;
+                } else {
+                    preview.innerHTML = '📷';
+                    alert('Error al subir foto');
+                }
+            } catch(e) {
+                preview.innerHTML = '📷';
+                alert('Error al procesar foto');
+            }
+        }
+
+        async function submitMatchPayment(side, teamId) {
+            const amount = document.getElementById(`arb-amount-${side}`).value;
+            const metodo = document.getElementById(`arb-method-${side}`).value;
+            const foto_url = arbPhotoUrl[side] || null;
+
+            if (!amount || parseFloat(amount) <= 0) {
+                alert('Ingresa un monto válido'); return;
+            }
+
+            const btn = document.getElementById(`arb-submit-btn-${side}`);
+            const originalText = btn.innerText;
+            btn.disabled = true;
+            btn.innerText = 'PROCESANDO...';
 
             try {
                 const res = await fetch(`/api/telegram/match/${activeMatch.id}/payment`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ equipo_id: teamId, monto: amount, metodo: 'Efectivo' })
+                    body: JSON.stringify({ equipo_id: teamId, monto: amount, metodo, foto_url })
                 });
-                if (res.ok) {
-                    alert("Pago registrado correctamente");
+                const data = await res.json();
+                if (data.success) {
                     tg.HapticFeedback.notificationOccurred('success');
+                    showArbitrageTicket(data, side);
+                } else {
+                    alert(data.error || 'Error al registrar pago');
                 }
-            } catch (e) { alert("Error al registrar pago"); }
+            } catch(e) {
+                alert('Error de conexión');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = originalText;
+            }
         }
+
+        function showArbitrageTicket(data, side) {
+            // Re-use the existing ticket view with arbitraje-specific info
+            document.getElementById('ticket-team').innerText = (data.equipo_nombre || '—').toUpperCase();
+            document.getElementById('ticket-torneo').innerText = (data.torneo_nombre || '—').toUpperCase();
+            document.getElementById('ticket-amount').innerText = `$${parseFloat(data.monto).toFixed(2)}`;
+            document.getElementById('ticket-date').innerText = data.fecha || new Date().toLocaleString();
+            document.getElementById('ticket-id').innerText = `ID: #${String(data.pago_id).padStart(6, '0')}`;
+
+            // Extra info unique to arbitraje ticket
+            const extraEl = document.getElementById('ticket-extra-info');
+            if (extraEl) {
+                extraEl.innerText = `⚽ ${data.partido_info || ''} • ${data.metodo || 'Efectivo'}`;
+            }
+
+            // Set ticket type badge
+            const typeBadge = document.getElementById('ticket-type-badge');
+            if (typeBadge) {
+                typeBadge.innerText = '🏁 COBRO DE ARBITRAJE';
+                typeBadge.style.background = 'rgba(245, 158, 11, 0.15)';
+                typeBadge.style.color = '#f59e0b';
+            }
+            document.getElementById('ticket-type-badge-inline').innerText = 'Arbitraje';
+            const extraRow = document.getElementById('ticket-extra-info-row');
+            if (extraRow) extraRow.style.display = 'flex';
+
+            showView('ticket-view');
+        }
+
+
 
         async function recordPenaltyGoal(side) {
             const teamId = side === 'local' ? activeMatch.equipo_local_id : activeMatch.equipo_visitante_id;
@@ -1069,20 +1454,24 @@
         async function confirmCardWithNote() {
             const note = document.getElementById('card-note-text').value;
             const isPenalty = pendingEventType === 'Gol Penales';
+            const currentMinute = isPenalty ? 0 : Math.floor(calcElapsedSeconds() / 60);
             const data = {
                 tipo: pendingEventType,
                 equipo_id: pendingEventData.equipoId,
                 jugador_id: pendingEventData.playerId,
-                minuto: isPenalty ? 0 : Math.floor(matchSeconds / 60),
+                minuto: currentMinute,
                 nota: note
             };
-            const ok = await sendEvent(data);
-            if (ok) {
+            const result = await sendEvent(data);
+            if (result) {
                 closeNoteModal();
                 tg.HapticFeedback.notificationOccurred('success');
 
-                // Update Local Score State
-                if (pendingEventType === 'Gol' || isPenalty) {
+                // Sync score from server response
+                if (result.match) {
+                    activeMatch = { ...activeMatch, ...result.match };
+                    document.getElementById('live-score').innerText = `${activeMatch.goles_local} - ${activeMatch.goles_visitante}`;
+                } else if (pendingEventType === 'Gol' || isPenalty) {
                     if (pendingEventData.equipoId === activeMatch.equipo_local_id) {
                         activeMatch.goles_local = (activeMatch.goles_local || 0) + 1;
                     } else {
@@ -1097,7 +1486,7 @@
                 if (pendingEventType === 'Amarilla') logType = '🟨 Tarjeta';
                 if (pendingEventType === 'Roja') logType = '🟥 Tarjeta';
 
-                logEvent(logType, pendingEventData.playerName, data.minuto);
+                logEvent(logType, pendingEventData.playerName, currentMinute);
             }
         }
 
@@ -1107,8 +1496,13 @@
                 return;
             }
 
+            // Si es dueño de equipo, mostrar botón de registro
+            const canRegister = currentUser.rol === 'equipo' || ['admin', 'ejecutivo', 'dueño_liga'].includes(currentUser.rol);
+            const regButton = canRegister ? `<button class="btn btn-outline" onclick="openRegistration()" style="margin: 10px; width: calc(100% - 20px);">➕ REGISTRAR NUEVO JUGADOR</button>` : '';
+
             showView('checkin-view');
             const container = document.getElementById('checkin-container');
+            container.innerHTML = regButton;
 
             let html = `<div style="padding:10px; color:var(--primary); font-weight:bold;">${activeMatch.equipo_local}</div>`;
             html += (matchPlayers.local || []).map(p => `
@@ -1167,7 +1561,7 @@
             const user = tg.initDataUnsafe?.user;
             const payloadWithAuth = {
                 ...payload,
-                telegram_id: user?.id || '5825342439' // Fallback for test ID
+                telegram_id: user?.id || '5825342439'
             };
 
             try {
@@ -1176,12 +1570,14 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payloadWithAuth)
                 });
-                return res.ok;
+                if (!res.ok) return null;
+                return await res.json(); // Returns { success, evento, match }
             } catch (e) {
                 alert("Error al enviar evento");
-                return false;
+                return null;
             }
         }
+
 
         function logEvent(type, subject, min) {
             const container = document.getElementById('event-log');
@@ -1198,7 +1594,866 @@
             loadMatches(); // Recargar para ver scores actualizados
         }
 
+        let lastUploadedPhotoUrl = null;
+
+        function openRegistration() {
+            showView('registration-view');
+            // Reset form
+            document.getElementById('reg-player-name').value = '';
+            document.getElementById('reg-player-number').value = '';
+            document.getElementById('reg-player-pos').value = '';
+            document.getElementById('photo-preview').innerHTML = '👤';
+            document.getElementById('reg-player-curp').value = '';
+            document.getElementById('reg-player-birth').value = '';
+            document.getElementById('reg-player-phone').value = '';
+            document.getElementById('minor-auth-check-reg').checked = false;
+            document.getElementById('minor-auth-container-reg').style.display = 'none';
+            document.getElementById('photo-preview').innerHTML = '👤';
+            clearSigCanvas('reg');
+            lastUploadedPhotoUrl = null;
+        }
+
+        function calculateAge(birthDateString) {
+            if (!birthDateString) return 999;
+            const today = new Date();
+            const birthDate = new Date(birthDateString);
+            let age = today.getFullYear() - birthDate.getFullYear();
+            const m = today.getMonth() - birthDate.getMonth();
+            if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+                age--;
+            }
+            return age;
+        }
+
+        function checkMinorStatus(type) {
+            const birthId     = type === 'reg' ? 'reg-player-birth' : 'edit-player-birth';
+            const containerId = type === 'reg' ? 'minor-auth-container-reg' : 'minor-auth-container-edit';
+            const url = type === 'reg' ? lastUploadedPhotoUrl : document.getElementById('edit-player-photo-url').value;
+
+            const birth     = document.getElementById(birthId).value;
+            const container = document.getElementById(containerId);
+
+            if (birth && url && calculateAge(birth) < 18) {
+                container.style.display = 'block';
+                // Inicializar el canvas lazy (solo la primera vez que se muestra)
+                setTimeout(() => initSigCanvas(type), 50);
+                return;
+            }
+            container.style.display = 'none';
+        }
+
+        async function handlePhoto(input) {
+            if (!input.files || !input.files[0]) return;
+            
+            const file = input.files[0];
+            const preview = document.getElementById('photo-preview');
+            preview.innerHTML = '⌛';
+
+            try {
+                // Compresión antes de subir
+                const compressedFile = await compressImage(file);
+                const formData = new FormData();
+                formData.append('photo', compressedFile); // Standardized to 'photo'
+
+                const res = await fetch('/api/telegram/upload_photo', { // Standardized to /api/telegram/upload_photo
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+                if (data.success) {
+                    lastUploadedPhotoUrl = data.url;
+                    preview.innerHTML = `<img src="${data.url}" style="width:100%; height:100%; object-fit:cover;">`;
+                    tg.HapticFeedback.notificationOccurred('success');
+                    checkMinorStatus('reg');
+                } else {
+                    alert("Error al subir foto: " + (data.error || "Error desconocido"));
+                    preview.innerHTML = '❌';
+                }
+            } catch (e) {
+                console.error(e);
+                alert("Error de conexión al subir foto");
+                preview.innerHTML = '❌';
+            }
+        }
+
+        async function compressImage(file) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.src = event.target.result;
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        let width = img.width;
+                        let height = img.height;
+                        const max = 1000;
+                        if (width > height) {
+                            if (width > max) { height *= max / width; width = max; }
+                        } else {
+                            if (height > max) { width *= max / height; height = max; }
+                        }
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+                        canvas.toBlob((blob) => {
+                            resolve(new File([blob], file.name, { type: 'image/jpeg' }));
+                        }, 'image/jpeg', 0.7);
+                    };
+                };
+            });
+        }
+
+        // ── Helpers de Firma Digital ──────────────────────────────────────
+        function initSigCanvas(type) {
+            const id = 'sig-canvas-' + type;
+            const canvas = document.getElementById(id);
+            if (!canvas || canvas._sigInit) return;
+            canvas._sigInit = true;
+
+            const ctx = canvas.getContext('2d');
+            const wrap = canvas.parentElement;
+
+            function resize() {
+                const dpr = window.devicePixelRatio || 1;
+                canvas.width  = wrap.clientWidth  * dpr;
+                canvas.height = wrap.clientHeight * dpr;
+                ctx.scale(dpr, dpr);
+                ctx.strokeStyle = '#1e293b';
+                ctx.lineWidth   = 2.5;
+                ctx.lineCap     = 'round';
+                ctx.lineJoin    = 'round';
+            }
+            resize();
+
+            let drawing = false;
+            function getPos(e) {
+                const rect = canvas.getBoundingClientRect();
+                const src  = e.touches ? e.touches[0] : e;
+                return { x: src.clientX - rect.left, y: src.clientY - rect.top };
+            }
+            function hidePlaceholder() {
+                const ph = document.getElementById('sig-placeholder-' + type);
+                if (ph) ph.style.display = 'none';
+            }
+            canvas.addEventListener('pointerdown', (e) => {
+                drawing = true;
+                hidePlaceholder();
+                const p = getPos(e);
+                ctx.beginPath();
+                ctx.moveTo(p.x, p.y);
+                e.preventDefault();
+            }, { passive: false });
+            canvas.addEventListener('pointermove', (e) => {
+                if (!drawing) return;
+                const p = getPos(e);
+                ctx.lineTo(p.x, p.y);
+                ctx.stroke();
+                e.preventDefault();
+            }, { passive: false });
+            canvas.addEventListener('pointerup',  () => { drawing = false; });
+            canvas.addEventListener('pointerout', () => { drawing = false; });
+        }
+
+        function clearSigCanvas(type) {
+            const canvas = document.getElementById('sig-canvas-' + type);
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const ph = document.getElementById('sig-placeholder-' + type);
+            if (ph) ph.style.display = 'flex';
+        }
+
+        function isSigCanvasBlank(type) {
+            const canvas = document.getElementById('sig-canvas-' + type);
+            if (!canvas) return true;
+            const data = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height).data;
+            return !data.some(v => v !== 0);
+        }
+
+        async function uploadSigCanvas(type) {
+            return new Promise((resolve) => {
+                const canvas = document.getElementById('sig-canvas-' + type);
+                if (!canvas) return resolve(null);
+                canvas.toBlob(async (blob) => {
+                    const fd = new FormData();
+                    fd.append('photo', new File([blob], 'firma_tutor.png', { type: 'image/png' }));
+                    try {
+                        const r = await fetch('/api/telegram/upload_photo', { method: 'POST', body: fd });
+                        const d = await r.json();
+                        resolve(d.success ? d.url : null);
+                    } catch { resolve(null); }
+                }, 'image/png');
+            });
+        }
+        // ─────────────────────────────────────────────────────────────────
+
+
+
+        async function submitPlayerRegistration() {
+            const nombre  = document.getElementById('reg-player-name').value;
+            const numero  = document.getElementById('reg-player-number').value;
+            const posicion = document.getElementById('reg-player-pos').value;
+            const curp    = document.getElementById('reg-player-curp').value;
+            const birth   = document.getElementById('reg-player-birth').value;
+            const phone   = document.getElementById('reg-player-phone').value;
+
+            if (!nombre) return alert('El nombre es obligatorio');
+
+            if (lastUploadedPhotoUrl) {
+                if (!birth) return alert('Para subir una fotografía es obligatorio ingresar la fecha de nacimiento.');
+                if (calculateAge(birth) < 18) {
+                    document.getElementById('minor-auth-container-reg').style.display = 'block';
+                    setTimeout(() => initSigCanvas('reg'), 50);
+                    if (!document.getElementById('minor-auth-check-reg').checked)
+                        return alert('Al ser menor de edad, es obligatorio leer y marcar la casilla de autorización legal.');
+                    if (isSigCanvasBlank('reg'))
+                        return alert('La firma digital del tutor es obligatoria para registrar la foto de un menor.');
+                }
+            }
+
+            // Subir firma si aplica
+            let firmaUrl = null;
+            if (lastUploadedPhotoUrl && birth && calculateAge(birth) < 18) {
+                firmaUrl = await uploadSigCanvas('reg');
+            }
+
+            const payload = {
+                nombre,
+                numero,
+                posicion,
+                curp,
+                fecha_nacimiento: birth,
+                telefono: phone,
+                foto_url: lastUploadedPhotoUrl,
+                firma_tutor_url: firmaUrl,
+                equipo_id: selectedEquipoIdForReg || currentUser.equipo_id
+            };
+
+            try {
+                const res = await fetch('/api/telegram/players/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (res.ok) {
+                    alert('Jugador registrado con éxito');
+                    tg.HapticFeedback.notificationOccurred('success');
+
+                    // LIMPIAR FORMULARIO PARA SIGUIENTE REGISTRO
+                    document.getElementById('reg-player-name').value = '';
+                    document.getElementById('reg-player-number').value = '';
+                    document.getElementById('reg-player-curp').value = '';
+                    document.getElementById('reg-player-birth').value = '';
+                    document.getElementById('reg-player-phone').value = '';
+                    document.getElementById('photo-preview').innerHTML = '👤';
+                    lastUploadedPhotoUrl = null;
+
+                    openRoster(selectedEquipoIdForReg);
+                } else {
+                    alert('Error al registrar jugador');
+                }
+            } catch (e) {
+                alert('Error de conexión');
+            }
+        }
+
         init();
+
+        // --- FUNCIONES PARA MÓDULOS DEL MENÚ ---
+        let allTeamTokens = [];
+        async function showUniqueIds() {
+            showView('ids-lookup-view');
+            try {
+                const res = await fetch(`/api/telegram/teams/tokens?liga_id=${currentUser.liga_id || ''}&rol=${currentUser.rol}`);
+                allTeamTokens = await res.json();
+                renderTeamIds(allTeamTokens);
+            } catch (e) { alert("Error al cargar IDs"); }
+        }
+
+        function renderTeamIds(list) {
+            const container = document.getElementById('ids-container');
+            container.innerHTML = list.map(t => `
+                <div class="card" style="padding: 12px; margin-bottom: 8px;">
+                    <div style="font-weight: 800; color: var(--primary); font-size: 1rem;">${t.uid}</div>
+                    <div style="font-size: 0.9rem; font-weight: 600;">${t.nombre}</div>
+                    <div style="font-size: 0.6rem; color: var(--muted);">${t.torneo}</div>
+                </div>
+            `).join('');
+        }
+
+        function filterTeamIds() {
+            const q = document.getElementById('search-ids').value.toLowerCase();
+            const filtered = allTeamTokens.filter(t => t.nombre.toLowerCase().includes(q) || t.uid.toLowerCase().includes(q));
+            renderTeamIds(filtered);
+        }
+
+        let drillPurpose = 'roster'; // 'roster' | 'matches' | 'payments'
+        let matchStatusFilter = ''; // 'Completed' | 'Scheduled'
+        let paymentTypeFilter = ''; // 'Inscripción' | 'Arbitraje'
+
+        function showSubmenu(type) {
+            showView('submenu-view');
+            const title = document.getElementById('submenu-title');
+            const container = document.getElementById('submenu-container');
+            container.innerHTML = '';
+            
+            if (type === 'matches') {
+                title.innerText = 'GESTIONAR PARTIDO';
+                container.innerHTML = `
+                    <button class="btn btn-primary" onclick="setMatchStatus('Scheduled')" style="padding:20px; font-weight:800; background:linear-gradient(135deg, #0ea5e9, #0284c7);">📅 PARTIDOS PENDIENTES</button>
+                    <button class="btn btn-primary" onclick="setMatchStatus('Completed')" style="padding:20px; font-weight:800; background:linear-gradient(135deg, #10b981, #059669);">✅ PARTIDOS JUGADOS</button>
+                `;
+            } else if (type === 'payments') {
+                title.innerText = 'SISTEMA DE PAGOS';
+                container.innerHTML = `
+                    <button class="btn btn-primary" onclick="setPaymentType('Inscripción')" style="padding:20px; font-weight:800; background:linear-gradient(135deg, #6366f1, #4f46e5);">📝 PAGO INSCRIPCIÓN</button>
+                    <button class="btn btn-primary" onclick="setPaymentType('Arbitraje')" style="padding:20px; font-weight:800; background:linear-gradient(135deg, #8b5cf6, #7c3aed);">⚖️ PAGO ARBITRAJE</button>
+                `;
+            }
+        }
+
+        function setMatchStatus(status) {
+            matchStatusFilter = status;
+            drillPurpose = 'matches';
+            startDrilldown('sede');
+        }
+
+        function setPaymentType(type) {
+            paymentTypeFilter = type;
+            drillPurpose = 'payments';
+            startDrilldown('sede');
+        }
+
+        async function lookupByUid() {
+            const uid = document.getElementById('direct-uid-input').value.trim();
+            if (!uid) return alert("Ingresa un UID");
+            try {
+                // Agregar liga_id y rol para seguridad
+                const res = await fetch(`/api/telegram/team/by_uid/${uid}?liga_id=${currentUser.liga_id || ''}&rol=${currentUser.rol}`);
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.error || "No encontrado");
+                }
+                const team = await res.json();
+                rosterMode = true;
+                openRoster(team.id);
+                tg.HapticFeedback.notificationOccurred('success');
+            } catch (e) { 
+                alert("UID no encontrado o no pertenece a tu liga: " + e.message); 
+                tg.HapticFeedback.notificationOccurred('error');
+            }
+        }
+        async function showRosterEdit() {
+            if (currentUser.equipo_id) {
+                rosterMode = false;
+                openRoster(currentUser.equipo_id);
+            } else {
+                drillPurpose = 'roster';
+                rosterMode = true;
+                // Iniciamos en SEDE pero el UI mostrará el input de UID prioritario
+                startDrilldown('sede');
+                // Auto-enfocar el input si es posible
+                setTimeout(() => {
+                    const input = document.getElementById('direct-uid-input');
+                    if (input) input.focus();
+                }, 300);
+            }
+        }
+
+        let drillStack = []; // {type, id, title}
+        function startDrilldown(type, id = null) {
+            drillStack = [];
+            loadDrillLevel(type, id);
+        }
+
+        function drilldownBack() {
+            if (drillStack.length <= 1) {
+                if (drillPurpose === 'matches' || drillPurpose === 'payments') {
+                    showSubmenu(drillPurpose);
+                } else {
+                    showView('menu-view');
+                }
+            } else {
+                drillStack.pop(); 
+                const prev = drillStack[drillStack.length - 1];
+                loadDrillLevel(prev.type, prev.id, true);
+            }
+        }
+
+        async function loadDrillLevel(type, id, isBack = false) {
+            showView('drilldown-view');
+            const container = document.getElementById('drilldown-container');
+            const title = document.getElementById('drilldown-title');
+            const uidContainer = document.getElementById('uid-input-container');
+            
+            // Mostrar input de UID solo en el primer paso de Roster
+            uidContainer.style.display = (drillPurpose === 'roster' && type === 'sede') ? 'block' : 'none';
+
+            container.innerHTML = '<div class="loading">Cargando...</div>';
+
+            try {
+                let url = '';
+                let items = [];
+                let nextType = '';
+                
+                if (type === 'sede') {
+                    title.innerText = 'SELECCIONAR SEDE';
+                    url = `/api/telegram/venues?liga_id=${currentUser.liga_id || ''}&rol=${currentUser.rol}`;
+                    nextType = 'liga';
+                } else if (type === 'liga') {
+                    title.innerText = 'SELECCIONAR LIGA';
+                    url = `/api/telegram/leagues?venue_name=${encodeURIComponent(id)}&liga_id=${currentUser.liga_id || ''}&rol=${currentUser.rol}`;
+                    nextType = 'torneo';
+                } else if (type === 'torneo') {
+                    title.innerText = 'SELECCIONAR TORNEO';
+                    url = `/api/telegram/tournaments?liga_id=${id}&rol=${currentUser.rol}`;
+                    nextType = drillPurpose === 'matches' ? 'matches' : 'equipo';
+                } else if (type === 'equipo') {
+                    title.innerText = 'SELECCIONAR EQUIPO';
+                    url = `/api/telegram/tournaments/teams?torneo_id=${id}&liga_id=${currentUser.liga_id || ''}&rol=${currentUser.rol}`;
+                    nextType = drillPurpose === 'payments' ? 'payments' : 'roster';
+                }
+
+                if (type === 'sede' && drillPurpose === 'roster') {
+                    // For Roster, we ONLY want the UID input. No browsing allowed.
+                    title.innerText = 'ACCESO CON ID ÚNICO';
+                    container.innerHTML = `
+                        <div class="card" style="padding:15px; border-left:4px solid var(--secondary); margin-top:10px;">
+                            <p style="font-size:0.8rem; color:var(--muted); margin-bottom:10px;">Ingresa el ID secreto de tu equipo para gestionar la plantilla. Si no lo tienes, solicítalo con tu organizador.</p>
+                        </div>
+                    `;
+                    if (!isBack) drillStack.push({ type, id, title: title.innerText });
+                    return;
+                }
+
+                const res = await fetch(url);
+                items = await res.json();
+
+                if (!isBack) drillStack.push({ type, id, title: title.innerText });
+
+                container.innerHTML = items.map(item => {
+                    const label = item.nombre || item.id;
+                    const value = type === 'sede' ? item.nombre : item.id;
+                    
+                    if (nextType === 'roster') {
+                        return `<button class="btn btn-primary" onclick="openRoster(${item.id})" style="text-align:left; padding:15px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:var(--text); font-weight:600;">
+                                    ${label} <span style="font-size:0.7rem; color:var(--muted); display:block; opacity:0.6;">UID: ${item.uid || '—'}</span>
+                                </button>`;
+                    }
+                    if (nextType === 'matches') {
+                        return `<button class="btn btn-primary" onclick="selectTournament(${item.id}, '${label}')" style="text-align:left; padding:15px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:var(--text); font-weight:600;">
+                                    ${label}
+                                </button>`;
+                    }
+                    if (nextType === 'payments' && drillPurpose === 'payments') {
+                        return `<button class="btn btn-primary" onclick="showPayments(${item.id})" style="text-align:left; padding:15px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:var(--text); font-weight:600;">
+                                    ${label}
+                                </button>`;
+                    }
+
+                    return `<button class="btn btn-primary" onclick="loadDrillLevel('${nextType}', '${value}')" style="text-align:left; padding:15px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:var(--text); font-weight:600;">
+                                ${label}
+                            </button>`;
+                }).join('');
+
+                if (items.length === 0) container.innerHTML = '<p style="text-align:center; padding:20px; color:var(--muted);">No se encontraron elementos.</p>';
+
+            } catch (e) {
+                console.error(e);
+                container.innerHTML = '<p style="color:var(--error); text-align:center;">Error al cargar datos.</p>';
+            }
+        }
+
+        function showTournamentsFromMenu() {
+            if (currentUser.rol === 'admin' || currentUser.rol === 'ejecutivo' || currentUser.rol === 'dueño_liga') {
+                showSubmenu('matches');
+            } else {
+                rosterMode = false;
+                showTournaments();
+            }
+        }
+
+        async function showPayments(teamId = null) {
+            if (!teamId && (currentUser.rol === 'admin' || currentUser.rol === 'ejecutivo' || currentUser.rol === 'dueño_liga')) {
+                showSubmenu('payments');
+                return;
+            }
+            showView('payments-view');
+            const container = document.getElementById('payments-container');
+            container.innerHTML = '<div class="loading" style="text-align:center; padding:20px;">Cargando pagos...</div>';
+            try {
+                const url = `/api/telegram/payments-list?liga_id=${currentUser.liga_id || ''}&equipo_id=${teamId || currentUser.equipo_id || ''}&tipo=${paymentTypeFilter}`;
+                const res = await fetch(url);
+                const payments = await res.json();
+                container.innerHTML = payments.map(p => `
+                    <div class="card" style="padding: 12px; border-left: 4px solid var(--primary); margin-bottom:10px;">
+                        <div style="display:flex; justify-content: space-between;">
+                            <span style="font-weight:800; color:var(--primary);">$${p.monto}</span>
+                            <span style="font-size:0.7rem; color:var(--muted);">${p.fecha}</span>
+                        </div>
+                        <div style="font-size:0.8rem; font-weight:600; margin-top:4px;">${p.tipo}</div>
+                        <div style="font-size:0.7rem; color:var(--muted);">${p.equipo_nombre}</div>
+                    </div>
+                `).join('');
+                if (payments.length === 0) container.innerHTML = '<p style="text-align:center; padding:20px; color:var(--muted);">No hay pagos registrados.</p>';
+                
+            } catch (e) { alert("Error al cargar pagos"); }
+        }
+
+        let currentPaymentTeamId = null;
+
+        async function openPaymentForm(teamId) {
+            currentPaymentTeamId = teamId;
+            showView('payment-form-view');
+            
+            // Limpiar formulario y estados
+            document.getElementById('pay-amount').value = '';
+            document.getElementById('pay-photo-url').value = '';
+            document.getElementById('pay-photo-status').innerText = 'Sin archivo';
+            document.getElementById('pay-torneo-name').innerText = 'CARGANDO...';
+            document.getElementById('pay-team-name').innerText = 'CARGANDO...';
+            
+            try {
+                const res = await fetch(`/api/telegram/inscription-status?equipo_id=${teamId}`);
+                const data = await res.json();
+                
+                document.getElementById('pay-torneo-name').innerText = data.torneo_nombre.toUpperCase();
+                document.getElementById('pay-team-name').innerText = data.equipo_nombre || 'EQUIPO';
+                document.getElementById('pay-total-pactado').innerText = `$${data.monto_pactado}`;
+                document.getElementById('pay-saldo-pendiente').innerText = `$${data.saldo_pendiente}`;
+                document.getElementById('pay-amount').value = data.saldo_pendiente;
+            } catch (e) {
+                console.error(e);
+                alert("Error al cargar estado de inscripción");
+            }
+        }
+
+        async function handlePaymentPhoto(input) {
+            if (!input.files || !input.files[0]) return;
+            const status = document.getElementById('pay-photo-status');
+            status.innerText = "Procesando...";
+            
+            try {
+                const compressed = await compressImage(input.files[0]);
+                const formData = new FormData();
+                formData.append('photo', compressed);
+                
+                const res = await fetch('/api/telegram/upload_photo', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+                
+                if (data.url) {
+                    document.getElementById('pay-photo-url').value = data.url;
+                    status.innerText = "✅ Subida";
+                    status.style.color = "var(--primary)";
+                }
+            } catch (e) {
+                status.innerText = "❌ Error";
+                alert("Error al subir foto");
+            }
+        }
+
+        async function submitPayment() {
+            const amount = document.getElementById('pay-amount').value;
+            if (!amount || amount <= 0) {
+                alert("Ingresa un monto válido");
+                return;
+            }
+
+            const btn = document.getElementById('btn-submit-payment');
+            btn.disabled = true;
+            btn.innerText = "PROCESANDO...";
+
+            try {
+                const res = await fetch('/api/telegram/payments/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        equipo_id: currentPaymentTeamId,
+                        monto: amount,
+                        metodo: document.getElementById('pay-method').value,
+                        foto_url: document.getElementById('pay-photo-url').value,
+                        tipo: 'Inscripción'
+                    })
+                });
+
+                const data = await res.json();
+                if (data.success) {
+                    showTicket(data);
+                } else {
+                    alert(data.error || "Error al registrar pago");
+                }
+            } catch (e) {
+                alert("Error de conexión");
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "CONFIRMAR PAGO";
+            }
+        }
+
+        function showTicket(data) {
+            document.getElementById('ticket-team').innerText = data.equipo_nombre.toUpperCase();
+            document.getElementById('ticket-torneo').innerText = data.torneo_nombre.toUpperCase();
+            document.getElementById('ticket-amount').innerText = `$${parseFloat(data.monto).toFixed(2)}`;
+            document.getElementById('ticket-date').innerText = data.fecha;
+            document.getElementById('ticket-id').innerText = `ID: #${String(data.pago_id).padStart(6, '0')}`;
+            
+            document.getElementById('ticket-type-badge-inline').innerText = 'Inscripción';
+            const typeBadge = document.getElementById('ticket-type-badge');
+            if (typeBadge) {
+                typeBadge.innerText = '💳 PAGO DE INSCRIPCIÓN';
+                typeBadge.style.background = 'rgba(0,242,255,0.1)';
+                typeBadge.style.color = 'var(--primary)';
+            }
+            const extraRow = document.getElementById('ticket-extra-info-row');
+            if (extraRow) extraRow.style.display = 'none';
+            
+            showView('ticket-view');
+        }
+
+        function downloadTicketImage() {
+            const area = document.getElementById('ticket-capture-area');
+            const canvas = document.getElementById('ticket-canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Ajustar canvas al tamaño del ticket
+            const width = area.offsetWidth * 2; // Alta resolución
+            const height = area.offsetHeight * 2;
+            canvas.width = width;
+            canvas.height = height;
+            
+            // Dibujar fondo oscuro
+            ctx.fillStyle = '#111111';
+            ctx.fillRect(0, 0, width, height);
+            
+            // Dibujar bordes redondeados (simulado)
+            ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+            ctx.lineWidth = 4;
+            ctx.strokeRect(10, 10, width - 20, height - 20);
+
+            // Dibujar textos
+            ctx.textAlign = 'center';
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 40px Inter, Arial';
+            ctx.fillText('FUTADMIN', width/2, 80);
+            
+            ctx.font = '200 16px Inter, Arial';
+            ctx.fillStyle = '#888';
+            ctx.fillText('COMPROBANTE OFICIAL', width/2, 110);
+
+            ctx.font = 'bold 36px Inter, Arial';
+            ctx.fillStyle = 'white';
+            ctx.fillText('PAGO EXITOSO', width/2, 220);
+            
+            ctx.font = '18px Inter, Arial';
+            ctx.fillStyle = '#888';
+            ctx.fillText(document.getElementById('ticket-date').innerText, width/2, 250);
+
+            // Caja de datos
+            ctx.fillStyle = 'rgba(255,255,255,0.03)';
+            ctx.fillRect(40, 300, width - 80, 230);
+            
+            ctx.textAlign = 'left';
+            ctx.font = '22px Inter, Arial';
+            ctx.fillStyle = '#888';
+            ctx.fillText('Equipo:', 60, 350);
+            ctx.fillText('Torneo:', 60, 400);
+            ctx.fillText('Concepto:', 60, 450);
+            
+            ctx.textAlign = 'right';
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 22px Inter, Arial';
+            ctx.fillText(document.getElementById('ticket-team').innerText, width - 60, 350);
+            ctx.font = 'bold 18px Inter, Arial';
+            // Limit text length for torneo and extra info
+            let torneoText = document.getElementById('ticket-torneo').innerText;
+            if (torneoText.length > 28) torneoText = torneoText.substring(0, 25) + '...';
+            ctx.fillText(torneoText, width - 60, 400);
+            
+            ctx.fillStyle = '#00ff88';
+            ctx.fillText(document.getElementById('ticket-type-badge-inline').innerText, width - 60, 450);
+
+            // Draw extra info row if it is visible
+            const extraInfoRow = document.getElementById('ticket-extra-info-row');
+            if (extraInfoRow && extraInfoRow.style.display !== 'none') {
+                ctx.textAlign = 'left';
+                ctx.font = '22px Inter, Arial';
+                ctx.fillStyle = '#888';
+                ctx.fillText('Partido:', 60, 500);
+
+                ctx.textAlign = 'right';
+                ctx.font = 'bold 18px Inter, Arial';
+                ctx.fillStyle = 'white';
+                let extraText = document.getElementById('ticket-extra-info').innerText;
+                if (extraText.length > 28) extraText = extraText.substring(0, 25) + '...';
+                ctx.fillText(extraText, width - 60, 500);
+            }
+            
+            // Total
+            ctx.textAlign = 'center';
+            ctx.font = 'bold 24px Inter, Arial';
+            ctx.fillStyle = '#888';
+            ctx.fillText('Total Pagado:', width/2, 570);
+            ctx.font = 'bold 60px Inter, Arial';
+            ctx.fillStyle = '#00ff88';
+            ctx.fillText(document.getElementById('ticket-amount').innerText, width/2, 640);
+            
+            // ID
+            ctx.font = 'bold 16px monospace';
+            ctx.fillStyle = '#555';
+            ctx.fillText(document.getElementById('ticket-id').innerText, width/2, height - 60);
+
+            // Convertir a imagen y descargar
+            const link = document.createElement('a');
+            link.download = `Ticket_FutAdmin_${document.getElementById('ticket-id').innerText.replace('#','')}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+
+        async function openRoster(teamId) {
+            showView('registration-view');
+            const container = document.getElementById('roster-list-container');
+            container.innerHTML = '<div style="text-align:center; padding:20px;">Cargando plantilla...</div>';
+            try {
+                const res = await fetch(`/api/telegram/team/${teamId}/roster`);
+                const data = await res.json();
+                document.getElementById('roster-team-name').innerText = data.team_name.toUpperCase();
+                container.innerHTML = data.players.map(p => `
+                    <div style="display:flex; align-items:center; gap:12px; padding:10px; border-bottom:1px solid rgba(255,255,255,0.05);">
+                        <div style="width:35px; height:35px; border-radius:50%; background:rgba(255,255,255,0.05); overflow:hidden; border:1px solid var(--muted);">
+                            ${p.foto_url ? `<img src="${p.foto_url}" style="width:100%; height:100%; object-fit:cover;">` : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:1.2rem;">👤</div>'}
+                        </div>
+                        <div style="flex:1;">
+                            <div style="font-size:0.85rem; font-weight:600;">${p.nombre}</div>
+                            <div style="font-size:0.65rem; color:var(--muted);">#${p.numero || '--'} | ${p.posicion || 'Sin Pos.'}</div>
+                        </div>
+                        <button class="btn btn-outline" onclick='openPlayerEdit(${JSON.stringify(p)})' style="width:auto; padding:4px 8px; font-size:0.6rem; border-color:var(--secondary); color:var(--secondary);">EDITAR</button>
+                    </div>
+                `).join('');
+                if (data.players.length === 0) container.innerHTML = '<p style="text-align:center; padding:20px; color:var(--muted);">Sin jugadores registrados.</p>';
+                selectedEquipoIdForReg = teamId;
+            } catch (e) { 
+                alert("Error al cargar plantilla"); 
+                showMenu();
+            }
+        }
+
+        let editingPlayerId = null;
+        function openPlayerEdit(player) {
+            editingPlayerId = player.id;
+            document.getElementById('edit-player-name').value   = player.nombre;
+            document.getElementById('edit-player-number').value = player.numero || '';
+            document.getElementById('edit-player-pos').value    = player.posicion || 'Delantero';
+            document.getElementById('edit-player-curp').value   = player.seudonimo || '';
+            document.getElementById('edit-player-birth').value  = player.fecha_nacimiento || '';
+            document.getElementById('edit-player-phone').value  = player.telefono || '';
+            document.getElementById('edit-player-photo-url').value = player.foto_url || '';
+
+            const preview = document.getElementById('player-photo-preview');
+            if (player.foto_url) {
+                preview.innerHTML = `<img src="${player.foto_url}" style="width:100%; height:100%; object-fit:cover;">`;
+            } else {
+                preview.innerHTML = `<span style="font-size:3rem;">👤</span>`;
+            }
+
+            document.getElementById('minor-auth-check-edit').checked = false;
+            clearSigCanvas('edit');
+            checkMinorStatus('edit');
+
+            document.getElementById('modal-edit-player').style.display = 'block';
+        }
+
+        async function handlePhotoSelect(input) {
+            if (!input.files || !input.files[0]) return;
+            
+            const btn = document.getElementById('btn-save-player');
+            const preview = document.getElementById('player-photo-preview');
+            btn.disabled = true;
+            const originalText = btn.innerText;
+            btn.innerText = "SUBIENDO FOTO...";
+            
+            try {
+                // Compresión antes de subir
+                const compressedFile = await compressImage(input.files[0]);
+                const formData = new FormData();
+                formData.append('photo', compressedFile);
+                
+                const res = await fetch('/api/telegram/upload_photo', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+                if (data.success) {
+                    document.getElementById('edit-player-photo-url').value = data.url;
+                    preview.innerHTML = `<img src="${data.url}" style="width:100%; height:100%; object-fit:cover;">`;
+                    tg.HapticFeedback.notificationOccurred('success');
+                    checkMinorStatus('edit');
+                } else {
+                    alert("Error al subir foto: " + data.error);
+                }
+            } catch (e) {
+                alert("Error de conexión al subir foto");
+            } finally {
+                btn.disabled = false;
+                btn.innerText = originalText;
+            }
+        }
+
+        function closePlayerEdit() {
+            document.getElementById('modal-edit-player').style.display = 'none';
+        }
+
+        async function savePlayerChanges() {
+            const birth    = document.getElementById('edit-player-birth').value;
+            const photoUrl = document.getElementById('edit-player-photo-url').value;
+
+            if (photoUrl) {
+                if (!birth) return alert('Para subir una fotografía es obligatorio ingresar la fecha de nacimiento.');
+                if (calculateAge(birth) < 18) {
+                    document.getElementById('minor-auth-container-edit').style.display = 'block';
+                    setTimeout(() => initSigCanvas('edit'), 50);
+                    if (!document.getElementById('minor-auth-check-edit').checked)
+                        return alert('Al ser menor de edad, es obligatorio leer y marcar la casilla de autorización legal.');
+                    if (isSigCanvasBlank('edit'))
+                        return alert('La firma digital del tutor es obligatoria para guardar la foto de un menor.');
+                }
+            }
+
+            // Subir firma si aplica
+            let firmaUrl = null;
+            if (photoUrl && birth && calculateAge(birth) < 18) {
+                firmaUrl = await uploadSigCanvas('edit');
+            }
+
+            const data = {
+                nombre:           document.getElementById('edit-player-name').value,
+                numero:           document.getElementById('edit-player-number').value,
+                posicion:         document.getElementById('edit-player-pos').value,
+                curp:             document.getElementById('edit-player-curp').value,
+                fecha_nacimiento: birth,
+                telefono:         document.getElementById('edit-player-phone').value,
+                foto_url:         photoUrl,
+                firma_tutor_url:  firmaUrl
+            };
+            try {
+                const res = await fetch(`/api/telegram/player/${editingPlayerId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                if (res.ok) {
+                    tg.HapticFeedback.notificationOccurred('success');
+                    closePlayerEdit();
+                    openRoster(selectedEquipoIdForReg);
+                } else {
+                    alert('Error al guardar cambios');
+                }
+            } catch (e) { alert('Error de conexión'); }
+        }
     </script>
     <!-- Modal de Penales -->
     <div id="penalties-modal" class="modal" style="display: none;">
@@ -1236,6 +2491,232 @@
             </div>
         </div>
     </div>
+    <!-- Vista de Registro de Jugador (Camera) -->
+    <div id="registration-view" class="view" style="display: none; padding: 16px;">
+        <div class="header">
+            <button class="btn btn-outline" onclick="showMenu()" style="width: auto; padding: 6px 12px;">← MENU</button>
+            <h3 id="roster-team-name">PLANTILLA</h3>
+        </div>
+        
+        <div id="roster-list-container" style="margin-bottom: 20px;">
+            <!-- Lista de jugadores aquí -->
+        </div>
+
+        <div class="card" style="border-top: 4px solid var(--primary);">
+            <h4 style="margin:0 0 15px 0;">REGISTRAR NUEVO JUGADOR</h4>
+            <div id="camera-preview-container" style="text-align: center; margin-bottom: 20px;">
+                <div id="photo-preview" style="width: 100px; height: 100px; background: rgba(255,255,255,0.05); border-radius: 12px; margin: 0 auto; display: flex; align-items: center; justify-content: center; font-size: 2rem; overflow: hidden; border: 2px dashed var(--primary);">
+                    👤
+                </div>
+                <div style="display:flex; gap:10px; width:100%; justify-content:center; margin-top:10px;">
+                    <button class="btn btn-outline" onclick="document.getElementById('reg-photo-camera').click()" style="width: auto; font-size: 0.65rem; border-color:var(--primary); color:var(--primary); padding:8px 10px;">📸 TOMAR FOTO</button>
+                    <button class="btn btn-outline" onclick="document.getElementById('reg-photo-gallery').click()" style="width: auto; font-size: 0.65rem; border-color:var(--primary); color:var(--primary); padding:8px 10px;">🖼️ GALERÍA</button>
+                </div>
+                <input type="file" id="reg-photo-camera" accept="image/*" capture="environment" style="display: none;" onchange="handlePhoto(this)">
+                <input type="file" id="reg-photo-gallery" accept="image/*" style="display: none;" onchange="handlePhoto(this)">
+            </div>
+
+            <div style="margin-bottom:12px;">
+                <label style="font-size:0.6rem; color:var(--muted); font-weight:700; margin-left:5px;">NOMBRE COMPLETO</label>
+                <input type="text" id="reg-player-name" placeholder="Ej. Juan Pérez" class="btn btn-outline" style="text-align: left; margin-top:4px; border-color: rgba(255,255,255,0.1); font-size: 0.85rem;">
+            </div>
+
+            <div style="margin-bottom:12px; display:none;">
+                <label style="font-size:0.6rem; color:var(--muted); font-weight:700; margin-left:5px;">CURP / ID ÚNICO</label>
+                <input type="text" id="reg-player-curp" placeholder="ID UNICO" class="btn btn-outline" style="text-align: left; margin-top:4px; border-color: rgba(255,255,255,0.1); font-size: 0.85rem;">
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:12px;">
+                <div>
+                    <label style="font-size:0.6rem; color:var(--muted); font-weight:700; margin-left:5px;">NÚMERO</label>
+                    <input type="number" id="reg-player-number" placeholder="00" class="btn btn-outline" style="text-align: left; margin-top:4px; border-color: rgba(255,255,255,0.1); font-size: 0.85rem;">
+                </div>
+                <div>
+                    <label style="font-size:0.6rem; color:var(--muted); font-weight:700; margin-left:5px;">POSICIÓN</label>
+                    <select id="reg-player-pos" class="btn btn-outline" style="text-align: left; margin-top:4px; border-color: rgba(255,255,255,0.1); width: 100%; height: 45px; background: rgba(0,0,0,0.2); color: white;">
+                        <option value="Delantero">Delantero</option>
+                        <option value="Mediocampista">Mediocampista</option>
+                        <option value="Defensa">Defensa</option>
+                        <option value="Portero">Portero</option>
+                    </select>
+                </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:20px;">
+                <div>
+                    <label style="font-size:0.6rem; color:var(--muted); font-weight:700; margin-left:5px;">F. NACIMIENTO</label>
+                    <input type="date" id="reg-player-birth" class="btn btn-outline" onchange="checkMinorStatus('reg')" style="text-align: left; margin-top:4px; border-color: rgba(255,255,255,0.1); font-size: 0.85rem;">
+                </div>
+                <div>
+                    <label style="font-size:0.6rem; color:var(--muted); font-weight:700; margin-left:5px;">TELÉFONO</label>
+                    <input type="tel" id="reg-player-phone" placeholder="10 dígitos" class="btn btn-outline" style="text-align: left; margin-top:4px; border-color: rgba(255,255,255,0.1); font-size: 0.85rem;">
+                </div>
+            </div>
+
+            <div id="minor-auth-container-reg" style="display:none; margin-bottom:15px; padding:12px; background:rgba(251, 191, 36, 0.08); border:1px solid var(--warning); border-radius:8px;">
+                <!-- Disclaimer + checkbox -->
+                <label style="display:flex; align-items:start; gap:8px; font-size:0.7rem; color:var(--text); cursor:pointer; line-height:1.3;">
+                    <input type="checkbox" id="minor-auth-check-reg" style="width:18px; height:18px; margin-top:2px; accent-color:var(--warning);">
+                    <span>⚠️ Mentir en temas legales de un menor es delito y es responsabilidad total del Entrenador o Dueño de Liga. FutAdmin solo provee la herramienta digital. <strong>Confirmo autorización para subir foto.</strong></span>
+                </label>
+                <!-- Firma del tutor -->
+                <div class="sig-section">
+                    <span class="sig-label">✍️ FIRMA DEL TUTOR / REPRESENTANTE LEGAL</span>
+                    <div class="sig-canvas-wrap">
+                        <canvas id="sig-canvas-reg"></canvas>
+                        <div class="sig-placeholder" id="sig-placeholder-reg">Firme aquí con el dedo</div>
+                    </div>
+                    <div class="sig-actions">
+                        <button class="btn btn-outline" onclick="clearSigCanvas('reg')" style="width:auto; padding:4px 10px; font-size:0.65rem; border-color:var(--warning); color:var(--warning);">🗑️ Limpiar</button>
+                    </div>
+                    <div class="sig-hint">La firma se guardará como respaldo digital del consentimiento</div>
+                </div>
+            </div>
+
+            <button class="btn btn-primary" onclick="submitPlayerRegistration()" style="font-weight:800; background:linear-gradient(135deg, var(--primary), #0ea5e9);">REGISTRAR FUTBOLISTA</button>
+        </div>
+    </div>
+
+    <div id="payments-view" class="view" style="display: none; padding: 16px;">
+        <div class="header">
+            <button class="btn btn-outline" onclick="showMenu()" style="width: auto; padding: 6px 12px;">← MENU</button>
+            <h3>SISTEMA DE PAGOS</h3>
+        </div>
+        <div id="payments-container"></div>
+    </div>
+
+    <div id="ids-lookup-view" class="view" style="display: none; padding: 16px;">
+        <div class="header">
+            <button class="btn btn-outline" onclick="showMenu()" style="width: auto; padding: 6px 12px;">← MENU</button>
+            <h3>EQUIPOS (IDs)</h3>
+        </div>
+        <input type="text" id="search-ids" placeholder="Buscar por nombre o ID..." class="btn btn-outline" oninput="filterTeamIds()" style="text-align:left; margin-bottom:15px;">
+        <div id="ids-container"></div>
+    </div>
+
+    <!-- Vista de Formulario de Pago -->
+    <div id="payment-form-view" class="view" style="display: none; padding: 16px;">
+        <div class="header">
+            <button class="btn btn-outline" onclick="showView('payments-view')" style="width: auto; padding: 6px 12px;">← VOLVER</button>
+            <h3>REGISTRAR PAGO</h3>
+        </div>
+
+        <div class="card" style="border-top: 4px solid var(--secondary); margin-bottom: 20px;">
+            <div id="payment-team-info" style="margin-bottom:15px; padding-bottom:10px; border-bottom:1px solid rgba(255,255,255,0.05);">
+                <div id="pay-torneo-name" style="font-size:0.7rem; color:var(--muted); font-weight:700;">CARGANDO...</div>
+                <div id="pay-team-name" style="font-size:1.1rem; font-weight:800; color:var(--secondary);">EQUIPO</div>
+            </div>
+
+            <div style="display:flex; justify-content: space-between; margin-bottom:15px; background:rgba(255,255,255,0.03); padding:10px; border-radius:8px;">
+                <div style="text-align:center;">
+                    <div style="font-size:0.6rem; color:var(--muted);">PACTADO</div>
+                    <div id="pay-total-pactado" style="font-weight:700;">$0</div>
+                </div>
+                <div style="text-align:center; border-left:1px solid rgba(255,255,255,0.1); border-right:1px solid rgba(255,255,255,0.1); padding:0 15px;">
+                    <div style="font-size:0.6rem; color:var(--muted);">SALDO</div>
+                    <div id="pay-saldo-pendiente" style="font-weight:800; color:var(--error);">$0</div>
+                </div>
+                <div style="text-align:center;">
+                    <div style="font-size:0.6rem; color:var(--muted);">TIPO</div>
+                    <div style="font-weight:700; color:var(--primary);">INSCRIPCIÓN</div>
+                </div>
+            </div>
+
+            <div style="margin-bottom:15px;">
+                <label style="font-size:0.6rem; color:var(--muted); font-weight:700;">MONTO A PAGAR</label>
+                <input type="number" id="pay-amount" placeholder="0.00" class="btn btn-outline" style="text-align: left; margin-top:4px; font-size:1.2rem; font-weight:800; color:var(--primary);">
+            </div>
+
+            <div style="margin-bottom:15px;">
+                <label style="font-size:0.6rem; color:var(--muted); font-weight:700;">MÉTODO DE PAGO</label>
+                <select id="pay-method" class="btn btn-outline" style="text-align: left; margin-top:4px; width:100%; height:45px; background:rgba(0,0,0,0.2); color:white;">
+                    <option value="Efectivo">Efectivo</option>
+                    <option value="Transferencia">Transferencia</option>
+                    <option value="Depósito">Depósito</option>
+                </select>
+            </div>
+
+            <div style="margin-bottom:20px;">
+                <label style="font-size:0.6rem; color:var(--muted); font-weight:700;">COMPROBANTE (OPCIONAL)</label>
+                <div style="display:flex; gap:10px; margin-top:5px;">
+                    <button class="btn btn-outline" onclick="document.getElementById('pay-photo-input').click()" style="font-size:0.7rem; padding:8px;">📸 SUBIR FOTO</button>
+                    <div id="pay-photo-status" style="font-size:0.6rem; color:var(--muted); display:flex; align-items:center;">Sin archivo</div>
+                </div>
+                <input type="file" id="pay-photo-input" accept="image/*" capture="environment" style="display:none;" onchange="handlePaymentPhoto(this)">
+                <input type="hidden" id="pay-photo-url">
+            </div>
+
+            <button class="btn btn-primary" id="btn-submit-payment" onclick="submitPayment()" style="font-weight:800; background:var(--primary);">CONFIRMAR PAGO</button>
+        </div>
+    </div>
+
+    <!-- Vista de Ticket Digital -->
+    <div id="ticket-view" class="view" style="display: none; padding: 16px; background: #0a0a0b;">
+        <div class="header">
+            <button class="btn btn-outline" id="ticket-back-btn" onclick="showMenu()" style="width: auto; padding: 6px 12px;">← VOLVER</button>
+            <h3>TICKET DIGITAL</h3>
+            <div style="width:60px;"></div>
+        </div>
+
+        <div id="ticket-capture-area" style="padding: 20px; background: #111; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); position: relative; overflow: hidden; margin-bottom: 20px;">
+            <!-- Decoración -->
+            <div style="position: absolute; top: -50px; right: -50px; width: 150px; height: 150px; background: var(--primary); filter: blur(80px); opacity: 0.2;"></div>
+            
+            <div style="text-align: center; margin-bottom: 20px;">
+                <div style="font-size: 1.5rem; font-weight: 900; letter-spacing: 2px; color: white;">FUTADMIN</div>
+                <div style="font-size: 0.6rem; color: var(--muted); letter-spacing: 3px; margin-top: 5px;">COMPROBANTE OFICIAL</div>
+            </div>
+
+            <!-- Type badge -->
+            <div style="text-align:center; margin-bottom: 16px;">
+                <span id="ticket-type-badge" style="font-size: 0.65rem; font-weight:800; letter-spacing:1px; padding: 6px 14px; border-radius: 20px; background: rgba(0,242,255,0.1); color: var(--primary);">💳 PAGO DE INSCRIPCIÓN</span>
+            </div>
+
+            <div style="text-align: center; margin-bottom: 25px;">
+                <div style="width: 60px; height: 60px; background: rgba(0,255,136,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto; color: var(--primary); font-size: 2rem; border: 2px solid var(--primary);">✓</div>
+                <h2 style="margin: 15px 0 5px 0; color: white;">PAGO EXITOSO</h2>
+                <div id="ticket-date" style="font-size: 0.75rem; color: var(--muted);">—</div>
+            </div>
+
+            <div style="background: rgba(255,255,255,0.03); border-radius: 12px; padding: 15px;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
+                    <span style="color: var(--muted); font-size: 0.8rem;">Equipo:</span>
+                    <span id="ticket-team" style="font-weight: 700; color: white;">—</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
+                    <span style="color: var(--muted); font-size: 0.8rem;">Torneo:</span>
+                    <span id="ticket-torneo" style="font-weight: 700; color: white; font-size: 0.7rem; text-align: right; max-width: 60%;">—</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
+                    <span style="color: var(--muted); font-size: 0.8rem;">Concepto:</span>
+                    <span id="ticket-type-badge-inline" style="font-weight: 700; color: var(--primary); font-size: 0.8rem;">Inscripción</span>
+                </div>
+                <!-- Extra info for arbitraje: match + method -->
+                <div id="ticket-extra-info-row" style="display:flex; justify-content: space-between; margin-bottom: 12px; display:none;">
+                    <span style="color: var(--muted); font-size: 0.8rem;">Partido:</span>
+                    <span id="ticket-extra-info" style="font-weight: 600; color: var(--muted); font-size: 0.75rem; text-align:right; max-width:60%;">—</span>
+                </div>
+                <div style="height: 1px; background: rgba(255,255,255,0.05); margin: 15px 0;"></div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="color: var(--muted); font-size: 0.9rem;">Total Pagado:</span>
+                    <span id="ticket-amount" style="font-size: 1.8rem; font-weight: 900; color: var(--primary);">$0.00</span>
+                </div>
+            </div>
+
+            <div style="margin-top: 25px; text-align: center;">
+                <div id="ticket-id" style="font-size: 0.6rem; color: var(--muted); font-family: monospace; opacity: 0.5;">ID: #000000</div>
+                <div style="font-size: 0.5rem; color: var(--muted); margin-top: 10px; font-style: italic;">Este documento es un comprobante digital generado por FutAdmin.</div>
+            </div>
+        </div>
+
+        <canvas id="ticket-canvas" style="display: none;"></canvas>
+
+        <button class="btn btn-primary" onclick="downloadTicketImage()" style="font-weight:800; height: 55px; background: linear-gradient(135deg, var(--primary), #0ea5e9);">
+            📥 DESCARGAR TICKET (IMAGEN)
+        </button>
+        <p style="text-align: center; font-size: 0.7rem; color: var(--muted); margin-top: 10px;">Presiona descargar para guardar el comprobante en tu galería.</p>
+    </div>
+
 </body>
 
 </html>
