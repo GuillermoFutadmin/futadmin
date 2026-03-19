@@ -205,6 +205,36 @@ def admin_seed_local():
         import traceback
         return jsonify({"error": f"Fallo al inyectar: {str(e)}", "trace": traceback.format_exc()}), 500
 
+@app.route('/api/admin/fix_db')
+def admin_fix_db():
+    if session.get('user_rol') != 'admin':
+        return jsonify({"error": "No autorizado"}), 403
+    try:
+        from sqlalchemy import inspect
+        inspector = inspect(db.engine)
+        from models import Usuario, Liga, Cancha, Arbitro, Torneo, Equipo, Jugador, Inscripcion, Pago, GrupoEntrenamiento, AlumnoEntrenamiento, Partido, EventoPartido, AsistenciaPartido, PagoCancha, PagoCombo, LigaExpansion, Configuracion
+        models = [Usuario, Liga, Cancha, Arbitro, Torneo, Equipo, Jugador, Inscripcion, Pago, GrupoEntrenamiento, AlumnoEntrenamiento, Partido, EventoPartido, AsistenciaPartido, PagoCancha, PagoCombo, LigaExpansion, Configuracion]
+        log = []
+        for model in models:
+            table_name = model.__tablename__
+            if table_name in inspector.get_table_names():
+                existing_columns = [c['name'] for c in inspector.get_columns(table_name)]
+                for col in model.__table__.columns:
+                    if col.name not in existing_columns:
+                        col_type = col.type.compile(dialect=db.engine.dialect)
+                        try:
+                            # Add column safely
+                            db.session.execute(db.text(f"ALTER TABLE {table_name} ADD COLUMN {col.name} {col_type}"))
+                            db.session.commit()
+                            log.append(f"Éxito: {table_name}.{col.name}")
+                        except Exception as e:
+                            db.session.rollback()
+                            log.append(f"Error en {table_name}.{col.name}: {e}")
+        return jsonify({"success": "Sincronización de esquema finalizada.", "log": log}), 200
+    except Exception as e:
+        import traceback
+        return jsonify({"error": str(e), "trace": traceback.format_exc()}), 500
+
 @app.route('/api/debug_prod')
 def debug_prod():
     # Ruta de diagnóstico que combina info básica (pública) y stats (admin)
