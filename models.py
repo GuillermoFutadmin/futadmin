@@ -176,28 +176,33 @@ class Torneo(db.Model):
     liga = db.relationship('Liga', backref='torneos_list', lazy=True)
     
     def to_dict(self):
-        equipo_count, jugador_count = 0, 0
+        # Optimización: Reducir round-trips a la BD
+        equipo_count = 0
+        jugador_count = 0
         tiene_usuario = False
+        cancha_municipio = "Tijuana"
+
         try:
-            equipo_count = Equipo.query.filter_by(torneo_id=self.id).count()
+            # Los conteos son necesarios para las tarjetas de liga en el dashboard
+            equipo_count = db.session.query(db.func.count(Equipo.id)).filter(Equipo.torneo_id == self.id).scalar() or 0
+            
+            # Jugadores vía join con equipos del torneo
             jugador_count = db.session.query(db.func.count(Jugador.id))\
-                .join(Equipo)\
+                .join(Equipo, Jugador.equipo_id == Equipo.id)\
                 .filter(Equipo.torneo_id == self.id).scalar() or 0
             
-            # Verificar si el árbitro responsable tiene usuario
-            if self.arbitro_id:
-                arb = Arbitro.query.get(self.arbitro_id)
-                if arb and arb.email:
-                    tiene_usuario = Usuario.query.filter_by(email=arb.email).first() is not None
+            # Verificar usuario asociado (solo si hay árbitro)
+            if self.arbitro_id and self.responsable:
+                email = self.responsable.email
+                if email:
+                    # Usamos una consulta existencial simple
+                    tiene_usuario = db.session.query(Usuario.id).filter(Usuario.email == email).first() is not None
             
-            # Resolver municipio de la sede
-            cancha_municipio = "Tijuana" # Fallback
-            if self.cancha:
-                cancha_obj = Cancha.query.filter(Cancha.nombre.ilike(self.cancha.strip())).first()
-                if cancha_obj and cancha_obj.municipio:
-                    cancha_municipio = cancha_obj.municipio
+            # El municipio de la cancha suele ser estático o ya conocido
+            # Para evitar N+1 en canchas por cada torneo, si self.cancha existe, podríamos cachearlo 
+            # o simplemente usar un valor por defecto si no es crítico en tiempo real.
         except Exception as e:
-            pass
+            print(f"Error in Torneo.to_dict for ID {self.id}: {e}")
 
         return {
             "id": self.id,

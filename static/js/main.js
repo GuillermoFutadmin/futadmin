@@ -191,87 +191,98 @@ class FutAdminUI {
     }
 
     async loadInitialStats() {
-        try {
-            const data = await Core.fetchAPI('/api/stats');
-            
-            // Guardar límites globales para control de UI
-            window.FutAdminLimits = data.limits || {};
-            window.FutAdminCounts = data.current_counts || {};
-            window.futUserRol = data.user_rol || null;
+        // Evitar múltiples llamadas simultáneas (Singleton pattern)
+        if (this._statsPromise) return this._statsPromise;
 
-            // Control dinámico de visibilidad para Entrenamientos
-            const trainItem = document.getElementById('nav-item-entrenamientos');
-            if (trainItem) {
-                if (window.FutAdminCounts.entrenadores > 0 || ['admin', 'ejecutivo'].includes(window.futUserRol?.toLowerCase())) {
-                    trainItem.style.display = 'block';
-                } else {
-                    trainItem.style.display = 'none';
+        this._statsPromise = (async () => {
+            try {
+                const data = await Core.fetchAPI('/api/stats');
+                
+                // Guardar límites globales para control de UI
+                window.FutAdminLimits = data.limits || {};
+                window.FutAdminCounts = data.current_counts || {};
+                window.futUserRol = data.user_rol || null;
+
+                // Control dinámico de visibilidad para Entrenamientos
+                const trainItem = document.getElementById('nav-item-entrenamientos');
+                if (trainItem) {
+                    if (window.FutAdminCounts.entrenadores > 0 || ['admin', 'ejecutivo'].includes(window.futUserRol?.toLowerCase())) {
+                        trainItem.style.display = 'block';
+                    } else {
+                        trainItem.style.display = 'none';
+                    }
                 }
-            }
-            
-            // Disparar evento para que los módulos actualicen su UI si dependen de los límites
-            document.dispatchEvent(new CustomEvent('futadmin:limitsLoaded'));
+                
+                // Disparar evento para que los módulos actualicen su UI si dependen de los límites
+                document.dispatchEvent(new CustomEvent('futadmin:limitsLoaded'));
 
-            // Render basic stats
-            const container = document.getElementById('stats-dashboard');
-            if (container) {
-                container.innerHTML = `
-                    <div class="stat-card">
-                        <p class="section-title">LIGAS ACTIVAS</p>
-                        <div class="value" style="font-size: 2.5rem; font-weight: 700; color: var(--primary);">${data.torneos_activos || 0}</div>
-                    </div>
-                    <div class="stat-card">
-                        <p class="section-title">EQUIPOS TOTALES</p>
-                        <div class="value" style="font-size: 2.5rem; font-weight: 700;">${data.total_equipos || 0}</div>
-                    </div>
-                    <div class="stat-card">
-                        <p class="section-title">JUGADORES REGISTRADOS</p>
-                        <div class="value" style="font-size: 2.5rem; font-weight: 700;">${data.total_jugadores || 0}</div>
-                    </div>
-                `;
-            }
-
-            // Render active tournaments detailed view in the welcome banner
-            const banner = document.querySelector('.welcome-banner');
-            if (banner && data.torneos_detalle && data.torneos_detalle.length > 0) {
-                let html = `<h2 style="font-size: 1.8rem; margin-bottom: 1.5rem;">Ligas Activas en Desarrollo</h2>
-                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">`;
-
-                data.torneos_detalle.forEach(t => {
-                    const totalPartidos = t.partidos_jugados + t.partidos_pendientes;
-                    const progress = totalPartidos > 0 ? Math.round((t.partidos_jugados / totalPartidos) * 100) : 0;
-
-                    html += `
-                    <div style="background: rgba(0,0,0,0.3); padding: 1.5rem; border-radius: 16px; border: 1px solid var(--border);">
-                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
-                            <h4 style="color: var(--primary); font-size: 1.1rem; margin: 0;">${t.nombre}</h4>
-                            <span style="font-size: 0.8rem; background: rgba(255,255,255,0.1); padding: 4px 10px; border-radius: 20px;">${t.jornadas_totales} Jornadas</span>
+                // Render basic stats
+                const container = document.getElementById('stats-dashboard');
+                if (container) {
+                    container.innerHTML = `
+                        <div class="stat-card">
+                            <p class="section-title">LIGAS ACTIVAS</p>
+                            <div class="value" style="font-size: 2.5rem; font-weight: 700; color: var(--primary);">${data.torneos_activos || 0}</div>
                         </div>
-                        <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;">
-                            <strong>${t.partidos_jugados}</strong> partidos jugados • <strong>${t.partidos_pendientes}</strong> pendientes
+                        <div class="stat-card">
+                            <p class="section-title">EQUIPOS TOTALES</p>
+                            <div class="value" style="font-size: 2.5rem; font-weight: 700;">${data.total_equipos || 0}</div>
                         </div>
-                        <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden; position: relative;">
-                            <div style="width: ${progress}%; height: 100%; background: var(--primary); transition: width 1s ease-in-out;"></div>
+                        <div class="stat-card">
+                            <p class="section-title">JUGADORES REGISTRADOS</p>
+                            <div class="value" style="font-size: 2.5rem; font-weight: 700;">${data.total_jugadores || 0}</div>
                         </div>
-                    </div>`;
-                });
+                    `;
+                }
 
-                html += `</div>`;
-                banner.innerHTML = html;
-            } else if (banner) {
-                banner.innerHTML = `
-                    <h2>Bienvenido a FutAdmin Professional</h2>
-                    <p>Aún no hay torneos activos. Ve a Gestión de Ligas para comenzar.</p>
-                `;
+                // Render active tournaments detailed view in the welcome banner
+                const banner = document.querySelector('.welcome-banner');
+                if (banner && data.torneos_detalle && data.torneos_detalle.length > 0) {
+                    let html = `<h2 style="font-size: 1.8rem; margin-bottom: 1.5rem;">Ligas Activas en Desarrollo</h2>
+                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">`;
+
+                    data.torneos_detalle.forEach(t => {
+                        const totalPartidos = t.partidos_jugados + t.partidos_pendientes;
+                        const progress = totalPartidos > 0 ? Math.round((t.partidos_jugados / totalPartidos) * 100) : 0;
+
+                        html += `
+                        <div style="background: rgba(0,0,0,0.3); padding: 1.5rem; border-radius: 16px; border: 1px solid var(--border);">
+                            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
+                                <h4 style="color: var(--primary); font-size: 1.1rem; margin: 0;">${t.nombre}</h4>
+                                <span style="font-size: 0.8rem; background: rgba(255,255,255,0.1); padding: 4px 10px; border-radius: 20px;">${t.jornadas_totales} Jornadas</span>
+                            </div>
+                            <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;">
+                                <strong>${t.partidos_jugados}</strong> partidos jugados • <strong>${t.partidos_pendientes}</strong> pendientes
+                            </div>
+                            <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden; position: relative;">
+                                <div style="width: ${progress}%; height: 100%; background: var(--primary); transition: width 1s ease-in-out;"></div>
+                            </div>
+                        </div>`;
+                    });
+
+                    html += `</div>`;
+                    banner.innerHTML = html;
+                } else if (banner) {
+                    banner.innerHTML = `
+                        <h2>Bienvenido a FutAdmin Professional</h2>
+                        <p>Aún no hay torneos activos. Ve a Gestión de Ligas para comenzar.</p>
+                    `;
+                }
+
+                // Update Map
+                if (data.geo_stats) {
+                    this.map.update(data.geo_stats);
+                }
+
+                return data;
+            } catch (error) { 
+                console.error('Error stats:', error); 
+                this._statsPromise = null; // Permitir reintento
+                throw error;
             }
+        })();
 
-
-            // Update Map
-            if (data.geo_stats) {
-                this.map.update(data.geo_stats);
-            }
-
-        } catch (error) { console.error('Error stats:', error); }
+        return this._statsPromise;
     }
 
     async handleGlobalUpload(event) {

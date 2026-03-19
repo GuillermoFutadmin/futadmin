@@ -1918,7 +1918,8 @@ def handle_torneos():
         db.session.commit()
         return jsonify(nuevo.to_dict()), 201
     
-    query = Torneo.query
+    from sqlalchemy.orm import joinedload
+    query = Torneo.query.options(joinedload(Torneo.liga))
     query = apply_liga_filter(query, Torneo)
     return paginate_query(query)
 

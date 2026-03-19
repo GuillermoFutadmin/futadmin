@@ -759,8 +759,15 @@ export class LeaguesModule {
     }
 
     async downloadTournamentReport(id) {
-        Core.showNotification('Generando reporte PDF...', 'info');
+        Core.showNotification('Cargando motor de reporte...', 'info');
         try {
+            // Carga diferida de librerías pesadas
+            await Promise.all([
+                Core.loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'),
+                Core.loadScript('https://html2canvas.hertzen.com/dist/html2canvas.min.js')
+            ]);
+
+            Core.showNotification('Generando reporte PDF...', 'info');
             const data = await Core.fetchAPI(`/api/torneos/${id}/report`);
             const { torneo, campeon, standings, leaderboard } = data;
 
