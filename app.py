@@ -2522,26 +2522,36 @@ def _get_stats_impl():
     torneos_detalle = []
     from sqlalchemy import func, distinct, case
     
-    # Optimizamos: Obtenemos conteos agrupados en lugar de traer todos los objetos Partido
-    stats_query = db.session.query(
-        Partido.torneo_id,
-        func.count(Partido.id).label('total'),
-        func.sum(case([(Partido.estado == 'Played', 1)], else_=0)).label('jugados'),
-        func.count(distinct(Partido.jornada)).label('jornadas')
-    ).group_by(Partido.torneo_id).filter(Partido.torneo_id.in_([t.id for t in active_tournaments])).all() if active_tournaments else []
-    
-    stats_map = {s.torneo_id: s for s in stats_query}
-    
-    for t in active_tournaments:
-        s = stats_map.get(t.id)
-        torneos_detalle.append({
-            "id": t.id,
-            "nombre": t.nombre,
-            "tipo": t.tipo,
-            "jornadas_totales": s.jornadas if s else 0,
-            "partidos_jugados": s.jugados if s else 0,
-            "partidos_pendientes": (s.total - s.jugados) if s else 0
-        })
+    try:
+        # Optimizamos: Obtenemos conteos agrupados en lugar de traer todos los objetos Partido
+        # Usamos COALESCE para evitar Nones que rompan la lógica matemática en Python
+        stats_query = db.session.query(
+            Partido.torneo_id,
+            func.count(Partido.id).label('total'),
+            func.coalesce(func.sum(case([(Partido.estado == 'Played', 1)], else_=0)), 0).label('jugados'),
+            func.count(distinct(Partido.jornada)).label('jornadas')
+        ).group_by(Partido.torneo_id).filter(Partido.torneo_id.in_([t.id for t in active_tournaments])).all() if active_tournaments else []
+        
+        stats_map = {s.torneo_id: s for s in stats_query}
+        
+        for t in active_tournaments:
+            s = stats_map.get(t.id)
+            total = getattr(s, 'total', 0) or 0
+            jugados = getattr(s, 'jugados', 0) or 0
+            jornadas = getattr(s, 'jornadas', 0) or 0
+            
+            torneos_detalle.append({
+                "id": t.id,
+                "nombre": t.nombre,
+                "tipo": t.tipo,
+                "jornadas_totales": jornadas,
+                "partidos_jugados": jugados,
+                "partidos_pendientes": max(0, total - jugados)
+            })
+    except Exception as es:
+        print(f"ERROR en optimización de stats: {es}")
+        # Fallback a lista vacía para no romper toda la respuesta si falla el cálculo agrupado
+        torneos_detalle = [{"id": t.id, "nombre": t.nombre, "tipo": t.tipo, "error": True} for t in active_tournaments]
 
     # Stats generales filtradas
     try:
