@@ -85,7 +85,14 @@ csrf.exempt(users_bp)
 csrf.exempt(arbitros_bp)
 csrf.exempt(anonymize_bp)
 
+@app.route('/telegram_app')
+@app.route('/telegram')
+def telegram_app_view():
+    return render_template('telegram_app.html')
+
 db.init_app(app)
+from flask_migrate import Migrate
+migrate = Migrate(app, db)
 
 @app.before_request
 def check_login():
@@ -97,7 +104,7 @@ def check_login():
     # Permitir si el usuario está en sesión
     if 'user_id' not in session:
         # Exenciones para la App de Telegram (tienen su propia auth)
-        if request.path == '/telegram_app' or request.path.startswith('/api/telegram/'):
+        if request.path in ['/telegram_app', '/telegram'] or request.path.startswith('/api/telegram/'):
             return
 
         print(f"DEBUG AUTH: 401 en {request.path} - Session: {list(session.keys())}")
@@ -2540,9 +2547,7 @@ def handle_combo_pagos():
     pagos = [p.to_dict() for p in query.order_by(PagoCombo.fecha.desc()).all()]
     return jsonify(pagos)
     
-@app.route('/telegram_app')
-def telegram_app():
-    return render_template('telegram_app.html')
+# Las rutas de entrenamientos han sido movidas a routes/entrenamientos.py
 
 # Las rutas de entrenamientos han sido movidas a routes/entrenamientos.py
 
@@ -2979,4 +2984,4 @@ if __name__ == '__main__':
     with app.app_context():
         db.create_all()
         ensure_team_uids()
-    app.run(debug=True, port=5003, use_reloader=False)
+    app.run(debug=True, port=5003, use_reloader=True)

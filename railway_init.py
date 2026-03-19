@@ -10,9 +10,14 @@ def init():
             db_url = app.config.get('SQLALCHEMY_DATABASE_URI') or "None"
             print(f"DATABASE_URI detectada: {db_url[:40]}...")
             
-            print("Paso 1: Creando tablas en PostgreSQL...")
-            db.create_all()
-            print("Éxito: Tablas creadas o ya existentes.")
+            print("Paso 1: Aplicando migraciones a PostgreSQL...")
+            try:
+                from flask_migrate import upgrade
+                upgrade()
+                print("Éxito: Migraciones aplicadas correctamente.")
+            except Exception as migrate_e:
+                print(f"Aviso: Falló o no configurado Flask-Migrate ({migrate_e}). Ejecutando db.create_all() como fallback.")
+                db.create_all()
 
             # Verificar y crear administradores
             for admin_email in ['admin@futadmin.com', 'admin@adminfutbol.com']:

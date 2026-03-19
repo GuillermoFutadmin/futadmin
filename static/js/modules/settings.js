@@ -249,7 +249,12 @@ export class SettingsModule {
                     <div style="font-size: 1rem; border-top: 1px solid #ddd; padding-top: 10px; margin-top: 5px;">
                         <div style="margin-bottom: 5px;">LIGA: <strong>${liga.nombre}</strong></div>
                         <div style="margin-bottom: 5px;">PLAN: <span style="text-transform: uppercase;">${owner.owner_rol.replace('_', ' ')}</span></div>
-                        <div>VENCIMIENTO: <strong style="color: #d32f2f;">${vencimiento}</strong></div>
+                        <div style="margin-bottom: 5px;">VENCIMIENTO: <strong style="color: #d32f2f;">${vencimiento}</strong></div>
+                        <div style="font-size: 0.8rem; color: #666; border-top: 1px dashed #ccc; margin-top: 8px; padding-top: 8px;">
+                            📦 <strong>Capacidad del Paquete:</strong><br>
+                            • 1 Sede y 1 Liga (Base)<br>
+                            • Límite Sugerido: 30 Equipos / 15 Jugadores p.e.
+                        </div>
                     </div>
                 </div>
 
