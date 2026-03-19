@@ -198,9 +198,28 @@ def admin_seed_local():
         return jsonify({"error": "No autorizado"}), 403
     
     try:
+        # 1. Sincronizar esquema automáticamente
+        from sqlalchemy import inspect
+        inspector = inspect(db.engine)
+        from models import Usuario, Liga, Cancha, Arbitro, Torneo, Equipo, Jugador, Inscripcion, Pago, GrupoEntrenamiento, AlumnoEntrenamiento, Partido, EventoPartido, AsistenciaPartido, PagoCancha, PagoCombo, LigaExpansion, Configuracion
+        models_sync = [Usuario, Liga, Cancha, Arbitro, Torneo, Equipo, Jugador, Inscripcion, Pago, GrupoEntrenamiento, AlumnoEntrenamiento, Partido, EventoPartido, AsistenciaPartido, PagoCancha, PagoCombo, LigaExpansion, Configuracion]
+        for m in models_sync:
+            t_name = m.__tablename__
+            if t_name in inspector.get_table_names():
+                existing_cols = [c['name'] for c in inspector.get_columns(t_name)]
+                for col in m.__table__.columns:
+                    if col.name not in existing_cols:
+                        c_type = col.type.compile(dialect=db.engine.dialect)
+                        try:
+                            db.session.execute(db.text(f"ALTER TABLE {t_name} ADD COLUMN {col.name} {c_type}"))
+                            db.session.commit()
+                        except Exception:
+                            db.session.rollback()
+
+        # 2. Inyectar datos
         import seed_local_to_prod
         seed_local_to_prod.inject_local_data()
-        return jsonify({"success": "Inyección de datos locales completada exitosamente.", "tip": "Revisa el dashboard para confirmar."}), 200
+        return jsonify({"success": "Estructura reparada e inyección de datos locales completada exitosamente.", "tip": "Revisa el dashboard para confirmar."}), 200
     except Exception as e:
         import traceback
         return jsonify({"error": f"Fallo al inyectar: {str(e)}", "trace": traceback.format_exc()}), 500
