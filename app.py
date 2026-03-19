@@ -192,6 +192,19 @@ def admin_seed_data():
     except Exception as e:
         return jsonify({"error": f"Fallo al inyectar: {str(e)}"}), 500
 
+@app.route('/api/admin/seed_local')
+def admin_seed_local():
+    if session.get('user_rol') != 'admin':
+        return jsonify({"error": "No autorizado"}), 403
+    
+    try:
+        import seed_local_to_prod
+        seed_local_to_prod.inject_local_data()
+        return jsonify({"success": "Inyección de datos locales completada exitosamente.", "tip": "Revisa el dashboard para confirmar."}), 200
+    except Exception as e:
+        import traceback
+        return jsonify({"error": f"Fallo al inyectar: {str(e)}", "trace": traceback.format_exc()}), 500
+
 @app.route('/api/debug_prod')
 def debug_prod():
     # Ruta de diagnóstico que combina info básica (pública) y stats (admin)
