@@ -1276,6 +1276,88 @@
     <!-- TOAST CONTAINER                                           -->
     <!-- ========================================================= -->
     <div id="toast-container"></div>
+    
+    <!-- ========================================================= -->
+    <!-- MODAL: GENERAR ROL                                        -->
+    <!-- ========================================================= -->
+    <div class="modal-overlay" id="modal-generate-fixtures">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>🎲 Generar Rol Automático</h3>
+                <button class="modal-close" onclick="CalendarApp.closeGenModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <p id="gen-modal-warning" style="margin-bottom: 15px; color: var(--danger); font-weight: bold;"></p>
+                <div class="form-group" id="gen-group-size" style="display:none;">
+                    <label>Equipos por Grupo</label>
+                    <input type="number" id="gen-teams-per-group" class="form-input" value="4" min="2" max="10" placeholder="Ej: 4">
+                    <small style="color:var(--text-muted);">El sistema repartirá los equipos automáticamente.</small>
+                </div>
+                <div class="form-group">
+                    <label>Tipo de Rol</label>
+                    <select id="gen-tipo" class="form-input select-field" style="background-image: none;">
+                        <option value="ida">1 - Solo IDA (A una vuelta)</option>
+                        <option value="doble">2 - IDA Y VUELTA (A dos vueltas)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-ghost" onclick="CalendarApp.closeGenModal()">Cancelar</button>
+                <button class="btn btn-primary" onclick="CalendarApp.submitGenerateFixtures()">🚀 Generar Rol</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- MODAL: AUTO-PROGRAMAR HORARIOS                            -->
+    <!-- ========================================================= -->
+    <div class="modal-overlay" id="modal-auto-schedule">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>📅 Auto-Programar Horarios</h3>
+                <button class="modal-close" onclick="CalendarApp.closeScheduleModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom: 15px; font-size: 0.9rem;">
+                    Asigna fechas, canchas y horas exactas a todos los partidos pendientes de la liga, respetando la duración configurada.
+                </p>
+                
+                <div class="form-group">
+                    <label>Días Permitidos para Jugar</label>
+                    <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:10px; margin-top:5px; font-size:0.85em;">
+                        <label><input type="checkbox" name="sched_days" value="1"> Lun</label>
+                        <label><input type="checkbox" name="sched_days" value="2"> Mar</label>
+                        <label><input type="checkbox" name="sched_days" value="3"> Mié</label>
+                        <label><input type="checkbox" name="sched_days" value="4"> Jue</label>
+                        <label><input type="checkbox" name="sched_days" value="5"> Vie</label>
+                        <label><input type="checkbox" name="sched_days" value="6" checked> Sáb</label>
+                        <label><input type="checkbox" name="sched_days" value="0" checked> Dom</label>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Hora Inicio Jornada</label>
+                        <input type="time" id="sched-time-start" class="form-input" value="08:00">
+                    </div>
+                    <div class="form-group">
+                        <label>Hora Fin Jornada</label>
+                        <input type="time" id="sched-time-end" class="form-input" value="20:00">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Max. Partidos por Día (Opcional)</label>
+                    <input type="number" id="sched-max-day" class="form-input" placeholder="Ej: 5 (Dejar vacío para sin límite)">
+                    <small style="color:var(--text-muted);">Si se supera el límite, se pasarán al siguiente día permitido.</small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-ghost" onclick="CalendarApp.closeScheduleModal()">Cancelar</button>
+                <button class="btn btn-accent" onclick="CalendarApp.submitAutoSchedule()">⚡ Programar Automáticamente</button>
+            </div>
+        </div>
+    </div>
 
     <!-- ========================================================= -->
     <!-- ISOLATED CALENDAR SCRIPT (no external module dependencies)-->
@@ -2114,48 +2196,53 @@
             }
 
             // ----------------------------------------------------------
-            // FIXTURE GENERATOR
+            // FIXTURE GENERATOR MODAL LOGIC
             // ----------------------------------------------------------
-            async function promptGenerateFixtures() {
+            function closeGenModal() {
+                document.getElementById('modal-generate-fixtures').classList.remove('open');
+            }
+
+            function promptGenerateFixtures() {
                 if (!state.torneoId) {
-                    toast('Selecciona un torneo primero.', 'error');
+                    toast('Selecciona un torneo primero.', 'warning');
                     return;
                 }
                 const t = state.torneos.find(t => t.id === state.torneoId);
                 const existing = state.matches.length;
 
-                let msg = `¿Generar nuevo rol para "${t?.nombre}"?`;
+                const warn = document.getElementById('gen-modal-warning');
                 if (existing > 0) {
-                    msg += `\n\nEste torneo ya tiene ${existing} partido(s). Se eliminarán y regenerarán.`;
+                    warn.textContent = `⚠️ Este torneo ya tiene ${existing} partido(s). Se eliminarán y regenerarán.`;
+                    warn.style.display = 'block';
+                } else {
+                    warn.style.display = 'none';
                 }
 
-                if (!confirm(msg)) return;
+                const groupEl = document.getElementById('gen-group-size');
+                if (t && t.formato === "Fase de Grupos") {
+                    groupEl.style.display = 'block';
+                } else {
+                    groupEl.style.display = 'none';
+                }
 
-                // Definir tamaño de grupos si es Fase de Grupos
+                document.getElementById('modal-generate-fixtures').classList.add('open');
+            }
+
+            async function submitGenerateFixtures() {
+                const t = state.torneos.find(t => t.id === state.torneoId);
+                const existing = state.matches.length;
+                
                 let teamsPerGroup = 4;
                 if (t && t.formato === "Fase de Grupos") {
-                    let sizeInput = prompt('¿De cuántos equipos deseas los grupos?\n\n(Ej: 3, 4, 5... El sistema repartirá los equipos automáticamente)', '4');
-                    if (sizeInput === null) return;
-                    teamsPerGroup = parseInt(sizeInput) || 4;
+                    teamsPerGroup = parseInt(document.getElementById('gen-teams-per-group').value) || 4;
                 }
-
-                // Definir tipo de rol mediante prompt numérico
-                let eleccion = prompt('¿Qué tipo de rol deseas generar?\n\nEscribe el número:\n1 - Solo IDA (Mundial)\n2 - IDA Y VUELTA (Liga/Champions)\n\n(Cualquier otro valor cancelará la operación)', '1');
-
-                if (eleccion === null) return;
-
-                let tipo = 'ida';
-                if (eleccion === '2') {
-                    tipo = 'doble';
-                } else if (eleccion !== '1') {
-                    toast('Operación cancelativa: Selección no válida.', 'warning');
-                    return;
-                }
+                const tipo = document.getElementById('gen-tipo').value;
 
                 try {
                     const reset = existing > 0;
                     const result = await api('POST', `/api/torneos/${state.torneoId}/generar_rol?reset=${reset}&tipo=${tipo}&teams_per_group=${teamsPerGroup}`);
                     toast(`✅ ${result.message}`, 'success');
+                    closeGenModal();
                     await loadMatches();
                     if (state.currentView === 'calendar') renderCalendar();
                     else renderSchedule();
@@ -2356,19 +2443,49 @@
                     .catch(e => toast('Error al sugerir horario', 'error'));
             }
 
-            async function autoScheduleAll() {
+            // ----------------------------------------------------------
+            // AUTO-SCHEDULE MODAL LOGIC
+            // ----------------------------------------------------------
+            function closeScheduleModal() {
+                document.getElementById('modal-auto-schedule').classList.remove('open');
+            }
+
+            function autoScheduleAll() {
                 if (!state.torneoId) {
                     toast('Por favor, selecciona un torneo primero', 'warning');
                     return;
                 }
+                document.getElementById('modal-auto-schedule').classList.add('open');
+            }
 
-                if (!confirm('¿Deseas programar automáticamente TODOS los partidos basándose en los días y horas del torneo? Esto sobrescribirá fechas y horas existentes.')) {
+            async function submitAutoSchedule() {
+                if (!state.torneoId) return;
+
+                const maxDayRaw = document.getElementById('sched-max-day').value;
+                const max_matches_per_day = maxDayRaw ? parseInt(maxDayRaw) : null;
+                const start_time = document.getElementById('sched-time-start').value;
+                const end_time = document.getElementById('sched-time-end').value;
+
+                // Gather checked days
+                const checkboxes = document.querySelectorAll('input[name="sched_days"]:checked');
+                const dias_permitidos = Array.from(checkboxes).map(cb => parseInt(cb.value));
+
+                if (dias_permitidos.length === 0) {
+                    toast('Debes seleccionar al menos un día permitido', 'warning');
                     return;
                 }
 
+                const payload = {
+                    max_matches_per_day,
+                    start_time,
+                    end_time,
+                    allowed_weekdays: dias_permitidos
+                };
+
                 try {
-                    const res = await api('POST', `/api/torneos/${state.torneoId}/auto_schedule`);
+                    const res = await api('POST', `/api/torneos/${state.torneoId}/auto_schedule`, payload);
                     toast(`¡Listo! Se programaron ${res.scheduled_count} partidos.`, 'success');
+                    closeScheduleModal();
                     await refreshData();
                 } catch (e) {
                     toast(e.message || 'Error al auto-programar', 'error');
@@ -2392,6 +2509,8 @@
                 filterByRound,
                 refreshData,
                 promptGenerateFixtures,
+                submitGenerateFixtures,
+                closeGenModal,
                 openEditModal,
                 saveMatch,
                 deleteMatch,
@@ -2400,6 +2519,8 @@
                 closeDayModal,
                 autoSuggestSchedule,
                 autoScheduleAll,
+                submitAutoSchedule,
+                closeScheduleModal,
                 toggleTraining: function () {
                     state.showTraining = document.getElementById('toggle-training').checked;
                     loadMatches().then(() => renderCalendar());

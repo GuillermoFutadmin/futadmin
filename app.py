@@ -1512,43 +1512,51 @@ def auto_schedule_torneo(torneo_id):
     if not partidos:
         return jsonify({'error': 'No hay partidos generados para este torneo.'}), 400
 
+    data = request.json or {}
+    manual_weekdays = data.get('allowed_weekdays')
+    manual_start_time = data.get('start_time')
+    manual_end_time = data.get('end_time')
+    max_matches_per_day = data.get('max_matches_per_day')
+
     # 1. Parse tournament settings
-    # Days logic: Check 'dias_juego' first as it's the specific field from checkboxes
-    day_map = {
-        0: ["lunes", "lun", "lu"],
-        1: ["martes", "mar", "ma"],
-        2: ["miercoles", "miércoles", "mier", "mié", "mie", "mi"],
-        3: ["jueves", "jue", "ju"],
-        4: ["viernes", "vie", "vi"],
-        5: ["sabado", "sábado", "sab", "sáb", "sa"],
-        6: ["domingo", "dom", "do"]
-    }
-    
-    allowed_weekdays = []
-    # Search in both fields
-    search_text = f"{(torneo.dias_juego or '')} {(torneo.horario_juego or '')}".lower()
-    
-    for day_num, patterns in day_map.items():
-        if any(p in search_text for p in patterns):
-            allowed_weekdays.append(day_num)
-    
-    if not allowed_weekdays:
-        allowed_weekdays = [5, 6] # Default Sat/Sun
-    
-    allowed_weekdays = sorted(list(set(allowed_weekdays)))
+    if manual_weekdays is not None and isinstance(manual_weekdays, list) and len(manual_weekdays) > 0:
+        allowed_weekdays = sorted(list(set([int(x) for x in manual_weekdays])))
+    else:
+        # Parse from string
+        day_map = {
+            0: ["lunes", "lun", "lu"],
+            1: ["martes", "mar", "ma"],
+            2: ["miercoles", "miércoles", "mier", "mié", "mie", "mi"],
+            3: ["jueves", "jue", "ju"],
+            4: ["viernes", "vie", "vi"],
+            5: ["sabado", "sábado", "sab", "sáb", "sa"],
+            6: ["domingo", "dom", "do"]
+        }
+        allowed_weekdays = []
+        search_text = f"{(torneo.dias_juego or '')} {(torneo.horario_juego or '')}".lower()
+        for day_num, patterns in day_map.items():
+            if any(p in search_text for p in patterns):
+                allowed_weekdays.append(day_num)
+        
+        if not allowed_weekdays:
+            allowed_weekdays = [5, 6] # Default Sat/Sun
+        allowed_weekdays = sorted(list(set(allowed_weekdays)))
     
     # Time range logic
-    start_time_str = "08:00"
-    end_time_str = "20:00"
-    try:
-        if " a " in horario_raw:
-            parts = horario_raw.split(" a ")
-            time_part_start = parts[0].split()[-1] # last word before 'a'
-            time_part_end = parts[1].split()[0]    # first word after 'a'
-            if ":" in time_part_start: start_time_str = time_part_start
-            if ":" in time_part_end: end_time_str = time_part_end
-    except:
-        pass
+    start_time_str = manual_start_time if manual_start_time else "08:00"
+    end_time_str = manual_end_time if manual_end_time else "20:00"
+    
+    if not manual_start_time or not manual_end_time:
+        try:
+            horario_raw = getattr(torneo, 'horario_juego', '')
+            if " a " in horario_raw:
+                parts = horario_raw.split(" a ")
+                time_part_start = parts[0].split()[-1]
+                time_part_end = parts[1].split()[0]
+                if ":" in time_part_start: start_time_str = time_part_start
+                if ":" in time_part_end: end_time_str = time_part_end
+        except:
+            pass
 
     # Match duration
     tiempos = int(torneo.num_tiempos or 2)
@@ -1597,33 +1605,50 @@ def auto_schedule_torneo(torneo_id):
             days_to_add = (w_day - current_date.weekday() + 7) % 7
             day_dates[w_day] = current_date + timedelta(days=days_to_add)
 
-        # Track time per day
+        # Track time and count per day
         day_current_min = {w_day: start_min for w_day in allowed_weekdays}
+        day_match_count = {w_day: 0 for w_day in allowed_weekdays}
         
         # Primero, identificar partidos que NO se mueven para ocupar sus horarios
         for p in jornada_matches:
             if p.estado != 'Scheduled':
-                # Si coincide con uno de nuestros días permitidos, adelantamos el puntero de tiempo
-                # para ese día para evitar traslapes (si es que está en el rango)
                 for w_day, d_date in day_dates.items():
                     if p.fecha == d_date and p.hora:
                         p_min = get_minutes(p.hora)
-                        # Si el partido jugado está después o en el puntero actual, movemos el puntero
                         if p_min >= day_current_min[w_day]:
                             day_current_min[w_day] = p_min + match_duration_total
+                        day_match_count[w_day] += 1
 
         # Segundo, programar los que SÍ son pendientes
         pending_matches = [p for p in jornada_matches if p.estado == 'Scheduled']
-        for idx, p in enumerate(pending_matches):
-            # Pick day in round-robin fashion
-            w_day = allowed_weekdays[idx % len(allowed_weekdays)]
+        current_w_idx = 0
+        
+        for p in pending_matches:
+            # Buscar el siguiente día disponible
+            max_attempts = len(allowed_weekdays) * 3
+            attempts = 0
+            
+            while attempts < max_attempts:
+                w_day = allowed_weekdays[current_w_idx % len(allowed_weekdays)]
+                
+                over_max_count = max_matches_per_day and day_match_count[w_day] >= max_matches_per_day
+                over_time = (day_current_min[w_day] + match_duration_total) > end_min
+                
+                if not over_max_count and not over_time:
+                    break
+                    
+                current_w_idx += 1
+                attempts += 1
+                
+            w_day = allowed_weekdays[current_w_idx % len(allowed_weekdays)]
             
             p.fecha = day_dates[w_day]
             p.hora = format_minutes(day_current_min[w_day])
             p.cancha = torneo.cancha or "Cancha Principal"
             
-            # Increment time for THIS specific day
             day_current_min[w_day] += match_duration_total
+            day_match_count[w_day] += 1
+            current_w_idx += 1
 
         # Advance current_date to the NEXT week
         current_date = min(day_dates.values()) + timedelta(days=7)
