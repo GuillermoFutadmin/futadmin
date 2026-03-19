@@ -123,6 +123,11 @@ def check_login():
 
 @app.errorhandler(Exception)
 def handle_exception(e):
+    # Pasar las excepciones HTTP de Werkzeug (404, 405, etc.) sin modificar
+    from werkzeug.exceptions import HTTPException
+    if isinstance(e, HTTPException):
+        return e
+    
     import traceback
     tb = traceback.format_exc()
     global LAST_STATS_ERROR
