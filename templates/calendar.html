@@ -426,8 +426,8 @@
 
         .day-number {
             font-size: 0.8rem;
-            font-weight: 600;
-            color: var(--text-muted);
+            font-weight: 700;
+            color: var(--primary); /* Use primary green for day numbers */
             margin-bottom: 4px;
         }
 
@@ -443,7 +443,7 @@
             padding: 3px 6px;
             font-size: 0.65rem;
             font-weight: 600;
-            color: var(--primary);
+            color: #ffffff; /* White text for teams */
             margin-bottom: 3px;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -1652,15 +1652,33 @@
                 let html = '';
 
                 // Helper to check if two time ranges (HH:MM) overlap
-                const overlaps = (startA, endA, startB, endB) => {
+                const overlaps = (startA, endA, startB, endB, tIdA, tIdB) => {
                     if (!startA || !startB) return false;
                     const val = t => parseInt(t.replace(':', ''));
                     const sA = val(startA);
                     const sB = val(startB);
-                    // If end is missing, assume 1 hour duration
-                    const getE = (s, e) => e ? val(e) : (s + 100);
-                    const eA = getE(sA, endA);
-                    const eB = getE(sB, endB);
+                    
+                    // Improved duration detection: try to find tournament duration or use 50m as standard
+                    const getDuration = (tid) => {
+                        const t = state.torneos.find(x => x.id === tid);
+                        if (t && t.duracion_tiempo) {
+                            return (parseInt(t.num_tiempos || 2) * parseInt(t.duracion_tiempo)) + parseInt(t.descanso || 0);
+                        }
+                        return 50; // Default standard match
+                    };
+
+                    const getE = (s, e, tid) => {
+                        if (e) return val(e);
+                        // Add duration properly to HHMM
+                        let h = Math.floor(s / 100);
+                        let m = s % 100;
+                        m += getDuration(tid);
+                        while (m >= 60) { h++; m -= 60; }
+                        return (h * 100) + m;
+                    };
+
+                    const eA = getE(sA, endA, tIdA);
+                    const eB = getE(sB, endB, tIdB);
                     return sA < eB && eA > sB;
                 };
 
@@ -1670,10 +1688,11 @@
                     const color = isTraining ? (p.color || '#3b82f6') : getTorneoColor(p.torneo_id);
 
                     // Lupa control: Detect overlap with ANY other match on same court
-                    const hasOverlap = p.hora && p.cancha && matches.some(other =>
+                    const hasOverlap = p.hora && p.cancha && p.estado !== 'Cancelled' && matches.some(other =>
                         other.id !== p.id &&
+                        other.estado !== 'Cancelled' &&
                         other.cancha === p.cancha &&
-                        overlaps(p.hora, p.hora_fin, other.hora, other.hora_fin)
+                        overlaps(p.hora, p.hora_fin, other.hora, other.hora_fin, p.torneo_id, other.torneo_id)
                     );
 
                     let cls = p.estado === 'Played' ? 'played' : p.estado === 'Cancelled' ? 'cancelled' : '';
