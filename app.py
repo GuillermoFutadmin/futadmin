@@ -60,6 +60,12 @@ talisman = Talisman(app,
 
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
+# Ruta de salud para Railway Healthcheck (excluida de SSL redirect y auth)
+@app.route('/health')
+@talisman(force_https=False)
+def healthcheck():
+    return jsonify({'status': 'ok'}), 200
+
 from models import db, bcrypt, Torneo, Equipo, Jugador, Inscripcion, Pago, GrupoEntrenamiento, AlumnoEntrenamiento, Partido, EventoPartido, Arbitro, Cancha, Usuario, apply_liga_filter, get_liga_id, check_torneos_limit, get_role_limits, Liga, PagoCombo, Configuracion, LigaExpansion
 from utils import paginate_query
 from routes.entrenamientos import entrenamientos_bp
@@ -98,7 +104,7 @@ migrate = Migrate(app, db)
 @app.before_request
 def check_login():
     # Rutas que no requieren login
-    public_routes = ['users.login_view', 'users.login', 'users.privacy_view', 'static']
+    public_routes = ['users.login_view', 'users.login', 'users.privacy_view', 'static', 'healthcheck']
     if request.endpoint in public_routes or not request.endpoint:
         return
     
