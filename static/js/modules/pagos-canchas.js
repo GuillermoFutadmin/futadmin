@@ -16,7 +16,8 @@ export class PagosCanchasModule {
 
         try {
             // Obtener todas las canchas para luego pedir el estado de cuenta de cada una
-            const canchas = await Core.fetchAPI('/api/canchas');
+            const res = await Core.fetchAPI('/api/canchas');
+            const canchas = res.items || res;
             this.estadosCuenta = [];
 
             for (let c of canchas) {

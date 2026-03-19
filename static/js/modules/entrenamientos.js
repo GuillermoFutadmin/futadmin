@@ -159,7 +159,8 @@ class EntrenamientosModule {
     async loadCanchasSelect() {
         try {
             const res = await fetch('/api/canchas');
-            const canchas = await res.json();
+            const data = await res.json();
+            const canchas = data.items || data;
             const select = document.getElementById('grupo-cancha');
             if (select) {
                 const current = select.value;

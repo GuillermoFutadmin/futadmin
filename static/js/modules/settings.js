@@ -346,7 +346,8 @@ export class SettingsModule {
 
     async loadCanchas() {
         try {
-            this.canchas = await Core.fetchAPI('/api/canchas');
+            const res = await Core.fetchAPI('/api/canchas');
+            this.canchas = res.items || res;
         } catch (error) {
             console.error('Error al cargar canchas:', error);
         }

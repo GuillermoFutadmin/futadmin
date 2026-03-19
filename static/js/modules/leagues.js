@@ -85,7 +85,8 @@ export class LeaguesModule {
 
         select.innerHTML = '<option value="">Cargando...</option>';
         try {
-            const canchas = await Core.fetchAPI('/api/canchas');
+            const res = await Core.fetchAPI('/api/canchas');
+            const canchas = res.items || res;
             select.innerHTML = '<option value="">-- Sin Cancha Asignada --</option>';
             canchas.forEach(c => {
                 const option = document.createElement('option');
@@ -399,7 +400,8 @@ export class LeaguesModule {
             // Poblar filtro de sedes si está vacío (excluyendo la opción por defecto)
             const venueFilter = document.getElementById('league-venue-filter');
             if (venueFilter && venueFilter.options.length <= 1) {
-                const canchas = await Core.fetchAPI('/api/canchas');
+                const resCanchas = await Core.fetchAPI('/api/canchas');
+                const canchas = resCanchas.items || resCanchas;
                 canchas.forEach(c => {
                     const opt = document.createElement('option');
                     opt.value = c.nombre;
