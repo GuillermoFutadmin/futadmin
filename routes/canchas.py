@@ -16,7 +16,7 @@ def get_canchas():
             query = query.filter_by(dueno_id=user_id)
             
     # Soporte para paginación
-    return paginate_query(query, items_per_page=12)
+    return paginate_query(query)
 
 @canchas_bp.route('/api/canchas', methods=['POST'])
 def add_cancha():
