@@ -38,6 +38,10 @@ export class SettingsModule {
         if (paymentForm) {
             paymentForm.onsubmit = (e) => this.handleComboPaymentSubmit(e);
         }
+        const editPaymentForm = document.getElementById('edit-combo-payment-form');
+        if (editPaymentForm) {
+            editPaymentForm.onsubmit = (e) => this.handleEditComboPaymentSubmit(e);
+        }
     }
 
     checkLimits() {
@@ -1536,7 +1540,12 @@ export class SettingsModule {
                 <td style="font-weight:700; color: #00ff88;">$${p.monto.toFixed(2)}</td>
                 <td>${p.metodo}</td>
                 <td>
-                    ${p.comprobante_url ? `<a href="${p.comprobante_url}" target="_blank" class="btn-icon" title="Ver Comprobante">📄</a>` : '—'}
+                    <div style="display: flex; gap: 8px; justify-content: flex-end;">
+                        ${p.comprobante_url ? `<a href="${p.comprobante_url}" target="_blank" class="btn-icon" title="Ver Comprobante">📄</a>` : ''}
+                        <button onclick="ui.settings.downloadComboPaymentPDF(${p.id})" class="btn-icon" title="Imprimir Recibo" style="background: rgba(255,255,255,0.05); color: var(--text); border: 1px solid var(--border); width: 30px; height: 30px; border-radius: 8px; cursor: pointer;">🖨️</button>
+                        <button onclick="ui.settings.editComboPayment(${p.id})" class="btn-icon" title="Editar" style="background: rgba(255,255,255,0.05); color: var(--text); border: 1px solid var(--border); width: 30px; height: 30px; border-radius: 8px; cursor: pointer;">✏️</button>
+                        <button onclick="ui.settings.confirmDeleteComboPayment(${p.id})" class="btn-icon" title="Eliminar" style="background: rgba(239,68,68,0.1); color: #ef4444; border: 1px solid rgba(239,68,68,0.2); width: 30px; height: 30px; border-radius: 8px; cursor: pointer;">🗑️</button>
+                    </div>
                 </td>
             </tr>
         `).join('');
@@ -1595,6 +1604,164 @@ export class SettingsModule {
             this.paymentsPage = 1;
             this.renderComboStatus();
             this.renderComboPayments();
+        }
+    }
+
+    // --- Acciones de Historial ---
+
+    editComboPayment(pagoId) {
+        const pago = this.payments.find(p => p.id == pagoId);
+        if (!pago) return;
+
+        document.getElementById('edit-pago-id').value = pago.id;
+        document.getElementById('edit-pago-liga-nombre').value = pago.liga_nombre;
+        document.getElementById('edit-pago-meses').value = pago.cantidad_meses || 1;
+        document.getElementById('edit-pago-monto').value = pago.monto;
+        document.getElementById('edit-pago-mes').value = pago.mes_pagado;
+        document.getElementById('edit-pago-metodo').value = pago.metodo;
+        document.getElementById('edit-pago-comprobante').value = pago.comprobante_url || '';
+        document.getElementById('edit-pago-notas').value = pago.notas || '';
+
+        Core.openModal('modal-edit-combo-payment');
+    }
+
+    async handleEditComboPaymentSubmit(e) {
+        e.preventDefault();
+        const id = document.getElementById('edit-pago-id').value;
+        const data = {
+            monto: parseFloat(document.getElementById('edit-pago-monto').value),
+            cantidad_meses: parseInt(document.getElementById('edit-pago-meses').value),
+            mes_pagado: document.getElementById('edit-pago-mes').value,
+            metodo: document.getElementById('edit-pago-metodo').value,
+            comprobante_url: document.getElementById('edit-pago-comprobante').value,
+            notas: document.getElementById('edit-pago-notas').value
+        };
+
+        try {
+            await Core.fetchAPI(`/api/combo-pagos/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            Core.showNotification('Aportación actualizada correctamente');
+            Core.closeModal('modal-edit-combo-payment');
+            await this.loadLigas(); // Recargar para ver cambios en estatus si aplica
+            this.renderComboStatus();
+            this.renderComboPayments();
+        } catch (error) {
+            Core.showNotification(error.message, 'error');
+        }
+    }
+
+    async confirmDeleteComboPayment(pagoId) {
+        const password = prompt('Esta acción requiere confirmación del Administrador General.\n\nPor favor, introduce tu contraseña para eliminar esta aportación:');
+        if (!password) return;
+
+        try {
+            // 1. Verificar contraseña
+            const verify = await Core.fetchAPI('/api/admin/verify-password', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password })
+            });
+
+            if (!verify.success) {
+                Core.showNotification('Contraseña incorrecta o no autorizado', 'error');
+                return;
+            }
+
+            // 2. Proceder a eliminar
+            if (!confirm('¿Estás seguro de que deseas eliminar permanentemente esta aportación?')) return;
+
+            await Core.fetchAPI(`/api/combo-pagos/${pagoId}`, { method: 'DELETE' });
+            Core.showNotification('Aportación eliminada correctamente');
+            
+            await this.loadLigas();
+            this.renderComboStatus();
+            this.renderComboPayments();
+        } catch (error) {
+            Core.showNotification(error.message, 'error');
+        }
+    }
+
+    async downloadComboPaymentPDF(pagoId) {
+        const pago = this.payments.find(p => p.id == pagoId);
+        if (!pago) return;
+
+        Core.showNotification('Generando recibo...', 'info');
+        
+        try {
+            // Cargar jsPDF si no está
+            await Core.loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            const primaryColor = [0, 255, 136]; // FutAdmin Green
+            const textColor = [40, 40, 40];
+
+            // 1. Cabecera Premium
+            doc.setFillColor(30, 30, 30);
+            doc.rect(0, 0, 210, 40, 'F');
+            
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(24);
+            doc.setFont("helvetica", "bold");
+            doc.text("FutAdmin PRO", 20, 25);
+            
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            doc.text("COMPROBANTE DE APORTACIÓN", 20, 32);
+            
+            doc.setFontSize(12);
+            doc.text(`Folio: #CP-${pago.id.toString().padStart(5, '0')}`, 150, 25);
+
+            // 2. Cuerpo
+            doc.setTextColor(...textColor);
+            doc.setFontSize(14);
+            doc.text("Detalles de la Transacción", 20, 55);
+            doc.setDrawColor(200, 200, 200);
+            doc.line(20, 58, 190, 58);
+
+            const startY = 65;
+            const rowH = 10;
+            
+            const rows = [
+                ["Organización:", pago.liga_nombre],
+                ["Fecha de Operación:", pago.fecha],
+                ["Mes(es) Cubierto(s):", pago.mes_pagado],
+                ["Método de Pago:", pago.metodo],
+                ["Monto Total:", `$${pago.monto.toFixed(2)} MXN`],
+                ["Estado:", "VERIFICADO"]
+            ];
+
+            doc.setFontSize(11);
+            rows.forEach((row, i) => {
+                doc.setFont("helvetica", "bold");
+                doc.text(row[0], 25, startY + (i * rowH));
+                doc.setFont("helvetica", "normal");
+                doc.text(row[1], 80, startY + (i * rowH));
+            });
+
+            if (pago.notas) {
+                doc.setFont("helvetica", "bold");
+                doc.text("Notas:", 25, startY + (rows.length * rowH) + 5);
+                doc.setFont("helvetica", "normal");
+                doc.setFontSize(10);
+                const splitNotes = doc.splitTextToSize(pago.notas, 150);
+                doc.text(splitNotes, 25, startY + (rows.length * rowH) + 12);
+            }
+
+            // Footer
+            doc.setFontSize(9);
+            doc.setTextColor(150, 150, 150);
+            doc.text("Este documento es un comprobante digital de operación interna.", 105, 280, { align: "center" });
+            doc.text("Gracias por su confianza en FutAdmin - Control y Gestión Deportiva.", 105, 285, { align: "center" });
+
+            doc.save(`Recibo_FutAdmin_${pago.liga_nombre.replace(/\s+/g, '_')}_${pago.mes_pagado.replace(/\s+/g, '_')}.pdf`);
+            Core.showNotification('Recibo generado exitosamente');
+        } catch (error) {
+            console.error(error);
+            Core.showNotification('Error al generar PDF: ' + error.message, 'error');
         }
     }
 }

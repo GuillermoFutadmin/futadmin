@@ -70,24 +70,27 @@
     <!-- Pestaña: Aportaciones de Combos -->
     <div id="settings-tab-payments" class="settings-tab-content animate-in slideInRight" style="display: none;">
         <div class="action-bar" style="background: rgba(255,255,255,0.03); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center;">
-            <div>
-                <h3 style="margin: 0;">Resumen de Suscripciones y Cobros</h3>
-                <p class="text-muted" style="margin-top: 5px; font-size: 0.9rem;">Estado actual de cuentas maestras y montos mensuales.</p>
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%;">
+                <div>
+                    <h3 style="margin: 0;">Resumen de Suscripciones y Cobros</h3>
+                    <p class="text-muted" style="margin-top: 5px; font-size: 0.9rem;">Estado actual de cuentas maestras y montos mensuales.</p>
+                </div>
+                <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 8px;">
+                    <select id="settings-combo-status-limit" class="nav-select" 
+                        style="min-width: 100px; background: rgba(0,0,0,0.2); border-color: var(--border); font-size: 0.8rem; height: 32px;"
+                        onchange="ui.settings.updateItemsPerPage(this.value)">
+                        <option value="5">Ver 5</option>
+                        <option value="10" selected>Ver 10</option>
+                        <option value="20">Ver 20</option>
+                        <option value="50">Ver 50</option>
+                    </select>
+                </div>
             </div>
             <div id="combo-payment-actions" style="display: flex; gap: 10px; align-items: center;">
                 <input type="text" id="combo-status-search" placeholder="🔍 Buscar organización..." 
                     style="background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 20px; padding: 6px 15px 6px 35px; color: var(--text); font-size: 0.85rem; width: 220px;"
                     onkeyup="ui.settings.renderComboStatus()">
                 
-                <select id="settings-combo-status-limit" class="nav-select" 
-                    style="min-width: 80px; background: var(--bg-card); border-color: var(--border);"
-                    onchange="ui.settings.updateItemsPerPage(this.value)">
-                    <option value="5">5 / pág</option>
-                    <option value="10" selected>10 / pág</option>
-                    <option value="20">20 / pág</option>
-                    <option value="50">50 / pág</option>
-                </select>
-
                 <select id="settings-combo-status-filter" class="nav-select" 
                     style="min-width: 180px; background: var(--bg-card); border-color: var(--primary);"
                     onchange="ui.settings.renderComboStatus()">
@@ -525,6 +528,61 @@
                 <div class="modal-footer">
                     <button type="button" class="btn-secondary" onclick="Core.closeModal('modal-combo')">Cancelar</button>
                     <button type="submit" id="combo-submit-btn" class="btn-primary" style="flex: 1;">✚ Crear Combo</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Editar Aportación Combo -->
+<div id="modal-edit-combo-payment" class="modal">
+    <div class="modal-content" style="max-width: 500px;">
+        <div class="modal-header">
+            <h3>✏️ Editar Aportación</h3>
+            <button class="close-btn" onclick="Core.closeModal('modal-edit-combo-payment')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="edit-combo-payment-form">
+                <input type="hidden" id="edit-pago-id">
+                <div class="form-group">
+                    <label>Combo / Organización</label>
+                    <input type="text" id="edit-pago-liga-nombre" disabled style="opacity: 0.7;">
+                </div>
+                <div class="form-row">
+                    <div class="form-group" style="flex: 0.5;">
+                        <label for="edit-pago-meses">Meses Pagados</label>
+                        <input type="number" id="edit-pago-meses" min="1" step="1" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-pago-monto">Monto Total ($)</label>
+                        <input type="number" id="edit-pago-monto" required step="0.01">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="edit-pago-mes">Concepto / Meses</label>
+                    <input type="text" id="edit-pago-mes" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="edit-pago-metodo">Método</label>
+                        <select id="edit-pago-metodo">
+                            <option value="Transferencia">🏦 Transferencia</option>
+                            <option value="Efectivo">💵 Efectivo</option>
+                            <option value="Tarjeta">💳 Tarjeta</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-pago-comprobante">URL Comprobante</label>
+                        <input type="text" id="edit-pago-comprobante">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="edit-pago-notas">Notas</label>
+                    <textarea id="edit-pago-notas"></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" onclick="Core.closeModal('modal-edit-combo_payment')">Cancelar</button>
+                    <button type="submit" class="btn-primary" style="flex: 1;">Actualizar Aportación</button>
                 </div>
             </form>
         </div>

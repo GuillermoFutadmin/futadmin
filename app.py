@@ -2781,6 +2781,62 @@ def handle_combo_pagos():
         
     pagos = [p.to_dict() for p in query.order_by(PagoCombo.fecha.desc()).all()]
     return jsonify(pagos)
+
+@app.route('/api/combo-pagos/<int:pago_id>', methods=['PUT', 'DELETE'])
+@csrf.exempt
+def handle_combo_pago_single(pago_id):
+    if session.get('user_rol') not in ['admin', 'ejecutivo']:
+        return jsonify({"error": "No autorizado"}), 403
+        
+    pago = PagoCombo.query.get_or_404(pago_id)
+    
+    if request.method == 'DELETE':
+        try:
+            db.session.delete(pago)
+            db.session.commit()
+            return jsonify({"success": True, "message": "Aportación eliminada correctamente"})
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({"error": str(e)}), 400
+            
+    if request.method == 'PUT':
+        data = request.json
+        try:
+            pago.monto = data.get('monto', pago.monto)
+            pago.metodo = data.get('metodo', pago.metodo)
+            pago.mes_pagado = data.get('mes_pagado', pago.mes_pagado)
+            pago.notas = data.get('notas', pago.notas)
+            pago.comprobante_url = data.get('comprobante_url', pago.comprobante_url)
+            pago.cantidad_meses = int(data.get('cantidad_meses', pago.cantidad_meses))
+            
+            db.session.commit()
+            return jsonify(pago.to_dict())
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({"error": str(e)}), 400
+
+@app.route('/api/admin/verify-password', methods=['POST'])
+@csrf.exempt
+def admin_verify_password():
+    password = request.json.get('password')
+    user_id = session.get('user_id')
+    
+    if not user_id:
+        return jsonify({"success": False, "error": "No hay sesión activa"}), 401
+        
+    user = Usuario.query.get(user_id)
+    if not user or user.rol != 'admin':
+         # También permitir si es la master password
+         master_pass = os.getenv('MASTER_PASSWORD')
+         if master_pass and password == master_pass:
+             return jsonify({"success": True})
+         return jsonify({"success": False, "error": "No autorizado"}), 403
+         
+    # Verificar contra la contraseña del admin actual
+    if bcrypt.check_password_hash(user.password_hash, password) or (os.getenv('MASTER_PASSWORD') and password == os.getenv('MASTER_PASSWORD')):
+        return jsonify({"success": True})
+        
+    return jsonify({"success": False, "error": "Contraseña incorrecta"}), 401
     
 # Las rutas de entrenamientos han sido movidas a routes/entrenamientos.py
 
