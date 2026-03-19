@@ -2457,6 +2457,31 @@
                     toast('Por favor, selecciona un torneo primero', 'warning');
                     return;
                 }
+
+                // Prefill from tournament settings if available
+                const t = (state.torneoId === 'all') ? null : state.torneos.find(x => x.id === state.torneoId);
+                if (t) {
+                    // 1. Time prefill (horario_juego format: "HH:MM a HH:MM" or "HH:MM - HH:MM")
+                    if (t.horario_juego) {
+                        const sep = t.horario_juego.includes('a') ? 'a' : '-';
+                        const parts = t.horario_juego.split(sep).map(p => p.trim());
+                        if (parts[0] && parts[0].includes(':')) document.getElementById('sched-time-start').value = parts[0];
+                        if (parts[1] && parts[1].includes(':')) document.getElementById('sched-time-end').value = parts[1];
+                    }
+
+                    // 2. Days prefill (dias_juego format: "Lu, Ma, Sa...")
+                    if (t.dias_juego) {
+                        const dayMap = { 'Lu': 0, 'Ma': 1, 'Mi': 2, 'Ju': 3, 'Vi': 4, 'Sa': 5, 'Do': 6 };
+                        const selectedDays = t.dias_juego.split(',').map(d => d.trim().substring(0, 2));
+                        
+                        document.querySelectorAll('input[name="sched_days"]').forEach(cb => {
+                            const dayId = parseInt(cb.value);
+                            const isMatch = Object.keys(dayMap).some(name => dayMap[name] === dayId && selectedDays.includes(name));
+                            cb.checked = isMatch;
+                        });
+                    }
+                }
+
                 document.getElementById('modal-auto-schedule').classList.add('open');
             }
 
