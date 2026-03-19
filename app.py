@@ -121,6 +121,21 @@ def check_login():
             return jsonify({"error": "No autenticado"}), 401
         return redirect(url_for('users.login_view'))
 
+@app.errorhandler(Exception)
+def handle_exception(e):
+    import traceback
+    tb = traceback.format_exc()
+    global LAST_STATS_ERROR
+    LAST_STATS_ERROR = f"Global Exception: {e}\n{tb}"
+    print(f"CRITICAL UNHANDLED ERROR: {e}\n{tb}")
+    
+    # Return JSON for API routes
+    if request.path.startswith('/api/'):
+        return jsonify({"error": "Internal Server Error", "details": str(e), "trace": tb}), 500
+    
+    # Or text for others
+    return f"Internal Server Error: {str(e)}", 500
+
 # Los modelos han sido movidos a models.py
 
 
