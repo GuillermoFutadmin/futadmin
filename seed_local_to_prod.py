@@ -4,6 +4,11 @@ import datetime
 import json
 def inject_local_data():
     with app.app_context():
+        print('--- Vaciando tablas previas (TRUNCATE) ---')
+        if 'postgresql' in db.engine.url.drivername:
+            tables = ', '.join([m.__tablename__ for m in [Liga, Usuario, Cancha, Arbitro, Torneo, Equipo, Jugador]])
+            db.session.execute(db.text(f'TRUNCATE TABLE {tables} CASCADE'))
+            db.session.commit()
         with db.session.no_autoflush:
             print('--- Insertando ligas ---')
             if not Liga.query.get(9):
