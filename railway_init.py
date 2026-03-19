@@ -16,8 +16,29 @@ def init():
                 upgrade()
                 print("Éxito: Migraciones aplicadas correctamente.")
             except Exception as migrate_e:
-                print(f"Aviso: Falló o no configurado Flask-Migrate ({migrate_e}). Ejecutando db.create_all() como fallback.")
+                print(f"Aviso: Falló o no configurado Flask-Migrate ({migrate_e}). Ejecutando db.create_all() y mutaciones manuales como fallback.")
                 db.create_all()
+                # Manual Fallback for adding missing columns
+                try:
+                    db.session.execute(db.text("ALTER TABLE jugadores ADD COLUMN IF NOT EXISTS fecha_nacimiento DATE;"))
+                    db.session.commit()
+                except Exception as e:
+                    db.session.rollback()
+                    print(f"Nota: columna jugadores.fecha_nacimiento ya existe o error: {e}")
+                
+                try:
+                    db.session.execute(db.text("ALTER TABLE alumnos_entrenamiento ADD COLUMN IF NOT EXISTS fecha_nacimiento DATE;"))
+                    db.session.commit()
+                except Exception as e:
+                    db.session.rollback()
+                    print(f"Nota: columna alumnos.fecha_nacimiento ya existe o error: {e}")
+
+                try:
+                    db.session.execute(db.text("ALTER TABLE torneos ADD COLUMN IF NOT EXISTS archived BOOLEAN DEFAULT FALSE;"))
+                    db.session.commit()
+                except Exception as e:
+                    db.session.rollback()
+                    print(f"Nota: columna torneos.archived ya existe o error: {e}")
 
             # Verificar y crear administradores
             for admin_email in ['admin@futadmin.com', 'admin@adminfutbol.com']:
