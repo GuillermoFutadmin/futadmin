@@ -2520,15 +2520,15 @@ def _get_stats_impl():
             active_tournaments = []
     
     torneos_detalle = []
-    from sqlalchemy import func
+    from sqlalchemy import func, distinct, case
     
     # Optimizamos: Obtenemos conteos agrupados en lugar de traer todos los objetos Partido
     stats_query = db.session.query(
         Partido.torneo_id,
         func.count(Partido.id).label('total'),
-        func.count(Partido.id).filter(Partido.estado == 'Played').label('jugados'),
+        func.sum(case([(Partido.estado == 'Played', 1)], else_=0)).label('jugados'),
         func.count(distinct(Partido.jornada)).label('jornadas')
-    ).group_by(Partido.torneo_id).filter(Partido.torneo_id.in_([t.id for t in active_tournaments])).all()
+    ).group_by(Partido.torneo_id).filter(Partido.torneo_id.in_([t.id for t in active_tournaments])).all() if active_tournaments else []
     
     stats_map = {s.torneo_id: s for s in stats_query}
     
