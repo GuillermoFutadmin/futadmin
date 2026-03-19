@@ -75,9 +75,16 @@
                     <h3 style="margin: 0;">Resumen de Suscripciones y Cobros</h3>
                     <p class="text-muted" style="margin-top: 5px; font-size: 0.9rem;">Estado actual de cuentas maestras y montos mensuales.</p>
                 </div>
-                <div style="display: flex; flex-direction: column; align-items: flex-end;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <select id="settings-combo-status-filter" class="nav-select" 
+                        style="min-width: 160px; background: rgba(0,255,136,0.1); border-color: rgba(0,255,136,0.3); color: #00ff88; font-size: 0.8rem; height: 32px;"
+                        onchange="ui.settings.renderComboStatus()">
+                        <option value="all" selected>🔍 Todos los Estatus</option>
+                        <option value="pending">⏳ Pendientes</option>
+                        <option value="settled">✅ Al Corriente</option>
+                    </select>
                     <select id="settings-combo-status-limit" class="nav-select" 
-                        style="min-width: 100px; background: rgba(0,0,0,0.2); border-color: var(--border); font-size: 0.8rem; height: 32px;"
+                        style="min-width: 100px; background: rgba(255,255,255,0.05); border-color: var(--border); font-size: 0.8rem; height: 32px;"
                         onchange="ui.settings.updateItemsPerPage(this.value)">
                         <option value="5">Ver 5</option>
                         <option value="10" selected>Ver 10</option>
@@ -88,17 +95,10 @@
             </div>
             
             <div id="combo-payment-actions" style="display: flex; gap: 10px; align-items: center; justify-content: flex-end; width: 100%;">
-                <input type="text" id="combo-status-search" placeholder="🔍 Buscar organización..." 
-                    style="background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 20px; padding: 6px 15px 6px 35px; color: var(--text); font-size: 0.85rem; width: 220px;"
+                <input type="text" id="combo-status-search" placeholder="🔍 Buscar organización por nombre o plan..." 
+                    style="background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 20px; padding: 6px 15px 6px 35px; color: var(--text); font-size: 0.85rem; width: 350px;"
                     onkeyup="ui.settings.renderComboStatus()">
                 
-                <select id="settings-combo-status-filter" class="nav-select" 
-                    style="min-width: 180px; background: var(--bg-card); border-color: var(--primary);"
-                    onchange="ui.settings.renderComboStatus()">
-                    <option value="all" selected>Todas las Organizaciones</option>
-                    <option value="pending">Pendientes de Donación</option>
-                    <option value="settled">Al Corriente</option>
-                </select>
                 <button id="btn-nuevo-pago-combo" class="btn-primary" onclick="ui.settings.showComboPaymentModal()" style="white-space: nowrap;">
                     ✚ Registrar Aportación
                 </button>
