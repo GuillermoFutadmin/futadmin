@@ -2437,6 +2437,7 @@ def get_stats():
                         pj = 0
                         eventos = 0
                         wins = 0
+                        total_goles = 0
                         try:
                             pj = Partido.query.filter(
                                 (Partido.equipo_local_id == e.id) | (Partido.equipo_visitante_id == e.id),
