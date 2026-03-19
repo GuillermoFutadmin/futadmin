@@ -132,7 +132,7 @@ def admin_seed_data():
         return jsonify({"error": "No autorizado"}), 403
     
     try:
-        from seed_combos import seed_data
+        from scripts.seed_combos import seed_data
         seed_data()
         return jsonify({"success": "Inyección de 3 combos más recientes completada exitosamente.", "tip": "Recuerda dar F5 para ver los equipos nuevos."}), 200
     except Exception as e:
