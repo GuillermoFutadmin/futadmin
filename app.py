@@ -101,10 +101,12 @@ db.init_app(app)
 from flask_migrate import Migrate
 migrate = Migrate(app, db)
 
+LAST_STATS_ERROR = "No errors yet"
+
 @app.before_request
 def check_login():
     # Rutas que no requieren login
-    public_routes = ['users.login_view', 'users.login', 'users.privacy_view', 'static', 'healthcheck']
+    public_routes = ['users.login_view', 'users.login', 'users.privacy_view', 'static', 'healthcheck', 'debug_stats']
     if request.endpoint in public_routes or not request.endpoint:
         return
     
@@ -2348,8 +2350,16 @@ def get_stats():
         return _get_stats_impl()
     except Exception as e:
         tb = traceback.format_exc()
+        global LAST_STATS_ERROR
+        LAST_STATS_ERROR = f"{e}\n{tb}"
         print(f"ERROR /api/stats: {e}\n{tb}")
         return jsonify({"error": str(e), "trace": tb}), 500
+
+@app.route('/debug_stats')
+@csrf.exempt
+def debug_stats():
+    global LAST_STATS_ERROR
+    return f"<pre>{LAST_STATS_ERROR}</pre>"
 
 def _get_stats_impl():
     # --- Torneos activos (protegidos en caso de que columnas opcionales no existan) ---
