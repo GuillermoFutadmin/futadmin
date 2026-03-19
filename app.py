@@ -2529,10 +2529,22 @@ def _get_stats_impl():
     except Exception as ge:
         print(f"Error calculando geo_stats: {ge}")
 
+    try:
+        total_jugadores = query_j.count()
+    except Exception as e:
+        print(f"WARN total_jugadores: {e}")
+        total_jugadores = 0
+
+    try:
+        total_equipos = query_e.count()
+    except Exception as e:
+        print(f"WARN total_equipos: {e}")
+        total_equipos = 0
+
     return jsonify({
         "torneos_activos": len(active_tournaments),
-        "total_jugadores": query_j.count(),
-        "total_equipos": query_e.count(),
+        "total_jugadores": total_jugadores,
+        "total_equipos": total_equipos,
         "torneos_detalle": torneos_detalle,
         "limits": limits,
         "current_counts": current_counts,
