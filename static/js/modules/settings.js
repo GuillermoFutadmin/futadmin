@@ -11,7 +11,8 @@ export class SettingsModule {
         this.payments = [];
         this.statusPage = 1;
         this.paymentsPage = 1;
-        this.itemsPerPage = 10;
+        this.statusLimit = 10;
+        this.paymentsLimit = 10;
         document.addEventListener('futadmin:limitsLoaded', () => this.checkLimits());
     }
 
@@ -1391,12 +1392,15 @@ export class SettingsModule {
         });
 
         // 2. Paginación
+        const limit = parseInt(document.getElementById('settings-combo-status-limit')?.value) || this.statusLimit;
+        this.statusLimit = limit;
+
         const totalItems = filtered.length;
-        const totalPages = Math.ceil(totalItems / this.itemsPerPage);
+        const totalPages = Math.ceil(totalItems / limit);
         if (this.statusPage > totalPages && totalPages > 0) this.statusPage = totalPages;
         
-        const start = (this.statusPage - 1) * this.itemsPerPage;
-        const paginated = filtered.slice(start, start + this.itemsPerPage);
+        const start = (this.statusPage - 1) * limit;
+        const paginated = filtered.slice(start, start + limit);
 
         // 3. Renderizar Contenido
         if (paginated.length === 0) {
@@ -1503,12 +1507,15 @@ export class SettingsModule {
         );
 
         // Paginación
+        const limit = parseInt(document.getElementById('settings-combo-payments-limit')?.value) || this.paymentsLimit;
+        this.paymentsLimit = limit;
+
         const totalItems = filtered.length;
-        const totalPages = Math.ceil(totalItems / this.itemsPerPage);
+        const totalPages = Math.ceil(totalItems / limit);
         if (this.paymentsPage > totalPages && totalPages > 0) this.paymentsPage = totalPages;
 
-        const start = (this.paymentsPage - 1) * this.itemsPerPage;
-        const paginated = filtered.slice(start, start + this.itemsPerPage);
+        const start = (this.paymentsPage - 1) * limit;
+        const paginated = filtered.slice(start, start + limit);
 
         if (paginated.length === 0) {
             container.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 3rem; color: var(--text-muted);">
@@ -1571,6 +1578,22 @@ export class SettingsModule {
             this.renderComboStatus();
         } else if (type === 'payments') {
             this.paymentsPage = page;
+            this.renderComboPayments();
+        }
+    }
+
+    updateItemsPerPage(value) {
+        const limit = parseInt(value);
+        // Identificar qué tabla refrescar basándose en el tab activo o el ID del select que disparó
+        // Como ambos llaman a la misma función, refrescamos ambos o el que esté visible
+        const activeTab = document.querySelector('.settings-tab-content:not([style*="display: none"])');
+        
+        if (activeTab && activeTab.id === 'settings-tab-payments') {
+            // Estamos en la pestaña de pagos, pero dentro del mismo tab están ambas tablas
+            // Generalmente, el usuario cambia el de la tabla que está viendo
+            this.statusPage = 1;
+            this.paymentsPage = 1;
+            this.renderComboStatus();
             this.renderComboPayments();
         }
     }

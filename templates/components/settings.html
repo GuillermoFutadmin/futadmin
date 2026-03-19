@@ -78,6 +78,16 @@
                 <input type="text" id="combo-status-search" placeholder="🔍 Buscar organización..." 
                     style="background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 20px; padding: 6px 15px 6px 35px; color: var(--text); font-size: 0.85rem; width: 220px;"
                     onkeyup="ui.settings.renderComboStatus()">
+                
+                <select id="settings-combo-status-limit" class="nav-select" 
+                    style="min-width: 80px; background: var(--bg-card); border-color: var(--border);"
+                    onchange="ui.settings.updateItemsPerPage(this.value)">
+                    <option value="5">5 / pág</option>
+                    <option value="10" selected>10 / pág</option>
+                    <option value="20">20 / pág</option>
+                    <option value="50">50 / pág</option>
+                </select>
+
                 <select id="settings-combo-status-filter" class="nav-select" 
                     style="min-width: 180px; background: var(--bg-card); border-color: var(--primary);"
                     onchange="ui.settings.renderComboStatus()">
@@ -112,11 +122,21 @@
 
         <div class="action-bar" style="background: rgba(255,255,255,0.03); padding: 1rem 1.5rem; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
             <h4 style="margin: 0;">Historial de Transacciones</h4>
-            <div style="position: relative; width: 250px;">
-                <input type="text" id="combo-payment-search" placeholder="🔍 Buscar aportación..." 
-                    style="width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 20px; padding: 6px 15px 6px 35px; color: var(--text); font-size: 0.85rem;"
-                    onkeyup="ui.settings.renderComboPayments()">
-                <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); opacity: 0.4; font-size: 0.9rem;"></span>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <select id="settings-combo-payments-limit" class="nav-select" 
+                    style="min-width: 80px; background: var(--bg-card); border-color: var(--border); height: 32px; font-size: 0.8rem;"
+                    onchange="ui.settings.updateItemsPerPage(this.value)">
+                    <option value="5">5 / pág</option>
+                    <option value="10" selected>10 / pág</option>
+                    <option value="20">20 / pág</option>
+                    <option value="50">50 / pág</option>
+                </select>
+                <div style="position: relative; width: 250px;">
+                    <input type="text" id="combo-payment-search" placeholder="🔍 Buscar aportación..." 
+                        style="width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 20px; padding: 6px 15px 6px 35px; color: var(--text); font-size: 0.85rem;"
+                        onkeyup="ui.settings.renderComboPayments()">
+                    <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); opacity: 0.4; font-size: 0.9rem;"></span>
+                </div>
             </div>
         </div>
         
