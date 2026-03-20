@@ -772,51 +772,84 @@ def handle_inscripciones():
     t_id = int(torneo_id)
     costo_arbitraje = float(torneo.costo_arbitraje or 0) if torneo else 0
 
-    def renderer_ins(ins):
-        # Calcular totales de pago
-        pagado_ins = db.session.query(db.func.sum(Pago.monto)).filter_by(inscripcion_id=ins.id, tipo='Inscripcion').scalar() or 0
-        pagado_arb = db.session.query(db.func.sum(Pago.monto)).filter_by(inscripcion_id=ins.id, tipo='Arbitraje').scalar() or 0
+    # --- OPTIMIZACIÓN: Precarga de datos masiva (Bulk Loading) para evitar N+1 queries ---
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 10, type=int)
+    
+    pagination = query.paginate(page=page, per_page=per_page, error_out=False)
+    inscritos = pagination.items
+    
+    ins_ids = [i.id for i in inscritos]
+    equipo_ids = [i.equipo_id for i in inscritos]
+    
+    # 1. Totales de pago por inscripción y tipo
+    pagos_totales_raw = db.session.query(
+        Pago.inscripcion_id, Pago.tipo, db.func.sum(Pago.monto)
+    ).filter(Pago.inscripcion_id.in_(ins_ids)).group_by(Pago.inscripcion_id, Pago.tipo).all()
+    
+    pagos_totales_map = {}
+    for p_iid, p_tipo, p_monto in pagos_totales_raw:
+        if p_iid not in pagos_totales_map: pagos_totales_map[p_iid] = {}
+        pagos_totales_map[p_iid][p_tipo] = float(p_monto or 0)
         
-        # Contar partidos del torneo para este equipo (todos los estados relevantes)
-        eq_id = int(ins.equipo_id)
-        
-        partidos_todos = Partido.query.filter(
-            Partido.torneo_id == t_id,
-            Partido.estado.in_(['Scheduled', 'Live', 'Played']),
-            or_(
-                Partido.equipo_local_id == eq_id,
-                Partido.equipo_visitante_id == eq_id
-            )
-        ).order_by(Partido.jornada.asc()).all()
-
-        partidos_jugados = sum(1 for p in partidos_todos if p.estado == 'Played')
-        partidos_programados = len(partidos_todos)
-        partidos_pendientes = partidos_programados - partidos_jugados
-
-        esperado_arb = partidos_programados * costo_arbitraje
-        saldo_arb = esperado_arb - float(pagado_arb)
-        
-        # Obtener historial de pagos para este equipo
-        pagos_lista = Pago.query.filter_by(inscripcion_id=ins.id).order_by(Pago.fecha.desc()).all()
-        
-        # Generar detalle de arbitraje por jornada
-        detalle_partidos = []
-        for p in partidos_todos:
-            # Encontrar el rival con manejo defensivo de nulos
-            rival_nombre = "Desconocido"
-            if p.equipo_local_id == eq_id:
-                if p.equipo_visitante:
-                    rival_nombre = p.equipo_visitante.nombre
-            else:
-                if p.equipo_local:
-                    rival_nombre = p.equipo_local.nombre
+    # 2. Partidos relevantes para los equipos de la página
+    partidos_raw = Partido.query.filter(
+        Partido.torneo_id == t_id,
+        Partido.estado.in_(['Scheduled', 'Live', 'Played']),
+        or_(Partido.equipo_local_id.in_(equipo_ids), Partido.equipo_visitante_id.in_(equipo_ids))
+    ).order_by(Partido.jornada.asc()).all()
+    
+    partidos_map = {eid: [] for eid in equipo_ids}
+    for p in partidos_raw:
+        if p.equipo_local_id in partidos_map:
+            partidos_map[p.equipo_local_id].append(p)
+        if p.equipo_visitante_id in partidos_map:
+            if p.equipo_visitante_id != p.equipo_local_id:
+                partidos_map[p.equipo_visitante_id].append(p)
             
-            # Pagos vinculados específicamente a este partido para este equipo
-            monto_pagado_partido = db.session.query(db.func.sum(Pago.monto)).filter(
-                Pago.inscripcion_id == ins.id,
-                Pago.partido_id == p.id,
-                Pago.tipo == 'Arbitraje'
-            ).scalar() or 0
+    # 3. Pagos específicos por partido (Arbitraje)
+    pagos_partido_raw = db.session.query(
+        Pago.inscripcion_id, Pago.partidoid if hasattr(Pago, 'partidoid') else Pago.partido_id, db.func.sum(Pago.monto)
+    ).filter(
+        Pago.inscripcion_id.in_(ins_ids), 
+        (Pago.partidoid if hasattr(Pago, 'partidoid') else Pago.partido_id).isnot(None), 
+        Pago.tipo == 'Arbitraje'
+    ).group_by(Pago.inscripcion_id, Pago.partidoid if hasattr(Pago, 'partidoid') else Pago.partido_id).all()
+    
+    pagos_partido_map = {}
+    for p_iid, p_pid, p_monto in pagos_partido_raw:
+        pagos_partido_map[(p_iid, p_pid)] = float(p_monto or 0)
+        
+    # 4. Historial de pagos para la vista detallada
+    pagos_lista_raw = Pago.query.filter(Pago.inscripcion_id.in_(ins_ids)).order_by(Pago.fecha.desc()).all()
+    historial_map = {iid: [] for iid in ins_ids}
+    for pg in pagos_lista_raw:
+        historial_map[pg.inscripcion_id].append(pg)
+
+    def renderer_ins_optimized(ins):
+        iid = ins.id
+        eid = ins.equipo_id
+        totales = pagos_totales_map.get(iid, {})
+        pagado_ins = totales.get('Inscripcion', 0)
+        pagado_arb = totales.get('Arbitraje', 0)
+        
+        partidos_equipo = partidos_map.get(eid, [])
+        partidos_jugados = sum(1 for p in partidos_equipo if p.estado == 'Played')
+        partidos_programados = len(partidos_equipo)
+        partidos_pendientes = partidos_programados - partidos_jugados
+        
+        esperado_arb = partidos_programados * costo_arbitraje
+        saldo_arb = esperado_arb - pagado_arb
+        
+        detalle_partidos = []
+        for p in partidos_equipo:
+            rival_nombre = "Desconocido"
+            if p.equipo_local_id == eid:
+                rival_nombre = p.equipo_visitante.nombre if p.equipo_visitante else "Desconocido"
+            else:
+                rival_nombre = p.equipo_local.nombre if p.equipo_local else "Desconocido"
+            
+            monto_pagado_partido = pagos_partido_map.get((iid, p.id), 0)
             
             detalle_partidos.append({
                 "partido_id": p.id,
@@ -825,18 +858,18 @@ def handle_inscripciones():
                 "fecha": p.fecha.strftime('%d/%m/%Y') if p.fecha else "Pendiente",
                 "estado": p.estado,
                 "tarifa": costo_arbitraje,
-                "pagado": float(monto_pagado_partido),
-                "saldo": costo_arbitraje - float(monto_pagado_partido)
+                "pagado": monto_pagado_partido,
+                "saldo": costo_arbitraje - monto_pagado_partido
             })
 
         return {
-            "id": ins.id,
-            "torneo_id": t_id,
-            "equipo_id": ins.equipo_id,
-            "equipo_nombre": ins.equipo.nombre if ins.equipo else f"Equipo {ins.equipo_id}",
+            "id": iid,
+            "torneo_id": ins.torneo_id,
+            "equipo_id": eid,
+            "equipo_nombre": ins.equipo.nombre if ins.equipo else f"Equipo {eid}",
             "monto_pactado": ins.monto_pactado_inscripcion,
-            "pagado_inscripcion": float(pagado_ins),
-            "pagado_arbitraje": float(pagado_arb),
+            "pagado_inscripcion": pagado_ins,
+            "pagado_arbitraje": pagado_arb,
             "saldo_inscripcion": float(ins.monto_pactado_inscripcion - pagado_ins),
             "partidos_jugados": partidos_jugados,
             "partidos_programados": partidos_programados,
@@ -852,10 +885,21 @@ def handle_inscripciones():
                 "fecha": pg.fecha.strftime('%d/%m/%Y') if pg.fecha else "??",
                 "metodo": pg.metodo,
                 "partido_id": pg.partido_id
-            } for pg in pagos_lista]
+            } for pg in historial_map.get(iid, [])]
         }
 
-    return paginate_query(query, renderer=renderer_ins)
+    items = [renderer_ins_optimized(item) for item in inscritos]
+    return jsonify({
+        'items': items,
+        'pagination': {
+            'page': pagination.page,
+            'per_page': pagination.per_page,
+            'total_items': pagination.total,
+            'total_pages': pagination.pages,
+            'has_next': pagination.has_next,
+            'has_prev': pagination.has_prev
+        }
+    })
 
 @app.route('/api/inscripciones/<int:inscripcion_id>', methods=['PUT', 'PATCH'])
 @csrf.exempt
