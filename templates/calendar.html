@@ -1327,7 +1327,7 @@
                     </div>
                 </div>
 
-                <div id="share-matches-list" style="display: flex; flex-direction: column; gap: 30px; position: relative; z-index: 2;">
+                <div id="share-matches-list" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 30px; position: relative; z-index: 2;">
                     <!-- Rendered by JS -->
                 </div>
 
@@ -2082,37 +2082,37 @@
                         const visitorInitial = (p.equipo_visitante || '?')[0].toUpperCase();
                         
                         const localShield = p.equipo_local_escudo 
-                            ? `<img src="${p.equipo_local_escudo}" style="width:120px; height:120px; object-fit:contain; filter: drop-shadow(0 10px 20px rgba(0,0,0,0.5));">`
-                            : `<div style="width:120px; height:120px; border-radius:50%; background:linear-gradient(45deg, var(--primary), #3b82f6); display:flex; align-items:center; justify-content:center; font-weight:900; font-size:3rem; color:#000; box-shadow: 0 10px 20px rgba(0,0,0,0.5);">${localInitial}</div>`;
+                            ? `<img src="${p.equipo_local_escudo}" style="width:100px; height:100px; object-fit:contain; filter: drop-shadow(0 10px 20px rgba(0,0,0,0.5));">`
+                            : `<div style="width:100px; height:100px; border-radius:50%; background:linear-gradient(45deg, var(--primary), #3b82f6); display:flex; align-items:center; justify-content:center; font-weight:900; font-size:2.5rem; color:#000; box-shadow: 0 10px 20px rgba(0,0,0,0.5);">${localInitial}</div>`;
                         
                         const visitorShield = p.equipo_visitante_escudo
-                            ? `<img src="${p.equipo_visitante_escudo}" style="width:120px; height:120px; object-fit:contain; filter: drop-shadow(0 10px 20px rgba(0,0,0,0.5));">`
-                            : `<div style="width:120px; height:120px; border-radius:50%; background:linear-gradient(45deg, #3b82f6, var(--primary)); display:flex; align-items:center; justify-content:center; font-weight:900; font-size:3rem; color:#000; box-shadow: 0 10px 20px rgba(0,0,0,0.5);">${visitorInitial}</div>`;
+                            ? `<img src="${p.equipo_visitante_escudo}" style="width:100px; height:100px; object-fit:contain; filter: drop-shadow(0 10px 20px rgba(0,0,0,0.5));">`
+                            : `<div style="width:100px; height:100px; border-radius:50%; background:linear-gradient(45deg, #3b82f6, var(--primary)); display:flex; align-items:center; justify-content:center; font-weight:900; font-size:2.5rem; color:#000; box-shadow: 0 10px 20px rgba(0,0,0,0.5);">${visitorInitial}</div>`;
 
                         return `
-                        <div class="share-match-card" style="background: rgba(255,255,255,0.03); border: 2px solid rgba(255,255,255,0.08); border-radius: 30px; padding: 40px; display: flex; flex-direction: column; gap: 25px; backdrop-filter: blur(20px); position: relative; overflow: hidden;">
+                        <div class="share-match-card" style="background: rgba(255,255,255,0.03); border: 2px solid rgba(255,255,255,0.08); border-radius: 25px; padding: 30px; display: flex; flex-direction: column; gap: 20px; backdrop-filter: blur(20px); position: relative; overflow: hidden;">
                             <!-- Top Info Badge -->
-                            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 15px;">
-                                <span style="font-size: 1rem; font-weight: 900; color: var(--primary); letter-spacing: 2px; text-transform: uppercase;">Jornada ${p.jornada}</span>
-                                <span style="font-size: 1rem; opacity: 0.6; font-weight: 700;">📍 ${p.cancha || 'Sede Principal'}</span>
+                            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 12px;">
+                                <span style="font-size: 0.9rem; font-weight: 900; color: var(--primary); letter-spacing: 2px; text-transform: uppercase;">Jornada ${p.jornada}</span>
+                                <span style="font-size: 0.9rem; opacity: 0.5; font-weight: 700;">📍 ${p.cancha || 'Sede'}</span>
                             </div>
 
                             <!-- Main VS area -->
-                            <div style="display: flex; align-items: center; justify-content: space-between; gap: 20px;">
-                                <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 20px; text-align: center;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+                                <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 15px; text-align: center;">
                                     ${localShield}
-                                    <span style="font-size: 1.8rem; font-weight: 900; color: white; line-height: 1; text-transform: uppercase;">${p.equipo_local}</span>
+                                    <span style="font-size: 1.4rem; font-weight: 900; color: white; line-height: 1; text-transform: uppercase;">${p.equipo_local}</span>
                                 </div>
 
-                                <div style="display: flex; flex-direction: column; align-items: center; gap: 10px; width: 150px;">
-                                    <div style="font-size: 3.5rem; font-weight: 900; color: white; text-shadow: 0 0 30px var(--primary-glow); line-height: 1;">${p.hora || '--:--'}</div>
-                                    <div style="width: 60px; height: 4px; background: var(--primary); border-radius: 2px;"></div>
-                                    <div style="font-size: 1rem; opacity: 0.5; font-weight: 900; letter-spacing: 5px;">VS</div>
+                                <div style="display: flex; flex-direction: column; align-items: center; gap: 5px; width: 120px;">
+                                    <div style="font-size: 2.8rem; font-weight: 900; color: white; text-shadow: 0 0 20px var(--primary-glow); line-height: 1;">${p.hora || '--:--'}</div>
+                                    <div style="width: 40px; height: 3px; background: var(--primary); border-radius: 2px;"></div>
+                                    <div style="font-size: 0.8rem; opacity: 0.4; font-weight: 900; letter-spacing: 4px;">VS</div>
                                 </div>
 
-                                <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 20px; text-align: center;">
+                                <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 15px; text-align: center;">
                                     ${visitorShield}
-                                    <span style="font-size: 1.8rem; font-weight: 900; color: white; line-height: 1; text-transform: uppercase;">${p.equipo_visitante}</span>
+                                    <span style="font-size: 1.4rem; font-weight: 900; color: white; line-height: 1; text-transform: uppercase;">${p.equipo_visitante}</span>
                                 </div>
                             </div>
                         </div>`;
