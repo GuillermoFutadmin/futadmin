@@ -1096,22 +1096,22 @@
             </div>
 
             <!-- Actions -->
+            {% if user_rol in ['Admin', 'Ejecutivo', 'Dueño de Liga'] %}
             <div class="panel-section">
                 <h3>Acciones</h3>
                 <div style="display: flex; flex-direction: column; gap: 10px;">
-                    {% if user_rol in ['Admin', 'Ejecutivo', 'Dueño de Liga'] %}
                     <button class="btn btn-primary btn-full" onclick="CalendarApp.promptGenerateFixtures()">
                         🎲 Generar Rol Automático
                     </button>
                     <button class="btn btn-accent btn-full" onclick="CalendarApp.autoScheduleAll()">
                         📅 Auto-Programar Horarios
                     </button>
-                    {% endif %}
                     <button class="btn btn-ghost btn-full" onclick="CalendarApp.refreshData()">
                         🔄 Actualizar
                     </button>
                 </div>
             </div>
+            {% endif %}
 
             <!-- Academia Filters -->
             <div class="panel-section">
