@@ -1441,18 +1441,27 @@ def generar_rol(torneo_id):
         return jsonify({'error': 'Se necesitan al menos 2 equipos para generar el rol.'}), 400
 
     try:
-        partidos_existentes = Partido.query.filter_by(torneo_id=torneo_id).all()
-        for p in partidos_existentes:
-            # NO eliminar partidos jugados, en curso o con marcador registrado
+        # 1. Identificar partidos que se pueden borrar (los que no han empezado ni tienen marcador)
+        partidos_a_borrar = Partido.query.filter_by(torneo_id=torneo_id).all()
+        ids_borrar = []
+        for p in partidos_a_borrar:
             has_score = p.goles_local is not None or p.goles_visitante is not None
-            if p.estado in ['Played', 'Live'] or has_score:
-                continue
+            if p.estado not in ['Played', 'Live'] and not has_score:
+                ids_borrar.append(p.id)
+        
+        if ids_borrar:
+            # ELIMINACIÓN MASIVA (Optimizado para Railway/PostgreSQL)
+            # 2. Borrar eventos y asistencias asociados de un solo golpe
+            EventoPartido.query.filter(EventoPartido.partido_id.in_(ids_borrar)).delete(synchronize_session=False)
+            from models import AsistenciaPartido
+            AsistenciaPartido.query.filter(AsistenciaPartido.partido_id.in_(ids_borrar)).delete(synchronize_session=False)
             
-            # ELIMINACIÓN EN CASCADA MANUAL: Borrar eventos asociados
-            EventoPartido.query.filter_by(partido_id=p.id).delete()
+            # 3. Desvincular pagos (set partido_id = NULL)
+            Pago.query.filter(Pago.partido_id.in_(ids_borrar)).update({Pago.partido_id: None}, synchronize_session=False)
             
-            db.session.delete(p)
-        db.session.flush()
+            # 4. Borrar los partidos masivamente
+            Partido.query.filter(Partido.id.in_(ids_borrar)).delete(synchronize_session=False)
+            db.session.flush()
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': f'No se pudieron eliminar los partidos previos: {str(e)}'}), 500
@@ -1505,7 +1514,7 @@ def generar_rol(torneo_id):
                             arbitro_id=arb_id,
                             liga_id=torneo.liga_id
                         )
-                        db.session.add(p)
+                        # db.session.add(p)  # Quitamos del bucle para eficiencia
                         partidos_creados.append(p)
                 temp_equipos.insert(1, temp_equipos.pop())
             jornada_offset += (n - 1)
@@ -1533,7 +1542,7 @@ def generar_rol(torneo_id):
                 fase=fase,
                 liga_id=torneo.liga_id
             )
-            db.session.add(p)
+            # db.session.add(p) # Fuera del bucle
             partidos_creados.append(p)
 
     elif formato == "Fase de Grupos":
@@ -1598,13 +1607,15 @@ def generar_rol(torneo_id):
                                 fase="Fase de Grupos",
                                 liga_id=torneo.liga_id
                             )
-                            db.session.add(p)
+                            # db.session.add(p) # Fuera del bucle
                             partidos_creados.append(p)
                     # Rotación de pool
                     pool.insert(1, pool.pop())
                 # El offset de jornada debe avanzar después de cada vuelta completa del grupo
                 j_offset += (n_p - 1)
 
+    if partidos_creados:
+        db.session.add_all(partidos_creados)
     db.session.commit()
     return jsonify({'success': True, 'partidos_generados': len(partidos_creados)})
 
