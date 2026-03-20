@@ -8,7 +8,7 @@ from sqlalchemy import or_
 from dotenv import load_dotenv
 from flask_talisman import Talisman
 from werkzeug.middleware.proxy_fix import ProxyFix
-import os, secrets, uuid, math
+import os, secrets, uuid, math, requests
 from PIL import Image
 
 # Cargar variables de entorno desde .env
@@ -809,7 +809,10 @@ def handle_inscripciones():
             
     # 3. Pagos específicos por partido (Arbitraje)
     pagos_partido_raw = db.session.query(
-        Pago.inscripcion_id, Pago.partidoid if hasattr(Pago, 'partidoid') else Pago.partido_id, db.func.sum(Pago.monto)
+        Pago.inscripcion_id, 
+        (Pago.partidoid if hasattr(Pago, 'partidoid') else Pago.partido_id), 
+        db.func.sum(Pago.monto),
+        db.func.max(Pago.id) # Add last pago ID for reference
     ).filter(
         Pago.inscripcion_id.in_(ins_ids), 
         (Pago.partidoid if hasattr(Pago, 'partidoid') else Pago.partido_id).isnot(None), 
@@ -817,8 +820,8 @@ def handle_inscripciones():
     ).group_by(Pago.inscripcion_id, Pago.partidoid if hasattr(Pago, 'partidoid') else Pago.partido_id).all()
     
     pagos_partido_map = {}
-    for p_iid, p_pid, p_monto in pagos_partido_raw:
-        pagos_partido_map[(p_iid, p_pid)] = float(p_monto or 0)
+    for p_iid, p_pid, p_monto, p_last_id in pagos_partido_raw:
+        pagos_partido_map[(p_iid, p_pid)] = {"monto": float(p_monto or 0), "id": p_last_id}
         
     # 4. Historial de pagos para la vista detallada
     pagos_lista_raw = Pago.query.filter(Pago.inscripcion_id.in_(ins_ids)).order_by(Pago.fecha.desc()).all()
@@ -849,7 +852,9 @@ def handle_inscripciones():
             else:
                 rival_nombre = p.equipo_local.nombre if p.equipo_local else "Desconocido"
             
-            monto_pagado_partido = pagos_partido_map.get((iid, p.id), 0)
+            p_pago_data = pagos_partido_map.get((iid, p.id), {"monto": 0, "id": None})
+            monto_pagado_partido = p_pago_data["monto"]
+            ultimo_pago_id = p_pago_data["id"]
             
             detalle_partidos.append({
                 "partido_id": p.id,
@@ -859,7 +864,8 @@ def handle_inscripciones():
                 "estado": p.estado,
                 "tarifa": costo_arbitraje,
                 "pagado": monto_pagado_partido,
-                "saldo": costo_arbitraje - monto_pagado_partido
+                "saldo": costo_arbitraje - monto_pagado_partido,
+                "ultimo_pago_id": ultimo_pago_id
             })
 
         return {
@@ -963,6 +969,13 @@ def handle_pagos():
         db.session.add(nuevo_pago)
         db.session.commit()
         
+        # Enviar notificación Telegram si hay árbitro vinculado
+        if nuevo_pago.tipo == 'Arbitraje' and nuevo_pago.partido_id:
+            try:
+                send_telegram_ticket_notification(nuevo_pago)
+            except Exception as te:
+                print(f"Error enviando notificación Telegram: {te}")
+        
         # Datos enriquecidos para el ticket
         ins = Inscripcion.query.get(inscripcion_id)
         torneo = ins.torneo
@@ -1017,6 +1030,58 @@ def handle_pagos():
             "clausulas": (torneo.clausulas if torneo and torneo.clausulas else "") + ("\n\n" + reglas_cancha if reglas_cancha else ""),
             "fecha_inicio_torneo": torneo.fecha_inicio.strftime('%d/%m/%Y') if torneo.fecha_inicio else "Pendiente"
         }), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+def send_telegram_ticket_notification(pago):
+    """Envía un resumen de pago vía Telegram al árbitro o administrador si están configurados."""
+    token = app.config.get('TELEGRAM_BOT_TOKEN')
+    if not token: return
+    
+    # 1. Obtener árbitro del partido
+    from models import Partido, Arbitro
+    p = Partido.query.get(pago.partido_id)
+    if not p or not p.arbitro or not p.arbitro.telegram_id:
+        return # No hay a quien enviar
+        
+    chat_id = p.arbitro.telegram_id
+    
+    mensaje = (
+        f"✅ *PAGO DE ARBITRAJE RECIBIDO*\n\n"
+        f"💰 *Monto:* ${pago.monto:,.2f}\n"
+        f"⚽ *Partido:* {p.equipo_local.nombre} vs {p.equipo_visitante.nombre}\n"
+        f"📅 *Jornada:* {p.jornada}\n"
+        f"🛡️ *Torneo:* {p.torneo.nombre}\n"
+        f"🏦 *Método:* {pago.metodo}\n"
+        f"🔖 *Comentario:* {pago.comentario or 'S/C'}\n\n"
+        f"¡Gracias por tu servicio! ⚽🛡️"
+    )
+    
+    url = f"https://api.telegram.org/bot{token}/sendMessage"
+    payload = {
+        "chat_id": chat_id,
+        "text": mensaje,
+        "parse_mode": "Markdown"
+    }
+    
+    try:
+        requests.post(url, json=payload, timeout=5)
+    except Exception as e:
+        print(f"Telegram API Error: {e}")
+
+@app.route('/api/pagos/<int:id>', methods=['DELETE'])
+@csrf.exempt
+def handle_pago_delete(id):
+    # Control de Permisos
+    if session.get('user_rol') not in ['admin', 'ejecutivo', 'dueño_liga', 'super_arbitro']:
+        return jsonify({"error": "No tiene permisos para anular pagos."}), 403
+        
+    pago = Pago.query.get_or_404(id)
+    try:
+        db.session.delete(pago)
+        db.session.commit()
+        return jsonify({"success": True})
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": str(e)}), 500
@@ -1308,6 +1373,22 @@ def get_partidos():
     if equipo_id:
         from sqlalchemy import or_
         query = query.filter(or_(Partido.equipo_local_id == equipo_id, Partido.equipo_visitante_id == equipo_id))
+
+    # Filtro de solo pendientes de arbitraje
+    solo_pendientes = request.args.get('solo_pendientes', '0') == '1'
+    if solo_pendientes and equipo_id:
+        # Excluir partidos que ya tengan un pago de Arbitraje registrado para esta inscripción
+        # Buscamos la inscripción del equipo en este torneo (o liga si aplica)
+        # Nota: handle_pago asocia pagos via inscripcion_id
+        from models import Inscripcion, Pago
+        pago_exists = db.session.query(Pago.partido_id).filter(
+            Pago.tipo == 'Arbitraje',
+            Pago.partido_id.isnot(None),
+            Pago.inscripcion_id.in_(
+                db.session.query(Inscripcion.id).filter(Inscripcion.equipo_id == equipo_id)
+            )
+        )
+        query = query.filter(~Partido.id.in_(pago_exists))
 
     query = query.order_by(Partido.fecha.desc(), Partido.hora.desc(), Partido.id.desc())
     return paginate_query(query)

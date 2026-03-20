@@ -116,6 +116,7 @@ export class FinanceModule {
                                     <th style="padding: 8px; text-align: right; color: #aaa;">Aportación</th>
                                     <th style="padding: 8px; text-align: right; color: #aaa;">Aportado</th>
                                     <th style="padding: 8px; text-align: right; color: #aaa;">Pendiente</th>
+                                    <th style="padding: 8px; text-align: center; color: #aaa;">Acción</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -127,13 +128,20 @@ export class FinanceModule {
                         const saldoColor = dp.saldo > 0 ? '#ff4d4d' : '#00ff88';
 
                         return `
-                                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); ${isPaid ? 'opacity: 0.6; background: rgba(0,255,136,0.03);' : ''}">
+                                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); ${isPaid ? 'opacity: 0.9; background: rgba(0,255,136,0.03);' : ''}">
                                         <td style="padding: 8px;">J${dp.jornada}</td>
                                         <td style="padding: 8px; font-weight: bold;">${dp.rival}</td>
                                         <td style="padding: 8px;"><span style="color: ${estadoColor}; font-size: 0.75rem; border: 1px solid ${estadoColor}; padding: 2px 6px; border-radius: 4px;">${estadoText}</span></td>
                                         <td style="padding: 8px; text-align: right;">$${dp.tarifa.toFixed(2)}</td>
                                         <td style="padding: 8px; text-align: right; color: ${abonadoColor};">$${dp.pagado.toFixed(2)}</td>
                                         <td style="padding: 8px; text-align: right; font-weight: bold; color: ${saldoColor};">$${dp.saldo.toFixed(2)}</td>
+                                        <td style="padding: 8px; text-align: center;">
+                                            ${dp.ultimo_pago_id ? `
+                                                <button onclick="event.stopPropagation(); ui.finance.deletePago(${dp.ultimo_pago_id}, true)" 
+                                                    style="background:none; border:none; color:#ff4d4d; cursor:pointer; font-size:1rem;" 
+                                                    title="Anular pago de esta jornada">🗑️</button>
+                                            ` : ''}
+                                        </td>
                                     </tr>`;
                     }).join('')}
                             </tbody>
@@ -509,7 +517,7 @@ export class FinanceModule {
             selectPartido.innerHTML = '<option value="">Cargando partidos...</option>';
             try {
                 // Notar: /api/partidos usa paginación, por lo que los resultados están en response.items
-                const response = await Core.fetchAPI(`/api/partidos?equipo_id=${equipoId}&per_page=100`);
+                const response = await Core.fetchAPI(`/api/partidos?equipo_id=${equipoId}&solo_pendientes=1&per_page=100`);
                 const matches = (response && response.items) ? response.items : (Array.isArray(response) ? response : []);
                 
                 selectPartido.innerHTML = '<option value="">-- Sin vincular a partido específico --</option>';
@@ -592,7 +600,7 @@ export class FinanceModule {
 
     showTicket(data) {
         const modal = document.getElementById('modal-ticket');
-        const content = document.getElementById('ticket-content');
+        const content = document.getElementById('ticket-visual-content');
         if (!modal || !content) return;
 
         this._lastTicket = data; // Guardar para PDF
@@ -799,6 +807,32 @@ ${data.reglamento ? `<strong>REGLAMENTO:</strong>\n${data.reglamento}\n\n` : ''}
             }
         } catch (err) {
             alert('Error de conexión.');
+        }
+    }
+
+    async deletePago(id, isArbitraje = false) {
+        if (!confirm('¿Seguro que deseas anular esta aportación? Esta acción es irreversible.')) return;
+
+        try {
+            const response = await fetch(`/api/pagos/${id}`, { method: 'DELETE' });
+            if (response.ok) {
+                if (isArbitraje) {
+                    this.loadArbitrajes();
+                } else {
+                    this.loadInscripciones();
+                }
+                
+                if (this.ui && this.ui.loadInitialStats) {
+                    this.ui.loadInitialStats();
+                }
+                
+                alert('Aportación anulada correctamente.');
+            } else {
+                const err = await response.json();
+                alert('Error al eliminar: ' + (err.error || 'Desconocido'));
+            }
+        } catch (error) {
+            alert('Error de conexión al eliminar pago.');
         }
     }
 
