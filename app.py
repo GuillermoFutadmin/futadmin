@@ -941,6 +941,18 @@ def handle_pagos():
         import string as _str3, random as _rnd3
         folio_pago = 'FUT-' + ''.join(_rnd3.choices(_str3.ascii_uppercase + _str3.digits, k=6))
 
+        # Información del partido si existe
+        partido_info = None
+        if nuevo_pago.partido_id:
+            from models import Partido
+            p = Partido.query.get(nuevo_pago.partido_id)
+            if p:
+                partido_info = {
+                    "rivales": f"{p.equipo_local.nombre} vs {p.equipo_visitante.nombre}",
+                    "jornada": p.jornada,
+                    "fecha": p.fecha.strftime('%d/%m/%Y') if p.fecha else "S/F"
+                }
+
         return jsonify({
             "success": True,
             "pago_id": nuevo_pago.id,
@@ -955,6 +967,7 @@ def handle_pagos():
             "monto_pactado": float(ins.monto_pactado_inscripcion),
             "total_pagado": float(pagado_ins) if nuevo_pago.tipo == 'Inscripcion' else float(pagado_arb),
             "saldo_pendiente": float(ins.monto_pactado_inscripcion - pagado_ins) if nuevo_pago.tipo == 'Inscripcion' else 0,
+            "partido": partido_info,
             "premios": torneo.premios or "",
             "reglamento": torneo.reglamento or "",
             "clausulas": (torneo.clausulas if torneo and torneo.clausulas else "") + ("\n\n" + reglas_cancha if reglas_cancha else ""),

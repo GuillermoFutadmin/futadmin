@@ -120,8 +120,9 @@ export class FinanceModule {
                             </thead>
                             <tbody>
                                 ${ins.detalle_partidos.map(dp => {
-                        const estadoColor = dp.estado === 'Played' ? '#00ff88' : (dp.estado === 'Live' ? '#ffae00' : '#aaa');
-                        const estadoText = dp.estado === 'Played' || dp.estado === 'Jugado' ? 'Jugado' : (dp.estado === 'Live' || dp.estado === 'En Vivo' ? 'En Vivo' : 'Pendiente');
+                        const isPaid = dp.saldo <= 0;
+                        const estadoColor = isPaid ? '#00ff88' : (dp.estado === 'Played' ? '#00ff88' : (dp.estado === 'Live' ? '#ffae00' : '#aaa'));
+                        const estadoText = isPaid ? 'Pagado' : (dp.estado === 'Played' || dp.estado === 'Jugado' ? 'Jugado' : (dp.estado === 'Live' || dp.estado === 'En Vivo' ? 'En Vivo' : 'Pendiente'));
                         const abonadoColor = dp.pagado >= dp.tarifa ? '#00ff88' : (dp.pagado > 0 ? '#ffae00' : '#fff');
                         const saldoColor = dp.saldo > 0 ? '#ff4d4d' : '#00ff88';
 
@@ -562,7 +563,19 @@ export class FinanceModule {
             if (response.ok) {
                 const ticketData = await response.json();
                 Core.closeModal('modal-pago');
-                this.loadInscripciones();
+                
+                // Actualizar la tabla correspondiente
+                if (data.tipo === 'Arbitraje') {
+                    this.loadArbitrajes();
+                } else {
+                    this.loadInscripciones();
+                }
+                
+                // Actualizar contadores globales
+                if (this.ui && this.ui.loadInitialStats) {
+                    this.ui.loadInitialStats();
+                }
+
                 this.showTicket(ticketData);
             } else {
                 const errData = await response.json();
@@ -570,96 +583,100 @@ export class FinanceModule {
             }
         } catch (error) { 
             console.error('Payment Error:', error);
-            alert('Error de conexión al procesar la donación'); 
+            alert('Error de conexión'); 
         }
     }
 
     showTicket(data) {
-        const content = document.getElementById('ticket-visual-content');
-        if (!content) return;
+        const modal = document.getElementById('modal-ticket');
+        const content = document.getElementById('ticket-content');
+        if (!modal || !content) return;
 
-        // Guardar data para PDF
-        this._lastTicket = data;
+        this._lastTicket = data; // Guardar para PDF
+
+        const isArb = data.tipo === 'Arbitraje';
+        const color = isArb ? '#00bfff' : '#00ff88';
+        const icon = isArb ? '⚖️' : '⚽';
+
+        let partidoHtml = '';
+        if (data.partido) {
+            partidoHtml = `
+                <div style="background: rgba(255,255,255,0.03); border: 1px dashed rgba(255,255,255,0.1); border-radius: 8px; padding: 12px; margin: 15px 0; text-align: left;">
+                    <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 5px; font-weight: bold;">Partido Vinculado (Arbitraje)</div>
+                    <div style="color: #fff; font-size: 0.95rem; font-weight: bold;">${data.partido.rivales}</div>
+                    <div style="font-size: 0.8rem; color: ${color}; margin-top: 3px;">Jornada ${data.partido.jornada} • ${data.partido.fecha}</div>
+                </div>
+            `;
+        }
 
         const premiosHtml = data.premios ? `
-            <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; margin-bottom: 20px; background: #fff9f0;">
-                <p style="font-size: 0.85rem; font-weight: 800; margin: 0 0 10px 0; color: #0f172a; text-transform: uppercase; border-bottom: 2px solid #fbbf24; padding-bottom: 8px;">🏆 Premios del Torneo</p>
-                <div style="white-space: pre-wrap; font-family: sans-serif; line-height: 1.5; font-size: 0.85rem; color: #475569;">${data.premios}</div>
+            <div style="border: 1px solid rgba(255,215,0,0.2); border-radius: 8px; padding: 12px; margin-bottom: 20px; background: rgba(255,215,0,0.02); text-align: left;">
+                <p style="font-size: 0.7rem; font-weight: 800; margin: 0 0 8px 0; color: #ffd700; text-transform: uppercase;">🏆 Premios del Torneo</p>
+                <div style="white-space: pre-wrap; font-size: 0.8rem; color: var(--text-muted); line-height: 1.4;">${data.premios}</div>
             </div>` : '';
 
         content.innerHTML = `
-                <div style="font-family: 'Outfit', sans-serif; color: #333; padding: 25px; background: #fff; border-radius: 8px;">
-                <div style="text-align: center; border-bottom: 3px solid #0ea5e9; padding-bottom: 15px; margin-bottom: 25px; text-transform: uppercase;">
-                    <h2 style="margin: 0; font-size: 1.8rem; color: #0f172a; font-weight: 800;">FUTADMIN PRO</h2>
-                    <p style="font-size: 1rem; color: #0ea5e9; margin: 5px 0; font-weight: 700; letter-spacing: 1px;">FICHA T&Eacute;CNICA DE INSCRIPCI&Oacute;N</p>
-                    <p style="font-size: 0.7rem; color: #64748b; margin: 0; font-weight: 600;">FOLIO &Uacute;NICO DE SEGUIMIENTO O ACLARACIONES: ${data.folio || ('FUT-' + String(data.pago_id).padStart(6, '0'))}</p>
+            <div style="text-align: center; font-family: 'Inter', sans-serif; color: #fff; padding: 10px;">
+                <div style="display: inline-block; background: ${color}20; color: ${color}; padding: 15px; border-radius: 50%; margin-bottom: 15px; font-size: 2rem; border: 1px solid ${color}40;">
+                    ${icon}
                 </div>
-                
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px;">
-                    <div style="background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0;">
-                        <span style="display: block; font-size: 0.7rem; color: #64748b; font-weight: 700; margin-bottom: 4px;">TORNEO / LIGA</span>
-                        <span style="font-size: 1rem; color: #0f172a; font-weight: 700;">${data.torneo}</span>
+                <h3 style="margin: 0; font-size: 1.5rem; letter-spacing: -0.5px;">Comprobante Digital</h3>
+                <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 5px;">Folio: <span style="color: #fff; font-weight: bold;">${data.folio}</span></p>
+
+                <div style="margin: 25px 0; padding: 20px; background: rgba(255,255,255,0.02); border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); position: relative; overflow: hidden;">
+                    <div style="position: absolute; top:0; left:0; width: 4px; height: 100%; background: ${color};"></div>
+                    
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 10px;">
+                        <span style="color: var(--text-muted); font-size: 0.8rem;">CONCEPTO</span>
+                        <span style="font-weight: bold; color: ${color}; font-size: 0.8rem; text-transform: uppercase;">${data.tipo}</span>
                     </div>
-                    <div style="background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0;">
-                        <span style="display: block; font-size: 0.7rem; color: #64748b; font-weight: 700; margin-bottom: 4px;">EQUIPO INSCRITO</span>
-                        <span style="font-size: 1rem; color: #0ea5e9; font-weight: 800;">${data.equipo}</span>
+
+                    <div style="text-align: left; margin-bottom: 15px;">
+                        <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 3px;">Beneficiario</div>
+                        <div style="font-size: 1.1rem; font-weight: bold;">${data.equipo}</div>
+                        <div style="font-size: 0.85rem; color: var(--text-muted);">${data.torneo}</div>
+                    </div>
+
+                    ${partidoHtml}
+
+                    <div style="margin-top: 20px; padding-top: 15px; border-top: 2px dashed rgba(255,255,255,0.1);">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="color: var(--text-muted); font-size: 0.9rem;">Monto Abonado</span>
+                            <span style="font-size: 1.8rem; font-weight: 800; color: #00ff88;">$${data.monto_abonado.toLocaleString()}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-top: 10px; font-size: 0.85rem;">
+                            <span style="color: var(--text-muted);">${data.metodo}</span>
+                            <span style="color: var(--text-muted);">${data.fecha}</span>
+                        </div>
                     </div>
                 </div>
 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 25px; font-size: 0.85rem;">
-                    <div>
-                        <span style="display: block; color: #64748b; font-weight: 600; font-size: 0.7rem;">FECHA DE REGISTRO</span>
-                        <span style="font-weight: 600; color: #333;">${data.fecha}</span>
+                <div style="display: flex; gap: 10px; justify-content: center; margin-top: 15px; margin-bottom: 20px;">
+                    <div style="flex: 1; background: rgba(255,255,255,0.03); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+                        <div style="font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase;">Total Pagado</div>
+                        <div style="font-size: 1rem; font-weight: bold; color: #fff;">$${data.total_pagado.toLocaleString()}</div>
                     </div>
-                    <div>
-                        <span style="display: block; color: #64748b; font-weight: 600; font-size: 0.7rem;">M&Eacute;TODO DE APORTACI&Oacute;N</span>
-                        <span style="font-weight: 600; color: #333;">${data.metodo}</span>
-                    </div>
-                    <div>
-                        <span style="display: block; color: #64748b; font-weight: 600; font-size: 0.7rem;">INICIO DEL TORNEO</span>
-                        <span style="font-weight: 700; color: #0284c7;">${data.fecha_inicio_torneo || 'Pendiente'}</span>
-                    </div>
-                    <div>
-                        <span style="display: block; color: #64748b; font-weight: 600; font-size: 0.7rem;">SEDE ASIGNADA</span>
-                        <span style="font-weight: 700; color: #0284c7;">${data.sede || 'Por definir'}</span>
-                    </div>
-                </div>
-
-                <div style="background: linear-gradient(135deg, #0ea5e9, #0284c7); padding: 15px; border-radius: 10px; margin-bottom: 20px; color: #fff; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 10px rgba(14, 165, 233, 0.2);">
-                    <div style="font-weight: 700; font-size: 1.1rem; text-transform: uppercase;">Contribución Registrada:</div>
-                    <div style="font-weight: 800; font-size: 1.5rem;">$${data.monto_abonado.toFixed(2)}</div>
-                </div>
-
-                <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; margin-bottom: 20px; background: #fafafa;">
-                    <p style="font-size: 0.85rem; font-weight: 800; margin: 0 0 10px 0; color: #0f172a; text-transform: uppercase; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px;">Resumen de Donaciones</p>
-                    <div style="font-size: 0.9rem;">
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                            <span style="color: #64748b; font-weight: 600;">Donación Pactada:</span> <span style="font-weight: 700;">$${data.monto_pactado.toFixed(2)}</span>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                            <span style="color: #64748b; font-weight: 600;">Total Donado a la Fecha:</span> <span style="font-weight: 700;">$${data.total_pagado.toFixed(2)}</span>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; font-weight: 800; border-top: 1px solid #cbd5e1; margin-top: 8px; padding-top: 8px; color: #ef4444; font-size: 1rem;">
-                            <span>DONACIÓN PENDIENTE:</span> <span>$${data.saldo_pendiente.toFixed(2)}</span>
-                        </div>
+                    <div style="flex: 1; background: rgba(255,255,255,0.03); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+                        <div style="font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase;">Abonar Más</div>
+                        <div style="font-size: 1rem; font-weight: bold; color: ${data.saldo_pendiente > 0 ? '#ff4444' : '#00ff88'};">$${data.saldo_pendiente.toLocaleString()}</div>
                     </div>
                 </div>
 
                 ${premiosHtml}
 
-                <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; font-size: 0.8rem; background: #f8fafc; margin-bottom: 10px; color: #475569;">
-                    <p style="font-weight: 800; text-align: center; margin: 0 0 12px 0; color: #0f172a; text-transform: uppercase; letter-spacing: 0.5px;">Reglamento y Cl&aacute;usulas Aceptadas</p>
-                    <div style="white-space: pre-wrap; font-family: sans-serif; line-height: 1.4;">
-${data.reglamento ? `<strong style="color:#0f172a;">REGLAMENTO:</strong>\n${data.reglamento}\n\n` : ''}${data.clausulas ? `<strong style="color:#0f172a;">CL&Aacute;USULAS:</strong>\n${data.clausulas}` : ''}
+                <div style="border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; padding: 12px; font-size: 0.75rem; background: rgba(255,255,255,0.01); color: var(--text-muted); text-align: left; max-height: 150px; overflow-y: auto;">
+                    <p style="font-weight: 800; text-align: center; margin: 0 0 10px 0; color: #fff; text-transform: uppercase;">Términos y Condiciones</p>
+                    <div style="white-space: pre-wrap; line-height: 1.4;">
+${data.reglamento ? `<strong>REGLAMENTO:</strong>\n${data.reglamento}\n\n` : ''}${data.clausulas ? `<strong>CLÁUSULAS:</strong>\n${data.clausulas}` : ''}
                     </div>
                 </div>
 
-                <div style="text-align: center; margin-top: 25px; font-size: 0.8rem; border-top: 1px solid #e2e8f0; padding-top: 20px; color: #64748b;">
-                    <p style="margin: 0; font-weight: 800; color: #0ea5e9; font-size: 0.95rem;">&#161;REGISTRO EXITOSO!</p>
-                    <p style="margin: 5px 0 0 0;">Esta Ficha T&eacute;cnica es un documento oficial emitido por FUTADMIN PRO.</p>
-                </div>
+                <p style="font-size: 0.7rem; color: var(--text-muted); margin-top: 25px; line-height: 1.4; font-style: italic;">
+                    Este documento es un comprobante digital de operación interna. <br>
+                    Generado por FutAdmin Pro v2.0
+                </p>
             </div>
-                `;
+        `;
         Core.openModal('modal-ticket');
     }
 
@@ -667,7 +684,17 @@ ${data.reglamento ? `<strong style="color:#0f172a;">REGLAMENTO:</strong>\n${data
         const data = this._lastTicket;
         if (!data) { alert('No hay ticket disponible.'); return; }
 
+        const isArb = data.tipo === 'Arbitraje';
+        const color = isArb ? '#0ea5e9' : '#059669';
         const folio = data.folio || ('FUT-' + String(data.pago_id).padStart(6, '0'));
+        
+        const partidoSection = data.partido ? `
+  <div class="info-box" style="grid-column: span 2; border-style: dashed; background: #f0f9ff;">
+    <span class="lbl">Partido Relacionado (Arbitraje)</span>
+    <span class="val">${data.partido.rivales}</span>
+    <span class="lbl" style="margin-top:4px;">Jornada ${data.partido.jornada} • ${data.partido.fecha}</span>
+  </div>` : '';
+
         const premiosSection = data.premios ? `
   <div class="section-title" style="color:#b45309; border-color:#fbbf24;">🏆 Premios del Torneo</div>
   <div class="reg-text" style="margin-bottom:20px;">${data.premios}</div>` : '';
@@ -676,93 +703,59 @@ ${data.reglamento ? `<strong style="color:#0f172a;">REGLAMENTO:</strong>\n${data
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Ficha T\u00e9cnica - ${data.equipo}</title>
+<title>Recibo - ${data.equipo}</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&display=swap');
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Outfit', Arial, sans-serif; color: #1e293b; background: #fff; padding: 28px; font-size: 13px; }
-  @page { size: letter; margin: 1.5cm; }
-  .header { text-align: center; border-bottom: 3px solid #0ea5e9; padding-bottom: 14px; margin-bottom: 22px; }
-  .header h1 { font-size: 24px; font-weight: 800; color: #0f172a; text-transform: uppercase; letter-spacing: 2px; }
-  .header .sub { font-size: 13px; color: #0ea5e9; font-weight: 700; letter-spacing: 1px; margin: 4px 0; }
-  .header .folio { font-size: 11px; color: #64748b; font-weight: 600; margin-top: 4px; }
+  body { font-family: 'Outfit', Arial, sans-serif; color: #1e293b; background: #fff; padding: 30px; font-size: 13px; }
+  @page { size: letter; margin: 1cm; }
+  .header { text-align: center; border-bottom: 3px solid ${color}; padding-bottom: 15px; margin-bottom: 25px; }
+  .header h1 { font-size: 26px; font-weight: 800; color: #0f172a; text-transform: uppercase; letter-spacing: 2px; }
+  .header .sub { font-size: 14px; color: ${color}; font-weight: 700; letter-spacing: 1px; margin: 5px 0; }
+  .header .folio { font-size: 11px; color: #64748b; font-weight: 600; }
   .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
-  .info-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 14px; }
-  .info-box .lbl { display: block; font-size: 9px; color: #64748b; font-weight: 700; text-transform: uppercase; margin-bottom: 3px; }
+  .info-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; }
+  .info-box .lbl { display: block; font-size: 9px; color: #64748b; font-weight: 700; text-transform: uppercase; margin-bottom: 4px; }
   .info-box .val { font-size: 14px; font-weight: 700; color: #0f172a; }
-  .info-box .val.blue { color: #0284c7; }
-  .abono-bar { background: linear-gradient(135deg, #0ea5e9, #0284c7); border-radius: 10px; padding: 14px 20px; margin-bottom: 18px; color: #fff; display: flex; justify-content: space-between; align-items: center; }
-  .abono-bar .label { font-weight: 700; font-size: 13px; text-transform: uppercase; }
-  .abono-bar .amount { font-weight: 800; font-size: 20px; }
-  .cuenta { border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; margin-bottom: 18px; background: #fafafa; }
-  .cuenta-title { font-size: 11px; font-weight: 800; text-transform: uppercase; border-bottom: 2px solid #e2e8f0; padding-bottom: 6px; margin-bottom: 10px; color: #0f172a; }
-  .cuenta-row { display: flex; justify-content: space-between; margin-bottom: 7px; font-size: 12px; }
-  .cuenta-row.saldo { border-top: 1px solid #cbd5e1; padding-top: 7px; margin-top: 7px; font-weight: 800; font-size: 14px; color: #ef4444; }
-  .section-title { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; border-bottom: 2px solid #e2e8f0; padding-bottom: 4px; margin: 16px 0 8px 0; color: #0f172a; }
-  .reg-text { white-space: pre-wrap; font-size: 11px; color: #475569; line-height: 1.5; text-align: justify; }
-  .footer { margin-top: 30px; border-top: 1px solid #e2e8f0; padding-top: 14px; text-align: center; font-size: 10px; color: #94a3b8; }
-  .footer .success { font-size: 13px; font-weight: 800; color: #0ea5e9; margin-bottom: 4px; }
-  @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+  .abono-bar { background: ${color}; border-radius: 10px; padding: 15px 20px; margin-bottom: 20px; color: #fff; display: flex; justify-content: space-between; align-items: center; }
+  .abono-bar .label { font-weight: 700; font-size: 14px; text-transform: uppercase; }
+  .abono-bar .amount { font-weight: 800; font-size: 22px; }
+  .cuenta { border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; margin-bottom: 20px; background: #fafafa; }
+  .cuenta-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px; }
+  .cuenta-row.total { border-top: 1px solid #cbd5e1; padding-top: 8px; margin-top: 8px; font-weight: 800; color: #ef4444; }
+  .section-title { font-size: 11px; font-weight: 800; text-transform: uppercase; border-bottom: 2px solid #e2e8f0; padding-bottom: 5px; margin-bottom: 10px; color: #0f172a; }
+  .reg-text { white-space: pre-wrap; font-size: 11px; color: #475569; line-height: 1.5; }
+  .footer { margin-top: 40px; border-top: 1px solid #e2e8f0; padding-top: 15px; text-align: center; font-size: 10px; color: #94a3b8; }
+  @media print { body { -webkit-print-color-adjust: exact; } }
 </style>
 </head>
 <body>
-
-<div class="header">
-  <h1>FUTADMIN PRO \u26bd</h1>
-  <div class="sub">FICHA T\u00c9CNICA DE INSCRIPCI\u00d3N</div>
-  <div class="folio">FOLIO &Uacute;NICO DE SEGUIMIENTO O ACLARACIONES: ${folio}</div>
-</div>
-
-<div class="info-grid">
-  <div class="info-box">
-    <span class="lbl">Torneo / Liga</span>
-    <span class="val">${data.torneo}</span>
+  <div class="header">
+    <h1>FUTADMIN PRO</h1>
+    <div class="sub">COMPROBANTE DE APORTACI&Oacute;N</div>
+    <div class="folio">ID OPERACI&Oacute;N: ${folio}</div>
   </div>
-  <div class="info-box">
-    <span class="lbl">Equipo Inscrito</span>
-    <span class="val blue">${data.equipo}</span>
+  <div class="info-grid">
+    <div class="info-box"><span class="lbl">Liga / Torneo</span><span class="val">${data.torneo}</span></div>
+    <div class="info-box"><span class="lbl">Sede</span><span class="val">${data.sede || 'N/A'}</span></div>
+    <div class="info-box"><span class="lbl">Beneficiario</span><span class="val">${data.equipo}</span></div>
+    <div class="info-box"><span class="lbl">Fecha</span><span class="val">${data.fecha}</span></div>
+    ${partidoSection}
   </div>
-  <div class="info-box">
-    <span class="lbl">Fecha de Registro</span>
-    <span class="val">${data.fecha}</span>
+  <div class="abono-bar">
+    <span class="label">Monto Abonado (${data.tipo})</span>
+    <span class="amount">$${data.monto_abonado.toLocaleString()}</span>
   </div>
-  <div class="info-box">
-    <span class="lbl">M\u00e9todo de Aportaci\u00f3n</span>
-    <span class="val">${data.metodo}</span>
+  <div class="cuenta">
+    <div class="section-title">Resumen de Cuenta</div>
+    <div class="cuenta-row"><span>Monto Pactado:</span><span>$${data.monto_pactado.toLocaleString()}</span></div>
+    <div class="cuenta-row"><span>Total Pagado:</span><span>$${data.total_pagado.toLocaleString()}</span></div>
+    <div class="cuenta-row total"><span>SALDO PENDIENTE:</span><span>$${data.saldo_pendiente.toLocaleString()}</span></div>
   </div>
-  <div class="info-box">
-    <span class="lbl">Inicio del Torneo</span>
-    <span class="val blue">${data.fecha_inicio_torneo || 'Pendiente'}</span>
-  </div>
-  <div class="info-box">
-    <span class="lbl">Sede Asignada</span>
-    <span class="val blue">${data.sede || 'Por definir'}</span>
-  </div>
-</div>
-
-<div class="abono-bar">
-  <span class="label">Contribución Registrada</span>
-  <span class="amount">$${data.monto_abonado.toFixed(2)}</span>
-</div>
-
-<div class="cuenta">
-  <div class="cuenta-title">Resumen de Donaciones</div>
-  <div class="cuenta-row"><span>Donación Pactada:</span><span>$${data.monto_pactado.toFixed(2)}</span></div>
-  <div class="cuenta-row"><span>Total Donado a la Fecha:</span><span>$${data.total_pagado.toFixed(2)}</span></div>
-  <div class="cuenta-row saldo"><span>DONACIÓN PENDIENTE:</span><span>$${data.saldo_pendiente.toFixed(2)}</span></div>
-</div>
-
-${premiosSection}
-
-${data.reglamento || data.clausulas ? `<div class="section-title">Reglamento y Cl\u00e1usulas Aceptadas</div>
-<div class="reg-text">${data.reglamento ? '<strong>REGLAMENTO:</strong>\n' + data.reglamento + '\n\n' : ''}${data.clausulas ? '<strong>CL\u00c1USULAS:</strong>\n' + data.clausulas : ''}</div>` : ''}
-
-<div class="footer">
-  <div class="success">\u00a1REGISTRO EXITOSO!</div>
-  <div>Esta Ficha T\u00e9cnica es un documento oficial emitido por FUTADMIN PRO.</div>
-  <div>Al participar, el equipo acepta el reglamento y las cl\u00e1usulas descritas.</div>
-</div>
-
+  ${premiosSection}
+  <div class="section-title">T&eacute;rminos y Condiciones</div>
+  <div class="reg-text">${(data.reglamento || '') + '\n' + (data.clausulas || '')}</div>
+  <div class="footer">Este recibo es un comprobante de pago digital. FutAdmin Pro v2.0</div>
 </body>
 </html>`;
 
