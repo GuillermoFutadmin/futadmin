@@ -146,12 +146,15 @@ export class DashboardMap {
                 if (stat.equipos_lista && stat.equipos_lista.length > 0) {
                     // Agrupar equipos que comparten el mismo GeoJSON exacto
                     const groupedByGeo = {};
+                    const noGeoEquipos = [];
                     stat.equipos_lista.forEach(equipo => {
-                        if (equipo.colonia_geojson) {
+                        if (equipo.colonia_geojson && equipo.colonia_geojson.trim().startsWith('{')) {
                             if (!groupedByGeo[equipo.colonia_geojson]) {
                                 groupedByGeo[equipo.colonia_geojson] = [];
                             }
                             groupedByGeo[equipo.colonia_geojson].push(equipo);
+                        } else {
+                            noGeoEquipos.push(equipo);
                         }
                     });
 
@@ -236,6 +239,73 @@ export class DashboardMap {
                             console.error('Error procesando Geometría de equipo grouped', e);
                         }
                     });
+
+                    // Renderizar equipos sin GeoJSON como un círculo agrupado
+                    if (noGeoEquipos.length > 0) {
+                        const count = noGeoEquipos.length;
+                        const color = '#3b82f6';
+                        
+                        let popupContent = `
+                        <div style="color: #fff; padding: 15px; font-family: 'Outfit', sans-serif; min-width: 260px;">
+                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px; color: var(--primary);">
+                                <span style="font-size: 1.2rem;">📍</span>
+                                <strong style="font-size: 1rem;">Equipos en la Zona</strong>
+                            </div>
+                            <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px;">
+                                ${stat.municipio}, ${stat.estado} (${count} equipos)
+                            </div>
+                        `;
+
+                        noGeoEquipos.forEach(eq => {
+                            const st = eq.stats || { goles: 0, pj: 0, victorias: 0 };
+                            popupContent += `
+                                <div style="margin-bottom: 12px; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px; border-left: 4px solid ${eq.color || color};">
+                                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                                        <img src="${eq.escudo_url || ''}" style="width: 35px; height: 35px; object-fit: contain; border-radius: 6px; background: rgba(255,255,255,0.1);">
+                                        <div style="display: flex; flex-direction: column;">
+                                            <span style="font-size: 0.95rem; font-weight: 700; color: #fff; line-height: 1.1;">${eq.nombre}</span>
+                                            <span style="font-size: 0.75rem; color: #00ff88; font-weight: 500;">${eq.liga_nombre || 'Independiente'}</span>
+                                        </div>
+                                    </div>
+                                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; text-align: center;">
+                                        <div style="background: rgba(0,0,0,0.3); padding: 4px; border-radius: 4px;">
+                                            <div style="font-size: 0.6rem; color: var(--text-muted); text-transform: uppercase;">PJ</div>
+                                            <div style="font-size: 0.85rem; font-weight: 700; color: #fff;">${st.pj}</div>
+                                        </div>
+                                        <div style="background: rgba(0,0,0,0.3); padding: 4px; border-radius: 4px;">
+                                            <div style="font-size: 0.6rem; color: var(--text-muted); text-transform: uppercase;">Goles</div>
+                                            <div style="font-size: 0.85rem; font-weight: 700; color: #00ff88;">${st.goles}</div>
+                                        </div>
+                                        <div style="background: rgba(0,0,0,0.3); padding: 4px; border-radius: 4px;">
+                                            <div style="font-size: 0.6rem; color: var(--text-muted); text-transform: uppercase;">Victorias</div>
+                                            <div style="font-size: 0.85rem; font-weight: 700; color: #fbbf24;">${st.victorias}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        });
+
+                        popupContent += '</div>';
+                        
+                        const jitteredCoords = applyJitter(baseCoords);
+                        const marker = L.circleMarker(jitteredCoords, {
+                            radius: 6 + Math.min(count * 1.5, 12),
+                            fillColor: color,
+                            color: '#fff',
+                            weight: 2,
+                            opacity: 1,
+                            fillOpacity: 0.7
+                        });
+                        
+                        marker.bindPopup(popupContent, { className: 'premium-popup', closeButton: true, autoPan: false });
+                        
+                        // Efectos Hover
+                        marker.on('mouseover', function(e) { this.setStyle({ fillOpacity: 0.9, radius: this.options.radius + 2 }); });
+                        marker.on('mouseout', function(e) { this.setStyle({ fillOpacity: 0.7, radius: this.options.radius - 2 }); });
+
+                        marker.addTo(this.map);
+                        this.markers.push(marker);
+                    }
                 }
             }
         }
