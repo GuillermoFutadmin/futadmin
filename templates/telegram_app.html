@@ -2074,6 +2074,65 @@
             container.innerHTML = '<div class="loading">Cargando...</div>';
 
             try {
+                if (type === 'team-matches') {
+                    console.log("Drilldown: Loading team matches for teamId:", id);
+                    title.innerText = 'PARTIDOS PENDIENTES';
+                    container.innerHTML = '<div class="loading">Cargando partidos...</div>';
+                    const user = tg.initDataUnsafe?.user;
+                    const telegram_id = user?.id || '5825342439';
+                    
+                    const url = `/api/telegram/matches?telegram_id=${telegram_id}&torneo_id=${selectedTorneoId}&rol=${currentUser.rol}&equipo_id=${currentUser.equipo_id || ''}&liga_id=${currentUser.liga_id || ''}&estado=${matchStatusFilter}&filter_team_id=${id}`;
+                    const res = await fetch(url);
+                    const matches = await res.json();
+                    
+                    if (matches.length === 0) {
+                        container.innerHTML = '<p style="text-align:center; padding:20px; color:var(--muted);">No hay partidos pendientes para este equipo.</p>';
+                    } else {
+                        container.innerHTML = matches.map((m, index) => {
+                            const isMyMatch = m.arbitro_id === currentUser.id;
+                            const canEdit = ['admin', 'ejecutivo', 'dueño_liga', 'super_arbitro', 'arbitro'].includes(currentUser.rol);
+                            const isPlayable = m.estado !== 'Played' && m.estado !== 'Cancelled';
+                            const isReferee = currentUser.rol === 'arbitro';
+                            const canAdopt = !m.arbitro_id && isPlayable && isReferee;
+                            const canPay = ['admin', 'ejecutivo', 'dueño_liga', 'equipo'].includes(currentUser.rol);
+                            const canOpen = isPlayable && canEdit;
+                            
+                            let statusColor = 'var(--muted)';
+                            if (m.estado === 'Live') statusColor = 'var(--error)';
+                            if (m.estado === 'HalfTime') statusColor = 'var(--warning)';
+                            if (m.estado === 'Scheduled') statusColor = 'var(--secondary)';
+
+                            return `
+                                <div class="card" onclick="${m.estado === 'Played' ? `showMatchDetails(${m.id})` : (canOpen ? `openMatchByIndex(${index})` : '')}"
+                                     style="border-left: 4px solid ${isMyMatch ? 'var(--primary)' : 'rgba(255,255,255,0.1)'}; padding: 15px; margin-bottom:12px;">
+                                    <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                                        <span style="font-size: 0.75rem; font-weight: 800; color: var(--muted); letter-spacing: 0.05em;">JORNADA ${m.jornada}</span>
+                                        <span class="status-badge" style="color:${statusColor}; border:1px solid ${statusColor}; background:transparent;">${m.estado}</span>
+                                    </div>
+                                    <div class="teams" style="margin: 8px 0;">
+                                        <span style="font-weight: 600; font-size: 0.9rem;">${m.equipo_local}</span>
+                                        <span class="score" style="font-size: 1rem; min-width: 50px; padding: 4px 8px;">${m.goles_local || 0} - ${m.goles_visitante || 0}</span>
+                                        <span style="font-weight: 600; font-size: 0.9rem;">${m.equipo_visitante}</span>
+                                    </div>
+                                    <div style="display:flex; justify-content: space-between; align-items: flex-end; margin-top: 10px;">
+                                        <div style="font-size: 0.7rem; color: var(--muted); line-height: 1.3;">📅 ${m.fecha} ${m.hora}<br>👤 ${m.arbitro_nombre || 'P.A.'}</div>
+                                        <div style="display:flex; flex-direction: column; gap: 5px; align-items: flex-end;">
+                                            ${canPay ? `
+                                                <div style="display:flex; gap: 5px;">
+                                                    <button class="btn-payment" onclick="event.stopPropagation(); openPaymentForm(${m.equipo_local_id}, 'Arbitraje', ${m.id})">PAGAR LOCAL</button>
+                                                    <button class="btn-payment" onclick="event.stopPropagation(); openPaymentForm(${m.equipo_visitante_id}, 'Arbitraje', ${m.id})">PAGAR VISITA</button>
+                                                </div>
+                                            ` : ''}
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('');
+                    }
+                    if (!isBack) drillStack.push({ type, id, title: title.innerText });
+                    return;
+                }
+
                 let url = '';
                 let items = [];
                 let nextType = '';
@@ -2148,12 +2207,8 @@
         }
 
         async function showTeamMatchesForPayment(teamId, teamName) {
-            console.log("showTeamMatchesForPayment called. teamId:", teamId, "teamName:", teamName);
-            paymentTeamFilterId = teamId;
-            drillStack.push({ type: 'team-matches', id: teamId, title: 'PAGAR: ' + teamName });
-            const title = document.getElementById('drilldown-title');
-            if (title) title.innerText = 'PARTIDOS: ' + teamName;
-            loadMatches();
+            console.log("Selecting team for payment matches:", teamId, teamName);
+            loadDrillLevel('team-matches', teamId);
         }
 
         function showTournamentsFromMenu() {
