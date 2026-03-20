@@ -595,7 +595,7 @@
     </div>
 
     <!-- VISTA: Seleccion Jerárquica (Drilldown) -->
-    <div id="drilldown-view" style="display:none;">
+    <div id="drilldown-view" class="view" style="display:none; z-index: 100;">
         <div class="header">
             <button class="btn btn-outline" id="drilldown-back" onclick="drilldownBack()" style="width: auto; padding: 6px 12px;">← VOLVER</button>
             <h3 id="drilldown-title">SELECCIONAR</h3>
@@ -750,12 +750,20 @@
         let paymentTeamFilterId = null; // Para filtrar partidos de un equipo en pagos
 
         function showView(id) {
-            const views = ['login-view', 'menu-view', 'tournament-view', 'list-view', 'match-view', 'checkin-view', 'halftime-view', 'registration-view', 'payments-view', 'ids-lookup-view', 'drilldown-view', 'submenu-view'];
+            console.log("==> showView(", id, ")");
+            const views = ['login-view', 'menu-view', 'tournament-view', 'list-view', 'match-view', 'checkin-view', 'halftime-view', 'registration-view', 'payments-view', 'ids-lookup-view', 'drilldown-view', 'submenu-view', 'payment-form-view'];
             views.forEach(v => {
                 const el = document.getElementById(v);
-                if (el) el.style.display = (v === id) ? 'block' : 'none';
+                if (el) {
+                    el.style.display = (v === id) ? 'block' : 'none';
+                }
             });
-            if (id === 'match-view') document.getElementById('modal-players').style.display = 'none';
+            // Ocultar TODOS los posibles modales y capas superpuestas
+            const overlays = ['modal-players', 'modal-edit-player', 'qr-modal'];
+            overlays.forEach(oid => {
+                const oel = document.getElementById(oid);
+                if (oel) oel.style.display = 'none';
+            });
         }
 
         function showMenu() {
