@@ -1316,8 +1316,8 @@
             <div style="flex-grow: 1; overflow-y: auto; background: #020617; display: flex; justify-content: center; align-items: flex-start; padding: 40px 0;">
                 <!-- Wrapper for Scaling -->
                 <div id="share-scale-wrapper" style="transform-origin: top center; transition: transform 0.3s ease;">
-                    <!-- Target Area for html2canvas (Fixed 1080px for Facebook standard) -->
-                    <div id="share-content-area" style="width: 1080px; min-height: 1080px; background: #020617; padding: 60px 40px; position: relative; color: white; display: flex; flex-direction: column; flex-shrink: 0; font-family: 'Outfit', sans-serif; box-sizing: border-box;">
+                    <!-- Target Area for html2canvas (Expanded 1600px for more horizontal space) -->
+                    <div id="share-content-area" style="width: 1600px; min-height: 1080px; background: #020617; padding: 60px 40px; position: relative; color: white; display: flex; flex-direction: column; flex-shrink: 0; font-family: 'Outfit', sans-serif; box-sizing: border-box;">
                         
                         <!-- Premium Background -->
                         <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at 20% 20%, rgba(0,255,136,0.12), transparent 40%), radial-gradient(circle at 80% 80%, rgba(59,130,246,0.08), transparent 40%); pointer-events: none;"></div>
@@ -1335,8 +1335,8 @@
                             </div>
                         </div>
 
-                        <!-- 3-Column Grid perfectly balanced for 1080px (approx 315px per card) -->
-                        <div id="share-matches-list" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; position: relative; z-index: 2; width: 100%;">
+                        <!-- 4-Column Grid perfectly balanced for 1600px -->
+                        <div id="share-matches-list" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; position: relative; z-index: 2; width: 100%;">
                             <!-- Rendered by JS -->
                         </div>
 
@@ -2156,25 +2156,33 @@
 
             async function downloadShareImage() {
                 const element = document.getElementById('share-content-area');
+                const wrapper = document.getElementById('share-scale-wrapper');
                 const btn = event.currentTarget;
                 const originalText = btn.innerHTML;
+                
+                // Temp remove transform to let html2canvas measure fonts and coordinates exactly 1:1
+                const originalTransform = wrapper.style.transform;
+                wrapper.style.transform = 'none';
                 
                 try {
                     btn.innerHTML = '⏳ Procesando...';
                     btn.disabled = true;
+
+                    // Allow browser a tiny moment to repaint unscaled layot
+                    await new Promise(r => setTimeout(r, 50));
 
                     const canvas = await html2canvas(element, {
                         scale: 2,
                         useCORS: true,
                         backgroundColor: '#020617',
                         logging: false,
-                        // No forzamos windowWidth, que herede del elemento natural
+                        windowWidth: 1600, // Force window width to prevent margin cropping on right
                         onclone: (clonedDoc) => {
                             const clonedElement = clonedDoc.getElementById('share-content-area');
                             clonedElement.style.height = 'auto';
                             clonedElement.style.maxHeight = 'none';
                             clonedElement.style.transform = 'none';
-                            clonedElement.style.width = '1080px'; 
+                            clonedElement.style.width = '1600px'; 
                             
                             // Html2Canvas artifacts fix: remove text-shadows, text-wrap, letter-spacing
                             const allElements = clonedElement.querySelectorAll('*');
@@ -2197,6 +2205,7 @@
                     console.error('Error generating image:', e);
                     toast('Error al generar la imagen', 'error');
                 } finally {
+                    wrapper.style.transform = originalTransform;
                     btn.innerHTML = originalText;
                     btn.disabled = false;
                 }
