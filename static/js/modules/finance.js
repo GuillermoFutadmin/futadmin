@@ -127,7 +127,7 @@ export class FinanceModule {
                         const saldoColor = dp.saldo > 0 ? '#ff4d4d' : '#00ff88';
 
                         return `
-                                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); ${isPaid ? 'opacity: 0.6; background: rgba(0,255,136,0.03);' : ''}">
                                         <td style="padding: 8px;">J${dp.jornada}</td>
                                         <td style="padding: 8px; font-weight: bold;">${dp.rival}</td>
                                         <td style="padding: 8px;"><span style="color: ${estadoColor}; font-size: 0.75rem; border: 1px solid ${estadoColor}; padding: 2px 6px; border-radius: 4px;">${estadoText}</span></td>
