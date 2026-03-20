@@ -58,7 +58,7 @@ talisman = Talisman(app,
     frame_options=None # Permitir que Telegram abra la app en un iframe (necesario para TWA)
 )
 
-os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True) # Ensure upload folder exists
 
 @app.route('/api/debug_uploads')
 def debug_uploads():
