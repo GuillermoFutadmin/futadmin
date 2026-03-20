@@ -1096,7 +1096,8 @@
             </div>
 
             <!-- Actions -->
-            {% if user_rol in ['Admin', 'Ejecutivo', 'Dueño de Liga'] %}
+            {% set role_lower = (user_rol|default('')|string|lower) %}
+            {% if role_lower in ['admin', 'ejecutivo', 'dueño de liga', 'dueño_liga', 'dueno_liga', 'dueno de liga'] %}
             <div class="panel-section">
                 <h3>Acciones</h3>
                 <div style="display: flex; flex-direction: column; gap: 10px;">
@@ -1278,11 +1279,13 @@
                 </div>
             </div>
             <div class="modal-footer">
-                {% if user_rol in ['Admin', 'Ejecutivo', 'Dueño de Liga'] %}
+                {% set role_lower = (user_rol|default('')|string|lower) %}
+                {% if role_lower in ['admin', 'ejecutivo', 'dueño de liga', 'dueño_liga', 'dueno_liga', 'dueno de liga'] %}
                 <button class="btn btn-danger btn-sm" onclick="CalendarApp.deleteMatch()">🗑 Eliminar</button>
                 {% endif %}
                 <button class="btn btn-ghost" onclick="CalendarApp.closeModal()">Cancelar</button>
-                {% if user_rol in ['Admin', 'Ejecutivo', 'Dueño de Liga'] %}
+                {% set role_lower = (user_rol|default('')|string|lower) %}
+                {% if role_lower in ['admin', 'ejecutivo', 'dueño de liga', 'dueño_liga', 'dueno_liga', 'dueno de liga'] %}
                 <button class="btn btn-primary" onclick="CalendarApp.saveMatch()">💾 Guardar Cambios</button>
                 {% endif %}
             </div>
@@ -2010,7 +2013,7 @@
                 }
 
                 let html = '';
-                const isAdmin = ['Admin', 'Ejecutivo', 'Dueño de Liga'].includes('{{ user_rol }}');
+                const isAdmin = ['admin', 'ejecutivo', 'dueño de liga', 'dueño_liga', 'dueno_liga', 'dueno de liga'].includes(('{{ user_rol }}' || '').toLowerCase());
 
                 // 1. Mostrar Partidos ya programados
                 if (dayMatches.length > 0) {
@@ -2254,7 +2257,7 @@
                 }
 
                 if (matches.length === 0) {
-                    const isAdmin = ['Admin', 'Ejecutivo', 'Dueño de Liga'].includes('{{ user_rol }}');
+                    const isAdmin = ['admin', 'ejecutivo', 'dueño de liga', 'dueño_liga', 'dueno_liga', 'dueno de liga'].includes(('{{ user_rol }}' || '').toLowerCase());
                     const genBtn = isAdmin ? `<button class="btn btn-primary" onclick="CalendarApp.promptGenerateFixtures()">🎲 Generar Rol Automático</button>` : '';
                     const emptyMsg = isAdmin ? 'El rol aún no ha sido generado. Haz clic en "Generar Rol Automático" para crear los enfrentamientos.' : 'El rol aún no ha sido generado. Un administrador creará los enfrentamientos pronto.';
                     container.innerHTML = emptyState('🎲', 'Sin Partidos Generados', emptyMsg, genBtn);
@@ -2299,7 +2302,7 @@
             }
 
             function matchRowHtml(p, compact = false) {
-                const isAdmin = ['Admin', 'Ejecutivo', 'Dueño de Liga'].includes('{{ user_rol }}');
+                const isAdmin = ['admin', 'ejecutivo', 'dueño de liga', 'dueño_liga', 'dueno_liga', 'dueno de liga'].includes(('{{ user_rol }}' || '').toLowerCase());
 
                 const score = p.estado === 'Played'
                     ? `<div class="score" style="${compact ? 'font-size:1.2rem; line-height:1;' : ''}">${p.goles_local ?? '?'} – ${p.goles_visitante ?? '?'}</div>`
@@ -2385,7 +2388,7 @@
             // EDIT MODAL
             // ----------------------------------------------------------
             function openEditModal(matchId) {
-                const isAdmin = ['Admin', 'Ejecutivo', 'Dueño de Liga'].includes('{{ user_rol }}');
+                const isAdmin = ['admin', 'ejecutivo', 'dueño de liga', 'dueño_liga', 'dueno_liga', 'dueno de liga'].includes(('{{ user_rol }}' || '').toLowerCase());
                 if (!isAdmin) return;
 
                 const p = state.matches.find(m => m.id === matchId);
