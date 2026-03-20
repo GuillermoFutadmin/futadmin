@@ -1318,24 +1318,24 @@
                         <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-image: radial-gradient(rgba(255,255,255,0.02) 1px, transparent 1px); background-size: 30px 30px; opacity: 0.5; pointer-events: none;"></div>
 
                         <div style="position: relative; z-index: 2; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: flex-start;">
-                            <div style="flex: 1;">
-                                <span style="background: var(--primary); color: #000; padding: 4px 12px; font-weight: 900; font-size: 0.8rem; border-radius: 4px; text-transform: uppercase; letter-spacing: 2px;">Programación Oficial</span>
-                                <h2 style="margin: 10px 0 0 0; color: white; font-size: 3.5rem; text-transform: uppercase; letter-spacing: -1px; font-weight: 900; line-height: 0.85;">FUT<span style="color: var(--primary);">ADMIN</span></h2>
-                                <p id="share-tournament-subtitle" style="margin: 10px 0 0 0; opacity: 0.7; font-size: 1.1rem; font-weight: 500; font-style: italic; border-left: 3px solid var(--primary); padding-left: 12px;">Tu liga en el siguiente nivel</p>
+                            <div style="flex: 1; display: flex; flex-direction: column; gap: 8px;">
+                                <span style="background: var(--primary); color: #000; padding: 4px 12px; font-weight: 900; font-size: 0.8rem; border-radius: 4px; text-transform: uppercase; letter-spacing: 2px; width: fit-content;">Programación Oficial</span>
+                                <h2 style="margin: 0; color: white; font-size: 3.5rem; text-transform: uppercase; letter-spacing: -1px; font-weight: 900; line-height: 0.9;">FUT<span style="color: var(--primary);">ADMIN</span></h2>
+                                <p id="share-tournament-subtitle" style="margin: 0; opacity: 0.7; font-size: 1.1rem; font-weight: 500; font-style: italic; border-left: 3px solid var(--primary); padding-left: 12px; line-height: 1.2;">Tu liga en el siguiente nivel</p>
                             </div>
-                            <div style="text-align: right; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 15px; backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1);">
+                            <div style="text-align: right; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 15px; backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); display: flex; flex-direction: column; gap: 4px;">
                                 <div id="share-day-name" style="font-size: 2.5rem; font-weight: 900; color: var(--primary); text-transform: uppercase; line-height: 1;">Domingo</div>
-                                <div id="share-full-date" style="font-size: 1.1rem; opacity: 0.7; margin-top: 6px; font-weight: 700; letter-spacing: 1px;">22 de Marzo, 2026</div>
+                                <div id="share-full-date" style="font-size: 1.1rem; opacity: 0.7; font-weight: 700; letter-spacing: 1px;">22 de Marzo, 2026</div>
                             </div>
                         </div>
 
                         <!-- 3-Column Grid perfectly balanced for 1080px (approx 315px per card) -->
-                        <div id="share-matches-list" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; position: relative; z-index: 2;">
+                        <div id="share-matches-list" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; position: relative; z-index: 2; width: 100%;">
                             <!-- Rendered by JS -->
                         </div>
 
-                        <div style="margin-top: 40px; padding: 30px; background: linear-gradient(to right, transparent, rgba(0,255,136,0.05), transparent); text-align: center; position: relative; z-index: 2;">
-                            <p style="font-size: 1.1rem; font-weight: 800; opacity: 0.9; margin-bottom: 6px; color: white;">Si quieres ver el resumen detallado de tu liga, míralo en <span style="color: var(--primary);">futadmin.com.mx</span></p>
+                        <div style="margin-top: 40px; padding: 30px; background: linear-gradient(to right, transparent, rgba(0,255,136,0.05), transparent); text-align: center; position: relative; z-index: 2; display: flex; flex-direction: column; gap: 8px;">
+                            <p style="font-size: 1.1rem; font-weight: 800; opacity: 0.9; color: white; margin: 0;">Si quieres ver el resumen detallado de tu liga, míralo en <span style="color: var(--primary);">futadmin.com.mx</span></p>
                             <div style="display: flex; justify-content: center; gap: 15px; font-size: 0.8rem; opacity: 0.4; font-weight: 600; text-transform: uppercase; letter-spacing: 2px;">
                                 <span>RESULTADOS</span> • <span>ESTADÍSTICAS</span> • <span>POSICIONES</span> • <span>FOTOS</span>
                             </div>
@@ -2095,29 +2095,29 @@
                             : `<div style="width:50px; height:50px; border-radius:50%; background:linear-gradient(45deg, #3b82f6, var(--primary)); display:flex; align-items:center; justify-content:center; font-weight:900; font-size:1.4rem; color:#000; box-shadow: 0 8px 15px rgba(0,0,0,0.3);">${visitorInitial}</div>`;
 
                         return `
-                        <div class="share-match-card" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 15px 10px; display: flex; flex-direction: column; gap: 10px; backdrop-filter: blur(15px); position: relative; overflow: hidden; text-align: center;">
+                        <div class="share-match-card" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 15px 10px; display: flex; flex-direction: column; gap: 10px; backdrop-filter: blur(15px); position: relative; overflow: hidden; text-align: center; width: 100%; box-sizing: border-box;">
                             <!-- Top Info Badge -->
-                            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 6px; margin-bottom: 2px;">
-                                <span style="font-size: 0.7rem; font-weight: 900; color: var(--primary); letter-spacing: 1px; text-transform: uppercase;">Jornada ${p.jornada}</span>
-                                <span style="font-size: 0.65rem; opacity: 0.4; font-weight: 600;">📍 ${p.cancha || 'Sede'}</span>
+                            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 6px; margin-bottom: 2px; width: 100%;">
+                                <span style="font-size: 0.75rem; font-weight: 900; color: var(--primary); letter-spacing: 1px; text-transform: uppercase;">Jornada ${p.jornada}</span>
+                                <span style="font-size: 0.7rem; opacity: 0.4; font-weight: 600;">📍 ${p.cancha || 'Sede'}</span>
                             </div>
 
-                            <!-- Main VS area -->
-                            <div style="display: flex; align-items: center; justify-content: space-between; gap: 4px;">
-                                <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                            <!-- Main VS area (Using fixed-ish widths for more stability in capture) -->
+                            <div style="display: flex; align-items: center; justify-content: center; gap: 4px; width: 100%;">
+                                <div style="width: 90px; display: flex; flex-direction: column; align-items: center; gap: 6px;">
                                     ${localShield}
-                                    <span style="font-size: 0.85rem; font-weight: 900; color: white; line-height: 1.1; text-transform: uppercase; min-height: 2rem; display: flex; align-items: center;">${p.equipo_local}</span>
+                                    <span style="font-size: 0.85rem; font-weight: 900; color: white; line-height: 1.1; text-transform: uppercase; min-height: 2.2rem; display: flex; align-items: center; text-wrap: balance; word-break: break-word;">${p.equipo_local}</span>
                                 </div>
 
-                                <div style="display: flex; flex-direction: column; align-items: center; gap: 2px; width: 80px;">
-                                    <div style="font-size: 1.8rem; font-weight: 900; color: white; text-shadow: 0 0 10px var(--primary-glow); line-height: 1;">${p.hora || '--:--'}</div>
+                                <div style="width: 100px; display: flex; flex-direction: column; align-items: center; gap: 4px;">
+                                    <div style="font-size: 2rem; font-weight: 900; color: white; text-shadow: 0 0 10px var(--primary-glow); line-height: 1;">${p.hora || '--:--'}</div>
                                     <div style="width: 25px; height: 3px; background: var(--primary); border-radius: 2px;"></div>
                                     <div style="font-size: 0.7rem; opacity: 0.4; font-weight: 900; letter-spacing: 3px;">VS</div>
                                 </div>
 
-                                <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                                <div style="width: 90px; display: flex; flex-direction: column; align-items: center; gap: 6px;">
                                     ${visitorShield}
-                                    <span style="font-size: 0.85rem; font-weight: 900; color: white; line-height: 1.1; text-transform: uppercase; min-height: 2rem; display: flex; align-items: center;">${p.equipo_visitante}</span>
+                                    <span style="font-size: 0.85rem; font-weight: 900; color: white; line-height: 1.1; text-transform: uppercase; min-height: 2.2rem; display: flex; align-items: center; text-wrap: balance; word-break: break-word;">${p.equipo_visitante}</span>
                                 </div>
                             </div>
                         </div>`;
@@ -2159,13 +2159,13 @@
                         useCORS: true,
                         backgroundColor: '#020617',
                         logging: false,
-                        width: 1080,
-                        windowWidth: 1080,
+                        // No forzamos windowWidth, que herede del elemento natural
                         onclone: (clonedDoc) => {
                             const clonedElement = clonedDoc.getElementById('share-content-area');
                             clonedElement.style.height = 'auto';
                             clonedElement.style.maxHeight = 'none';
-                            clonedElement.style.transform = 'none'; // Ensure no scaling in capture
+                            clonedElement.style.transform = 'none';
+                            clonedElement.style.width = '1080px'; 
                         }
                     });
 
