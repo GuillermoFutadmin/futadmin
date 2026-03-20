@@ -1305,35 +1305,43 @@
     <!-- ========================================================= -->
     <!-- MODAL: SHARE DAY FOR SOCIAL MEDIA                          -->
     <!-- ========================================================= -->
-    <div class="modal-overlay" id="modal-share-day" style="z-index: 2500; background: rgba(0,0,0,0.95);">
-        <div class="modal-box" style="width: 100%; max-width: 1200px; height: 90vh; padding: 0; border: none; background: #0f172a; display: flex; flex-direction: column; overflow-y: auto;">
-            <div id="share-content-area" style="width: 100%; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 60px 40px; position: relative; color: white; display: flex; flex-direction: column; flex-shrink: 0;">
-                <!-- High-quality Background Decorations -->
-                <div style="position: absolute; top: -5%; right: -5%; width: 400px; height: 400px; background: var(--primary); filter: blur(150px); opacity: 0.15; border-radius: 50%;"></div>
-                <div style="position: absolute; bottom: -5%; left: -5%; width: 400px; height: 400px; background: #3b82f6; filter: blur(150px); opacity: 0.1; border-radius: 50%;"></div>
+    <div class="modal-overlay" id="modal-share-day" style="z-index: 2500; background: rgba(0,0,0,0.98);">
+        <div class="modal-box" style="width: 100%; max-width: 1100px; height: 95vh; padding: 0; border: none; background: #020617; display: flex; flex-direction: column; overflow-y: auto; border-radius: 0;">
+            <!-- Target Area for html2canvas -->
+            <div id="share-content-area" style="width: 1080px; min-height: 1080px; background: #020617; padding: 80px 60px; position: relative; color: white; display: flex; flex-direction: column; flex-shrink: 0; font-family: 'Outfit', sans-serif;">
                 
-                <div style="position: relative; z-index: 2; margin-bottom: 50px; display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid var(--primary); padding-bottom: 20px;">
-                    <div>
-                        <h2 style="margin: 0; color: var(--primary); font-size: 3rem; text-transform: uppercase; letter-spacing: 5px; font-weight: 900; line-height: 1;">FutAdmin</h2>
-                        <p style="margin: 10px 0 0 0; opacity: 0.8; font-size: 1.1rem; letter-spacing: 2px; font-weight: 600;">PROGRAMACIÓN OFICIAL JORNADA</p>
+                <!-- Premium Background: Deep Dark with Primary Glows -->
+                <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at 20% 20%, rgba(0,255,136,0.15), transparent 40%), radial-gradient(circle at 80% 80%, rgba(59,130,246,0.1), transparent 40%);"></div>
+                <!-- Subtle Grid Pattern -->
+                <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-image: radial-gradient(rgba(255,255,255,0.03) 1px, transparent 1px); background-size: 40px 40px; opacity: 0.5;"></div>
+
+                <div style="position: relative; z-index: 2; margin-bottom: 60px; display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div style="flex: 1;">
+                        <span style="background: var(--primary); color: #000; padding: 5px 15px; font-weight: 900; font-size: 1rem; border-radius: 4px; text-transform: uppercase; letter-spacing: 2px;">Programación Oficial</span>
+                        <h2 style="margin: 15px 0 0 0; color: white; font-size: 5rem; text-transform: uppercase; letter-spacing: -2px; font-weight: 900; line-height: 0.85;">FUT<span style="color: var(--primary);">ADMIN</span></h2>
+                        <p id="share-tournament-subtitle" style="margin: 15px 0 0 0; opacity: 0.6; font-size: 1.4rem; font-weight: 400; font-style: italic; border-left: 4px solid var(--primary); padding-left: 15px;">Tu liga en el siguiente nivel</p>
                     </div>
-                    <div style="text-align: right;">
-                        <div id="share-day-name" style="font-size: 2.5rem; font-weight: 800; color: white; line-height: 1;">Sábado</div>
-                        <div id="share-full-date" style="font-size: 1.2rem; opacity: 0.7; margin-top: 5px; font-weight: 400;">21 de Marzo, 2026</div>
+                    <div style="text-align: right; background: rgba(255,255,255,0.05); padding: 25px; border-radius: 20px; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1);">
+                        <div id="share-day-name" style="font-size: 3.5rem; font-weight: 900; color: var(--primary); text-transform: uppercase; line-height: 1;">Domingo</div>
+                        <div id="share-full-date" style="font-size: 1.5rem; opacity: 0.8; margin-top: 10px; font-weight: 600; letter-spacing: 1px;">22 de Marzo, 2026</div>
                     </div>
                 </div>
 
-                <div id="share-matches-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(480px, 1fr)); gap: 25px;">
+                <div id="share-matches-list" style="display: flex; flex-direction: column; gap: 30px; position: relative; z-index: 2;">
                     <!-- Rendered by JS -->
                 </div>
 
-                <div style="margin-top: 60px; padding-top: 40px; text-align: center; opacity: 0.6; font-size: 1rem; letter-spacing: 1px;">
-                    🏆 Vive la pasión del fútbol con <strong>FutAdmin</strong> | www.futadmin.com.mx
+                <div style="margin-top: 80px; padding: 40px; background: linear-gradient(to right, transparent, rgba(0,255,136,0.05), transparent); text-align: center; position: relative; z-index: 2;">
+                    <p style="font-size: 1.2rem; font-weight: 700; letter-spacing: 3px; opacity: 0.8; margin-bottom: 10px; text-transform: uppercase;">Descarga la App en FutAdmin.com.mx</p>
+                    <div style="display: flex; justify-content: center; gap: 20px; font-size: 0.9rem; opacity: 0.4;">
+                        <span>RESULTADOS</span> • <span>ESTADÍSTICAS</span> • <span>POSICIONES</span> • <span>FOTOS</span>
+                    </div>
                 </div>
             </div>
-            <div class="modal-footer" style="padding: 25px; background: #1e293b; border-top: 1px solid rgba(255,255,255,0.1); justify-content: center; gap: 20px; position: sticky; bottom: 0; z-index: 10;">
-                <button class="btn btn-primary btn-lg" style="padding: 15px 40px; font-size: 1.2rem;" onclick="CalendarApp.downloadShareImage()">📥 Descargar Imagen HD Completa</button>
-                <button class="btn btn-ghost btn-lg" onclick="document.getElementById('modal-share-day').classList.remove('open')">Regresar</button>
+
+            <div class="modal-footer" style="padding: 30px; background: #020617; border-top: 1px solid rgba(255,255,255,0.1); justify-content: center; gap: 30px; position: sticky; bottom: 0; z-index: 100;">
+                <button class="btn btn-primary btn-lg" style="height: 60px; padding: 0 50px; font-size: 1.4rem; font-weight: 800; border-radius: 30px; box-shadow: 0 10px 30px var(--primary-glow);" onclick="CalendarApp.downloadShareImage()">🔥 DESCARGAR PARA FACEBOOK</button>
+                <button class="btn btn-ghost btn-lg" style="height: 60px; padding: 0 40px; font-size: 1.2rem; border-radius: 30px;" onclick="document.getElementById('modal-share-day').classList.remove('open')">VOLVER</button>
             </div>
         </div>
     </div>
@@ -2063,40 +2071,48 @@
                 document.getElementById('share-full-date').textContent = `${dateObj.getDate()} de ${monthNames[dateObj.getMonth()]}, ${dateObj.getFullYear()}`;
 
                 const listContainer = document.getElementById('share-matches-list');
+                const t = state.torneos.find(tor => tor.id == state.torneoId);
+                document.getElementById('share-tournament-subtitle').textContent = t ? `${t.nombre} - ${t.tipo}` : "Tu liga en el siguiente nivel";
+
                 if (matches.length === 0) {
-                    listContainer.innerHTML = '<div style="text-align:center; padding:40px; opacity:0.5;">No hay partidos programados para este día.</div>';
+                    listContainer.innerHTML = '<div style="text-align:center; padding:100px; opacity:0.5; font-size:2rem;">No hay partidos programados.</div>';
                 } else {
                     listContainer.innerHTML = matches.map(p => {
                         const localInitial = (p.equipo_local || '?')[0].toUpperCase();
                         const visitorInitial = (p.equipo_visitante || '?')[0].toUpperCase();
                         
                         const localShield = p.equipo_local_escudo 
-                            ? `<img src="${p.equipo_local_escudo}" style="width:45px; height:45px; object-fit:contain;">`
-                            : `<div style="width:45px; height:45px; border-radius:50%; background:rgba(255,255,255,0.1); display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:1.2rem;">${localInitial}</div>`;
+                            ? `<img src="${p.equipo_local_escudo}" style="width:120px; height:120px; object-fit:contain; filter: drop-shadow(0 10px 20px rgba(0,0,0,0.5));">`
+                            : `<div style="width:120px; height:120px; border-radius:50%; background:linear-gradient(45deg, var(--primary), #3b82f6); display:flex; align-items:center; justify-content:center; font-weight:900; font-size:3rem; color:#000; box-shadow: 0 10px 20px rgba(0,0,0,0.5);">${localInitial}</div>`;
                         
                         const visitorShield = p.equipo_visitante_escudo
-                            ? `<img src="${p.equipo_visitante_escudo}" style="width:45px; height:45px; object-fit:contain;">`
-                            : `<div style="width:45px; height:45px; border-radius:50%; background:rgba(255,255,255,0.1); display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:1.2rem;">${visitorInitial}</div>`;
+                            ? `<img src="${p.equipo_visitante_escudo}" style="width:120px; height:120px; object-fit:contain; filter: drop-shadow(0 10px 20px rgba(0,0,0,0.5));">`
+                            : `<div style="width:120px; height:120px; border-radius:50%; background:linear-gradient(45deg, #3b82f6, var(--primary)); display:flex; align-items:center; justify-content:center; font-weight:900; font-size:3rem; color:#000; box-shadow: 0 10px 20px rgba(0,0,0,0.5);">${visitorInitial}</div>`;
 
                         return `
-                        <div class="share-match-card" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 20px; display: flex; flex-direction: column; gap: 15px; backdrop-filter: blur(10px); box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
-                            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; opacity: 0.6; text-transform: uppercase; font-weight: 800; letter-spacing: 1.5px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 10px;">
-                                <span>${p.torneo_name || 'Torneo'} · Jornada ${p.jornada}</span>
-                                <span style="color: var(--primary); font-weight: 900;">📍 ${p.cancha || 'Cancha Principal'}</span>
+                        <div class="share-match-card" style="background: rgba(255,255,255,0.03); border: 2px solid rgba(255,255,255,0.08); border-radius: 30px; padding: 40px; display: flex; flex-direction: column; gap: 25px; backdrop-filter: blur(20px); position: relative; overflow: hidden;">
+                            <!-- Top Info Badge -->
+                            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 15px;">
+                                <span style="font-size: 1rem; font-weight: 900; color: var(--primary); letter-spacing: 2px; text-transform: uppercase;">Jornada ${p.jornada}</span>
+                                <span style="font-size: 1rem; opacity: 0.6; font-weight: 700;">📍 ${p.cancha || 'Sede Principal'}</span>
                             </div>
-                            <div style="display: flex; align-items: center; justify-content: center; gap: 30px;">
-                                <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center;">
-                                    <div style="filter: drop-shadow(0 0 10px rgba(255,255,255,0.1)); transition: transform 0.3s ease;">${localShield}</div>
-                                    <span style="font-size: 1rem; font-weight: 800; color: white; line-height: 1.2; text-shadow: 0 2px 4px rgba(0,0,0,0.3);">${p.equipo_local}</span>
+
+                            <!-- Main VS area -->
+                            <div style="display: flex; align-items: center; justify-content: space-between; gap: 20px;">
+                                <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 20px; text-align: center;">
+                                    ${localShield}
+                                    <span style="font-size: 1.8rem; font-weight: 900; color: white; line-height: 1; text-transform: uppercase;">${p.equipo_local}</span>
                                 </div>
-                                <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
-                                    <div style="font-size: 1.8rem; font-weight: 900; color: var(--primary); text-shadow: 0 0 15px var(--primary-glow);">${p.hora || '--:--'}</div>
-                                    <div style="width: 40px; height: 3px; background: var(--primary); border-radius: 2px; opacity: 0.5;"></div>
-                                    <div style="font-size: 0.7rem; opacity: 0.5; font-weight: 900; letter-spacing: 2px;">VS</div>
+
+                                <div style="display: flex; flex-direction: column; align-items: center; gap: 10px; width: 150px;">
+                                    <div style="font-size: 3.5rem; font-weight: 900; color: white; text-shadow: 0 0 30px var(--primary-glow); line-height: 1;">${p.hora || '--:--'}</div>
+                                    <div style="width: 60px; height: 4px; background: var(--primary); border-radius: 2px;"></div>
+                                    <div style="font-size: 1rem; opacity: 0.5; font-weight: 900; letter-spacing: 5px;">VS</div>
                                 </div>
-                                <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center;">
-                                    <div style="filter: drop-shadow(0 0 10px rgba(255,255,255,0.1)); transition: transform 0.3s ease;">${visitorShield}</div>
-                                    <span style="font-size: 1rem; font-weight: 800; color: white; line-height: 1.2; text-shadow: 0 2px 4px rgba(0,0,0,0.3);">${p.equipo_visitante}</span>
+
+                                <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 20px; text-align: center;">
+                                    ${visitorShield}
+                                    <span style="font-size: 1.8rem; font-weight: 900; color: white; line-height: 1; text-transform: uppercase;">${p.equipo_visitante}</span>
                                 </div>
                             </div>
                         </div>`;
