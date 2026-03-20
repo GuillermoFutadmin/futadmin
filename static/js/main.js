@@ -272,7 +272,7 @@ class FutAdminUI {
 
                 // Update Map
                 if (data.geo_stats) {
-                    this.map.update(data.geo_stats);
+                    this.map.update(Object.values(data.geo_stats));
                 }
 
                 return data;
