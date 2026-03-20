@@ -903,17 +903,47 @@
         }
 
         async function loadMatches() {
+            console.log("==> loadMatches() START");
+            console.log("selectedTorneoId:", selectedTorneoId);
+            console.log("paymentTeamFilterId:", paymentTeamFilterId);
+            console.log("currentUser:", currentUser);
+
             showView('list-view');
             const user = tg.initDataUnsafe?.user;
             const telegram_id = user?.id || '5825342439';
+            
+            if (!selectedTorneoId) {
+                console.error("EROR: selectedTorneoId is missing callback");
+                alert("Error: No se ha seleccionado un torneo válido.");
+                return;
+            }
+
             try {
                 let url = `/api/telegram/matches?telegram_id=${telegram_id}&torneo_id=${selectedTorneoId}&rol=${currentUser.rol}&equipo_id=${currentUser.equipo_id || ''}&liga_id=${currentUser.liga_id || ''}&estado=${matchStatusFilter}`;
                 if (paymentTeamFilterId) {
                     url += `&filter_team_id=${paymentTeamFilterId}`;
                 }
+                
+                console.log("Fetching from URL:", url);
                 const res = await fetch(url);
+                console.log("Response status:", res.status);
+                
+                if (!res.ok) {
+                    const errTxt = await res.text();
+                    console.error("API Error Status:", res.status, "Body:", errTxt);
+                    throw new Error(`Servidor respondió con ${res.status}`);
+                }
+                
                 currentMatches = await res.json();
+                console.log("Matches received:", currentMatches.length);
+                
                 const container = document.getElementById('matches-container');
+                if (!container) {
+                    console.error("ERROR: matches-container not found in DOM!");
+                    alert("Error catastrófico: No se encontró el contenedor de partidos.");
+                    return;
+                }
+
                 container.innerHTML = currentMatches.map((m, index) => {
                     const isMyMatch = m.arbitro_id === currentUser.id;
                     const canEdit = ['admin', 'ejecutivo', 'dueño_liga', 'super_arbitro', 'arbitro'].includes(currentUser.rol);
@@ -922,13 +952,15 @@
                     const canAdopt = !m.arbitro_id && isPlayable && isReferee;
                     const canPay = ['admin', 'ejecutivo', 'dueño_liga', 'equipo'].includes(currentUser.rol);
                     const canOpen = isPlayable && canEdit;
+                    
                     let statusColor = 'var(--muted)';
                     if (m.estado === 'Live') statusColor = 'var(--error)';
                     if (m.estado === 'HalfTime') statusColor = 'var(--warning)';
                     if (m.estado === 'Scheduled') statusColor = 'var(--secondary)';
+                    
                     return `
                     <div class="card" onclick="${m.estado === 'Played' ? `showMatchDetails(${m.id})` : (canOpen ? `openMatchByIndex(${index})` : '')}"
-                         style="border-left: 4px solid ${isMyMatch ? 'var(--primary)' : 'rgba(255,255,255,0.1)'}; padding: 15px;">
+                         style="border-left: 4px solid ${isMyMatch ? 'var(--primary)' : 'rgba(255,255,255,0.1)'}; padding: 15px; margin-bottom:10px;">
                         <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
                             <span style="font-size: 0.75rem; font-weight: 800; color: var(--muted); letter-spacing: 0.05em;">JORNADA ${m.jornada}</span>
                             <span class="status-badge" style="color: ${statusColor}; border: 1px solid ${statusColor}; background: transparent;">${m.estado === 'Live' ? 'EN VIVO' : m.estado === 'HalfTime' ? 'MEDIO TIEMPO' : m.estado === 'Scheduled' ? 'PROGRAMADO' : m.estado === 'Played' ? 'FINALIZADO' : m.estado}</span>
@@ -955,8 +987,18 @@
                             </div>
                         </div>
                     </div>
-                `}).join('');
-            } catch (e) { alert("Error al cargar partidos"); }
+                `;}).join('');
+
+                if (currentMatches.length === 0) {
+                    container.innerHTML = '<p style="text-align:center; padding:20px; color:var(--muted);">No hay partidos pendientes en este torneo.</p>';
+                }
+                
+                console.log("==> loadMatches() END - innerHTML updated");
+
+            } catch (e) { 
+                console.error("loadMatches error catch:", e);
+                alert("Error al cargar partidos: " + e.message); 
+            }
         }
 
         async function adoptMatch(id) {
@@ -2106,6 +2148,7 @@
         }
 
         async function showTeamMatchesForPayment(teamId, teamName) {
+            console.log("showTeamMatchesForPayment called. teamId:", teamId, "teamName:", teamName);
             paymentTeamFilterId = teamId;
             drillStack.push({ type: 'team-matches', id: teamId, title: 'PAGAR: ' + teamName });
             const title = document.getElementById('drilldown-title');
