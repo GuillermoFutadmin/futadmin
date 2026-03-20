@@ -2284,7 +2284,7 @@
                     container.style.display = 'block';
                 }
 
-                container.innerHTML = Object.keys(groups).sort().map(groupKey => {
+                container.innerHTML = Object.keys(groups).sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'})).map(groupKey => {
                     const groupMatches = groups[groupKey];
                     const played = groupMatches.filter(p => p.estado === 'Played').length;
 
