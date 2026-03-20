@@ -54,7 +54,7 @@ export class DashboardModule {
             if (container) container.innerHTML = '';
 
             this.switchTab('resumen');
-            this.ui.loadInitialStats();
+            this.ui.loadInitialStats(true); // Forzar actualización y renderizado
         } else {
             if (tabsNav) tabsNav.style.setProperty('display', 'flex', 'important');
             try {

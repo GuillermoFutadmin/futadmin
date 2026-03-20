@@ -190,9 +190,10 @@ class FutAdminUI {
         else if (tabId === 'jugadores') this.players.populateTeamSelects();
     }
 
-    async loadInitialStats() {
+    async loadInitialStats(forceUpdate = false) {
         // Evitar múltiples llamadas simultáneas (Singleton pattern)
-        if (this._statsPromise) return this._statsPromise;
+        if (this._statsPromise && !forceUpdate) return this._statsPromise;
+        if (forceUpdate) this._statsPromise = null;
 
         this._statsPromise = (async () => {
             try {

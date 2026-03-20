@@ -12,6 +12,11 @@ export class DashboardMap {
         const mapContainer = document.getElementById('mexico-map');
         if (!mapContainer || this.map) return;
 
+        if (typeof L === 'undefined') {
+            console.warn('Leaflet (L) no está disponible. El mapa ha sido deshabilitado.');
+            return;
+        }
+
         // Inicializar mapa centrado en México
         this.map = L.map('mexico-map', {
             center: [23.6345, -102.5528],
@@ -52,10 +57,12 @@ export class DashboardMap {
 
     async update(geoStatsList) {
         if (!this.map) this.init();
-        if (!this.map) return;
+        if (!this.map || typeof L === 'undefined') return;
 
         // Limpiar marcadores y polígonos previos
-        this.markers.forEach(m => this.map.removeLayer(m));
+        try {
+            this.markers.forEach(m => this.map.removeLayer(m));
+        } catch(e) {}
         this.markers = [];
         this.geoLayer.clearLayers();
 
