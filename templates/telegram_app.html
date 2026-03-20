@@ -2113,6 +2113,7 @@
                         }
 
                         const matches = Array.isArray(data) ? data : [];
+                        currentMatches = matches; // Sincronizar estado global para que funcionen los clicks en tarjetas
                         console.log("Matches to render:", matches.length);
 
                         let html = `
