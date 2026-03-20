@@ -224,116 +224,64 @@ export class SettingsModule {
         }
     }
 
-    printComboTicket(liga, owner, pago, cuentas = []) {
-        const domain = window.location.origin;
-        const vencimiento = liga.vencimiento || 'Pendiente';
-        
-        // Formatear cuentas para el ticket
-        const cuentasHtml = cuentas.length > 0 
-            ? cuentas.map(c => `
-                <div style="margin-bottom: 8px; border-bottom: 1px solid #eee; padding-bottom: 4px;">
-                    <div style="font-size: 0.75rem; color: #666;">${c.rol.toUpperCase()}</div>
-                    <div style="font-size: 0.85rem;"><strong>U:</strong> ${c.email}</div>
-                    <div style="font-size: 0.85rem;"><strong>P:</strong> ${owner.owner_pass}</div>
-                </div>
-            `).join('')
-            : `
-                <p><strong>USR:</strong> ${owner.owner_email}</p>
-                <p><strong>PASS:</strong> ${owner.owner_pass}</p>
-            `;
-
-        const ticketHtml = `
-            <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 30px; color: #333; width: 380px; margin: 0 auto; background: #fff; line-height: 1.4;">
-                <div style="text-align:center; margin-bottom: 20px;">
-                    <h1 style="margin:0; font-size: 24px; letter-spacing: 2px;">FUTADMIN</h1>
-                    <p style="font-size: 0.9rem; color: #666; margin: 5px 0;">Comprobante de Activación</p>
-                </div>
-                
-                <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-                    <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 5px;">
-                        <span>FOLIO: <strong>${liga.id}P${pago.id}</strong></span>
-                        <span>FECHA: ${new Date().toLocaleDateString()}</span>
-                    </div>
-                    <div style="font-size: 1rem; border-top: 1px solid #ddd; padding-top: 10px; margin-top: 5px;">
-                        <div style="margin-bottom: 5px;">LIGA: <strong>${liga.nombre}</strong></div>
-                        <div style="margin-bottom: 5px;">PLAN: <span style="text-transform: uppercase;">${owner.owner_rol.replace('_', ' ')}</span></div>
-                        <div style="margin-bottom: 5px;">VENCIMIENTO: <strong style="color: #d32f2f;">${vencimiento}</strong></div>
-                        <div style="font-size: 0.8rem; color: #666; border-top: 1px dashed #ccc; margin-top: 8px; padding-top: 8px;">
-                            📦 <strong>Capacidad del Paquete:</strong><br>
-                            • 1 Sede y 1 Liga (Base)<br>
-                            • Límite Sugerido: 30 Equipos / 15 Jugadores p.e.
-                        </div>
-                    </div>
-                </div>
-
-                <div style="margin-bottom: 25px;">
-                    <h3 style="font-size: 0.9rem; border-bottom: 2px solid #333; padding-bottom: 5px; margin-bottom: 15px; text-align: center; text-transform: uppercase;">Credenciales de Acceso</h3>
-                    ${cuentasHtml}
-                </div>
-
-                <div style="background: #e3f2fd; padding: 15px; border-radius: 8px; margin-bottom: 20px; font-size: 0.8rem;">
-                    <h4 style="margin: 0 0 8px 0; color: #1976d2;">📖 Manual Rápido</h4>
-                    <ul style="padding-left: 15px; margin: 0;">
-                        <li style="margin-bottom: 4px;">Accede desde: <strong>${domain}</strong></li>
-                        <li style="margin-bottom: 4px;">Usa tu cuenta secundaria (Lector) para pantallas de resultados.</li>
-                        <li>Configura tus Torneos y Sedes desde el panel de Ajustes.</li>
-                    </ul>
-                </div>
-
-                <div style="font-size: 0.75rem; color: #666; text-align: justify; border-top: 1px solid #eee; padding-top: 15px;">
-                    <h4 style="margin: 0 0 5px 0; font-size: 0.8rem; color: #333;">🔒 Aviso de Privacidad y Alcance</h4>
-                    <p style="margin: 0 0 8px 0;">Esta aplicación gestiona datos deportivos y administrativos. Los datos personales son utilizados únicamente para el funcionamiento del sistema. 
-                    <strong>La app permite:</strong> Registrar pagos, programar partidos, capturar estadísticas en vivo vía Telegram y generar reportes. 
-                    <strong>La app NO:</strong> Procesa pagos bancarios directamente ni almacena información financiera sensible fuera de los registros administrativos proporcionados.</p>
-                </div>
-
-                <div style="text-align:center; margin-top: 30px; font-size: 0.8rem; color: #999;">
-                    <p>Gracias por confiar en FutAdmin.<br>Tus datos están seguros y respaldados.</p>
-                </div>
-            </div>
-        `;
-        const pw = window.open('', '_blank');
-        pw.document.write('<html><head><title>Ticket de Activación - FutAdmin</title></head><body style="background:#f0f2f5;">' + ticketHtml + '</body></html>');
-        pw.document.close();
-        pw.print();
+    async printComboTicket(liga, owner, pago, cuentas = []) {
+        // Redirigir al nuevo generador profesional PDF
+        await this.downloadComboPaymentPDF(pago.id, { 
+            isActivation: true, 
+            cuentas: cuentas,
+            ownerRol: owner.owner_rol 
+        });
     }
 
-    printExpansionTicket(liga, field, delta, cost) {
-        const type = field === 'extra_canchas' ? 'SEDE EXTRA' : 'LIGA/TORNEO EXTRA';
-        const ticketHtml = `
-            <div style="font-family: 'Courier New', monospace; padding: 20px; color: #000; width: 300px; margin: 0 auto;">
-                <h2 style="text-align:center; margin:0;">FUTADMIN</h2>
-                <p style="text-align:center; font-size: 0.8rem; margin: 5px 0;">Ticket de Expansión</p>
-                <hr style="border-top: 1px dashed #000;">
-                <p><strong>ORGANIZACIÓN:</strong> ${liga?.nombre || 'Organización'}</p>
-                <p><strong>FECHA:</strong> ${new Date().toLocaleString()}</p>
-                <hr style="border-top: 1px dashed #000;">
-                <p style="text-align:center; font-weight:bold;">DETALLE DE CRECIMIENTO</p>
-                <p><strong>CONCEPTO:</strong> ${type}</p>
-                <p><strong>CANTIDAD:</strong> ${Math.abs(delta)}</p>
-                <p><strong>COSTO UNITARIO:</strong> $${cost.toFixed(2)}</p>
-                <hr style="border-top: 1px dashed #000;">
-                <p style="text-align:center; font-size: 1.2rem; font-weight:bold;">VALOR: $${(Math.abs(delta) * cost).toFixed(2)}</p>
-                <hr style="border-top: 1px dashed #000;">
-                <p style="text-align:center; font-size:0.7rem;">Este crecimiento se reflejará en su cargo mensual.</p>
-                <p style="text-align:center; font-weight:bold;">¡Felicidades por su crecimiento Ing!</p>
-            </div>
-        `;
-        const pw = window.open('', '_blank');
-        pw.document.write('<html><head><title>Ticket de Expansión</title></head><body>' + ticketHtml + '</body></html>');
-        pw.document.close();
-        pw.print();
+    async printExpansionTicket(liga, field, delta, cost) {
+        // Generar un objeto de pago ficticio para la expansión
+        const pagoObj = {
+            id: Date.now() % 10000,
+            liga_id: liga.id,
+            liga_nombre: liga.nombre,
+            fecha: new Date().toLocaleDateString(),
+            mes_pagado: field === 'extra_canchas' ? 'Sede Extra' : 'Torneo Extra',
+            monto: Math.abs(delta) * cost,
+            metodo: 'Ajuste de Plan',
+            notas: `Expansión de ${Math.abs(delta)} ${field === 'extra_canchas' ? 'sede(s)' : 'torneo(s)'}.`
+        };
+        await this.downloadComboPaymentPDF(null, { 
+            isExpansion: true, 
+            customPago: pagoObj 
+        });
+    }
 
-        // Proactivamente ofrecer registrar el pago para que salga en el corte diario
-        if (confirm(`Aumento de ${type} registrado.\n¿Deseas registrar el pago de esta expansión ahora para que aparezca en el corte del día?\n(Recomendado: Añade "Crecimiento de paquete" en las notas)`)) {
-            this.showComboPaymentModal(liga.id);
-            // Pre-llenar notas si es posible (el modal ya se abre)
-            setTimeout(() => {
-                const notes = document.getElementById('settings-pago-notas');
-                const monto = document.getElementById('settings-pago-monto');
-                if (notes) notes.value = `Crecimiento de paquete: ${type} (+${delta})`;
-                if (monto) monto.value = (Math.abs(delta) * cost).toFixed(2);
-            }, 500);
+    async updateLigaExtras(ligaId, field, delta) {
+        const cost = field === 'extra_canchas' ? 290 : 85;
+        const type = field === 'extra_canchas' ? 'SEDE EXTRA' : 'LIGA/TORNEO EXTRA';
+        
+        try {
+            const res = await Core.fetchAPI('/api/ligas/extras', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ liga_id: ligaId, field, delta })
+            });
+
+            if (res.success) {
+                Core.showNotification(`Aumento de ${type} registrado.`);
+                this.loadLigas();
+                this.renderLinkedAccounts();
+
+                // Proactivamente ofrecer registrar el pago para que salga en el corte diario
+                if (confirm(`Aumento de ${type} registrado.\n¿Deseas registrar el pago de esta expansión ahora para que aparezca en el corte del día?\n(Recomendado: Añade "Crecimiento de paquete" en las notas)`)) {
+                    this.showComboPaymentModal(ligaId);
+                    // Pre-llenar notas y monto
+                    setTimeout(() => {
+                        const notes = document.getElementById('settings-pago-notas');
+                        const monto = document.getElementById('settings-pago-monto');
+                        if (notes) notes.value = `Crecimiento de paquete: ${type} (+${delta})`;
+                        if (monto) monto.value = (Math.abs(delta) * cost).toFixed(2);
+                    }, 500);
+                }
+            }
+        } catch (err) {
+            console.error(err);
+            Core.showNotification('Error al actualizar extras', 'error');
         }
     }
 
@@ -675,143 +623,151 @@ export class SettingsModule {
         Core.showNotification('Cargando motor de reporte...', 'info');
         try {
             await Core.loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
-            
-            const payments = (this.payments || []).filter(p => p.liga_id == ligaId);
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
-        
-        // Colores y Estilos
-        const primary = [59, 130, 246]; // Azul
-        const secondary = [245, 247, 250]; // Fondo gris suave
-        const text = [33, 37, 41];
-        const now = new Date();
+            
+            const primaryColor = [0, 255, 136]; // FutAdmin Green
+            const textColor = [40, 40, 40];
+            const secondaryTextColor = [100, 100, 100];
+            const lightGray = [245, 245, 245];
 
-        // Banner Header
-        doc.setFillColor(...primary);
-        doc.rect(0, 0, 210, 35, 'F');
-        doc.setTextColor(255, 255, 255);
-        doc.setFontSize(22);
-        doc.setFont('helvetica', 'bold');
-        doc.text('ESTADO DE CUENTA - FUTADMIN', 20, 22);
-        doc.setFontSize(9);
-        doc.setFont('helvetica', 'normal');
-        doc.text(`Generado el: ${now.toLocaleDateString()} ${now.toLocaleTimeString()}`, 145, 22);
+            // 1. Cabecera Premium
+            doc.setFillColor(30, 30, 30);
+            doc.rect(0, 0, 210, 45, 'F');
+            
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(26);
+            doc.setFont("helvetica", "bold");
+            doc.text("FutAdmin PRO", 20, 25);
+            
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            doc.text("ESTADO DE CUENTA Y RESUMEN OPERATIVO", 20, 32);
+            doc.text(`ORGANIZACIÓN: ${liga.nombre.toUpperCase()}`, 20, 38);
+            
+            doc.setFontSize(10);
+            doc.text(`Generado: ${new Date().toLocaleDateString()}`, 155, 25);
+            doc.text(`ID Cliente: ${ligaId}`, 155, 32);
 
-        let currentY = 48;
+            let currentY = 55;
 
-        // --- SECCIÓN 1: RESUMEN DE SUBSCRIPCIÓN ---
-        doc.setTextColor(...text);
-        doc.setFontSize(14);
-        doc.setFont('helvetica', 'bold');
-        doc.text('Resumen de Membresía', 20, currentY);
-        doc.setDrawColor(200, 200, 200);
-        doc.line(20, currentY + 2, 190, currentY + 2);
-        currentY += 12;
+            // --- SECCIÓN 1: RESUMEN DE MEMBRESÍA ---
+            doc.setTextColor(...textColor);
+            doc.setFontSize(14);
+            doc.setFont('helvetica', 'bold');
+            doc.text('RESUMEN DE MEMBRESÍA', 20, currentY);
+            doc.setDrawColor(...primaryColor);
+            doc.setLineWidth(0.8);
+            doc.line(20, currentY + 3, 190, currentY + 3);
+            currentY += 12;
 
-        doc.setFontSize(10);
-        const col1 = 20, col2 = 65, col3 = 110, col4 = 155;
+            doc.setFontSize(10);
+            const col1 = 20, col2 = 65, col3 = 110, col4 = 155;
 
-        // Fila 1
-        doc.setFont('helvetica', 'bold'); doc.text('Organización:', col1, currentY);
-        doc.setFont('helvetica', 'normal'); doc.text(liga.nombre, col2, currentY);
-        doc.setFont('helvetica', 'bold'); doc.text('Desde:', col3, currentY);
-        doc.setFont('helvetica', 'normal'); doc.text(liga.fecha_registro || 'N/A', col4, currentY);
-        currentY += 8;
+            // Datos de membresía
+            const membership = [
+                ["Organización:", liga.nombre, "Plan Actual:", liga.paquete.toUpperCase()],
+                ["Vencimiento:", liga.vencimiento || 'Pendiente', "Registrado el:", liga.fecha_registro || 'N/A'],
+                ["Meses Pagados:", `${liga.stats?.total_meses_pagados || 0} Mes(es)`, "Costo Mensual:", `$${(liga.monto_total_mensual || 0).toFixed(2)} MXN`]
+            ];
 
-        // Fila 2
-        doc.setFont('helvetica', 'bold'); doc.text('Plan Actual:', col1, currentY);
-        doc.setFont('helvetica', 'normal'); doc.text(liga.paquete, col2, currentY);
-        doc.setFont('helvetica', 'bold'); doc.text('Vence:', col3, currentY);
-        doc.setFont('helvetica', 'normal'); 
-        doc.setTextColor(220, 50, 50);
-        doc.text(liga.vencimiento || 'Pendiente', col4, currentY);
-        doc.setTextColor(...text);
-        currentY += 8;
-
-        // Fila 3
-        doc.setFont('helvetica', 'bold'); doc.text('Meses Cubiertos:', col1, currentY);
-        doc.setFont('helvetica', 'normal'); doc.text(`${liga.stats?.total_meses_pagados || 0} meses`, col2, currentY);
-        doc.setFont('helvetica', 'bold'); doc.text('Costo Total:', col3, currentY);
-        doc.setFont('helvetica', 'normal'); doc.text(`$${(liga.monto_total_mensual || 0).toFixed(2)} MXN`, col4, currentY);
-        currentY += 15;
-
-        // --- SECCIÓN 2: INFRAESTRUCTURA Y USO ---
-        doc.setFontSize(14);
-        doc.setFont('helvetica', 'bold');
-        doc.text('Desglose de Operación', 20, currentY);
-        doc.line(20, currentY + 2, 190, currentY + 2);
-        currentY += 12;
-
-        // Columna Izquierda: Sedes / Canchas
-        doc.setFontSize(10);
-        doc.setFont('helvetica', 'bold');
-        doc.text(`Sedes (${liga.stats?.canchas || 0}):`, col1, currentY);
-        doc.setFont('helvetica', 'normal');
-        let tempY = currentY + 6;
-        (liga.detalles?.canchas || []).forEach(c => {
-            doc.text(`• ${c}`, col1 + 2, tempY);
-            tempY += 5;
-        });
-        const maxY_Canchas = tempY;
-
-        // Columna Derecha: Ligas / Torneos
-        doc.setFont('helvetica', 'bold');
-        doc.text(`Ligas Activadas (${liga.stats?.torneos || 0}):`, col3, currentY);
-        doc.setFont('helvetica', 'normal');
-        tempY = currentY + 6;
-        (liga.detalles?.torneos || []).forEach(t => {
-            doc.text(`• ${t}`, col3 + 2, tempY);
-            tempY += 5;
-        });
-        const maxY_Torneos = tempY;
-
-        currentY = Math.max(maxY_Canchas, maxY_Torneos) + 10;
-
-        // --- SECCIÓN 3: RESUMEN OPERATIVO ---
-        doc.setFillColor(...secondary);
-        doc.rect(20, currentY, 170, 20, 'F');
-        doc.setFont('helvetica', 'bold');
-        doc.text('Resumen de Datos:', 25, currentY + 12);
-        doc.setFont('helvetica', 'normal');
-        doc.text(`${liga.stats?.equipos || 0} Equipos inscritos`, 65, currentY + 12);
-        doc.text(`${liga.stats?.jugadores || 0} Jugadores en sistema`, 125, currentY + 12);
-        currentY += 35;
-
-        // --- SECCIÓN 4: HISTORIAL DE TRANSACCIONES ---
-        doc.setFontSize(14);
-        doc.setFont('helvetica', 'bold');
-        doc.text('Historial de Aportaciones', 20, currentY);
-        doc.line(20, currentY + 2, 190, currentY + 2);
-        currentY += 10;
-
-        // Cabecera de Tabla
-        doc.setFillColor(240, 240, 240);
-        doc.rect(20, currentY, 170, 8, 'F');
-        doc.setFontSize(10);
-        doc.text('FECHA', 25, currentY + 6);
-        doc.text('CONCEPTO', 60, currentY + 6);
-        doc.text('MÉTODO', 130, currentY + 6);
-        doc.text('MONTO', 165, currentY + 6);
-
-        let y = currentY + 15;
-        doc.setFont('helvetica', 'normal');
-        
-        if (payments.length === 0) {
-            doc.text('No se han registrado pagos.', 20, y);
-        } else {
-            payments.forEach((p) => {
-                if (y > 270) { doc.addPage(); y = 20; }
-                doc.text(p.fecha || '', 25, y);
-                doc.text(p.mes_pagado || '', 60, y);
-                doc.text(p.metodo || '', 130, y);
-                doc.text(`$${p.monto.toFixed(2)}`, 165, y);
-                doc.setDrawColor(240, 240, 240);
-                doc.line(20, y + 2, 190, y + 2);
-                y += 10;
+            membership.forEach(row => {
+                doc.setFont('helvetica', 'bold'); doc.text(row[0], col1, currentY);
+                doc.setFont('helvetica', 'normal'); doc.text(row[1], col2, currentY);
+                doc.setFont('helvetica', 'bold'); doc.text(row[2], col3, currentY);
+                doc.setFont('helvetica', 'normal'); doc.text(row[3], col4, currentY);
+                currentY += 7;
             });
-        }
 
-            doc.save(`Estado_Cuenta_${liga.nombre.replace(/\s+/g, '_')}.pdf`);
+            // --- SECCIÓN 2: DESGLOSE DE OPERACIÓN ---
+            currentY += 8;
+            doc.setFontSize(14);
+            doc.setFont('helvetica', 'bold');
+            doc.text('INFRAESTRUCTURA ACTIVA', 20, currentY);
+            doc.line(20, currentY + 3, 190, currentY + 3);
+            currentY += 12;
+
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'bold');
+            doc.text(`Sedes en Sistema (${liga.stats?.canchas || 0}):`, col1, currentY);
+            doc.text(`Ligas/Torneos Activos (${liga.stats?.torneos || 0}):`, col3, currentY);
+            doc.setFont('helvetica', 'normal');
+            
+            let listY_Sedes = currentY + 6;
+            (liga.detalles?.canchas || ["Ninguna registrada"]).forEach(c => {
+                doc.text(`• ${c}`, col1 + 2, listY_Sedes);
+                listY_Sedes += 5;
+            });
+
+            let listY_Torneos = currentY + 6;
+            (liga.detalles?.torneos || ["Ninguna registrada"]).forEach(t => {
+                doc.text(`• ${t}`, col3 + 2, listY_Torneos);
+                listY_Torneos += 5;
+            });
+
+            currentY = Math.max(listY_Sedes, listY_Torneos) + 10;
+
+            // --- SECCIÓN 3: MÉTRICAS DE USO ---
+            doc.setFillColor(...lightGray);
+            doc.rect(20, currentY, 170, 15, 'F');
+            doc.setFont('helvetica', 'bold');
+            doc.text('Impacto Operativo:', 25, currentY + 10);
+            doc.setFont('helvetica', 'normal');
+            doc.text(`${liga.stats?.equipos || 0} Equipos Inscritos`, 65, currentY + 10);
+            doc.text(`${liga.stats?.jugadores || 0} Jugadores Registrados`, 125, currentY + 10);
+            currentY += 28;
+
+            // --- SECCIÓN 4: HISTORIAL DE APORTACIONES ---
+            doc.setFontSize(14);
+            doc.setFont('helvetica', 'bold');
+            doc.text('HISTORIAL DE APORTACIONES', 20, currentY);
+            doc.line(20, currentY + 3, 190, currentY + 3);
+            currentY += 10;
+
+            // Cabecera de Tabla
+            doc.setFillColor(50, 50, 50);
+            doc.rect(20, currentY, 170, 8, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(9);
+            doc.text('FECHA', 25, currentY + 6);
+            doc.text('CONCEPTO / MES', 60, currentY + 6);
+            doc.text('MÉTODO', 130, currentY + 6);
+            doc.text('MONTO (MXN)', 165, currentY + 6);
+
+            let rowY = currentY + 14;
+            doc.setTextColor(...textColor);
+            
+            const payments = (this.payments || []).filter(p => p.liga_id == ligaId);
+            if (payments.length === 0) {
+                doc.text('No se han registrado pagos históricos para esta organización.', 25, rowY);
+            } else {
+                payments.forEach((p) => {
+                    if (rowY > 265) { doc.addPage(); rowY = 30; }
+                    doc.setFont('helvetica', 'normal');
+                    doc.text(p.fecha || '', 25, rowY);
+                    doc.text(p.mes_pagado || '', 60, rowY);
+                    doc.text(p.metodo || '', 130, rowY);
+                    doc.setFont('helvetica', 'bold');
+                    doc.text(`$${p.monto.toFixed(2)}`, 165, rowY);
+                    doc.setDrawColor(230, 230, 230);
+                    doc.setLineWidth(0.1);
+                    doc.line(20, rowY + 2, 190, rowY + 2);
+                    rowY += 10;
+                });
+            }
+
+            // Footer Legal (Términos cortos)
+            doc.setFontSize(8);
+            doc.setTextColor(...secondaryTextColor);
+            const legalSummary = "FutAdmin es un sistema de gestión deportiva. Los datos y fotos son responsabilidad de la organización. Sin reembolsos.";
+            doc.text(legalSummary, 105, 280, { align: "center" });
+            
+            doc.setTextColor(0, 150, 80);
+            doc.setFont("helvetica", "bold");
+            doc.text("WWW.FUTADMIN.COM.MX", 105, 288, { align: "center" });
+
+            doc.save(`Estado_Cuenta_FutAdmin_${liga.nombre.replace(/\s+/g, '_')}.pdf`);
+            Core.showNotification('Estado de cuenta generado correctamente');
         } catch (error) {
             console.error('Error generating PDF:', error);
             Core.showNotification('Error al generar el PDF', 'error');
@@ -856,13 +812,17 @@ export class SettingsModule {
                 if ((result.pago || result.id) && confirm('¿Deseas imprimir el comprobante de esta aportación?')) {
                     const liga = this.ligas.find(l => l.id == data.liga_id);
                     const owner = {
-                        owner_rol: liga ? liga.paquete : 'Combo',
-                        owner_email: 'Sistema',
+                        owner_rol: liga ? liga.paquete : 'Dueño de Liga',
+                        owner_email: liga ? liga.contacto : 'Sistema',
                         owner_pass: 'Confirmado'
                     };
-                    // Asegurar que el objeto pago tenga los datos enviados si el API solo regresa ID
                     const pagoObj = result.pago || { ...data, id: result.id };
-                    this.printComboTicket(liga || {id: data.liga_id, nombre: 'Organización'}, owner, pagoObj);
+                    // Usar el nuevo generador profesional PDF
+                    this.downloadComboPaymentPDF(pagoObj.id, { 
+                        isActivation: false, 
+                        customPago: pagoObj,
+                        ownerRol: owner.owner_rol
+                    });
                 }
             } else {
                 alert('Error: ' + (result.error || 'No se pudo guardar el pago'));
@@ -1687,84 +1647,179 @@ export class SettingsModule {
         }
     }
 
-    async downloadComboPaymentPDF(pagoId) {
-        const pago = this.payments.find(p => p.id == pagoId);
+    async downloadComboPaymentPDF(pagoId, options = {}) {
+        let pago = options.customPago;
+        if (!pago && pagoId) {
+            pago = this.payments.find(p => p.id == pagoId);
+        }
         if (!pago) return;
 
-        Core.showNotification('Generando recibo...', 'info');
+        Core.showNotification('Generando comprobante profesional...', 'info');
         
         try {
-            // Cargar jsPDF si no está
             await Core.loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
-
             const primaryColor = [0, 255, 136]; // FutAdmin Green
             const textColor = [40, 40, 40];
+            const secondaryTextColor = [100, 100, 100];
+
+            // Buscar la liga asociada para info extendida
+            const liga = this.ligas.find(l => l.id == pago.liga_id) || {};
 
             // 1. Cabecera Premium
             doc.setFillColor(30, 30, 30);
-            doc.rect(0, 0, 210, 40, 'F');
+            doc.rect(0, 0, 210, 45, 'F');
             
             doc.setTextColor(255, 255, 255);
-            doc.setFontSize(24);
+            doc.setFontSize(26);
             doc.setFont("helvetica", "bold");
             doc.text("FutAdmin PRO", 20, 25);
             
             doc.setFontSize(10);
             doc.setFont("helvetica", "normal");
-            doc.text("COMPROBANTE DE APORTACIÓN", 20, 32);
+            doc.text("SISTEMA DE GESTIÓN DEPORTIVA INTEGRAL", 20, 32);
+            
+            const title = options.isActivation ? "ACTA DE ACTIVACIÓN DE SERVICIOS" : 
+                         (options.isExpansion ? "COMPROBANTE DE EXPANSIÓN" : "COMPROBANTE OFICIAL DE APORTACIÓN");
+            doc.text(title, 20, 38);
             
             doc.setFontSize(12);
-            doc.text(`Folio: #CP-${pago.id.toString().padStart(5, '0')}`, 150, 25);
+            doc.text(`Folio: #CP-${pago.id.toString().padStart(5, '0')}`, 155, 25);
+            doc.setFontSize(10);
+            doc.text(`ID Cliente: ${pago.liga_id}`, 155, 32);
 
-            // 2. Cuerpo
+            // 2. Sección: Detalles
             doc.setTextColor(...textColor);
             doc.setFontSize(14);
-            doc.text("Detalles de la Transacción", 20, 55);
-            doc.setDrawColor(200, 200, 200);
-            doc.line(20, 58, 190, 58);
+            doc.setFont("helvetica", "bold");
+            doc.text("DETALLES DE LA OPERACIÓN", 20, 60);
+            doc.setDrawColor(...primaryColor);
+            doc.setLineWidth(0.8);
+            doc.line(20, 63, 190, 63);
 
-            const startY = 65;
-            const rowH = 10;
-            
-            const rows = [
-                ["Organización:", pago.liga_nombre],
+            let currentY = 72;
+            doc.setFontSize(11);
+            const transDetails = [
+                ["Organización / Combo:", pago.liga_nombre],
                 ["Fecha de Operación:", pago.fecha],
-                ["Mes(es) Cubierto(s):", pago.mes_pagado],
+                ["Concepto:", pago.mes_pagado],
                 ["Método de Pago:", pago.metodo],
-                ["Monto Total:", `$${pago.monto.toFixed(2)} MXN`],
-                ["Estado:", "VERIFICADO"]
+                ["Monto Total:", `$${(pago.monto || 0).toFixed(2)} MXN`],
+                ["Estado:", "VERIFICADO Y ACTIVADO"]
             ];
 
-            doc.setFontSize(11);
-            rows.forEach((row, i) => {
+            transDetails.forEach(row => {
                 doc.setFont("helvetica", "bold");
-                doc.text(row[0], 25, startY + (i * rowH));
+                doc.text(row[0], 25, currentY);
                 doc.setFont("helvetica", "normal");
-                doc.text(row[1], 80, startY + (i * rowH));
+                doc.text(row[1], 85, currentY);
+                currentY += 8;
             });
 
-            if (pago.notas) {
+            // 3. Sección: Información del Plan y Capacidad 
+            currentY += 10;
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(14);
+            doc.text("CAPACIDAD Y DETALLES DEL PLAN", 20, currentY);
+            doc.line(20, currentY + 3, 190, currentY + 3);
+            currentY += 12;
+
+            const limits = {
+                'dueno_liga': { u: 4, s: 1, t: 5 },
+                'super_arbitro': { u: 4, s: 1, t: 2 },
+                'equipo': { u: 4, s: 1, t: 1 }
+            };
+            const pName = (options.ownerRol || liga.paquete || 'dueño_liga').toLowerCase().replace(' ', '_');
+            const base = limits[pName] || limits['dueno_liga'];
+            const capUsers = base.u;
+            const capSedes = base.s + (liga.extra_canchas || 0);
+            const capTorneos = base.t + (liga.extra_torneos || 0);
+
+            doc.setFontSize(11);
+            const planDetails = [
+                ["Paquete Suscrito:", (options.ownerRol || liga.paquete || "Dueño de Liga").toUpperCase()],
+                ["Capacidad Usuarios:", `${capUsers} Cuentas Administrativas`],
+                ["Capacidad Sedes:", `${capSedes} Sede(s) Activa(s)`],
+                ["Capacidad Torneos:", `${capTorneos} Torneo(s) Simultáneo(s)`],
+                ["Vigencia Estimada:", `${liga.vencimiento || 'Al Corriente'}`]
+            ];
+
+            planDetails.forEach(row => {
                 doc.setFont("helvetica", "bold");
-                doc.text("Notas:", 25, startY + (rows.length * rowH) + 5);
+                doc.text(row[0], 25, currentY);
                 doc.setFont("helvetica", "normal");
-                doc.setFontSize(10);
-                const splitNotes = doc.splitTextToSize(pago.notas, 150);
-                doc.text(splitNotes, 25, startY + (rows.length * rowH) + 12);
+                doc.text(row[1], 85, currentY);
+                currentY += 8;
+            });
+
+            // 4. Sección: Credenciales y Cuentas (NUEVO / REFINADO)
+            currentY += 10;
+            doc.setFillColor(245, 255, 250); // Lichte groen
+            doc.rect(20, currentY, 170, options.cuentas?.length > 0 ? (20 + options.cuentas.length * 10) : 35, 'F');
+            doc.setDrawColor(200, 230, 200);
+            doc.rect(20, currentY, 170, options.cuentas?.length > 0 ? (20 + options.cuentas.length * 10) : 35, 'S');
+
+            doc.setFont("helvetica", "bold");
+            doc.text("Accesos Habilitados:", 25, currentY + 10);
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(10);
+            
+            if (options.cuentas && options.cuentas.length > 0) {
+                options.cuentas.forEach((c, i) => {
+                    doc.text(`${c.rol.toUpperCase()}: ${c.email}`, 25, currentY + 18 + (i * 8));
+                });
+                currentY += (options.cuentas.length * 8) + 12;
+            } else {
+                doc.text(`Email de Contacto: ${liga.contacto || 'Confirmado'}`, 25, currentY + 18);
+                doc.text(`Contraseña Genérica: admin123`, 25, currentY + 26);
+                currentY += 35;
             }
 
-            // Footer
+            // 5. Expansión y Mejoras
+            currentY += 10;
+            doc.setFontSize(11);
+            doc.setFont("helvetica", "bold");
+            doc.text("¿Necesitas más capacidad?", 20, currentY);
+            doc.setFont("helvetica", "normal");
             doc.setFontSize(9);
-            doc.setTextColor(150, 150, 150);
-            doc.text("Este documento es un comprobante digital de operación interna.", 105, 280, { align: "center" });
-            doc.text("Gracias por su confianza en FutAdmin - Control y Gestión Deportiva.", 105, 285, { align: "center" });
+            doc.text("Puedes añadir Sedes ($290) o Ligas ($85) extras directamente desde tu panel de Ajustes.", 20, currentY + 6);
+            currentY += 15;
 
-            doc.save(`Recibo_FutAdmin_${pago.liga_nombre.replace(/\s+/g, '_')}_${pago.mes_pagado.replace(/\s+/g, '_')}.pdf`);
-            Core.showNotification('Recibo generado exitosamente');
+            // 6. Términos y Condiciones
+            currentY += 10;
+            doc.setTextColor(...secondaryTextColor);
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "bold");
+            doc.text("TÉRMINOS, CONDICIONES Y RESPONSABILIDAS:", 20, currentY);
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(8);
+            const legalText = [
+                "• FutAdmin es un sistema de gestión y control administrativo, no interviene en la organización física de los eventos.",
+                "• RESPONSABILIDAD DE DATOS (FOTOS DE MENORES): El Administrador de la Liga es el único responsable legal por el uso y publicación de imágenes y datos de menores de edad. FutAdmin recomienda contar con el consentimiento expreso de padres/tutores para el uso en la sección de Liguilla o perfiles.",
+                "• POLÍTICA DE CANCELACIÓN: El servicio puede darse de baja en cualquier momento notificando a soporte. Los pagos realizados no son reembolsables.",
+                "• CREDENCIALES: Se recomienda cambiar la contraseña inicial tras el primer ingreso para mayor seguridad."
+            ];
+            
+            legalText.forEach((line) => {
+                const splitLine = doc.splitTextToSize(line, 170);
+                doc.text(splitLine, 20, currentY + 5);
+                currentY += (splitLine.length * 4) + 2;
+            });
+
+            // Footer Final
+            doc.setFontSize(9);
+            doc.setTextColor(0, 150, 80);
+            doc.setFont("helvetica", "bold");
+            doc.text("WWW.FUTADMIN.COM.MX - EL CONTROL TOTAL DE TU LIGA", 105, 285, { align: "center" });
+
+            const fileName = options.isActivation ? `Acta_Activacion_${pago.liga_nombre.replace(/\s+/g, '_')}.pdf` : 
+                             `Recibo_FutAdmin_${pago.liga_nombre.replace(/\s+/g, '_')}_${pago.mes_pagado.replace(/\s+/g, '_')}.pdf`;
+            doc.save(fileName);
+            Core.showNotification('Documento profesional generado');
         } catch (error) {
             console.error(error);
-            Core.showNotification('Error al generar PDF: ' + error.message, 'error');
+            Core.showNotification('Error al crear PDF: ' + error.message, 'error');
         }
     }
 }
