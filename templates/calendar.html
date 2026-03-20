@@ -2374,6 +2374,9 @@
             // EDIT MODAL
             // ----------------------------------------------------------
             function openEditModal(matchId) {
+                const isAdmin = ['Admin', 'Ejecutivo', 'Dueño de Liga'].includes('{{ user_rol }}');
+                if (!isAdmin) return;
+
                 const p = state.matches.find(m => m.id === matchId);
                 if (!p) return;
                 state.editingMatchId = matchId;
