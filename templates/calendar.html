@@ -2299,6 +2299,8 @@
             }
 
             function matchRowHtml(p, compact = false) {
+                const isAdmin = ['Admin', 'Ejecutivo', 'Dueño de Liga'].includes('{{ user_rol }}');
+
                 const score = p.estado === 'Played'
                     ? `<div class="score" style="${compact ? 'font-size:1.2rem; line-height:1;' : ''}">${p.goles_local ?? '?'} – ${p.goles_visitante ?? '?'}</div>`
                     : `<div class="vs-text" style="${compact ? 'font-size:0.7rem; margin:5px 0;' : ''}">VS</div>`;
@@ -2321,7 +2323,7 @@
                             ${badgeHtml(p.estado)}
                             <div style="display:flex; align-items:center; gap:8px;">
                                 ${p.hora ? `<span style="font-size:0.65rem; color:var(--text-muted); font-weight:600;">⏰ ${p.hora}</span>` : ''}
-                                <button class="btn btn-ghost btn-sm" style="padding:4px 8px; font-size:0.7rem; height:24px;" onclick="CalendarApp.openEditModal(${p.id})">✏️ Editar</button>
+                                ${isAdmin ? `<button class="btn btn-ghost btn-sm" style="padding:4px 8px; font-size:0.7rem; height:24px;" onclick="CalendarApp.openEditModal(${p.id})">✏️ Editar</button>` : ''}
                             </div>
                         </div>
 
@@ -2349,7 +2351,7 @@
                     </div>`;
                 }
 
-                return `<div class="match-row">
+                return `<div class="match-row" style="background: rgba(0, 0, 0, 0.75); border: 1px solid rgba(255, 255, 255, 0.08);">
             <div class="team-cell">
                 ${localShield}
                 <span class="team-name">${p.equipo_local}</span>
@@ -2370,7 +2372,7 @@
                 ${badgeHtml(p.estado)}
                 ${p.arbitro ? `<div class="referee-tag">🏳 ${p.arbitro}</div>` : ''}
                 ${p.cancha ? `<div class="referee-tag">📍 ${p.cancha}</div>` : ''}
-                <button class="btn btn-ghost btn-sm" onclick="CalendarApp.openEditModal(${p.id})">✏️ Editar</button>
+                ${isAdmin ? `<button class="btn btn-ghost btn-sm" onclick="CalendarApp.openEditModal(${p.id})">✏️ Editar</button>` : ''}
             </div>
         </div>`;
             }
