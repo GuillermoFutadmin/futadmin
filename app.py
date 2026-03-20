@@ -2792,6 +2792,13 @@ def _get_stats_impl():
                 cancha_nombre = torneo.cancha.strip().lower()
                 cancha_ref = venues_by_name.get(cancha_nombre)
                 
+                # Fallback: Búsqueda flexible si no hay match exacto
+                if not cancha_ref:
+                    for name, ref in venues_by_name.items():
+                        if name in cancha_nombre or cancha_nombre in name:
+                            cancha_ref = ref
+                            break
+                
                 if cancha_ref:
                     st = cancha_ref.estado or "Otro"
                     mun = cancha_ref.municipio or "Otro"

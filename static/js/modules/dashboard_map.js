@@ -69,17 +69,25 @@ export class DashboardMap {
         const stateCoords = window.MEXICO_STATE_COORDS || {};
         const munCoords = window.MEXICO_MUN_COORDS || {};
 
-        const applyJitter = (coords) => {
-            const jitter = 0.05; 
-            return [
-                coords[0] + (Math.random() - 0.5) * jitter,
-                coords[1] + (Math.random() - 0.5) * jitter
-            ];
-        };
+        const normalize = (s) => (s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+        
+        // Cachear mapas normalizados
+        if (!this._normalizedMunCoords) {
+            this._normalizedMunCoords = {};
+            for (const k in munCoords) { this._normalizedMunCoords[normalize(k)] = munCoords[k]; }
+            this._normalizedStateCoords = {};
+            for (const k in stateCoords) { this._normalizedStateCoords[normalize(k)] = stateCoords[k]; }
+        }
+
+        let renderedCount = 0;
+        let teamsRendered = 0;
 
         for (const stat of geoStatsList) {
-            const munKey = `${stat.estado}|${stat.municipio}`;
-            const baseCoords = munCoords[munKey] || stateCoords[stat.estado];
+            const normalizedEstado = normalize(stat.estado);
+            const normalizedMun = normalize(stat.municipio);
+            const normalizedMunKey = `${normalizedEstado}|${normalizedMun}`;
+            
+            const baseCoords = this._normalizedMunCoords[normalizedMunKey] || this._normalizedStateCoords[normalizedEstado];
 
             if (baseCoords) {
                 // --- 1. Renderizar Perímetro (GeoJSON) ---
@@ -305,9 +313,20 @@ export class DashboardMap {
 
                         marker.addTo(this.map);
                         this.markers.push(marker);
+                        teamsRendered += count;
                     }
+                    renderedCount++;
                 }
             }
+        }
+
+        // --- Debug Info (Visible solo en consola o si habilitamos un div) ---
+        console.log(`Mapa Actualizado: ${geoStatsList.length} zonas recibidas, ${renderedCount} zonas pintadas, ${teamsRendered} equipos.`);
+        
+        // Actualizar contador visual si existe
+        const counter = document.querySelector('.map-stats-counter');
+        if (counter) {
+            counter.innerHTML = `<span style="color: #00ff88;">${renderedCount} Sedes</span> • <span style="color: #3b82f6;">${teamsRendered} Equipos</span>`;
         }
 
         // Auto-zoom a las áreas con datos (Solo la primera vez)
