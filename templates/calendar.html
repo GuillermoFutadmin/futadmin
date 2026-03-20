@@ -2108,7 +2108,7 @@
                             <div style="display: flex; align-items: center; justify-content: center; gap: 4px; width: 100%;">
                                 <div style="width: 90px; display: flex; flex-direction: column; align-items: center; gap: 6px;">
                                     ${localShield}
-                                    <span style="font-size: 0.85rem; font-weight: 900; color: white; line-height: 1.1; text-transform: uppercase; min-height: 2.2rem; display: flex; align-items: center; text-wrap: balance; word-break: break-word;">${p.equipo_local}</span>
+                                    <span style="font-size: 0.85rem; font-weight: 900; color: white; line-height: 1.1; text-transform: uppercase; min-height: 2.2rem; display: block; width: 100%; text-align: center; word-break: break-word;">${p.equipo_local}</span>
                                 </div>
 
                                 <div style="width: 100px; display: flex; flex-direction: column; align-items: center; gap: 4px;">
@@ -2119,7 +2119,7 @@
 
                                 <div style="width: 90px; display: flex; flex-direction: column; align-items: center; gap: 6px;">
                                     ${visitorShield}
-                                    <span style="font-size: 0.85rem; font-weight: 900; color: white; line-height: 1.1; text-transform: uppercase; min-height: 2.2rem; display: flex; align-items: center; text-wrap: balance; word-break: break-word;">${p.equipo_visitante}</span>
+                                    <span style="font-size: 0.85rem; font-weight: 900; color: white; line-height: 1.1; text-transform: uppercase; min-height: 2.2rem; display: block; width: 100%; text-align: center; word-break: break-word;">${p.equipo_visitante}</span>
                                 </div>
                             </div>
                         </div>`;
@@ -2168,6 +2168,14 @@
                             clonedElement.style.maxHeight = 'none';
                             clonedElement.style.transform = 'none';
                             clonedElement.style.width = '1080px'; 
+                            
+                            // Html2Canvas artifacts fix: remove text-shadows, text-wrap, letter-spacing
+                            const allElements = clonedElement.querySelectorAll('*');
+                            allElements.forEach(el => {
+                                el.style.textShadow = 'none';
+                                el.style.letterSpacing = 'normal';
+                                el.style.textWrap = 'normal';
+                            });
                         }
                     });
 
