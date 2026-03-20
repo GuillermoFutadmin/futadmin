@@ -829,6 +829,9 @@ def handle_inscripciones():
     for pg in pagos_lista_raw:
         historial_map[pg.inscripcion_id].append(pg)
 
+    # 5. Mapa de información de partidos para consulta rápida de rivales
+    partido_info_lookup = {p.id: p for p in partidos_raw}
+
     def renderer_ins_optimized(ins):
         iid = ins.id
         eid = ins.equipo_id
@@ -890,7 +893,11 @@ def handle_inscripciones():
                 "tipo": pg.tipo,
                 "fecha": pg.fecha.strftime('%d/%m/%Y') if pg.fecha else "??",
                 "metodo": pg.metodo,
-                "partido_id": pg.partido_id
+                "partido_id": pg.partido_id,
+                "rival": (
+                    (partido_info_lookup[pg.partido_id].equipo_visitante.nombre if partido_info_lookup[pg.partido_id].equipo_local_id == eid else partido_info_lookup[pg.partido_id].equipo_local.nombre)
+                    if pg.partido_id in partido_info_lookup and pg.tipo == 'Arbitraje' else None
+                )
             } for pg in historial_map.get(iid, [])]
         }
 

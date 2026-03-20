@@ -905,7 +905,9 @@ ${data.reglamento ? `<strong>REGLAMENTO:</strong>\n${data.reglamento}\n\n` : ''}
                 ? insData.historial_pagos.map(p => `
                     <tr>
                         <td style="padding:8px; border-bottom:1px solid #e2e8f0;">${p.fecha}</td>
-                        <td style="padding:8px; border-bottom:1px solid #e2e8f0;">${p.tipo}</td>
+                        <td style="padding:8px; border-bottom:1px solid #e2e8f0;">
+                            ${p.tipo}${p.rival ? ` <span style="font-size:0.75rem; color:#666; font-style:italic;">(vs ${p.rival})</span>` : ''}
+                        </td>
                         <td style="padding:8px; border-bottom:1px solid #e2e8f0;">${p.metodo}</td>
                         <td style="padding:8px; border-bottom:1px solid #e2e8f0; font-weight:bold; text-align:right;">$${Number(p.monto).toFixed(2)}</td>
                     </tr>`).join('')
