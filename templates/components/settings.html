@@ -282,28 +282,41 @@
 
     <!-- Pestaña: Privacidad y Términos -->
     <div id="settings-tab-privacidad" class="settings-tab-content animate-in slideInRight" style="display: none;">
-        <div class="action-bar" style="background: rgba(255,255,255,0.03); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center;">
+        <div class="action-bar" style="background: rgba(255,255,255,0.03); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
             <div>
-                <h3 style="margin: 0;">🔐 Aviso de Privacidad y Términos</h3>
-                <p class="text-muted" style="margin-top: 5px; font-size: 0.9rem;">Edita el contenido legal que los usuarios ven al iniciar sesión.</p>
+                <h3 style="margin: 0;">🔐 Marco Legal y Políticas</h3>
+                <p class="text-muted" style="margin-top: 5px; font-size: 0.9rem;">Configura los avisos legales que se muestran en el inicio de sesión y perfiles.</p>
             </div>
-            <button id="btn-save-privacy" class="btn-primary" onclick="ui.privacy.savePrivacyPolicy()" style="white-space: nowrap;">
-                💾 Guardar Cambios
-            </button>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn-secondary" onclick="ui.privacy.fillDefaultTemplate()" style="display: flex; align-items: center; gap: 8px;">
+                    🪄 Autollenar Borrador
+                </button>
+                <button id="btn-save-privacy" class="btn-primary" onclick="ui.privacy.savePrivacyPolicy()" style="white-space: nowrap;">
+                    💾 Guardar Cambios
+                </button>
+            </div>
+        </div>
+
+        <!-- Navegación Interna de Privacidad -->
+        <div class="tabs-nav-internal" style="display: flex; gap: 8px; margin-bottom: 1.5rem; background: rgba(0,0,0,0.2); padding: 5px; border-radius: 12px; border: 1px solid var(--border);">
+            <button class="privacy-tab-btn active" id="priv-tab-policy" onclick="ui.privacy.switchPrivacyTab('privacy_policy')" style="flex: 1; padding: 10px; border: none; background: var(--primary); color: #000; font-weight: 700; border-radius: 8px; cursor: pointer; transition: 0.3s;">📄 Aviso Privacidad</button>
+            <button class="privacy-tab-btn" id="priv-tab-minors" onclick="ui.privacy.switchPrivacyTab('minors_photo_policy')" style="flex: 1; padding: 10px; border: none; background: transparent; color: var(--text-muted); font-weight: 600; border-radius: 8px; cursor: pointer; transition: 0.3s;">🔞 Fotos Menores</button>
+            <button class="privacy-tab-btn" id="priv-tab-terms" onclick="ui.privacy.switchPrivacyTab('terms_conditions')" style="flex: 1; padding: 10px; border: none; background: transparent; color: var(--text-muted); font-weight: 600; border-radius: 8px; cursor: pointer; transition: 0.3s;">⚖️ Términos y Cond.</button>
+            <button class="privacy-tab-btn" id="priv-tab-scope" onclick="ui.privacy.switchPrivacyTab('app_scope')" style="flex: 1; padding: 10px; border: none; background: transparent; color: var(--text-muted); font-weight: 600; border-radius: 8px; cursor: pointer; transition: 0.3s;">🎯 Alcance de App</button>
         </div>
 
         <div class="privacy-editor-card" style="background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 20px; padding: 2rem; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
             <div style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 10px; color: var(--primary); font-weight: bold;">
-                <span>📝 Editor de Contenido Legal</span>
+                <span id="privacy-editor-title">📝 Editando: Aviso de Privacidad</span>
                 <div style="flex: 1; height: 1px; background: linear-gradient(to right, var(--primary), transparent);"></div>
             </div>
             
             <textarea id="privacy-content-editor" 
-                style="width: 100%; min-height: 500px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 1.5rem; color: #fff; font-family: 'Inter', sans-serif; line-height: 1.6; resize: vertical; outline: none; transition: 0.3s;"
-                placeholder="Escribe aquí el aviso de privacidad, términos y condiciones..."></textarea>
+                style="width: 100%; min-height: 480px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 1.5rem; color: #fff; font-family: 'Inter', sans-serif; line-height: 1.6; resize: vertical; outline: none; transition: 0.3s;"
+                placeholder="Cargando contenido..."></textarea>
             
             <div style="margin-top: 1rem; font-size: 0.8rem; color: var(--text-muted); display: flex; align-items: center; gap: 8px;">
-                <span>💡 Tip: Usa párrafos claros para que los usuarios puedan leerlo fácilmente en el login.</span>
+                <span>💡 Tip: Usa el botón "Autollenar Borrador" para generar un texto base legalmente sólido y luego ajústalo a tu liga.</span>
             </div>
         </div>
     </div>
