@@ -134,7 +134,7 @@ LAST_STATS_ERROR = "No errors yet"
 @app.before_request
 def check_login():
     # Rutas que no requieren login
-    public_routes = ['users.login_view', 'users.login', 'users.privacy_view', 'static', 'healthcheck', 'debug_stats', 'diag_db']
+    public_routes = ['users.login_view', 'users.login', 'users.privacy_view', 'static', 'healthcheck', 'debug_stats', 'diag_db', 'debug_uploads']
     if request.endpoint in public_routes or not request.endpoint:
         return
     
