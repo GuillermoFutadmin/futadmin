@@ -385,24 +385,14 @@ def telegram_upload_photo():
         return jsonify({"error": "No photo file"}), 400
     
     file = request.files['photo']
-    if file.filename == '':
-        return jsonify({"error": "No selected file"}), 400
-        
-    if file:
-        filename = secure_filename(f"{uuid.uuid4().hex}_{file.filename}")
-        # Obtener UPLOAD_FOLDER de la configuración de la app (vía current_app o db.app)
-        from flask import current_app
-        upload_path = current_app.config.get('UPLOAD_FOLDER')
-        if not upload_path:
-            # Fallback a ruta relativa
-            upload_path = os.path.join(os.getcwd(), 'static', 'uploads')
-            
-        os.makedirs(upload_path, exist_ok=True)
-        file.save(os.path.join(upload_path, filename))
-        url = f"/static/uploads/{filename}"
-        return jsonify({"success": True, "url": url})
     
-    return jsonify({"error": "Upload failed"}), 500
+    from utils import handle_image_upload
+    url, error = handle_image_upload(file)
+    
+    if error:
+        return jsonify({"error": error}), 400
+        
+    return jsonify({"success": True, "url": url})
 
 @arbitros_bp.route('/api/telegram/match/<int:id>/adopt', methods=['POST'])
 def telegram_adopt_match(id):

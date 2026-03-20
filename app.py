@@ -48,8 +48,9 @@ def add_security_headers(response):
     return response
 
 app.config['UPLOAD_FOLDER'] = os.path.join(BASE_DIR, 'static', 'uploads')
-app.config['TELEGRAM_BOT_TOKEN'] = os.getenv('TELEGRAM_BOT_TOKEN')
-app.config['MAX_CONTENT_LENGTH'] = int(os.getenv('MAX_CONTENT_LENGTH', 10 * 1024 * 1024))
+# Forzar ruta absoluta en Railway para persistencia real
+if os.getenv('RAILWAY_ENVIRONMENT'):
+    app.config['UPLOAD_FOLDER'] = "/app/static/uploads"
 
 # Inicializar Talisman para headers de seguridad y SSL (si SSL_REQUIRED=True)
 talisman = Talisman(app, 
@@ -65,8 +66,20 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True) # Ensure upload folder e
 def healthcheck():
     return jsonify({'status': 'ok'}), 200
 
+@app.route('/api/diag_paths')
+@talisman(force_https=False)
+def diag_paths():
+    import os
+    return jsonify({
+        'cwd': os.getcwd(),
+        'base_dir': BASE_DIR,
+        'upload_folder': app.config.get('UPLOAD_FOLDER'),
+        'exists': os.path.exists(app.config.get('UPLOAD_FOLDER', '')),
+        'files_in_uploads': os.listdir(app.config.get('UPLOAD_FOLDER', '.')) if os.path.exists(app.config.get('UPLOAD_FOLDER', '')) else []
+    })
+
 from models import db, bcrypt, Torneo, Equipo, Jugador, Inscripcion, Pago, GrupoEntrenamiento, AlumnoEntrenamiento, Partido, EventoPartido, Arbitro, Cancha, Usuario, apply_liga_filter, get_liga_id, check_torneos_limit, get_role_limits, Liga, PagoCombo, Configuracion, LigaExpansion
-from utils import paginate_query
+from utils import paginate_query, handle_image_upload
 from routes.entrenamientos import entrenamientos_bp
 from routes.canchas import canchas_bp
 from routes.pagos_cancha import pagos_cancha_bp
@@ -312,44 +325,12 @@ def upload_file():
     if 'file' not in request.files:
         return jsonify({"error": "No se envió ningún archivo"}), 400
     file = request.files['file']
-    if file.filename == '':
-        return jsonify({"error": "Nombre de archivo vacío"}), 400
     
-    # Validación extra de tamaño (redundante con MAX_CONTENT_LENGTH pero útil para respuesta personalizada)
-    file.seek(0, os.SEEK_END)
-    size = file.tell()
-    if size > app.config['MAX_CONTENT_LENGTH']:
-        return jsonify({"error": f"Archivo demasiado grande. Máximo {app.config['MAX_CONTENT_LENGTH']//(1024*1024)}MB"}), 413
-    file.seek(0)
-
-    if file and allowed_file(file.filename):
-        # Sanitizar nombre
-        ext = file.filename.rsplit('.', 1)[1].lower()
-        # Cargar imagen y comprimir para ahorrar espacio (Max 800px, 70% calidad)
-        try:
-            img = Image.open(file)
-            # Convertir a RGB si es necesario (para JPEG/compatibilidad)
-            if img.mode in ("RGBA", "P"):
-                img = img.convert("RGB")
-            
-            max_size = (800, 800)
-            img.thumbnail(max_size, Image.Resampling.LANCZOS)
-            
-            # Forzamos extensión a jpg para consistencia y ahorro
-            unique_name = f"{uuid.uuid4().hex}.jpg"
-            save_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_name)
-            
-            img.save(save_path, "JPEG", optimize=True, quality=70)
-            url = f"/static/uploads/{unique_name}"
-            return jsonify({"url": url}), 201
-        except Exception as e:
-            print(f"Error comprimiendo imagen: {e}")
-            # Fallback: guardar tal cual si falla Pillow
-            file.seek(0)
-            file.save(save_path)
-            url = f"/static/uploads/{unique_name}"
-            return jsonify({"url": url}), 201
-    return jsonify({"error": "Formato de archivo no permitido"}), 400
+    url, error = handle_image_upload(file)
+    if error:
+        return jsonify({"error": error}), 400
+        
+    return jsonify({"url": url}), 201
 
 # --- Rutas API: Equipos ---
 

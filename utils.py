@@ -1,4 +1,8 @@
-from flask import request, jsonify
+import os
+import uuid
+from PIL import Image
+from flask import request, jsonify, current_app
+from werkzeug.utils import secure_filename
 
 def paginate_query(query, renderer=None):
     """Universal helper for paginated SQLAlchemy queries."""
@@ -24,3 +28,51 @@ def paginate_query(query, renderer=None):
             'has_prev': pagination.has_prev
         }
     })
+
+def handle_image_upload(file, folder=None):
+    """
+    Procesa, comprime y guarda una imagen.
+    Retorna la URL relativa si tiene éxito, o None si falla.
+    """
+    if not file or file.filename == '':
+        return None, "Archivo no válido"
+
+    if not folder:
+        folder = current_app.config.get('UPLOAD_FOLDER')
+    
+    if not folder:
+        # Fallback de emergencia a ruta absoluta estándar en Railway
+        folder = "/app/static/uploads"
+    
+    os.makedirs(folder, exist_ok=True)
+
+    try:
+        # Cargar imagen
+        img = Image.open(file)
+        # Convertir a RGB (maneja RGBA o paleta)
+        if img.mode in ("RGBA", "P"):
+            img = img.convert("RGB")
+        
+        # Redimensionar (Max 800px)
+        max_size = (800, 800)
+        img.thumbnail(max_size, Image.Resampling.LANCZOS)
+        
+        # Nombre único con extensión .jpg
+        unique_name = f"{uuid.uuid4().hex}.jpg"
+        save_path = os.path.join(folder, unique_name)
+        
+        # Guardar comprimido
+        img.save(save_path, "JPEG", optimize=True, quality=70)
+        
+        # Retornar URL estándar
+        return f"/static/uploads/{unique_name}", None
+    except Exception as e:
+        print(f"Error procesando imagen: {e}")
+        # Intento de fallback: guardar archivo original si Pillow falla
+        try:
+            filename = secure_filename(f"{uuid.uuid4().hex}_{file.filename}")
+            file.seek(0)
+            file.save(os.path.join(folder, filename))
+            return f"/static/uploads/{filename}", None
+        except Exception as e2:
+            return None, str(e2)
