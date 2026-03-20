@@ -1242,7 +1242,9 @@
                 <div class="form-group">
                     <label for="edit-estado">Estado del Partido</label>
                     <select id="edit-estado" class="form-input select-field" style="background-image: none;">
-                        <option value="Scheduled">🕐 Programado</option>
+                        <option value="Scheduled">📅 Programado</option>
+                        <option value="In Live">🔴 En Vivo</option>
+                        <option value="Playing">⏳ Jugando</option>
                         <option value="Played">✅ Jugado</option>
                         <option value="Cancelled">❌ Cancelado</option>
                     </select>
@@ -1456,9 +1458,11 @@
 
             async function loadArbitros() {
                 try {
-                    state.arbitros = await api('GET', '/api/arbitros');
+                    const data = await api('GET', '/api/arbitros');
+                    state.arbitros = data.items || [];
                 } catch (e) {
                     console.warn('Could not load referees:', e);
+                    state.arbitros = [];
                 }
             }
 
@@ -2166,8 +2170,10 @@
 
                 // Populate referee select
                 const arbSel = document.getElementById('edit-arbitro');
-                arbSel.innerHTML = '<option value="">— Sin árbitro asignado —</option>' +
-                    state.arbitros.map(a => `<option value="${a.id}" ${a.id === p.arbitro_id ? 'selected' : ''}>${a.nombre} (${a.nivel})</option>`).join('');
+                const optionsRef = Array.isArray(state.arbitros) 
+                    ? state.arbitros.map(a => `<option value="${a.id}" ${a.id === p.arbitro_id ? 'selected' : ''}>${a.nombre} (${a.nivel})</option>`).join('')
+                    : '';
+                arbSel.innerHTML = '<option value="">— Sin árbitro asignado —</option>' + optionsRef;
 
                 document.getElementById('modal-edit-match').classList.add('open');
             }
@@ -2338,10 +2344,18 @@
             function badgeHtml(estado) {
                 const map = {
                     'Scheduled': 'badge-scheduled',
+                    'In Live': 'badge-live',
+                    'Playing': 'badge-playing',
                     'Played': 'badge-played',
                     'Cancelled': 'badge-cancelled',
                 };
-                const labels = { 'Scheduled': 'Programado', 'Played': 'Jugado', 'Cancelled': 'Cancelado' };
+                const labels = { 
+                    'Scheduled': 'Programado', 
+                    'In Live': 'En Vivo', 
+                    'Playing': 'Jugando',
+                    'Played': 'Jugado', 
+                    'Cancelled': 'Cancelado' 
+                };
                 return `<span class="badge ${map[estado] || 'badge-scheduled'}">${labels[estado] || 'Programado'}</span>`;
             }
 
