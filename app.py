@@ -60,6 +60,34 @@ talisman = Talisman(app,
 
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
+@app.route('/api/debug_uploads')
+def debug_uploads():
+    import os
+    folder = app.config.get('UPLOAD_FOLDER', 'No folder')
+    exists = os.path.exists(folder)
+    files = os.listdir(folder) if exists else []
+    
+    # Intentar escribir un archivo de prueba para verificar persistencia real
+    test_file = os.path.join(folder, 'persistence_test.txt')
+    write_ok = False
+    try:
+        with open(test_file, 'w') as f:
+            f.write(f'Test at {datetime.now()}')
+        write_ok = True
+    except:
+        write_ok = False
+
+    return jsonify({
+        "upload_folder": folder,
+        "exists": exists,
+        "is_writable": os.access(folder, os.W_OK) if exists else False,
+        "test_write_ok": write_ok,
+        "files_count": len(files),
+        "files_preview": files[:20],
+        "base_dir": BASE_DIR,
+        "current_working_dir": os.getcwd()
+    }), 200
+
 # Ruta de salud para Railway Healthcheck (excluida de SSL redirect y auth)
 @app.route('/health')
 @talisman(force_https=False)
