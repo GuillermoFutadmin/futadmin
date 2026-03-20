@@ -1787,24 +1787,24 @@ export class SettingsModule {
             currentY += 15;
 
             // 6. Términos y Condiciones
-            currentY += 10;
+            currentY += 8;
             doc.setTextColor(...secondaryTextColor);
-            doc.setFontSize(10);
+            doc.setFontSize(9);
             doc.setFont("helvetica", "bold");
-            doc.text("TÉRMINOS, CONDICIONES Y RESPONSABILIDAS:", 20, currentY);
+            doc.text("TÉRMINOS, CONDICIONES Y RESPONSABILIDADES:", 20, currentY);
             doc.setFont("helvetica", "normal");
-            doc.setFontSize(8);
+            doc.setFontSize(7.5);
             const legalText = [
-                "• FutAdmin es un sistema de gestión y control administrativo, no interviene en la organización física de los eventos.",
-                "• RESPONSABILIDAD DE DATOS (FOTOS DE MENORES): El Administrador de la Liga es el único responsable legal por el uso y publicación de imágenes y datos de menores de edad. FutAdmin recomienda contar con el consentimiento expreso de padres/tutores para el uso en la sección de Liguilla o perfiles.",
-                "• POLÍTICA DE CANCELACIÓN: El servicio puede darse de baja en cualquier momento notificando a soporte. Los pagos realizados no son reembolsables.",
-                "• CREDENCIALES: Se recomienda cambiar la contraseña inicial tras el primer ingreso para mayor seguridad."
+                "• FutAdmin es un sistema de gestión y control administrativo, no interviene en la organización deportiva.",
+                "• RESPONSABILIDAD DE DATOS: El Administrador es el único responsable legal por el uso de fotos de menores. Se recomienda contar con consentimiento expreso de padres/tutores.",
+                "• CANCELACIÓN Y PAGOS: El servicio puede darse de baja en cualquier momento. Los pagos realizados no son reembolsables.",
+                "• CREDENCIALES: Se recomienda cambiar la contraseña inicial tras el primer ingreso."
             ];
             
             legalText.forEach((line) => {
                 const splitLine = doc.splitTextToSize(line, 170);
-                doc.text(splitLine, 20, currentY + 5);
-                currentY += (splitLine.length * 4) + 2;
+                doc.text(splitLine, 20, currentY + 4);
+                currentY += (splitLine.length * 3.5) + 1.5;
             });
 
             // Footer Final
