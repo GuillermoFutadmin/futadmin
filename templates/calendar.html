@@ -1306,44 +1306,47 @@
     <!-- MODAL: SHARE DAY FOR SOCIAL MEDIA                          -->
     <!-- ========================================================= -->
     <div class="modal-overlay" id="modal-share-day" style="z-index: 2500; background: rgba(0,0,0,0.98);">
-        <div class="modal-box" style="width: 95%; max-width: 1400px; height: 95vh; padding: 0; border: none; background: #020617; display: flex; flex-direction: column; overflow: hidden; border-radius: 20px; box-shadow: 0 0 50px rgba(0,255,136,0.2);">
-            <div style="flex-grow: 1; overflow-y: auto; background: #020617; display: flex; justify-content: center;">
-                <!-- Target Area for html2canvas (Fixed 1080px for Social Media standard) -->
-                <div id="share-content-area" style="width: 1200px; min-height: 1000px; background: #020617; padding: 80px 60px; position: relative; color: white; display: flex; flex-direction: column; flex-shrink: 0; font-family: 'Outfit', sans-serif; box-sizing: border-box;">
-                    
-                    <!-- Premium Background -->
-                    <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at 20% 20%, rgba(0,255,136,0.15), transparent 40%), radial-gradient(circle at 80% 80%, rgba(59,130,246,0.1), transparent 40%); pointer-events: none;"></div>
-                    <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-image: radial-gradient(rgba(255,255,255,0.03) 1px, transparent 1px); background-size: 40px 40px; opacity: 0.5; pointer-events: none;"></div>
+        <div class="modal-box" style="width: 98%; max-width: 1200px; height: 95vh; padding: 0; border: none; background: #020617; display: flex; flex-direction: column; overflow: hidden; border-radius: 20px; box-shadow: 0 0 50px rgba(0,255,136,0.2);">
+            <div style="flex-grow: 1; overflow-y: auto; background: #020617; display: flex; justify-content: center; align-items: flex-start; padding: 40px 0;">
+                <!-- Wrapper for Scaling -->
+                <div id="share-scale-wrapper" style="transform-origin: top center; transition: transform 0.3s ease;">
+                    <!-- Target Area for html2canvas (Fixed 1080px for Facebook standard) -->
+                    <div id="share-content-area" style="width: 1080px; min-height: 1080px; background: #020617; padding: 60px 40px; position: relative; color: white; display: flex; flex-direction: column; flex-shrink: 0; font-family: 'Outfit', sans-serif; box-sizing: border-box;">
+                        
+                        <!-- Premium Background -->
+                        <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at 20% 20%, rgba(0,255,136,0.12), transparent 40%), radial-gradient(circle at 80% 80%, rgba(59,130,246,0.08), transparent 40%); pointer-events: none;"></div>
+                        <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-image: radial-gradient(rgba(255,255,255,0.02) 1px, transparent 1px); background-size: 30px 30px; opacity: 0.5; pointer-events: none;"></div>
 
-                    <div style="position: relative; z-index: 2; margin-bottom: 60px; display: flex; justify-content: space-between; align-items: flex-start;">
-                        <div style="flex: 1;">
-                            <span style="background: var(--primary); color: #000; padding: 6px 18px; font-weight: 900; font-size: 1rem; border-radius: 4px; text-transform: uppercase; letter-spacing: 2px;">Programación Oficial</span>
-                            <h2 style="margin: 15px 0 0 0; color: white; font-size: 5.5rem; text-transform: uppercase; letter-spacing: -2px; font-weight: 900; line-height: 0.85;">FUT<span style="color: var(--primary);">ADMIN</span></h2>
-                            <p id="share-tournament-subtitle" style="margin: 15px 0 0 0; opacity: 0.7; font-size: 1.6rem; font-weight: 500; font-style: italic; border-left: 5px solid var(--primary); padding-left: 20px;">Tu liga en el siguiente nivel</p>
+                        <div style="position: relative; z-index: 2; margin-bottom: 40px; display: flex; justify-content: space-between; align-items: flex-start;">
+                            <div style="flex: 1;">
+                                <span style="background: var(--primary); color: #000; padding: 5px 15px; font-weight: 900; font-size: 0.9rem; border-radius: 4px; text-transform: uppercase; letter-spacing: 2px;">Programación Oficial</span>
+                                <h2 style="margin: 12px 0 0 0; color: white; font-size: 4.5rem; text-transform: uppercase; letter-spacing: -2px; font-weight: 900; line-height: 0.85;">FUT<span style="color: var(--primary);">ADMIN</span></h2>
+                                <p id="share-tournament-subtitle" style="margin: 12px 0 0 0; opacity: 0.7; font-size: 1.3rem; font-weight: 500; font-style: italic; border-left: 4px solid var(--primary); padding-left: 15px;">Tu liga en el siguiente nivel</p>
+                            </div>
+                            <div style="text-align: right; background: rgba(255,255,255,0.05); padding: 25px; border-radius: 20px; backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1);">
+                                <div id="share-day-name" style="font-size: 3rem; font-weight: 900; color: var(--primary); text-transform: uppercase; line-height: 1;">Domingo</div>
+                                <div id="share-full-date" style="font-size: 1.3rem; opacity: 0.7; margin-top: 8px; font-weight: 700; letter-spacing: 1px;">22 de Marzo, 2026</div>
+                            </div>
                         </div>
-                        <div style="text-align: right; background: rgba(255,255,255,0.05); padding: 35px; border-radius: 25px; backdrop-filter: blur(20px); border: 2px solid rgba(255,255,255,0.1); box-shadow: 0 10px 40px rgba(0,0,0,0.4);">
-                            <div id="share-day-name" style="font-size: 4rem; font-weight: 900; color: var(--primary); text-transform: uppercase; line-height: 1;">Domingo</div>
-                            <div id="share-full-date" style="font-size: 1.6rem; opacity: 0.8; margin-top: 10px; font-weight: 700; letter-spacing: 1px;">22 de Marzo, 2026</div>
+
+                        <!-- 3-Column Grid perfectly balanced for 1080px (approx 315px per card) -->
+                        <div id="share-matches-list" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; position: relative; z-index: 2;">
+                            <!-- Rendered by JS -->
                         </div>
-                    </div>
 
-                    <!-- 3-Column Grid Perfectly balanced for 1200px width -->
-                    <div id="share-matches-list" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 25px; position: relative; z-index: 2;">
-                        <!-- Rendered by JS -->
-                    </div>
-
-                    <div style="margin-top: 80px; padding: 50px; background: linear-gradient(to right, transparent, rgba(0,255,136,0.05), transparent); text-align: center; position: relative; z-index: 2;">
-                        <p style="font-size: 1.4rem; font-weight: 800; letter-spacing: 1px; opacity: 0.9; margin-bottom: 12px; color: white;">Si quieres ver el resumen detallado de tu liga, míralo en <span style="color: var(--primary);">futadmin.com.mx</span></p>
-                        <div style="display: flex; justify-content: center; gap: 25px; font-size: 1rem; opacity: 0.5; font-weight: 600;">
-                            <span>RESULTADOS</span> • <span>ESTADÍSTICAS</span> • <span>POSICIONES</span> • <span>FOTOS</span>
+                        <div style="margin-top: 60px; padding: 40px; background: linear-gradient(to right, transparent, rgba(0,255,136,0.05), transparent); text-align: center; position: relative; z-index: 2;">
+                            <p style="font-size: 1.2rem; font-weight: 800; opacity: 0.9; margin-bottom: 8px; color: white;">Si quieres ver el resumen detallado de tu liga, míralo en <span style="color: var(--primary);">futadmin.com.mx</span></p>
+                            <div style="display: flex; justify-content: center; gap: 20px; font-size: 0.9rem; opacity: 0.4; font-weight: 600; text-transform: uppercase; letter-spacing: 2px;">
+                                <span>RESULTADOS</span> • <span>ESTADÍSTICAS</span> • <span>POSICIONES</span> • <span>FOTOS</span>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="modal-footer" style="padding: 30px; background: #020617; border-top: 1px solid rgba(255,255,255,0.1); justify-content: center; gap: 30px; position: relative; z-index: 100;">
-                <button class="btn btn-primary btn-lg" style="height: 65px; padding: 0 60px; font-size: 1.5rem; font-weight: 900; border-radius: 40px; box-shadow: 0 10px 40px var(--primary-glow); transition: transform 0.2s;" onclick="CalendarApp.downloadShareImage()">🔥 DESCARGAR PARA FACEBOOK</button>
-                <button class="btn btn-ghost btn-lg" style="height: 65px; padding: 0 40px; font-size: 1.3rem; border-radius: 40px;" onclick="document.getElementById('modal-share-day').classList.remove('open')">VOLVER</button>
+            <div class="modal-footer" style="padding: 25px; background: #020617; border-top: 1px solid rgba(255,255,255,0.1); justify-content: center; gap: 25px; position: relative; z-index: 100;">
+                <button class="btn btn-primary btn-lg" style="height: 60px; padding: 0 50px; font-size: 1.4rem; font-weight: 900; border-radius: 40px; box-shadow: 0 10px 40px var(--primary-glow);" onclick="CalendarApp.downloadShareImage()">🔥 DESCARGAR PARA FACEBOOK</button>
+                <button class="btn btn-ghost btn-lg" style="height: 60px; padding: 0 40px; font-size: 1.2rem; border-radius: 40px;" onclick="document.getElementById('modal-share-day').classList.remove('open')">VOLVER</button>
             </div>
         </div>
     </div>
@@ -2084,37 +2087,37 @@
                         const visitorInitial = (p.equipo_visitante || '?')[0].toUpperCase();
                         
                         const localShield = p.equipo_local_escudo 
-                            ? `<img src="${p.equipo_local_escudo}" style="width:100px; height:100px; object-fit:contain; filter: drop-shadow(0 15px 30px rgba(0,0,0,0.6));">`
-                            : `<div style="width:100px; height:100px; border-radius:50%; background:linear-gradient(45deg, var(--primary), #3b82f6); display:flex; align-items:center; justify-content:center; font-weight:900; font-size:2.8rem; color:#000; box-shadow: 0 15px 30px rgba(0,0,0,0.5);">${localInitial}</div>`;
+                            ? `<img src="${p.equipo_local_escudo}" style="width:70px; height:70px; object-fit:contain; filter: drop-shadow(0 10px 20px rgba(0,0,0,0.5));">`
+                            : `<div style="width:70px; height:70px; border-radius:50%; background:linear-gradient(45deg, var(--primary), #3b82f6); display:flex; align-items:center; justify-content:center; font-weight:900; font-size:1.8rem; color:#000; box-shadow: 0 10px 20px rgba(0,0,0,0.4);">${localInitial}</div>`;
                         
                         const visitorShield = p.equipo_visitante_escudo
-                            ? `<img src="${p.equipo_visitante_escudo}" style="width:100px; height:100px; object-fit:contain; filter: drop-shadow(0 15px 30px rgba(0,0,0,0.6));">`
-                            : `<div style="width:100px; height:100px; border-radius:50%; background:linear-gradient(45deg, #3b82f6, var(--primary)); display:flex; align-items:center; justify-content:center; font-weight:900; font-size:2.8rem; color:#000; box-shadow: 0 15px 30px rgba(0,0,0,0.5);">${visitorInitial}</div>`;
+                            ? `<img src="${p.equipo_visitante_escudo}" style="width:70px; height:70px; object-fit:contain; filter: drop-shadow(0 10px 20px rgba(0,0,0,0.5));">`
+                            : `<div style="width:70px; height:70px; border-radius:50%; background:linear-gradient(45deg, #3b82f6, var(--primary)); display:flex; align-items:center; justify-content:center; font-weight:900; font-size:1.8rem; color:#000; box-shadow: 0 10px 20px rgba(0,0,0,0.4);">${visitorInitial}</div>`;
 
                         return `
-                        <div class="share-match-card" style="background: rgba(255,255,255,0.02); border: 2px solid rgba(255,255,255,0.08); border-radius: 30px; padding: 35px 25px; display: flex; flex-direction: column; gap: 25px; backdrop-filter: blur(30px); position: relative; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.3); text-align: center;">
+                        <div class="share-match-card" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 18px; padding: 20px 15px; display: flex; flex-direction: column; gap: 15px; backdrop-filter: blur(20px); position: relative; overflow: hidden; text-align: center;">
                             <!-- Top Info Badge -->
-                            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid rgba(255,255,255,0.1); padding-bottom: 15px; margin-bottom: 5px;">
-                                <span style="font-size: 1rem; font-weight: 900; color: var(--primary); letter-spacing: 2px; text-transform: uppercase;">Jornada ${p.jornada}</span>
-                                <span style="font-size: 0.9rem; opacity: 0.6; font-weight: 700;">📍 ${p.cancha || 'Sede'}</span>
+                            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 8px; margin-bottom: 2px;">
+                                <span style="font-size: 0.8rem; font-weight: 900; color: var(--primary); letter-spacing: 1px; text-transform: uppercase;">Jornada ${p.jornada}</span>
+                                <span style="font-size: 0.75rem; opacity: 0.5; font-weight: 600;">📍 ${p.cancha || 'Sede'}</span>
                             </div>
 
                             <!-- Main VS area -->
-                            <div style="display: flex; align-items: center; justify-content: space-between; gap: 5px;">
-                                <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 18px;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; gap: 4px;">
+                                <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 10px;">
                                     ${localShield}
-                                    <span style="font-size: 1.4rem; font-weight: 900; color: white; line-height: 1.1; text-transform: uppercase; min-height: 3rem; display: flex; align-items: center;">${p.equipo_local}</span>
+                                    <span style="font-size: 1.1rem; font-weight: 900; color: white; line-height: 1.1; text-transform: uppercase; min-height: 2.4rem; display: flex; align-items: center;">${p.equipo_local}</span>
                                 </div>
 
-                                <div style="display: flex; flex-direction: column; align-items: center; gap: 8px; width: 130px;">
-                                    <div style="font-size: 3.2rem; font-weight: 900; color: white; text-shadow: 0 0 25px var(--primary-glow); line-height: 1;">${p.hora || '--:--'}</div>
-                                    <div style="width: 50px; height: 4px; background: var(--primary); border-radius: 2px;"></div>
-                                    <div style="font-size: 0.9rem; opacity: 0.5; font-weight: 900; letter-spacing: 5px;">VS</div>
+                                <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; width: 100px;">
+                                    <div style="font-size: 2.4rem; font-weight: 900; color: white; text-shadow: 0 0 15px var(--primary-glow); line-height: 1;">${p.hora || '--:--'}</div>
+                                    <div style="width: 30px; height: 3px; background: var(--primary); border-radius: 2px;"></div>
+                                    <div style="font-size: 0.8rem; opacity: 0.4; font-weight: 900; letter-spacing: 4px;">VS</div>
                                 </div>
 
-                                <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 18px;">
+                                <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 10px;">
                                     ${visitorShield}
-                                    <span style="font-size: 1.4rem; font-weight: 900; color: white; line-height: 1.1; text-transform: uppercase; min-height: 3rem; display: flex; align-items: center;">${p.equipo_visitante}</span>
+                                    <span style="font-size: 1.1rem; font-weight: 900; color: white; line-height: 1.1; text-transform: uppercase; min-height: 2.4rem; display: flex; align-items: center;">${p.equipo_visitante}</span>
                                 </div>
                             </div>
                         </div>`;
@@ -2122,6 +2125,25 @@
                 }
 
                 document.getElementById('modal-share-day').classList.add('open');
+                
+                // Auto-scale to fit preview vertically
+                setTimeout(() => {
+                    const wrapper = document.getElementById('share-scale-wrapper');
+                    const content = document.getElementById('share-content-area');
+                    const modalBox = wrapper.closest('.modal-box');
+                    if (wrapper && content && modalBox) {
+                        const availableHeight = modalBox.offsetHeight - 150; // Space minus footer/padding
+                        const contentHeight = content.offsetHeight;
+                        const availableWidth = modalBox.offsetWidth - 80;
+                        const contentWidth = content.offsetWidth;
+                        
+                        const scaleH = availableHeight / contentHeight;
+                        const scaleW = availableWidth / contentWidth;
+                        const scale = Math.min(scaleH, scaleW, 1); // Never scale up
+                        
+                        wrapper.style.transform = `scale(${scale})`;
+                    }
+                }, 100);
             }
 
             async function downloadShareImage() {
@@ -2133,17 +2155,14 @@
                     btn.innerHTML = '⏳ Procesando...';
                     btn.disabled = true;
 
-                    // IMPORTANTE: html2canvas captura mejor si el elemento no tiene scroll interno 
-                    // y tiene altura natural. Nuestra nueva estructura ya lo permite.
                     const canvas = await html2canvas(element, {
                         scale: 2, // Alta calidad para redes sociales
                         useCORS: true,
                         backgroundColor: '#020617',
                         logging: false,
-                        width: 1200,
-                        windowWidth: 1200, // Forzar ancho de renderizado
+                        width: 1080,
+                        windowWidth: 1080, // Forzar ancho de renderizado estándar
                         onclone: (clonedDoc) => {
-                            // Asegurarse de que el clon sea visible y tenga altura completa
                             const clonedElement = clonedDoc.getElementById('share-content-area');
                             clonedElement.style.height = 'auto';
                             clonedElement.style.maxHeight = 'none';
