@@ -659,7 +659,12 @@ def telegram_inscription_status():
     equipo_id = request.args.get('equipo_id', type=int)
     if not equipo_id:
         return jsonify({"error": "Equipo ID requerido"}), 400
+    equipo = Equipo.query.get_or_404(equipo_id)
+    insc = Inscripcion.query.filter_by(equipo_id=equipo_id, torneo_id=equipo.torneo_id).first()
+    if not insc:
+        return jsonify({"saldo_pendiente": 0, "error": "No hay inscripción"}), 200
     
+    return jsonify({
         "saldo_pendiente": float(insc.saldo_pendiente)
     })
 
