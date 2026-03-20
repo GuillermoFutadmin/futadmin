@@ -4,11 +4,11 @@ import datetime
 import json
 def inject_local_data():
     with app.app_context():
-        print('--- Vaciando tablas previas (TRUNCATE) ---')
-        if 'postgresql' in db.engine.url.drivername:
-            tables = ', '.join([m.__tablename__ for m in [Liga, Usuario, Cancha, Arbitro, Torneo, Equipo, Jugador]])
-            db.session.execute(db.text(f'TRUNCATE TABLE {tables} CASCADE'))
-            db.session.commit()
+        # print('--- Vaciando tablas previas (TRUNCATE) ---')
+        # if 'postgresql' in db.engine.url.drivername:
+        #     tables = ', '.join([m.__tablename__ for m in [Liga, Usuario, Cancha, Arbitro, Torneo, Equipo, Jugador]])
+        #     db.session.execute(db.text(f'TRUNCATE TABLE {tables} CASCADE'))
+        #     db.session.commit()
         with db.session.no_autoflush:
             print('--- Insertando ligas ---')
             if not Liga.query.get(9):
@@ -51,10 +51,6 @@ def inject_local_data():
                 db.session.add(obj)
             if not Usuario.query.get(1):
                 obj = Usuario(id=1, nombre='Administrador Sistema', email='admin@futadmin.com', password_hash='$2b$12$SJYe2Zjouavzmvs78kQlP./OyscR8Ce2Qgu2DG/YQOZA1hsu.qOYW', rol='admin', liga_id=None, cancha_id=None, activo=True, fecha_creacion=datetime.datetime.strptime('2026-03-10 20:22:22', '%Y-%m-%d %H:%M:%S'), privacy_accepted=True, privacy_accepted_at=datetime.datetime.strptime('2026-03-18 21:52:49', '%Y-%m-%d %H:%M:%S'))
-                if hasattr(obj, 'configuracion') and isinstance(obj.configuracion, str): obj.configuracion = json.loads(obj.configuracion)
-                db.session.add(obj)
-            if not Usuario.query.get(40):
-                obj = Usuario(id=40, nombre='Administrador Global', email='admin@adminfutbol.com', password_hash='$2b$12$4.dOn8wGL5NntJklkUY4POb.tojcv6tRK4qvdc5yjyw9TAAqOE/c6', rol='admin', liga_id=None, cancha_id=None, activo=True, fecha_creacion=datetime.datetime.strptime('2026-03-19 10:03:11', '%Y-%m-%d %H:%M:%S'), privacy_accepted=False, privacy_accepted_at=None)
                 if hasattr(obj, 'configuracion') and isinstance(obj.configuracion, str): obj.configuracion = json.loads(obj.configuracion)
                 db.session.add(obj)
             if not Usuario.query.get(14):

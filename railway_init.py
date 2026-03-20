@@ -40,8 +40,8 @@ def init():
                     db.session.rollback()
                     print(f"Nota: columna torneos.archived ya existe o error: {e}")
 
-            # Verificar y crear administradores
-            for admin_email in ['admin@futadmin.com', 'admin@adminfutbol.com']:
+            # Verificar y crear administradores (Solo el principal del sistema)
+            for admin_email in ['admin@futadmin.com']:
                 admin = Usuario.query.filter_by(email=admin_email).first()
                 if not admin:
                     print(f"Paso 2: Creando usuario administrador: {admin_email}")
