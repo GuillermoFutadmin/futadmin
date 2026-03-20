@@ -452,6 +452,7 @@ export class SettingsModule {
         } else if (tabId === 'resumenes') {
             this.ui.analytics.renderResumenes();
         } else if (tabId === 'privacidad') {
+            this.ui.privacy.init();
         }
     }
 
