@@ -920,6 +920,7 @@
                     const isPlayable = m.estado !== 'Played' && m.estado !== 'Cancelled';
                     const isReferee = currentUser.rol === 'arbitro';
                     const canAdopt = !m.arbitro_id && isPlayable && isReferee;
+                    const canPay = ['admin', 'ejecutivo', 'dueño_liga', 'equipo'].includes(currentUser.rol);
                     const canOpen = isPlayable && canEdit;
                     let statusColor = 'var(--muted)';
                     if (m.estado === 'Live') statusColor = 'var(--error)';
