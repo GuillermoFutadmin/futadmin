@@ -49,7 +49,7 @@ def add_security_headers(response):
 
 app.config['UPLOAD_FOLDER'] = os.path.join(BASE_DIR, 'static', 'uploads')
 app.config['TELEGRAM_BOT_TOKEN'] = os.getenv('TELEGRAM_BOT_TOKEN')
-app.config['MAX_CONTENT_LENGTH'] = int(os.getenv('MAX_CONTENT_LENGTH', 2 * 1024 * 1024))
+app.config['MAX_CONTENT_LENGTH'] = int(os.getenv('MAX_CONTENT_LENGTH', 10 * 1024 * 1024))
 
 # Inicializar Talisman para headers de seguridad y SSL (si SSL_REQUIRED=True)
 talisman = Talisman(app, 
@@ -60,35 +60,6 @@ talisman = Talisman(app,
 
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True) # Ensure upload folder exists
 
-@app.route('/api/debug_uploads')
-def debug_uploads():
-    import os
-    folder = app.config.get('UPLOAD_FOLDER', 'No folder')
-    exists = os.path.exists(folder)
-    files = os.listdir(folder) if exists else []
-    
-    # Intentar escribir un archivo de prueba para verificar persistencia real
-    test_file = os.path.join(folder, 'persistence_test.txt')
-    write_ok = False
-    try:
-        with open(test_file, 'w') as f:
-            f.write(f'Test at {datetime.now()}')
-        write_ok = True
-    except:
-        write_ok = False
-
-    return jsonify({
-        "upload_folder": folder,
-        "exists": exists,
-        "is_writable": os.access(folder, os.W_OK) if exists else False,
-        "test_write_ok": write_ok,
-        "files_count": len(files),
-        "files_preview": files[:20],
-        "base_dir": BASE_DIR,
-        "current_working_dir": os.getcwd()
-    }), 200
-
-# Ruta de salud para Railway Healthcheck (excluida de SSL redirect y auth)
 @app.route('/health')
 @talisman(force_https=False)
 def healthcheck():
@@ -134,7 +105,7 @@ LAST_STATS_ERROR = "No errors yet"
 @app.before_request
 def check_login():
     # Rutas que no requieren login
-    public_routes = ['users.login_view', 'users.login', 'users.privacy_view', 'static', 'healthcheck', 'debug_stats', 'diag_db', 'debug_uploads']
+    public_routes = ['users.login_view', 'users.login', 'users.privacy_view', 'static', 'healthcheck', 'debug_stats', 'diag_db']
     if request.endpoint in public_routes or not request.endpoint:
         return
     
