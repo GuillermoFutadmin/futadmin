@@ -1787,24 +1787,41 @@ export class SettingsModule {
             currentY += 15;
 
             // 6. Términos y Condiciones
-            currentY += 8;
+            if (currentY > 210) {
+                doc.addPage();
+                currentY = 25; // Reiniciar Y en nueva página
+                
+                // Opcional: Mini cabecera en pág 2
+                doc.setFillColor(30, 30, 30);
+                doc.rect(0, 0, 210, 15, 'F');
+                doc.setTextColor(255, 255, 255);
+                doc.setFontSize(10);
+                doc.text(`CONTINUACIÓN - RECIBO ${pago.liga_nombre.toUpperCase()}`, 20, 10);
+                currentY += 15;
+            }
+
+            currentY += 5;
             doc.setTextColor(...secondaryTextColor);
-            doc.setFontSize(9);
+            doc.setFontSize(10);
             doc.setFont("helvetica", "bold");
             doc.text("TÉRMINOS, CONDICIONES Y RESPONSABILIDADES:", 20, currentY);
             doc.setFont("helvetica", "normal");
-            doc.setFontSize(7.5);
+            doc.setFontSize(8.5);
             const legalText = [
-                "• FutAdmin es un sistema de gestión y control administrativo, no interviene en la organización deportiva.",
-                "• RESPONSABILIDAD DE DATOS: El Administrador es el único responsable legal por el uso de fotos de menores. Se recomienda contar con consentimiento expreso de padres/tutores.",
-                "• CANCELACIÓN Y PAGOS: El servicio puede darse de baja en cualquier momento. Los pagos realizados no son reembolsables.",
-                "• CREDENCIALES: Se recomienda cambiar la contraseña inicial tras el primer ingreso."
+                "• FutAdmin es un sistema de gestión y control administrativo, no interviene en la organización física de los eventos deportivos ni en la logística de los mismos.",
+                "• RESPONSABILIDAD DE DATOS (FOTOS DE MENORES): El Administrador de la Liga es el único responsable legal por el uso y publicación de imágenes y datos de menores de edad. FutAdmin recomienda contar con el consentimiento expreso de padres/tutores para el uso en la sección de Liguilla o perfiles públicos.",
+                "• POLÍTICA DE CANCELACIÓN: El servicio puede darse de baja en cualquier momento notificando a soporte técnico. Los pagos realizados por periodos ya iniciados o activaciones no son reembolsables.",
+                "• CREDENCIALES: Se recomienda encarecidamente cambiar la contraseña inicial tras el primer ingreso para garantizar la integridad de su información."
             ];
             
             legalText.forEach((line) => {
                 const splitLine = doc.splitTextToSize(line, 170);
-                doc.text(splitLine, 20, currentY + 4);
-                currentY += (splitLine.length * 3.5) + 1.5;
+                if (currentY + (splitLine.length * 5) > 280) {
+                    doc.addPage();
+                    currentY = 25;
+                }
+                doc.text(splitLine, 20, currentY + 5);
+                currentY += (splitLine.length * 4.5) + 2;
             });
 
             // Footer Final
