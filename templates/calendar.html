@@ -1306,34 +1306,33 @@
     <!-- MODAL: SHARE DAY FOR SOCIAL MEDIA                          -->
     <!-- ========================================================= -->
     <div class="modal-overlay" id="modal-share-day" style="z-index: 2500; background: rgba(0,0,0,0.95);">
-        <div class="modal-box" style="width: 100%; max-width: 1200px; height: 90vh; padding: 0; overflow: hidden; border: none; background: #0f172a; display: flex; flex-direction: column;">
-            <div id="share-content-area" style="flex-grow: 1; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 40px; position: relative; color: white; display: flex; flex-direction: column; overflow-y: auto;">
+        <div class="modal-box" style="width: 100%; max-width: 1200px; height: 90vh; padding: 0; border: none; background: #0f172a; display: flex; flex-direction: column; overflow-y: auto;">
+            <div id="share-content-area" style="width: 100%; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 60px 40px; position: relative; color: white; display: flex; flex-direction: column; flex-shrink: 0;">
                 <!-- High-quality Background Decorations -->
-                <div style="position: absolute; top: -10%; right: -10%; width: 50%; height: 50%; background: var(--primary); filter: blur(150px); opacity: 0.15; border-radius: 50%;"></div>
-                <div style="position: absolute; bottom: -10%; left: -10%; width: 50%; height: 50%; background: #3b82f6; filter: blur(150px); opacity: 0.1; border-radius: 50%;"></div>
-                <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: url('/static/fotos/canchapasto.png'); opacity: 0.05; pointer-events: none; mix-blend-mode: overlay;"></div>
-
-                <div style="position: relative; z-index: 2; margin-bottom: 40px; display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid var(--primary); padding-bottom: 20px;">
+                <div style="position: absolute; top: -5%; right: -5%; width: 400px; height: 400px; background: var(--primary); filter: blur(150px); opacity: 0.15; border-radius: 50%;"></div>
+                <div style="position: absolute; bottom: -5%; left: -5%; width: 400px; height: 400px; background: #3b82f6; filter: blur(150px); opacity: 0.1; border-radius: 50%;"></div>
+                
+                <div style="position: relative; z-index: 2; margin-bottom: 50px; display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid var(--primary); padding-bottom: 20px;">
                     <div>
-                        <h2 style="margin: 0; color: var(--primary); font-size: 2.5rem; text-transform: uppercase; letter-spacing: 4px; font-weight: 900; line-height: 1;">FutAdmin</h2>
-                        <p style="margin: 10px 0 0 0; opacity: 0.8; font-size: 1rem; letter-spacing: 2px; font-weight: 600;">PROGRAMACIÓN OFICIAL JORNADA</p>
+                        <h2 style="margin: 0; color: var(--primary); font-size: 3rem; text-transform: uppercase; letter-spacing: 5px; font-weight: 900; line-height: 1;">FutAdmin</h2>
+                        <p style="margin: 10px 0 0 0; opacity: 0.8; font-size: 1.1rem; letter-spacing: 2px; font-weight: 600;">PROGRAMACIÓN OFICIAL JORNADA</p>
                     </div>
                     <div style="text-align: right;">
-                        <div id="share-day-name" style="font-size: 2rem; font-weight: 800; color: white; line-height: 1;">Sábado</div>
-                        <div id="share-full-date" style="font-size: 1.1rem; opacity: 0.7; margin-top: 5px; font-weight: 400;">21 de Marzo, 2026</div>
+                        <div id="share-day-name" style="font-size: 2.5rem; font-weight: 800; color: white; line-height: 1;">Sábado</div>
+                        <div id="share-full-date" style="font-size: 1.2rem; opacity: 0.7; margin-top: 5px; font-weight: 400;">21 de Marzo, 2026</div>
                     </div>
                 </div>
 
-                <div id="share-matches-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(450px, 1fr)); gap: 20px;">
+                <div id="share-matches-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(480px, 1fr)); gap: 25px;">
                     <!-- Rendered by JS -->
                 </div>
 
-                <div style="margin-top: auto; padding-top: 40px; text-align: center; opacity: 0.6; font-size: 0.9rem; letter-spacing: 1px;">
+                <div style="margin-top: 60px; padding-top: 40px; text-align: center; opacity: 0.6; font-size: 1rem; letter-spacing: 1px;">
                     🏆 Vive la pasión del fútbol con <strong>FutAdmin</strong> | www.futadmin.com.mx
                 </div>
             </div>
-            <div class="modal-footer" style="padding: 20px; background: #1e293b; border-top: 1px solid rgba(255,255,255,0.1); justify-content: center; gap: 20px;">
-                <button class="btn btn-primary btn-lg" style="padding: 12px 30px; font-size: 1.1rem;" onclick="CalendarApp.downloadShareImage()">📥 Descargar Imagen HD</button>
+            <div class="modal-footer" style="padding: 25px; background: #1e293b; border-top: 1px solid rgba(255,255,255,0.1); justify-content: center; gap: 20px; position: sticky; bottom: 0; z-index: 10;">
+                <button class="btn btn-primary btn-lg" style="padding: 15px 40px; font-size: 1.2rem;" onclick="CalendarApp.downloadShareImage()">📥 Descargar Imagen HD Completa</button>
                 <button class="btn btn-ghost btn-lg" onclick="document.getElementById('modal-share-day').classList.remove('open')">Regresar</button>
             </div>
         </div>
@@ -2116,12 +2115,20 @@
                     btn.innerHTML = '⏳ Procesando...';
                     btn.disabled = true;
 
-                    // Aumentar escala para mejor calidad en redes sociales
+                    // IMPORTANTE: html2canvas captura mejor si el elemento no tiene scroll interno 
+                    // y tiene altura natural. Nuestra nueva estructura ya lo permite.
                     const canvas = await html2canvas(element, {
-                        scale: 2,
+                        scale: 2, // Alta calidad para redes sociales
                         useCORS: true,
                         backgroundColor: '#0f172a',
-                        logging: false
+                        logging: false,
+                        windowWidth: 1200, // Forzar ancho de renderizado
+                        onclone: (clonedDoc) => {
+                            // Asegurarse de que el clon sea visible y tenga altura completa
+                            const clonedElement = clonedDoc.getElementById('share-content-area');
+                            clonedElement.style.height = 'auto';
+                            clonedElement.style.maxHeight = 'none';
+                        }
                     });
 
                     const link = document.createElement('a');
