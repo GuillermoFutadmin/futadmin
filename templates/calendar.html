@@ -1099,12 +1099,14 @@
             <div class="panel-section">
                 <h3>Acciones</h3>
                 <div style="display: flex; flex-direction: column; gap: 10px;">
+                    {% if user_rol in ['Admin', 'Ejecutivo', 'Dueño de Liga'] %}
                     <button class="btn btn-primary btn-full" onclick="CalendarApp.promptGenerateFixtures()">
                         🎲 Generar Rol Automático
                     </button>
                     <button class="btn btn-accent btn-full" onclick="CalendarApp.autoScheduleAll()">
                         📅 Auto-Programar Horarios
                     </button>
+                    {% endif %}
                     <button class="btn btn-ghost btn-full" onclick="CalendarApp.refreshData()">
                         🔄 Actualizar
                     </button>
@@ -2228,9 +2230,10 @@
                 }
 
                 if (matches.length === 0) {
-                    container.innerHTML = emptyState('🎲', 'Sin Partidos Generados',
-                        'El rol aún no ha sido generado. Haz clic en "Generar Rol Automático" para crear los enfrentamientos.',
-                        `<button class="btn btn-primary" onclick="CalendarApp.promptGenerateFixtures()">🎲 Generar Rol Automático</button>`);
+                    const isAdmin = ['Admin', 'Ejecutivo', 'Dueño de Liga'].includes('{{ user_rol }}');
+                    const genBtn = isAdmin ? `<button class="btn btn-primary" onclick="CalendarApp.promptGenerateFixtures()">🎲 Generar Rol Automático</button>` : '';
+                    const emptyMsg = isAdmin ? 'El rol aún no ha sido generado. Haz clic en "Generar Rol Automático" para crear los enfrentamientos.' : 'El rol aún no ha sido generado. Un administrador creará los enfrentamientos pronto.';
+                    container.innerHTML = emptyState('🎲', 'Sin Partidos Generados', emptyMsg, genBtn);
                     return;
                 }
 
