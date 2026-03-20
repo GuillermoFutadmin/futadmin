@@ -907,7 +907,7 @@
             const user = tg.initDataUnsafe?.user;
             const telegram_id = user?.id || '5825342439';
             try {
-                let url = `/api/telegram/matches?telegram_id=${telegram_id}&torneo_id=${selectedTorneoId}&rol=${currentUser.rol}&equipo_id=${currentUser.equipo_id || ''}&estado=${matchStatusFilter}`;
+                let url = `/api/telegram/matches?telegram_id=${telegram_id}&torneo_id=${selectedTorneoId}&rol=${currentUser.rol}&equipo_id=${currentUser.equipo_id || ''}&liga_id=${currentUser.liga_id || ''}&estado=${matchStatusFilter}`;
                 if (paymentTeamFilterId) {
                     url += `&filter_team_id=${paymentTeamFilterId}`;
                 }
@@ -2050,6 +2050,7 @@
                 } else if (type === 'equipo') {
                     title.innerText = 'SELECCIONAR EQUIPO';
                     url = `/api/telegram/tournaments/teams?torneo_id=${id}&liga_id=${currentUser.liga_id || ''}&rol=${currentUser.rol}`;
+                    selectedTorneoId = id; // Asegurar que el ID del torneo esté guardado
                     nextType = drillPurpose === 'payments' ? 'payments' : 'roster';
                 }
 

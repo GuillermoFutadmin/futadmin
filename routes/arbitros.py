@@ -298,6 +298,7 @@ def telegram_get_matches():
     liga_id = request.args.get('liga_id', type=int)
     rol = request.args.get('rol')
     equipo_id = request.args.get('equipo_id', type=int)
+    filter_team_id = request.args.get('filter_team_id', type=int)
     estado = request.args.get('estado') # 'Completed', 'Scheduled'
     
     if not torneo_id:
@@ -305,19 +306,23 @@ def telegram_get_matches():
         
     query = Partido.query.filter_by(torneo_id=torneo_id)
     
-    # Seguridad: Si hay liga_id en el request, forzar que el partido pertenezca a esa liga
+    # Seguridad y Filtrado por Liga
+    allowed_admin_roles = ['admin', 'ejecutivo', 'dueño_liga', 'super_arbitro', 'arbitro', 'resultados']
     if liga_id:
         query = query.filter(Partido.liga_id == liga_id)
     elif rol not in ['admin', 'ejecutivo']:
-        # Si no es admin y no manda liga_id, no debería ver nada
+        # Si no es admin y no manda liga_id, restringir
         return jsonify([])
 
     if estado:
         query = query.filter_by(estado=estado)
     
-    # Si es dueño de equipo, solo ver sus partidos
+    # Si es dueño de equipo, solo ver sus partidos (prioridad)
     if rol == 'equipo' and equipo_id:
         query = query.filter((Partido.equipo_local_id == equipo_id) | (Partido.equipo_visitante_id == equipo_id))
+    # Si hay un filtro específico de equipo (ej: desde el sistema de pagos)
+    elif filter_team_id:
+        query = query.filter((Partido.equipo_local_id == filter_team_id) | (Partido.equipo_visitante_id == filter_team_id))
     
     partidos = query.order_by(Partido.fecha.asc(), Partido.hora.asc()).all()
     return jsonify([p.to_dict() for p in partidos])
