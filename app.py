@@ -2737,9 +2737,44 @@ def _get_stats_impl():
     # Geo Stats: Venues and Teams by State and Municipality (NACIONAL - Sin filtros de liga)
     geo_stats = {}
     try:
-        # Sedes por estado y municipio (Global)
-        venues_query = Cancha.query.all()
-        for c in venues_query:
+        # 1. Precargar Catálogos para evitar N+1
+        all_venues = Cancha.query.all()
+        venues_by_name = {c.nombre.strip().lower(): c for c in all_venues if c.nombre}
+        all_active_torneos = {t.id: t for t in Torneo.query.all()}
+        
+        # 2. Stats de Equipos en Masa (Goles, PJ, Wins)
+        # Obtenemos stats de todos los equipos en una sola pasada
+        # Win logic: (local_id = team_id AND goles_local > goles_visitante) OR (visitante_id = team_id AND goles_visitante > goles_local)
+        
+        # PJ y Goles por equipo (como local)
+        local_stats = db.session.query(
+            Partido.equipo_local_id.label('team_id'),
+            func.count(Partido.id).label('pj'),
+            func.sum(func.coalesce(Partido.goles_local, 0)).label('goles'),
+            func.sum(case([(Partido.goles_local > Partido.goles_visitante, 1)], else_=0)).label('wins')
+        ).filter(Partido.estado == 'Played').group_by(Partido.equipo_local_id).all()
+
+        # PJ y Goles por equipo (como visitante)
+        visit_stats = db.session.query(
+            Partido.equipo_visitante_id.label('team_id'),
+            func.count(Partido.id).label('pj'),
+            func.sum(func.coalesce(Partido.goles_visitante, 0)).label('goles'),
+            func.sum(case([(Partido.goles_visitante > Partido.goles_local, 1)], else_=0)).label('wins')
+        ).filter(Partido.estado == 'Played').group_by(Partido.equipo_visitante_id).all()
+
+        # Consolidar stats en un dict: team_id -> {pj, goles, wins}
+        consolidated_team_stats = {}
+        for s in local_stats:
+            consolidated_team_stats[s.team_id] = {'pj': s.pj, 'goles': int(s.goles or 0), 'wins': s.wins}
+        for s in visit_stats:
+            if s.team_id not in consolidated_team_stats:
+                consolidated_team_stats[s.team_id] = {'pj': 0, 'goles': 0, 'wins': 0}
+            consolidated_team_stats[s.team_id]['pj'] += s.pj
+            consolidated_team_stats[s.team_id]['goles'] += int(s.goles or 0)
+            consolidated_team_stats[s.team_id]['wins'] += s.wins
+
+        # 3. Mapeo de Sedes
+        for c in all_venues:
             st = c.estado or "Otro"
             mun = c.municipio or "Otro"
             key = f"{st}|{mun}"
@@ -2749,14 +2784,13 @@ def _get_stats_impl():
             if c.nombre not in geo_stats[key]["sedes_lista"]:
                 geo_stats[key]["sedes_lista"].append(c.nombre)
 
-        # Equipos por estado y municipio (Global)
-        teams_query = Equipo.query.all()
-        for e in teams_query:
-            torneo = Torneo.query.get(e.torneo_id) if e.torneo_id else None
+        # 4. Mapeo de Equipos
+        all_teams = Equipo.query.all()
+        for e in all_teams:
+            torneo = all_active_torneos.get(e.torneo_id)
             if torneo and torneo.cancha:
-                # Normalizar búsqueda para ignorar espacios al inicio/final
-                cancha_nombre = torneo.cancha.strip()
-                cancha_ref = Cancha.query.filter(Cancha.nombre.ilike(f"%{cancha_nombre}%")).first()
+                cancha_nombre = torneo.cancha.strip().lower()
+                cancha_ref = venues_by_name.get(cancha_nombre)
                 
                 if cancha_ref:
                     st = cancha_ref.estado or "Otro"
@@ -2765,62 +2799,27 @@ def _get_stats_impl():
                     if key not in geo_stats:
                         geo_stats[key] = {"estado": st, "municipio": mun, "sedes": 0, "sedes_lista": [], "equipos": 0, "equipos_lista": []}
                     
-                    # Evitar duplicados
-                    team_ids = [item['id'] for item in geo_stats[key]["equipos_lista"]]
-                    if e.id not in team_ids:
-                        # Calcular desempeño rápido (con protección para que no rompa el mapa)
-                        pj = 0
-                        eventos = 0
-                        wins = 0
-                        total_goles = 0
-                        try:
-                            pj = Partido.query.filter(
-                                (Partido.equipo_local_id == e.id) | (Partido.equipo_visitante_id == e.id),
-                                Partido.estado == 'Played'
-                            ).count()
-                            
-                            # Sumar goles de los marcadores (Fuente primaria solicitada por Ing)
-                            partidos_played = Partido.query.filter(
-                                (Partido.equipo_local_id == e.id) | (Partido.equipo_visitante_id == e.id),
-                                Partido.estado == 'Played'
-                            ).all()
-                            
-                            goles_sumados = 0
-                            wins = 0
-                            for p in partidos_played:
-                                if p.equipo_local_id == e.id:
-                                    goles_sumados += (p.goles_local or 0)
-                                    if (p.goles_local or 0) > (p.goles_visitante or 0):
-                                        wins += 1
-                                elif p.equipo_visitante_id == e.id:
-                                    goles_sumados += (p.goles_visitante or 0)
-                                    if (p.goles_visitante or 0) > (p.goles_local or 0):
-                                        wins += 1
-                            
-                            # Mantener eventos como referencia si se requiere detalle manual luego
-                            eventos = EventoPartido.query.filter_by(equipo_id=e.id, tipo='Goal').count()
-                            # Si los goles sumados son 0 pero los eventos > 0 (poco probable con esta fuente), usar eventos.
-                            total_goles = max(goles_sumados, eventos)
-                        except Exception as te:
-                            print(f"Error stats equipo {e.id}: {te}")
-
-                        geo_stats[key]["equipos"] += 1
-                        geo_stats[key]["equipos_lista"].append({
-                            "id": e.id,
-                            "nombre": e.nombre,
-                            "escudo_url": e.escudo_url or 'https://cdn-icons-png.flaticon.com/512/53/53283.png',
-                            "colonia": e.colonia,
-                            "colonia_geojson": e.colonia_geojson,
-                            "liga_nombre": e.liga.nombre if e.liga else "Independiente",
-                            "color": e.color,
-                            "stats": {
-                                "goles": total_goles,
-                                "pj": pj,
-                                "victorias": wins
-                            }
-                        })
+                    # Stats consolidadas
+                    t_stats = consolidated_team_stats.get(e.id, {'pj': 0, 'goles': 0, 'wins': 0})
+                    
+                    geo_stats[key]["equipos"] += 1
+                    geo_stats[key]["equipos_lista"].append({
+                        "id": e.id,
+                        "nombre": e.nombre,
+                        "escudo_url": e.escudo_url or 'https://cdn-icons-png.flaticon.com/512/53/53283.png',
+                        "colonia": e.colonia,
+                        "colonia_geojson": e.colonia_geojson,
+                        "liga_nombre": e.liga.nombre if e.liga else "Independiente",
+                        "color": e.color,
+                        "stats": {
+                            "goles": t_stats['goles'],
+                            "pj": t_stats['pj'],
+                            "victorias": t_stats['wins']
+                        }
+                    })
     except Exception as ge:
-        print(f"Error calculando geo_stats: {ge}")
+        import traceback
+        print(f"Error calculando geo_stats optimizado: {ge}\n{traceback.format_exc()}")
 
     try:
         total_jugadores = query_j.count()
@@ -3369,15 +3368,31 @@ def get_dashboard_stats():
         vencimientos_count = 0
         try:
             active_ligas = Liga.query.filter_by(activa=True).all()
+            
+            # Optimización N+1: Obtenemos todos los meses pagados de una vez
+            meses_pagados_query = db.session.query(
+                PagoCombo.liga_id,
+                func.sum(PagoCombo.cantidad_meses).label('total_meses')
+            ).filter(PagoCombo.liga_id.in_([l.id for l in active_ligas])).group_by(PagoCombo.liga_id).all()
+            
+            meses_map = {m.liga_id: m.total_meses for m in meses_pagados_query}
+
             for l in active_ligas:
-                v_str = l.vencimiento_actual
-                if v_str:
-                    v_date = datetime.strptime(v_str, '%Y-%m-%d').date()
-                    # Si ya venció o vence en los próximos 10 días
-                    if v_date <= limit_date:
-                        vencimientos_count += 1
+                # Calculamos el vencimiento manualmente aquí para evitar la property N+1
+                total_meses = meses_map.get(l.id, 0)
+                if not l.fecha_registro:
+                    continue
+                
+                # Logic from model vencimiento_actual: fecha_registro + total_meses
+                from dateutil.relativedelta import relativedelta
+                v_date = l.fecha_registro.date() + relativedelta(months=total_meses)
+                
+                # Si ya venció o vence en los próximos 10 días
+                if v_date <= limit_date:
+                    vencimientos_count += 1
         except Exception as e_venc:
-            print(f"Error calculando vencimientos dashboard: {e_venc}")
+            import traceback
+            print(f"Error calculando vencimientos dashboard optimizado: {e_venc}\n{traceback.format_exc()}")
 
         return jsonify({
             "partidos_hoy": partidos_rango,
