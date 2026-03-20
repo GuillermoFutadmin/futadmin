@@ -508,10 +508,13 @@ export class FinanceModule {
         if (equipoId) {
             selectPartido.innerHTML = '<option value="">Cargando partidos...</option>';
             try {
-                const partidos = await Core.fetchAPI(`/api/partidos?equipo_id=${equipoId}`);
+                // Notar: /api/partidos usa paginación, por lo que los resultados están en response.items
+                const response = await Core.fetchAPI(`/api/partidos?equipo_id=${equipoId}&per_page=100`);
+                const matches = (response && response.items) ? response.items : (Array.isArray(response) ? response : []);
+                
                 selectPartido.innerHTML = '<option value="">-- Sin vincular a partido específico --</option>';
-                if (partidos && partidos.length > 0) {
-                    partidos.forEach(p => {
+                if (matches.length > 0) {
+                    matches.forEach(p => {
                         const esLocal = Number(p.equipo_local_id) === Number(equipoId);
                         const rival = esLocal ? p.equipo_visitante : p.equipo_local;
                         const fecha = p.fecha ? ` | ${p.fecha}` : '';
