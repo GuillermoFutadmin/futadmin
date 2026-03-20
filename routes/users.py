@@ -159,6 +159,14 @@ def update_user(user_id):
         user.nombre = data.get('nombre', user.nombre)
         user.activo = data.get('activo', user.activo)
         
+        # Actualizar email con validación de duplicados
+        new_email = data.get('email', '').strip()
+        if new_email and new_email != user.email:
+            existing = Usuario.query.filter_by(email=new_email).first()
+            if existing and existing.id != user_id:
+                return jsonify({"success": False, "error": f"El correo '{new_email}' ya está registrado en otra cuenta."}), 400
+            user.email = new_email
+        
         # Validar cambio de rol a principal
         new_rol = data.get('rol')
         if new_rol in ['dueño_liga', 'super_arbitro'] and new_rol != user.rol:
