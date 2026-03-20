@@ -848,14 +848,27 @@ def telegram_get_tournament_teams():
     if not torneo_id:
         return jsonify({"error": "Torneo ID requerido"}), 400
         
+    # Roles que pueden ver equipos (básicamente todos los que usan la app)
+    allowed_roles = ['admin', 'ejecutivo', 'dueño_liga', 'super_arbitro', 'arbitro', 'equipo', 'resultados']
+    if rol not in allowed_roles and not (not rol and liga_id):
+         return jsonify([])
+
+    # Intentar búsqueda directa
     query = Equipo.query.filter_by(torneo_id=torneo_id)
-    
     if liga_id:
         query = query.filter_by(liga_id=liga_id)
-    elif rol not in ['admin', 'ejecutivo', 'dueño_liga']:
-        return jsonify([])
-
+    
     teams = query.all()
+    
+    # Si no hay resultados directos, buscar vía Inscripciones
+    if not teams:
+        from models import Inscripcion
+        inscripciones = Inscripcion.query.filter_by(torneo_id=torneo_id).all()
+        teams = [ins.equipo for ins in inscripciones if ins.equipo]
+        # Aplicar filtro de liga si existe
+        if liga_id:
+            teams = [t for t in teams if t.liga_id == liga_id]
+
     return jsonify([{
         "id": t.id,
         "nombre": t.nombre,

@@ -112,6 +112,25 @@
             background: rgba(255, 255, 255, 0.1);
         }
 
+        .btn-payment {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: white;
+            padding: 8px 12px;
+            font-size: 0.75rem;
+            border-radius: 8px;
+            font-weight: 700;
+            margin-top: 10px;
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);
+            border: none;
+            width: auto;
+            display: inline-block;
+        }
+
+        .btn-payment:active {
+            transform: scale(0.95);
+            background: #b45309;
+        }
+
         .teams {
             display: flex;
             align-items: center;
@@ -728,6 +747,7 @@
         let isTimerPaused = false;
         let selectedTorneoId = null;
         let currentMatches = [];
+        let paymentTeamFilterId = null; // Para filtrar partidos de un equipo en pagos
 
         function showView(id) {
             const views = ['login-view', 'menu-view', 'tournament-view', 'list-view', 'match-view', 'checkin-view', 'halftime-view', 'registration-view', 'payments-view', 'ids-lookup-view', 'drilldown-view', 'submenu-view'];
@@ -857,6 +877,7 @@
         let rosterMode = false;
         function selectTournament(id, name) {
             selectedTorneoId = id;
+            paymentTeamFilterId = null; // Resetear filtro de equipo al cambiar torneo
             document.getElementById('selected-torneo-name').innerText = name;
             if (rosterMode) {
                 loadTeamsForRoster();
@@ -886,7 +907,10 @@
             const user = tg.initDataUnsafe?.user;
             const telegram_id = user?.id || '5825342439';
             try {
-                const url = `/api/telegram/matches?telegram_id=${telegram_id}&torneo_id=${selectedTorneoId}&rol=${currentUser.rol}&equipo_id=${currentUser.equipo_id || ''}&estado=${matchStatusFilter}`;
+                let url = `/api/telegram/matches?telegram_id=${telegram_id}&torneo_id=${selectedTorneoId}&rol=${currentUser.rol}&equipo_id=${currentUser.equipo_id || ''}&estado=${matchStatusFilter}`;
+                if (paymentTeamFilterId) {
+                    url += `&filter_team_id=${paymentTeamFilterId}`;
+                }
                 const res = await fetch(url);
                 currentMatches = await res.json();
                 const container = document.getElementById('matches-container');
@@ -915,7 +939,19 @@
                         </div>
                         <div style="display:flex; justify-content: space-between; align-items: flex-end; margin-top: 12px;">
                             <div style="font-size: 0.75rem; color: var(--muted); line-height: 1.4;">📅 ${m.fecha || ''} <span style="color: var(--text);">${m.hora || ''}</span><br>👤 ${m.arbitro_nombre || 'POR ASIGNAR'}</div>
-                            ${canAdopt ? `<button class="btn btn-primary" onclick="event.stopPropagation(); adoptMatch(${m.id})" style="padding: 6px 12px; font-size: 0.7rem; width: auto; border-radius: 8px;">ADOPTAR</button>` : ''}
+                            <div style="display:flex; flex-direction: column; gap: 5px; align-items: flex-end;">
+                                ${canAdopt ? `<button class="btn btn-primary" onclick="event.stopPropagation(); adoptMatch(${m.id})" style="padding: 6px 12px; font-size: 0.7rem; width: auto; border-radius: 8px;">ADOPTAR</button>` : ''}
+                                ${canPay ? `
+                                    <div style="display:flex; gap: 5px;">
+                                        ${currentUser.rol === 'equipo' ? `
+                                            <button class="btn-payment" onclick="event.stopPropagation(); openPaymentForm(${currentUser.equipo_id}, 'Arbitraje', ${m.id})">PAGAR ARBITRAJE</button>
+                                        ` : `
+                                            <button class="btn-payment" style="background: var(--primary); color: #000;" onclick="event.stopPropagation(); openPaymentForm(${m.equipo_local_id}, 'Arbitraje', ${m.id})">PAGAR LOCAL</button>
+                                            <button class="btn-payment" onclick="event.stopPropagation(); openPaymentForm(${m.equipo_visitante_id}, 'Arbitraje', ${m.id})">PAGAR VISITA</button>
+                                        `}
+                                    </div>
+                                ` : ''}
+                            </div>
                         </div>
                     </div>
                 `}).join('');
@@ -2049,7 +2085,7 @@
                                 </button>`;
                     }
                     if (nextType === 'payments' && drillPurpose === 'payments') {
-                        return `<button class="btn btn-primary" onclick="openPaymentForm(${item.id}, '${paymentTypeFilter}')" style="text-align:left; padding:15px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:var(--text); font-weight:600;">
+                         return `<button class="btn btn-primary" onclick="showTeamMatchesForPayment(${item.id}, '${label.replace(/'/g, "\\'")}')" style="text-align:left; padding:15px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:var(--text); font-weight:600;">
                                     ${label}
                                 </button>`;
                     }
@@ -2065,6 +2101,14 @@
                 console.error(e);
                 container.innerHTML = '<p style="color:var(--error); text-align:center;">Error al cargar datos.</p>';
             }
+        }
+
+        async function showTeamMatchesForPayment(teamId, teamName) {
+            paymentTeamFilterId = teamId;
+            drillStack.push({ type: 'team-matches', id: teamId, title: 'PAGAR: ' + teamName });
+            const title = document.getElementById('drilldown-title');
+            if (title) title.innerText = 'PARTIDOS: ' + teamName;
+            loadMatches();
         }
 
         function showTournamentsFromMenu() {
@@ -2104,7 +2148,7 @@
         }
 
         let currentPaymentType = 'Inscripción';
-        async function openPaymentForm(teamId, type = 'Inscripción') {
+        async function openPaymentForm(teamId, type = 'Inscripción', matchId = null) {
             currentPaymentTeamId = teamId;
             currentPaymentType = type;
             showView('payment-form-view');
@@ -2152,6 +2196,16 @@
                         matchSelect.innerHTML += data.partidos_pendientes.map(m => 
                             `<option value="${m.id}" data-costo="${m.costo}">${m.label}</option>`
                         ).join('');
+                        
+                        // Pre-seleccionar si viene matchId
+                        if (matchId) {
+                            matchSelect.value = matchId;
+                            // Actualizar monto automáticamente
+                            const opt = matchSelect.options[matchSelect.selectedIndex];
+                            if (opt && opt.dataset.costo) {
+                                document.getElementById('pay-amount').value = opt.dataset.costo;
+                            }
+                        }
                     } else {
                         matchSelect.innerHTML = '<option value="">No hay partidos pendientes</option>';
                     }
