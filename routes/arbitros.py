@@ -660,24 +660,71 @@ def telegram_inscription_status():
     if not equipo_id:
         return jsonify({"error": "Equipo ID requerido"}), 400
     
-    equipo = Equipo.query.get_or_404(equipo_id)
-    # Buscar inscripcion activa en el torneo del equipo
-    insc = Inscripcion.query.filter_by(equipo_id=equipo_id, torneo_id=equipo.torneo_id).first()
-    
-    if not insc:
-        return jsonify({
-            "torneo_nombre": equipo.torneo.nombre,
-            "costo_inscripcion": equipo.torneo.costo_inscripcion,
-            "monto_pactado": equipo.torneo.costo_inscripcion,
-            "saldo_pendiente": equipo.torneo.costo_inscripcion
-        })
-
-    return jsonify({
-        "torneo_nombre": equipo.torneo.nombre,
-        "costo_inscripcion": equipo.torneo.costo_inscripcion,
-        "monto_pactado": insc.monto_pactado_inscripcion,
         "saldo_pendiente": float(insc.saldo_pendiente)
     })
+
+@arbitros_bp.route('/api/telegram/payment-context', methods=['GET'])
+def telegram_payment_context():
+    equipo_id = request.args.get('equipo_id', type=int)
+    tipo = request.args.get('tipo', 'Inscripción')
+    
+    if not equipo_id:
+        return jsonify({"error": "Equipo ID requerido"}), 400
+    
+    equipo = Equipo.query.get_or_404(equipo_id)
+    torneo = equipo.torneo
+    
+    res = {
+        "equipo_nombre": equipo.nombre,
+        "torneo_nombre": torneo.nombre if torneo else "Sin Torneo",
+        "tipo": tipo
+    }
+    
+    if tipo == 'Inscripción':
+        insc = Inscripcion.query.filter_by(equipo_id=equipo_id, torneo_id=equipo.torneo_id).first()
+        if not insc:
+            res.update({
+                "monto_pactado": float(torneo.costo_inscripcion or 0) if torneo else 0,
+                "saldo_pendiente": float(torneo.costo_inscripcion or 0) if torneo else 0
+            })
+        else:
+            res.update({
+                "monto_pactado": float(insc.monto_pactado_inscripcion or 0),
+                "saldo_pendiente": float(insc.saldo_pendiente or 0)
+            })
+    else:
+        # Arbitraje: Buscar partidos que NO tengan pago de arbitraje de este equipo
+        # Simplificación: Lista de partidos del equipo en este torneo
+        partidos = Partido.query.filter(
+            Partido.torneo_id == equipo.torneo_id,
+            ((Partido.equipo_local_id == equipo_id) | (Partido.equipo_visitante_id == equipo_id))
+        ).order_by(Partido.fecha.desc()).all()
+        
+        # Filtrar los que ya tienen pago de tipo 'Arbitraje' por este equipo
+        pending_matches = []
+        for p in partidos:
+            pago_existente = Pago.query.join(Inscripcion).filter(
+                Pago.partido_id == p.id,
+                Pago.tipo == 'Arbitraje',
+                Inscripcion.equipo_id == equipo_id
+            ).first()
+            
+            if not pago_existente:
+                equipo_local = Equipo.query.get(p.equipo_local_id)
+                equipo_vis = Equipo.query.get(p.equipo_visitante_id)
+                label = f"{p.fecha} | {equipo_local.nombre if equipo_local else '?'} vs {equipo_vis.nombre if equipo_vis else '?'}"
+                pending_matches.append({
+                    "id": p.id,
+                    "label": label,
+                    "costo": float(torneo.costo_arbitraje or 0) if torneo else 0
+                })
+        
+        res.update({
+            "partidos_pendientes": pending_matches,
+            "costo_base": float(torneo.costo_arbitraje or 0) if torneo else 0
+        })
+        
+    return jsonify(res)
 
 @arbitros_bp.route('/api/telegram/payments/register', methods=['POST'])
 def telegram_register_payment():
@@ -688,6 +735,7 @@ def telegram_register_payment():
     tipo = data.get('tipo', 'Inscripción')
     comentario = data.get('comentario', '')
     foto_url = data.get('foto_url', '')
+    partido_id = data.get('partido_id') # Nuevo
     
     if not equipo_id or not monto:
         return jsonify({"error": "Faltan datos obligatorios"}), 400
@@ -696,7 +744,6 @@ def telegram_register_payment():
     # Asegurar que exista la inscripción
     insc = Inscripcion.query.filter_by(equipo_id=equipo.id, torneo_id=equipo.torneo_id).first()
     if not insc:
-        # Crear inscripción si no existe (con el costo base del torneo)
         insc = Inscripcion(
             equipo_id=equipo.id,
             torneo_id=equipo.torneo_id,
@@ -712,24 +759,37 @@ def telegram_register_payment():
         tipo=tipo,
         metodo=metodo,
         comentario=comentario,
+        partido_id=partido_id, # Vincular al partido si aplica
         liga_id=equipo.liga_id,
         torneo_id=equipo.torneo_id
     )
-    # Si hay foto_url, podríamos guardarla en comentario o extender el modelo
-    # Por ahora en comentario si es necesario o si Pago tiene campo (no lo vi)
     if foto_url:
-        nuevo_pago.comentario = f"{comentario} [Foto: {foto_url}]".strip()
+        nuevo_pago.foto_url = foto_url # Soportar campo foto_url en Pago si existe
+        # Si no existe, lo metemos en comentario como fallback
+        if not hasattr(nuevo_pago, 'foto_url'):
+            nuevo_pago.comentario = f"{comentario} [Foto: {foto_url}]".strip()
 
     db.session.add(nuevo_pago)
     db.session.commit()
     
+    # Datos para el ticket digital
+    partido_label = "N/A"
+    if partido_id:
+        p = Partido.query.get(partido_id)
+        if p:
+            el = Equipo.query.get(p.equipo_local_id)
+            ev = Equipo.query.get(p.equipo_visitante_id)
+            partido_label = f"{el.nombre if el else '?'} vs {ev.nombre if ev else '?'}"
+
     return jsonify({
         "success": True, 
         "pago_id": nuevo_pago.id,
         "equipo_nombre": equipo.nombre,
-        "torneo_nombre": equipo.torneo.nombre,
+        "torneo_nombre": equipo.torneo.nombre if equipo.torneo else "N/A",
         "monto": nuevo_pago.monto,
-        "fecha": nuevo_pago.fecha.strftime('%Y-%m-%d %H:%M')
+        "tipo": tipo,
+        "partido_info": partido_label,
+        "fecha": nuevo_pago.fecha.strftime('%d/%m/%Y %H:%M')
     })
 
 @arbitros_bp.route('/api/telegram/payments', methods=['GET'])

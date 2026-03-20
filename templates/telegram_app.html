@@ -2049,7 +2049,7 @@
                                 </button>`;
                     }
                     if (nextType === 'payments' && drillPurpose === 'payments') {
-                        return `<button class="btn btn-primary" onclick="showPayments(${item.id})" style="text-align:left; padding:15px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:var(--text); font-weight:600;">
+                        return `<button class="btn btn-primary" onclick="openPaymentForm(${item.id}, '${paymentTypeFilter}')" style="text-align:left; padding:15px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:var(--text); font-weight:600;">
                                     ${label}
                                 </button>`;
                     }
@@ -2103,31 +2103,70 @@
             } catch (e) { alert("Error al cargar pagos"); }
         }
 
-        let currentPaymentTeamId = null;
-
-        async function openPaymentForm(teamId) {
+        let currentPaymentType = 'Inscripción';
+        async function openPaymentForm(teamId, type = 'Inscripción') {
             currentPaymentTeamId = teamId;
+            currentPaymentType = type;
             showView('payment-form-view');
             
-            // Limpiar formulario y estados
+            // UI Reset
             document.getElementById('pay-amount').value = '';
             document.getElementById('pay-photo-url').value = '';
             document.getElementById('pay-photo-status').innerText = 'Sin archivo';
             document.getElementById('pay-torneo-name').innerText = 'CARGANDO...';
             document.getElementById('pay-team-name').innerText = 'CARGANDO...';
+            document.getElementById('pay-type-label').innerText = type.toUpperCase();
+            
+            const matchSelectorWrap = document.getElementById('pay-match-selector-wrap');
+            const matchSelect = document.getElementById('pay-match-id');
+            matchSelectorWrap.style.display = (type === 'Arbitraje') ? 'block' : 'none';
+            matchSelect.innerHTML = '<option value="">Seleccionar partido...</option>';
+
+            // Adaptar colores del formulario
+            const formCard = document.querySelector('#payment-form-view .card');
+            if (type === 'Arbitraje') {
+                formCard.style.borderTopColor = 'var(--warning)';
+                document.getElementById('pay-type-label').style.color = 'var(--warning)';
+            } else {
+                formCard.style.borderTopColor = 'var(--secondary)';
+                document.getElementById('pay-type-label').style.color = 'var(--primary)';
+            }
             
             try {
-                const res = await fetch(`/api/telegram/inscription-status?equipo_id=${teamId}`);
+                const res = await fetch(`/api/telegram/payment-context?equipo_id=${teamId}&tipo=${type}`);
                 const data = await res.json();
                 
                 document.getElementById('pay-torneo-name').innerText = data.torneo_nombre.toUpperCase();
                 document.getElementById('pay-team-name').innerText = data.equipo_nombre || 'EQUIPO';
-                document.getElementById('pay-total-pactado').innerText = `$${data.monto_pactado}`;
-                document.getElementById('pay-saldo-pendiente').innerText = `$${data.saldo_pendiente}`;
-                document.getElementById('pay-amount').value = data.saldo_pendiente;
+                
+                if (type === 'Inscripción') {
+                    document.getElementById('pay-total-pactado').innerText = `$${data.monto_pactado}`;
+                    document.getElementById('pay-saldo-pendiente').innerText = `$${data.saldo_pendiente}`;
+                    document.getElementById('pay-amount').value = data.saldo_pendiente;
+                } else {
+                    document.getElementById('pay-total-pactado').innerText = `$${data.costo_base}`;
+                    document.getElementById('pay-saldo-pendiente').innerText = 'PENDIENTE';
+                    document.getElementById('pay-amount').value = data.costo_base;
+                    
+                    if (data.partidos_pendientes && data.partidos_pendientes.length > 0) {
+                        matchSelect.innerHTML += data.partidos_pendientes.map(m => 
+                            `<option value="${m.id}" data-costo="${m.costo}">${m.label}</option>`
+                        ).join('');
+                    } else {
+                        matchSelect.innerHTML = '<option value="">No hay partidos pendientes</option>';
+                    }
+                }
             } catch (e) {
                 console.error(e);
-                alert("Error al cargar estado de inscripción");
+                alert("Error al cargar contexto de pago");
+            }
+        }
+
+        function updatePayAmountFromMatch() {
+            const sel = document.getElementById('pay-match-id');
+            const opt = sel.options[sel.selectedIndex];
+            if (opt && opt.dataset.costo) {
+                document.getElementById('pay-amount').value = opt.dataset.costo;
             }
         }
 
@@ -2160,9 +2199,14 @@
 
         async function submitPayment() {
             const amount = document.getElementById('pay-amount').value;
+            const partidoId = document.getElementById('pay-match-id').value;
+
             if (!amount || amount <= 0) {
                 alert("Ingresa un monto válido");
                 return;
+            }
+            if (currentPaymentType === 'Arbitraje' && !partidoId) {
+                if (!confirm("No has seleccionado un partido. ¿Deseas registrar un pago de arbitraje general sin vincular a un partido?")) return;
             }
 
             const btn = document.getElementById('btn-submit-payment');
@@ -2178,7 +2222,9 @@
                         monto: amount,
                         metodo: document.getElementById('pay-method').value,
                         foto_url: document.getElementById('pay-photo-url').value,
-                        tipo: 'Inscripción'
+                        tipo: currentPaymentType,
+                        partido_id: partidoId || null,
+                        collector_name: (currentUser && currentUser.nombre) ? currentUser.nombre : 'Admin'
                     })
                 });
 
@@ -2198,20 +2244,33 @@
 
         function showTicket(data) {
             document.getElementById('ticket-team').innerText = data.equipo_nombre.toUpperCase();
-            document.getElementById('ticket-torneo').innerText = data.torneo_nombre.toUpperCase();
+            document.getElementById('ticket-torneo').innerText = (data.torneo_nombre || 'N/A').toUpperCase();
             document.getElementById('ticket-amount').innerText = `$${parseFloat(data.monto).toFixed(2)}`;
             document.getElementById('ticket-date').innerText = data.fecha;
             document.getElementById('ticket-id').innerText = `ID: #${String(data.pago_id).padStart(6, '0')}`;
             
-            document.getElementById('ticket-type-badge-inline').innerText = 'Inscripción';
+            document.getElementById('ticket-type-badge-inline').innerText = data.tipo;
+            
             const typeBadge = document.getElementById('ticket-type-badge');
-            if (typeBadge) {
+            const extraRow = document.getElementById('ticket-extra-info-row');
+            
+            if (data.tipo === 'Arbitraje') {
+                typeBadge.innerText = '⚖️ PAGO DE ARBITRAJE';
+                typeBadge.style.background = 'rgba(251,191,36,0.1)';
+                typeBadge.style.color = 'var(--warning)';
+                
+                if (data.partido_info && data.partido_info !== 'N/A') {
+                    extraRow.style.display = 'flex';
+                    document.getElementById('ticket-extra-info').innerText = data.partido_info;
+                } else {
+                    extraRow.style.display = 'none';
+                }
+            } else {
                 typeBadge.innerText = '💳 PAGO DE INSCRIPCIÓN';
                 typeBadge.style.background = 'rgba(0,242,255,0.1)';
                 typeBadge.style.color = 'var(--primary)';
+                extraRow.style.display = 'none';
             }
-            const extraRow = document.getElementById('ticket-extra-info-row');
-            if (extraRow) extraRow.style.display = 'none';
             
             showView('ticket-view');
         }
@@ -2239,12 +2298,12 @@
             // Dibujar textos
             ctx.textAlign = 'center';
             ctx.fillStyle = 'white';
-            ctx.font = 'bold 40px Inter, Arial';
-            ctx.fillText('FUTADMIN', width/2, 80);
+            ctx.font = 'bold 44px Outfit, Inter, Arial';
+            ctx.fillText('FUTADMIN PRO', width/2, 80);
             
-            ctx.font = '200 16px Inter, Arial';
-            ctx.fillStyle = '#888';
-            ctx.fillText('COMPROBANTE OFICIAL', width/2, 110);
+            ctx.font = '700 18px Outfit, Inter, Arial';
+            ctx.fillStyle = (document.getElementById('ticket-type-badge-inline').innerText === 'Arbitraje') ? '#fbbf24' : '#00f2ff';
+            ctx.fillText('COMPROBANTE DE APORTACIÓN', width/2, 115);
 
             ctx.font = 'bold 36px Inter, Arial';
             ctx.fillStyle = 'white';
@@ -2256,57 +2315,65 @@
 
             // Caja de datos
             ctx.fillStyle = 'rgba(255,255,255,0.03)';
-            ctx.fillRect(40, 300, width - 80, 230);
+            ctx.fillRect(40, 300, width - 80, 280);
             
             ctx.textAlign = 'left';
-            ctx.font = '22px Inter, Arial';
-            ctx.fillStyle = '#888';
-            ctx.fillText('Equipo:', 60, 350);
-            ctx.fillText('Torneo:', 60, 400);
-            ctx.fillText('Concepto:', 60, 450);
+            ctx.font = '20px Outfit, Inter, Arial';
+            ctx.fillStyle = '#94a3b8';
+            ctx.fillText('EQUIPO:', 60, 350);
+            ctx.fillText('TORNEO:', 60, 400);
+            ctx.fillText('CONCEPTO:', 60, 450);
             
             ctx.textAlign = 'right';
             ctx.fillStyle = 'white';
-            ctx.font = 'bold 22px Inter, Arial';
+            ctx.font = 'bold 22px Outfit, Inter, Arial';
             ctx.fillText(document.getElementById('ticket-team').innerText, width - 60, 350);
-            ctx.font = 'bold 18px Inter, Arial';
-            // Limit text length for torneo and extra info
+            ctx.font = 'bold 20px Outfit, Inter, Arial';
             let torneoText = document.getElementById('ticket-torneo').innerText;
             if (torneoText.length > 28) torneoText = torneoText.substring(0, 25) + '...';
             ctx.fillText(torneoText, width - 60, 400);
             
-            ctx.fillStyle = '#00ff88';
-            ctx.fillText(document.getElementById('ticket-type-badge-inline').innerText, width - 60, 450);
+            const typeValue = document.getElementById('ticket-type-badge-inline').innerText;
+            ctx.fillStyle = (typeValue === 'Arbitraje') ? '#fbbf24' : '#00f2ff';
+            ctx.fillText(typeValue.toUpperCase(), width - 60, 450);
 
             // Draw extra info row if it is visible
+            let currentY = 500;
             const extraInfoRow = document.getElementById('ticket-extra-info-row');
             if (extraInfoRow && extraInfoRow.style.display !== 'none') {
                 ctx.textAlign = 'left';
-                ctx.font = '22px Inter, Arial';
-                ctx.fillStyle = '#888';
-                ctx.fillText('Partido:', 60, 500);
+                ctx.font = '20px Outfit, Inter, Arial';
+                ctx.fillStyle = '#94a3b8';
+                ctx.fillText('PARTIDO:', 60, currentY);
 
                 ctx.textAlign = 'right';
-                ctx.font = 'bold 18px Inter, Arial';
+                ctx.font = 'bold 18px Outfit, Inter, Arial';
                 ctx.fillStyle = 'white';
                 let extraText = document.getElementById('ticket-extra-info').innerText;
                 if (extraText.length > 28) extraText = extraText.substring(0, 25) + '...';
-                ctx.fillText(extraText, width - 60, 500);
+                ctx.fillText(extraText, width - 60, currentY);
+                currentY += 50;
             }
             
-            // Total
-            ctx.textAlign = 'center';
-            ctx.font = 'bold 24px Inter, Arial';
-            ctx.fillStyle = '#888';
-            ctx.fillText('Total Pagado:', width/2, 570);
-            ctx.font = 'bold 60px Inter, Arial';
-            ctx.fillStyle = '#00ff88';
-            ctx.fillText(document.getElementById('ticket-amount').innerText, width/2, 640);
+            // Total Bar Style
+            const barY = 640;
+            const barColor = (typeValue === 'Arbitraje') ? '#fbbf24' : '#00f2ff';
+            ctx.fillStyle = barColor;
+            ctx.fillRect(40, barY, width - 80, 110);
             
-            // ID
+            ctx.textAlign = 'center';
+            ctx.font = 'bold 20px Outfit, Inter, Arial';
+            ctx.fillStyle = (typeValue === 'Arbitraje') ? '#1e1b4b' : '#003333';
+            ctx.fillText('TOTAL PAGADO', width/2, barY + 38);
+            ctx.font = 'bold 48px Outfit, Inter, Arial';
+            ctx.fillText(document.getElementById('ticket-amount').innerText, width/2, barY + 88);
+            
+            // ID and Footer
             ctx.font = 'bold 16px monospace';
-            ctx.fillStyle = '#555';
-            ctx.fillText(document.getElementById('ticket-id').innerText, width/2, height - 60);
+            ctx.fillStyle = '#64748b';
+            ctx.fillText(document.getElementById('ticket-id').innerText, width/2, height - 70);
+            ctx.font = '14px Outfit, Inter, Arial';
+            ctx.fillText('Comprobante Digital Verificado • FutAdmin Pro V2.5', width/2, height - 40);
 
             // Convertir a imagen y descargar
             const link = document.createElement('a');
@@ -2614,13 +2681,20 @@
                     <div id="pay-total-pactado" style="font-weight:700;">$0</div>
                 </div>
                 <div style="text-align:center; border-left:1px solid rgba(255,255,255,0.1); border-right:1px solid rgba(255,255,255,0.1); padding:0 15px;">
-                    <div style="font-size:0.6rem; color:var(--muted);">SALDO</div>
-                    <div id="pay-saldo-pendiente" style="font-weight:800; color:var(--error);">$0</div>
+                    <div style="font-size:0.6rem; color:var(--muted);">ESTADO</div>
+                    <div id="pay-saldo-pendiente" style="font-weight:800; color:var(--error); font-size:0.75rem;">$0</div>
                 </div>
                 <div style="text-align:center;">
                     <div style="font-size:0.6rem; color:var(--muted);">TIPO</div>
-                    <div style="font-weight:700; color:var(--primary);">INSCRIPCIÓN</div>
+                    <div id="pay-type-label" style="font-weight:700; color:var(--primary); font-size:0.7rem;">INSCRIPCIÓN</div>
                 </div>
+            </div>
+
+            <div id="pay-match-selector-wrap" style="margin-bottom:15px; display:none;">
+                <label style="font-size:0.6rem; color:var(--muted); font-weight:700;">SELECCIONAR PARTIDO (ARBITRAJE)</label>
+                <select id="pay-match-id" class="btn btn-outline" onchange="updatePayAmountFromMatch()" style="text-align: left; margin-top:4px; width:100%; height:45px; background:rgba(0,0,0,0.2); color:white; font-size:0.8rem;">
+                    <option value="">Seleccionar partido...</option>
+                </select>
             </div>
 
             <div style="margin-bottom:15px;">
