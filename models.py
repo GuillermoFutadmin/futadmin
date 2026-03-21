@@ -193,11 +193,10 @@ class Torneo(db.Model):
                 .filter(Equipo.torneo_id == self.id).scalar() or 0
             
             # Verificar usuario asociado (solo si hay árbitro)
-            if self.arbitro_id and self.responsable:
-                email = self.responsable.email
-                if email:
-                    # Usamos una consulta existencial simple
-                    tiene_usuario = db.session.query(Usuario.id).filter(Usuario.email == email).first() is not None
+            if self.arbitro_id:
+                arb = db.session.query(Arbitro).get(self.arbitro_id)
+                if arb and arb.email:
+                    tiene_usuario = db.session.query(Usuario.id).filter(Usuario.email == arb.email).first() is not None
             
             # El municipio de la cancha suele ser estático o ya conocido
             # Para evitar N+1 en canchas por cada torneo, si self.cancha existe, podríamos cachearlo 

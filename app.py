@@ -2636,31 +2636,52 @@ def run_leaderboard_query(id):
 
 @app.route('/api/torneos/<int:id>/report', methods=['GET'])
 def get_torneo_report(id):
-    # Combinar Standings, Líderes y Detalles básicos en un solo objeto para el reporte PDF
-    torneo = Torneo.query.get_or_404(id)
-    
-    # Standings
-    standings_response = get_torneo_standings(id)
-    standings_data = standings_response.get_json()
-    
-    # Leaderboard
-    leaderboard_response = run_leaderboard_query(id)
-    leaderboard_data = leaderboard_response.get_json()
-    
-    # Campeón (buscar el último ganador de la Final si existe)
-    final = Partido.query.filter_by(torneo_id=id, fase='Final', estado='Played').first()
-    campeon = None
-    if final:
-        winner = Equipo.query.get(final.ganador_id) if final.ganador_id else None
-        if winner:
-            campeon = winner.nombre
-    
-    return jsonify({
-        "torneo": torneo.to_dict(),
-        "campeon": campeon,
-        "standings": standings_data,
-        "leaderboard": leaderboard_data
-    })
+    try:
+        # Combinar Standings, Líderes y Detalles básicos en un solo objeto para el reporte PDF
+        torneo = Torneo.query.get_or_404(id)
+        
+        # Standings (Llamada interna segura)
+        try:
+            standings_response = get_torneo_standings(id)
+            standings_data = standings_response.get_json()
+        except Exception as e:
+            print(f"Error in standings for report {id}: {e}")
+            standings_data = []
+
+        # Leaderboard (Llamada interna segura)
+        try:
+            leaderboard_response = run_leaderboard_query(id)
+            leaderboard_data = leaderboard_response.get_json()
+        except Exception as e:
+            print(f"Error in leaderboard for report {id}: {e}")
+            leaderboard_data = {"goles": [], "amarillas": [], "rojas": [], "porteros": []}
+        
+        # Campeón (buscar el último ganador de la Final si existe)
+        campeon = None
+        try:
+            final = Partido.query.filter_by(torneo_id=id, fase='Final', estado='Played').first()
+            if final:
+                winner = Equipo.query.get(final.ganador_id) if final.ganador_id else None
+                if winner:
+                    campeon = winner.nombre
+        except Exception as e:
+            print(f"Error calculating campeon for report {id}: {e}")
+        
+        return jsonify({
+            "torneo": torneo.to_dict(),
+            "campeon": campeon,
+            "standings": standings_data,
+            "leaderboard": leaderboard_data
+        })
+    except Exception as e:
+        import traceback
+        error_msg = f"DIAG REPORT ERROR (ID {id}): {str(e)}"
+        print(error_msg)
+        print(traceback.format_exc())
+        return jsonify({
+            "error": "Error al generar datos del reporte",
+            "details": str(e)
+        }), 500
 
 @app.route('/')
 def index():
