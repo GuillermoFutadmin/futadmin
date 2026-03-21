@@ -319,9 +319,8 @@ def telegram_get_matches():
         if arb:
             query = query.filter(Partido.arbitro_id == arb.id)
         else:
-            # Si no es árbitro pero es Admin, tal vez quiera ver todo? 
-            # Por ahora si no es árbitro y no hay torneo, devolvemos vacío a menos que sea Admin
-            if rol not in ['admin', 'ejecutivo']:
+            # Si no es árbitro pero es Admin, permitimos continuar (verá todo filtrado por hoy o liga)
+            if rol not in ['admin', 'ejecutivo', 'dueño_liga']:
                 return jsonify([])
 
     # Filtro de fecha (Hoy)

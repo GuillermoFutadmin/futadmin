@@ -2052,7 +2052,7 @@
                     <button class="btn btn-primary" onclick="setMatchSearchMode('team')" style="padding:20px; font-weight:800; background:linear-gradient(135deg, #f59e0b, #d97706);">🔍 BUSCAR POR EQUIPO</button>
                     <button class="btn btn-primary" onclick="showMyMatches()" style="padding:20px; font-weight:800; background:linear-gradient(135deg, #10b981, #059669);">⚽ MIS PARTIDOS (HOY)</button>
                     <div style="border-top:1px dashed rgba(255,255,255,0.1); margin:10px 0; padding-top:10px;">
-                        <button class="btn btn-primary" onclick="setMatchStatus('Completed')" style="padding:15px; font-weight:600; font-size:0.8rem; background:rgba(255,255,255,0.05); color:var(--muted); border:1px solid rgba(255,255,255,0.1);">✅ VER PARTIDOS JUGADOS</button>
+                        <button class="btn btn-primary" onclick="setMatchStatus('Completed')" style="padding:15px; font-weight:600; font-size:0.8rem; background:linear-gradient(135deg, #475569, #1e293b); color:white; border:1px solid rgba(255,255,255,0.1);">✅ VER PARTIDOS JUGADOS</button>
                     </div>
                 `;
             } else if (type === 'payments') {
@@ -2071,10 +2071,8 @@
         }
 
         function setMatchSearchMode(mode) {
-            drillPurpose = 'matches';
-            if (mode === 'team') {
-                startDrilldown('ligas'); // Ir directo a ligas para elegir equipo
-            }
+            drillPurpose = mode === 'team' ? 'search_team' : 'matches';
+            startDrilldown('sede');
         }
 
         async function showMyMatches() {
@@ -2171,13 +2169,16 @@
 
             try {
                 if (type === 'team-matches') {
-                    title.innerText = 'OPCIONES DE PAGO';
+                    title.innerText = 'PARTIDOS DEL EQUIPO';
                     const url = `/api/telegram/matches?telegram_id=${currentUser.telegram_id}&torneo_id=${selectedTorneoId || ''}&rol=${currentUser.rol}&filter_team_id=${id}&estado=${matchStatusFilter}`;
                     const res = await fetch(url);
                     const data = await res.json();
                     const matches = Array.isArray(data) ? data : [];
                     currentMatches = matches;
-                    renderMatchesInDrilldown(matches, container, { showAbonarButton: true, teamId: id });
+                    renderMatchesInDrilldown(matches, container, { 
+                        showAbonarButton: drillPurpose === 'payments', 
+                        teamId: id 
+                    });
                     if (!isBack) drillStack.push({ type, id, title: title.innerText });
                     return;
                 }
@@ -2209,12 +2210,12 @@
                 } else if (type === 'torneo') {
                     title.innerText = 'SELECCIONAR TORNEO';
                     url = `/api/telegram/tournaments?liga_id=${id}&rol=${currentUser.rol}`;
-                    nextType = drillPurpose === 'matches' ? 'matches' : 'equipo';
+                    nextType = (drillPurpose === 'matches') ? 'matches' : 'equipo';
                 } else if (type === 'equipo') {
                     title.innerText = 'SELECCIONAR EQUIPO';
                     url = `/api/telegram/tournaments/teams?torneo_id=${id}&liga_id=${currentUser.liga_id || ''}&rol=${currentUser.rol}`;
                     selectedTorneoId = id; // Asegurar que el ID del torneo esté guardado
-                    nextType = drillPurpose === 'payments' ? 'payments' : 'roster';
+                    nextType = (drillPurpose === 'payments' || drillPurpose === 'search_team') ? 'payments_or_search' : 'roster';
                 }
 
                 if (type === 'sede' && drillPurpose === 'roster') {
@@ -2243,8 +2244,9 @@
                                     ${label} <span style="font-size:0.7rem; color:var(--muted); display:block; opacity:0.6;">UID: ${item.uid || '—'}</span>
                                 </button>`;
                     }
-                    if (nextType === 'matches') {
-                        return `<button class="btn btn-primary" onclick="selectTournament(${item.id}, '${label}')" style="text-align:left; padding:15px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:var(--text); font-weight:600;">
+                    if (nextType === 'payments_or_search') {
+                        const action = (drillPurpose === 'search_team') ? `showTeamMatchesForManagement(${item.id}, '${label}')` : `showTeamMatchesForPayment(${item.id}, '${label}')`;
+                        return `<button class="btn btn-primary" onclick="${action}" style="text-align:left; padding:15px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:var(--text); font-weight:600;">
                                     ${label}
                                 </button>`;
                     }
