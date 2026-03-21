@@ -2209,7 +2209,7 @@
                     nextType = 'torneo';
                 } else if (type === 'torneo') {
                     title.innerText = 'SELECCIONAR TORNEO';
-                    url = `/api/telegram/tournaments?liga_id=${id}&rol=${currentUser.rol}&_v=${Date.now()}`;
+                    url = `/api/telegram/tours?liga_id=${id}&rol=${currentUser.rol}&_v=${Date.now()}`;
                     nextType = (drillPurpose === 'matches') ? 'matches' : 'equipo';
                 } else if (type === 'equipo') {
                     title.innerText = 'SELECCIONAR EQUIPO';

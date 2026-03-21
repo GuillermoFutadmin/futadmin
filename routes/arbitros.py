@@ -296,6 +296,19 @@ def telegram_get_tournaments():
     tournaments = query.all()
     return jsonify([{"id": t.id, "nombre": t.nombre} for t in tournaments])
 
+@arbitros_bp.route('/api/telegram/tours', methods=['GET'])
+def telegram_get_tours_diag():
+    # Diagnostic endpoint
+    liga_id = request.args.get('liga_id', type=int)
+    rol = request.args.get('rol')
+    print(f"DIAG TOURS: liga_id={liga_id}, rol={rol}")
+    query = Torneo.query.filter_by(activo=True)
+    if liga_id:
+        query = query.filter_by(liga_id=liga_id)
+    tournaments = query.all()
+    print(f"DIAG TOURS: Found {len(tournaments)} tournaments")
+    return jsonify([{"id": t.id, "nombre": t.nombre} for t in tournaments])
+
 @arbitros_bp.route('/api/telegram/matches', methods=['GET'])
 def telegram_get_matches():
     telegram_id = request.args.get('telegram_id')
