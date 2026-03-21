@@ -1,4 +1,13 @@
 
+function applyJitter(coords) {
+    if (!coords || coords.length !== 2) return coords;
+    const jitter = 0.0005; // ~50m de desviación para evitar solapamientos exactos
+    return [
+        coords[0] + (Math.random() - 0.5) * jitter,
+        coords[1] + (Math.random() - 0.5) * jitter
+    ];
+}
+
 export class DashboardMap {
     constructor() {
         this.map = null;

@@ -286,6 +286,7 @@ def telegram_get_leagues():
 @arbitros_bp.route('/api/telegram/tournaments', methods=['GET'])
 def telegram_get_tournaments():
     liga_id = request.args.get('liga_id', type=int)
+    print(f"DEBUG: telegram_get_tournaments called for liga_id={liga_id}, rol={request.args.get('rol')}")
     query = Torneo.query.filter_by(activo=True)
     if liga_id:
         query = query.filter_by(liga_id=liga_id)
