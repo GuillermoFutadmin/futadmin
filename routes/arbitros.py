@@ -299,6 +299,7 @@ def telegram_get_tournaments():
 @arbitros_bp.route('/api/telegram/matches', methods=['GET'])
 def telegram_get_matches():
     telegram_id = request.args.get('telegram_id')
+    if telegram_id == 'undefined': telegram_id = None
     torneo_id = request.args.get('torneo_id', type=int)
     liga_id = request.args.get('liga_id', type=int)
     rol = request.args.get('rol')

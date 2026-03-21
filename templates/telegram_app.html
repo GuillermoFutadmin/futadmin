@@ -2280,6 +2280,11 @@
             loadDrillLevel('team-matches', teamId);
         }
 
+        async function showTeamMatchesForManagement(teamId, teamName) {
+            console.log("Selecting team for match management:", teamId, teamName);
+            loadDrillLevel('team-matches', teamId);
+        }
+
         function showTournamentsFromMenu() {
             if (currentUser.rol === 'admin' || currentUser.rol === 'ejecutivo' || currentUser.rol === 'dueño_liga') {
                 showSubmenu('matches');
