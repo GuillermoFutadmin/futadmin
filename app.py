@@ -319,18 +319,43 @@ ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-@app.route('/api/upload', methods=['POST'])
+    return jsonify({"url": url}), 201
+
+@app.route('/api/torneos/<int:id>/import-excel', methods=['POST'])
 @csrf.exempt
-def upload_file():
+def import_torneo_excel(id):
     if 'file' not in request.files:
         return jsonify({"error": "No se envió ningún archivo"}), 400
-    file = request.files['file']
     
-    url, error = handle_image_upload(file)
-    if error:
-        return jsonify({"error": error}), 400
+    file = request.files['file']
+    if not file.filename.endswith(('.xlsx', '.xls')):
+        return jsonify({"error": "Formato no válido. Use .xlsx"}), 400
         
-    return jsonify({"url": url}), 201
+    import os
+    from werkzeug.utils import secure_filename
+    from logic.importer import process_tournament_excel
+    
+    filename = secure_filename(file.filename)
+    temp_path = os.path.join('/tmp', filename)
+    file.save(temp_path)
+    
+    summary, error = process_tournament_excel(temp_path, id)
+    
+    if os.path.exists(temp_path):
+        os.remove(temp_path)
+        
+    if error:
+        return jsonify({"error": error}), 500
+        
+    return jsonify(summary), 200
+
+@app.route('/api/import/sample-excel', methods=['GET'])
+def get_sample_excel():
+    from logic.importer import generate_sample_excel
+    from flask import send_file
+    path = os.path.join('/tmp', 'plantilla_importacion.xlsx')
+    generate_sample_excel(path)
+    return send_file(path, as_attachment=True)
 
 # --- Rutas API: Equipos ---
 
@@ -2457,8 +2482,12 @@ def get_torneo_standings(id):
             "id": eq.id,
             "nombre": eq.nombre,
             "escudo_url": eq.escudo_url,
-            "pj": 0, "g": 0, "e": 0, "p": 0,
-            "gf": 0, "gc": 0, "dg": 0, "pts": 0,
+            "pj": 0, 
+            "g": 0, "e": 0, "p": 0,
+            "gf": eq.goles_f_legacy or 0, 
+            "gc": eq.goles_c_legacy or 0, 
+            "dg": 0, 
+            "pts": eq.puntos_legacy or 0,
             "recent": [] # Last 5 results
         }
     
@@ -2506,47 +2535,72 @@ def get_torneo_leaderboard(id):
     return run_leaderboard_query(id)
 
 def run_leaderboard_query(id):
-    # Goles
-    goles = db.session.query(
+    # Goles (Eventos + Legacy)
+    goles_raw = db.session.query(
+        Jugador.id,
         Jugador.nombre, 
         Equipo.nombre.label('equipo_nombre'),
         Equipo.escudo_url,
-        db.func.count(EventoPartido.id).label('total')
-    ).join(EventoPartido, Jugador.id == EventoPartido.jugador_id)\
+        Jugador.goles_legacy,
+        db.func.count(EventoPartido.id).label('event_total')
+    ).outerjoin(EventoPartido, db.and_(Jugador.id == EventoPartido.jugador_id, EventoPartido.tipo == 'Gol', 
+                                      EventoPartido.partido_id.in_(db.session.query(Partido.id).filter_by(torneo_id=id))))\
      .join(Equipo, Jugador.equipo_id == Equipo.id)\
-     .join(Partido, EventoPartido.partido_id == Partido.id)\
-     .filter(Partido.torneo_id == id, EventoPartido.tipo == 'Gol')\
+     .filter(Equipo.torneo_id == id)\
      .group_by(Jugador.id, Equipo.id)\
-     .order_by(db.text('total DESC'))\
-     .limit(10).all()
+     .all()
 
-    # Amarillas
-    amarillas = db.session.query(
-        Jugador.nombre, 
-        Equipo.nombre.label('equipo_nombre'),
-        Equipo.escudo_url,
-        db.func.count(EventoPartido.id).label('total')
-    ).join(EventoPartido, Jugador.id == EventoPartido.jugador_id)\
-     .join(Equipo, Jugador.equipo_id == Equipo.id)\
-     .join(Partido, EventoPartido.partido_id == Partido.id)\
-     .filter(Partido.torneo_id == id, EventoPartido.tipo == 'Amarilla')\
-     .group_by(Jugador.id, Equipo.id)\
-     .order_by(db.text('total DESC'))\
-     .limit(10).all()
+    goles_list = []
+    for row in goles_raw:
+        total = (row.goles_legacy or 0) + (row.event_total or 0)
+        if total > 0:
+            goles_list.append({"jugador": row.nombre, "equipo": row.equipo_nombre, "escudo": row.escudo_url, "total": total})
+    
+    goles_list = sorted(goles_list, key=lambda x: x["total"], reverse=True)[:10]
 
-    # Rojas
-    rojas = db.session.query(
+    # Amarillas (Eventos + Legacy)
+    amarillas_raw = db.session.query(
         Jugador.nombre, 
         Equipo.nombre.label('equipo_nombre'),
         Equipo.escudo_url,
-        db.func.count(EventoPartido.id).label('total')
-    ).join(EventoPartido, Jugador.id == EventoPartido.jugador_id)\
+        Jugador.amarillas_legacy,
+        db.func.count(EventoPartido.id).label('event_total')
+    ).outerjoin(EventoPartido, db.and_(Jugador.id == EventoPartido.jugador_id, EventoPartido.tipo == 'Amarilla',
+                                      EventoPartido.partido_id.in_(db.session.query(Partido.id).filter_by(torneo_id=id))))\
      .join(Equipo, Jugador.equipo_id == Equipo.id)\
-     .join(Partido, EventoPartido.partido_id == Partido.id)\
-     .filter(Partido.torneo_id == id, EventoPartido.tipo == 'Roja')\
+     .filter(Equipo.torneo_id == id)\
      .group_by(Jugador.id, Equipo.id)\
-     .order_by(db.text('total DESC'))\
-     .limit(10).all()
+     .all()
+
+    amarillas_list = []
+    for row in amarillas_raw:
+        total = (row.amarillas_legacy or 0) + (row.event_total or 0)
+        if total > 0:
+            amarillas_list.append({"jugador": row.nombre, "equipo": row.equipo_nombre, "escudo": row.escudo_url, "total": total})
+    
+    amarillas_list = sorted(amarillas_list, key=lambda x: x["total"], reverse=True)[:10]
+
+    # Rojas (Eventos + Legacy)
+    rojas_raw = db.session.query(
+        Jugador.nombre, 
+        Equipo.nombre.label('equipo_nombre'),
+        Equipo.escudo_url,
+        Jugador.rojas_legacy,
+        db.func.count(EventoPartido.id).label('event_total')
+    ).outerjoin(EventoPartido, db.and_(Jugador.id == EventoPartido.jugador_id, EventoPartido.tipo == 'Roja',
+                                      EventoPartido.partido_id.in_(db.session.query(Partido.id).filter_by(torneo_id=id))))\
+     .join(Equipo, Jugador.equipo_id == Equipo.id)\
+     .filter(Equipo.torneo_id == id)\
+     .group_by(Jugador.id, Equipo.id)\
+     .all()
+
+    rojas_list = []
+    for row in rojas_raw:
+        total = (row.rojas_legacy or 0) + (row.event_total or 0)
+        if total > 0:
+            rojas_list.append({"jugador": row.nombre, "equipo": row.equipo_nombre, "escudo": row.escudo_url, "total": total})
+    
+    rojas_list = sorted(rojas_list, key=lambda x: x["total"], reverse=True)[:10]
 
     # Porteros
     partidos = Partido.query.filter_by(torneo_id=id, estado='Played').all()
@@ -2574,9 +2628,9 @@ def run_leaderboard_query(id):
     porteros_list = sorted(porteros_list, key=lambda x: (x["total"], -x["cs"]))[:10]
 
     return jsonify({
-        "goles": [{"jugador": row[0], "equipo": row[1], "escudo": row[2], "total": row[3]} for row in goles],
-        "amarillas": [{"jugador": row[0], "equipo": row[1], "escudo": row[2], "total": row[3]} for row in amarillas],
-        "rojas": [{"jugador": row[0], "equipo": row[1], "escudo": row[2], "total": row[3]} for row in rojas],
+        "goles": goles_list,
+        "amarillas": amarillas_list,
+        "rojas": rojas_list,
         "porteros": porteros_list
     })
 

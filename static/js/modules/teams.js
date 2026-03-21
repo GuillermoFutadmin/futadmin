@@ -446,4 +446,49 @@ export class TeamsModule {
             }
         });
     }
+
+    downloadTemplate() {
+        window.location.href = '/api/import/sample-excel';
+    }
+
+    async importExcel(input) {
+        if (!input.files || !input.files[0]) return;
+        const torneoId = document.getElementById('team-league-filter').value;
+        if (!torneoId) {
+            alert("Selecciona un torneo primero.");
+            input.value = '';
+            return;
+        }
+
+        const file = input.files[0];
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            Core.showNotification('Procesando archivo... No recargues.', 'info');
+            const res = await fetch(`/api/torneos/${torneoId}/import-excel`, {
+                method: 'POST',
+                body: formData
+            });
+
+            if (res.ok) {
+                const summary = await res.json();
+                let msg = `¡Importación exitosa!\n\nEquipos creados: ${summary.equipos_creados}\nJugadores creados: ${summary.jugadores_creados}`;
+                if (summary.errores && summary.errores.length > 0) {
+                    msg += `\n\nErrores encontrados:\n- ${summary.errores.join('\n- ')}`;
+                }
+                alert(msg);
+                this.loadEquipos();
+                this.ui.loadInitialStats();
+            } else {
+                const err = await res.json();
+                alert('Error al importar: ' + (err.error || 'Error desconocido'));
+            }
+        } catch (error) {
+            console.error('Import error:', error);
+            alert('Error de conexión.');
+        } finally {
+            input.value = '';
+        }
+    }
 }

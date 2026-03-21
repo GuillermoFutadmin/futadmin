@@ -307,7 +307,12 @@
                             </select>
                         </div>
                         {% if user_rol.lower() not in ['resultados', 'arbitro'] %}
-                        <button class="btn-primary" onclick="ui.teams.showEquipoModal()">+ Nuevo Equipo</button>
+                        <div class="flex-group">
+                            <button class="btn-outline" onclick="ui.teams.downloadTemplate()" style="border: 1px dashed var(--primary); padding: 8px 12px; font-size: 0.8rem;">📥 Plantilla Excel</button>
+                            <button class="btn-primary" onclick="document.getElementById('import-excel-input').click()">📁 Importar Torneo</button>
+                            <input type="file" id="import-excel-input" style="display: none;" accept=".xlsx" onchange="ui.teams.importExcel(this)">
+                            <button class="btn-primary" onclick="ui.teams.showEquipoModal()" style="background: var(--primary); color: #000;">+ Nuevo Equipo</button>
+                        </div>
                         {% endif %}
                     </div>
                     <div class="leagues-grid" id="equipos-container">

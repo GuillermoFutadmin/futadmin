@@ -252,6 +252,14 @@ class Equipo(db.Model):
     colonia = db.Column(db.String(100)) # Ubicación más precisa
     colonia_geojson = db.Column(db.Text) # GeoJSON perimetral
     grupo = db.Column(db.String(50))
+    # Estadísticas para arranques de torneos ya iniciados
+    puntos_legacy = db.Column(db.Integer, default=0)
+    goles_f_legacy = db.Column(db.Integer, default=0)
+    goles_c_legacy = db.Column(db.Integer, default=0)
+    amarillas_legacy = db.Column(db.Integer, default=0)
+    rojas_legacy = db.Column(db.Integer, default=0)
+    saldo_arbitraje_legacy = db.Column(db.Float, default=0.0)
+    
     jugadores = db.relationship('Jugador', backref='equipo', lazy=True, cascade="all, delete-orphan")
     liga = db.relationship('Liga', backref='equipos_list', lazy=True)
     torneo = db.relationship('Torneo', backref='equipos_rel', lazy=True)
@@ -282,6 +290,7 @@ class Equipo(db.Model):
             "color": self.color,
             "liga_id": self.liga_id,
             "liga_nombre": self.liga.nombre if self.liga else "—",
+            "saldo_arbitraje_legacy": float(self.saldo_arbitraje_legacy or 0.0),
             "tiene_usuario": Usuario.query.filter_by(email=self.email).first() is not None if self.email else False,
             "jugadores_count": jugador_count,
             "stats": {
@@ -312,6 +321,10 @@ class Jugador(db.Model):
     es_portero = db.Column(db.Boolean, default=False)
     es_capitan = db.Column(db.Boolean, default=False)
     equipo_id = db.Column(db.Integer, db.ForeignKey('equipos.id'), nullable=False)
+    # Estadísticas para arranques de torneos ya iniciados
+    goles_legacy = db.Column(db.Integer, default=0)
+    amarillas_legacy = db.Column(db.Integer, default=0)
+    rojas_legacy = db.Column(db.Integer, default=0)
     
     liga = db.relationship('Liga', backref='jugadores_list', lazy=True)
 
