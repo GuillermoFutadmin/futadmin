@@ -2314,17 +2314,21 @@
                 const url = `/api/telegram/payments-list?liga_id=${currentUser.liga_id || ''}&equipo_id=${teamId || currentUser.equipo_id || ''}&tipo=${paymentTypeFilter}`;
                 const res = await fetch(url);
                 const payments = await res.json();
-                container.innerHTML = payments.map(p => `
-                    <div class="card" style="padding: 12px; border-left: 4px solid var(--primary); margin-bottom:10px;">
+                const newPayBtn = `<button class="btn btn-primary" onclick="openPaymentForm(${teamId}, '${paymentTypeFilter || 'Inscripción'}')" style="margin-bottom:15px; padding:12px; font-weight:700; background:var(--primary); color:black;">➕ REGISTRAR ${paymentTypeFilter.toUpperCase()}</button>`;
+                
+                container.innerHTML = newPayBtn + payments.map(p => `
+                    <div class="card" style="padding: 12px; border-left: 4px solid var(--primary); margin-bottom:10px; background: rgba(255,255,255,0.05);">
                         <div style="display:flex; justify-content: space-between;">
-                            <span style="font-weight:800; color:var(--primary);">$${p.monto}</span>
+                            <span style="font-weight:800; color:var(--primary); font-size:1.1rem;">$${p.monto}</span>
                             <span style="font-size:0.7rem; color:var(--muted);">${p.fecha}</span>
                         </div>
-                        <div style="font-size:0.8rem; font-weight:600; margin-top:4px;">${p.tipo}</div>
-                        <div style="font-size:0.7rem; color:var(--muted);">${p.equipo_nombre}</div>
+                        <div style="font-size:0.85rem; font-weight:600; margin-top:4px; color:white;">${p.tipo}</div>
+                        <div style="font-size:0.75rem; color:var(--muted);">${p.equipo_nombre}</div>
                     </div>
                 `).join('');
-                if (payments.length === 0) container.innerHTML = '<p style="text-align:center; padding:20px; color:var(--muted);">No hay pagos registrados.</p>';
+                if (payments.length === 0) {
+                    container.innerHTML = newPayBtn + '<p style="text-align:center; padding:20px; color:var(--muted);">No hay pagos registrados.</p>';
+                }
                 
             } catch (e) { alert("Error al cargar pagos"); }
         }
