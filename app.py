@@ -78,7 +78,7 @@ def diag_paths():
         'files_in_uploads': os.listdir(app.config.get('UPLOAD_FOLDER', '.')) if os.path.exists(app.config.get('UPLOAD_FOLDER', '')) else []
     })
 
-from models import db, bcrypt, Torneo, Equipo, Jugador, Inscripcion, Pago, GrupoEntrenamiento, AlumnoEntrenamiento, Partido, EventoPartido, Arbitro, Cancha, Usuario, apply_liga_filter, get_liga_id, check_torneos_limit, get_role_limits, Liga, PagoCombo, Configuracion, LigaExpansion
+from models import db, bcrypt, Torneo, Equipo, Jugador, Inscripcion, Pago, GrupoEntrenamiento, AlumnoEntrenamiento, Partido, EventoPartido, AsistenciaPartido, Arbitro, Cancha, Usuario, apply_liga_filter, get_liga_id, check_torneos_limit, get_role_limits, Liga, PagoCombo, Configuracion, LigaExpansion
 from utils import paginate_query, handle_image_upload
 from routes.entrenamientos import entrenamientos_bp
 from routes.canchas import canchas_bp
@@ -1933,14 +1933,14 @@ def auto_avanzar_ronda(torneo_id):
     return True
 
 
-@app.route('/api/partido/<int:id>/players', methods=['GET'])
-def get_match_players(id):
-    partido = Partido.query.get_or_404(id)
+@app.route('/api/partido/<int:match_id>/players', methods=['GET'])
+def get_match_players(match_id):
+    partido = Partido.query.get_or_404(match_id)
     local_players = Jugador.query.filter_by(equipo_id=partido.equipo_local_id).all()
     visitante_players = Jugador.query.filter_by(equipo_id=partido.equipo_visitante_id).all()
     
     # Obtener asistencias actuales para este partido
-    asistencias = AsistenciaPartido.query.filter_by(partido_id=id).all()
+    asistencias = AsistenciaPartido.query.filter_by(partido_id=match_id).all()
     asistencia_map = {a.jugador_id: a.presente for a in asistencias}
     
     return jsonify({
