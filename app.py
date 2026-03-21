@@ -2665,7 +2665,7 @@ def _get_stats_impl():
         stats_query = db.session.query(
             Partido.torneo_id,
             func.count(Partido.id).label('total'),
-            func.coalesce(func.sum(case([(Partido.estado == 'Played', 1)], else_=0)), 0).label('jugados'),
+            func.coalesce(func.sum(case((Partido.estado == 'Played', 1), else_=0)), 0).label('jugados'),
             func.count(distinct(Partido.jornada)).label('jornadas')
         ).group_by(Partido.torneo_id).filter(Partido.torneo_id.in_([t.id for t in active_tournaments])).all() if active_tournaments else []
         
@@ -2751,7 +2751,7 @@ def _get_stats_impl():
             Partido.equipo_local_id.label('team_id'),
             func.count(Partido.id).label('pj'),
             func.sum(func.coalesce(Partido.goles_local, 0)).label('goles'),
-            func.sum(case([(Partido.goles_local > Partido.goles_visitante, 1)], else_=0)).label('wins')
+            func.sum(case((Partido.goles_local > Partido.goles_visitante, 1), else_=0)).label('wins')
         ).filter(Partido.estado == 'Played').group_by(Partido.equipo_local_id).all()
 
         # PJ y Goles por equipo (como visitante)
@@ -2759,7 +2759,7 @@ def _get_stats_impl():
             Partido.equipo_visitante_id.label('team_id'),
             func.count(Partido.id).label('pj'),
             func.sum(func.coalesce(Partido.goles_visitante, 0)).label('goles'),
-            func.sum(case([(Partido.goles_visitante > Partido.goles_local, 1)], else_=0)).label('wins')
+            func.sum(case((Partido.goles_visitante > Partido.goles_local, 1), else_=0)).label('wins')
         ).filter(Partido.estado == 'Played').group_by(Partido.equipo_visitante_id).all()
 
         # Consolidar stats en un dict: team_id -> {pj, goles, wins}
