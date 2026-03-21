@@ -426,10 +426,15 @@
                 <div style="font-size: 1.5rem; margin-bottom: 8px;">🏟️</div>
                 GESTIONAR PARTIDO
             </button>
-            
+
             <button class="btn btn-primary" id="btn-menu-payments" onclick="showPayments()" style="padding: 25px; font-size: 1rem; background: linear-gradient(135deg, #3b82f6, #2563eb); display: none;">
                 <div style="font-size: 1.5rem; margin-bottom: 8px;">💳</div>
                 SISTEMA DE PAGOS
+            </button>
+
+            <button class="btn btn-primary" id="btn-menu-my-matches" onclick="showMyMatches()" style="padding: 25px; font-size: 1rem; background: linear-gradient(135deg, #10b981, #059669); display: none;">
+                <div style="font-size: 1.5rem; margin-bottom: 8px;">⚽</div>
+                MIS PARTIDOS (HOY)
             </button>
             
             <button class="btn btn-primary" id="btn-menu-roster" onclick="showRosterEdit()" style="padding: 25px; font-size: 1rem; background: linear-gradient(135deg, #8b5cf6, #7c3aed); display: none;">
@@ -749,6 +754,66 @@
         let currentMatches = [];
         let paymentTeamFilterId = null; // Para filtrar partidos de un equipo en pagos
 
+        function renderMatchesInDrilldown(matches, container, options = {}) {
+            const { showAbonarButton = false, teamId = null, title = null } = options;
+            
+            let html = '';
+            if (showAbonarButton && teamId) {
+                html += `
+                    <button class="btn btn-primary" onclick="openPaymentForm(${teamId}, '${paymentTypeFilter || 'Arbitraje'}')" 
+                            style="margin-bottom:20px; background:linear-gradient(135deg, #f59e0b, #d97706); height:auto; padding:15px; color:white;">
+                        💰 ABONAR / PAGO GENERAL
+                    </button>
+                    <div style="border-top: 1px dashed rgba(255,255,255,0.1); margin: 15px 0; padding-top: 10px;">
+                        <h4 style="font-size:0.75rem; color:var(--muted); margin-bottom:10px; text-transform:uppercase;">${title || 'Partidos Pendientes'}</h4>
+                    </div>
+                `;
+            }
+
+            if (matches.length === 0) {
+                html += '<p style="text-align:center; padding:40px; color:var(--muted); font-size:0.9rem;">No se encontraron partidos.</p>';
+            } else {
+                html += matches.map((m, index) => {
+                    const isMyMatch = m.arbitro_id === currentUser.id;
+                    const canEdit = ['admin', 'ejecutivo', 'dueño_liga', 'super_arbitro', 'arbitro'].includes(currentUser.rol);
+                    const isPlayable = m.estado !== 'Played' && m.estado !== 'Cancelled';
+                    const canPay = ['admin', 'ejecutivo', 'dueño_liga', 'equipo'].includes(currentUser.rol);
+                    const canOpen = isPlayable && canEdit;
+                    
+                    let statusColor = 'var(--muted)';
+                    if (m.estado === 'Live') statusColor = 'var(--error)';
+                    if (m.estado === 'HalfTime') statusColor = 'var(--warning)';
+                    if (m.estado === 'Scheduled') statusColor = 'var(--secondary)';
+
+                    return `
+                        <div class="card" onclick="${m.estado === 'Played' ? `showMatchDetails(${m.id})` : (canOpen ? `openMatchByIndex(${index})` : '')}"
+                             style="border-left: 4px solid ${isMyMatch ? 'var(--primary)' : 'rgba(255,255,255,0.1)'}; padding: 15px; margin-bottom:12px;">
+                            <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                                <span style="font-size: 0.75rem; font-weight: 800; color: var(--muted); letter-spacing: 0.05em;">JORNADA ${m.jornada}</span>
+                                <span class="status-badge" style="color:${statusColor}; border:1px solid ${statusColor}; background:transparent;">${m.estado}</span>
+                            </div>
+                            <div class="teams" style="margin: 8px 0;">
+                                <span style="font-weight: 600; font-size: 0.9rem;">${m.equipo_local}</span>
+                                <span class="score" style="font-size: 1rem; min-width: 50px; padding: 4px 8px;">${m.goles_local || 0} - ${m.goles_visitante || 0}</span>
+                                <span style="font-weight: 600; font-size: 0.9rem;">${m.equipo_visitante}</span>
+                            </div>
+                            <div style="display:flex; justify-content: space-between; align-items: flex-end; margin-top: 10px;">
+                                <div style="font-size: 0.7rem; color: var(--muted); line-height: 1.3;">📅 ${m.fecha} ${m.hora}<br>👤 ${m.arbitro_nombre || 'P.A.'}</div>
+                                <div style="display:flex; flex-direction: column; gap: 5px; align-items: flex-end;">
+                                    ${canPay ? `
+                                        <div style="display:flex; gap: 5px;">
+                                            <button class="btn-payment" onclick="event.stopPropagation(); openPaymentForm(${m.equipo_local_id}, '${paymentTypeFilter || 'Arbitraje'}', ${m.id})">PAGAR</button>
+                                        </div>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+            container.innerHTML = html;
+        }
+
         function showView(id) {
             console.log("==> showView(", id, ")");
             const views = ['login-view', 'menu-view', 'tournament-view', 'list-view', 'match-view', 'checkin-view', 'halftime-view', 'registration-view', 'payments-view', 'ids-lookup-view', 'drilldown-view', 'submenu-view', 'payment-form-view', 'ticket-view'];
@@ -771,19 +836,17 @@
             const rol = currentUser.rol;
             
             // Visibility Rules based on latest requirements
-            // GESTIONAR PARTIDO: admin, ejecutivo, dueño_liga, super_arbitro, equipo, arbitro
             const canManage = ['admin', 'ejecutivo', 'dueño_liga', 'super_arbitro', 'equipo', 'arbitro'].includes(rol);
-            // SISTEMA DE PAGOS: admin, ejecutivo, dueño_liga, super_arbitro, equipo, arbitro
             const canPay = ['admin', 'ejecutivo', 'dueño_liga', 'super_arbitro', 'equipo', 'arbitro'].includes(rol);
-            // INGRESAR PLANTILLA: admin, ejecutivo, dueño_liga, super_arbitro, equipo, espectador, resultados
             const canRoster = ['admin', 'ejecutivo', 'dueño_liga', 'super_arbitro', 'equipo', 'espectador', 'resultados'].includes(rol);
-            // CONSULTAR IDS: admin, ejecutivo, dueño_liga
+            const canMyMatches = ['admin', 'ejecutivo', 'arbitro', 'super_arbitro'].includes(rol);
             const isAdmin = ['admin', 'ejecutivo', 'dueño_liga'].includes(rol);
 
             document.getElementById('btn-menu-matches').style.display = canManage ? 'block' : 'none';
             document.getElementById('btn-menu-payments').style.display = canPay ? 'block' : 'none';
             document.getElementById('btn-menu-roster').style.display = canRoster ? 'block' : 'none';
             document.getElementById('btn-menu-ids').style.display = isAdmin ? 'block' : 'none';
+            document.getElementById('btn-menu-my-matches').style.display = canMyMatches ? 'block' : 'none';
         }
 
         async function init() {
@@ -890,7 +953,7 @@
             if (rosterMode) {
                 loadTeamsForRoster();
             } else {
-                loadMatches();
+                loadDrillLevel('partidos', id);
             }
         }
 
@@ -1990,8 +2053,12 @@
             if (type === 'matches') {
                 title.innerText = 'GESTIONAR PARTIDO';
                 container.innerHTML = `
-                    <button class="btn btn-primary" onclick="setMatchStatus('Scheduled')" style="padding:20px; font-weight:800; background:linear-gradient(135deg, #0ea5e9, #0284c7);">📅 PARTIDOS PENDIENTES</button>
-                    <button class="btn btn-primary" onclick="setMatchStatus('Completed')" style="padding:20px; font-weight:800; background:linear-gradient(135deg, #10b981, #059669);">✅ PARTIDOS JUGADOS</button>
+                    <button class="btn btn-primary" onclick="setMatchStatus('Scheduled')" style="padding:20px; font-weight:800; background:linear-gradient(135deg, #0ea5e9, #0284c7);">📅 LISTA POR TORNEO</button>
+                    <button class="btn btn-primary" onclick="setMatchSearchMode('team')" style="padding:20px; font-weight:800; background:linear-gradient(135deg, #f59e0b, #d97706);">🔍 BUSCAR POR EQUIPO</button>
+                    <button class="btn btn-primary" onclick="showMyMatches()" style="padding:20px; font-weight:800; background:linear-gradient(135deg, #10b981, #059669);">⚽ MIS PARTIDOS (HOY)</button>
+                    <div style="border-top:1px dashed rgba(255,255,255,0.1); margin:10px 0; padding-top:10px;">
+                        <button class="btn btn-primary" onclick="setMatchStatus('Completed')" style="padding:15px; font-weight:600; font-size:0.8rem; background:rgba(255,255,255,0.05); color:var(--muted); border:1px solid rgba(255,255,255,0.1);">✅ VER PARTIDOS JUGADOS</button>
+                    </div>
                 `;
             } else if (type === 'payments') {
                 title.innerText = 'SISTEMA DE PAGOS';
@@ -2008,10 +2075,36 @@
             startDrilldown('sede');
         }
 
-        function setPaymentType(type) {
-            paymentTypeFilter = type;
-            drillPurpose = 'payments';
-            startDrilldown('sede');
+        function setMatchSearchMode(mode) {
+            drillPurpose = 'matches';
+            if (mode === 'team') {
+                startDrilldown('ligas'); // Ir directo a ligas para elegir equipo
+            }
+        }
+
+        async function showMyMatches() {
+            drillPurpose = 'matches';
+            matchStatusFilter = 'Scheduled';
+            showView('drilldown-view');
+            document.getElementById('drilldown-title').innerText = "MIS PARTIDOS (HOY)";
+            const container = document.getElementById('drilldown-container');
+            container.innerHTML = '<div style="text-align:center; padding:20px;">Cargando tus partidos de hoy...</div>';
+            
+            try {
+                const url = `/api/telegram/matches?telegram_id=${currentUser.telegram_id}&rol=${currentUser.rol}&only_today=true`;
+                const res = await fetch(url);
+                const matches = await res.json();
+                
+                if (!matches || matches.length === 0) {
+                    container.innerHTML = '<div style="text-align:center; padding:40px; color:var(--muted);">No tienes partidos asignados para hoy.</div>';
+                    return;
+                }
+
+                currentMatches = matches;
+                renderMatchesInDrilldown(matches, container);
+            } catch (err) {
+                container.innerHTML = `<div class="error-msg">Error: ${err.message}</div>`;
+            }
         }
 
         async function lookupByUid() {
@@ -2083,100 +2176,27 @@
 
             try {
                 if (type === 'team-matches') {
-                    console.log("Drilldown matches. teamId:", id, "torneoId:", selectedTorneoId, "filter:", paymentTypeFilter);
                     title.innerText = 'OPCIONES DE PAGO';
-                    container.innerHTML = '<div class="loading">Cargando...</div>';
-                    
-                    const user = tg.initDataUnsafe?.user;
-                    const telegram_id = user?.id || '5825342439';
-                    
-                    try {
-                        const url = `/api/telegram/matches?telegram_id=${telegram_id}&torneo_id=${selectedTorneoId || ''}&rol=${currentUser.rol}&equipo_id=${currentUser.equipo_id || ''}&liga_id=${currentUser.liga_id || ''}&estado=${matchStatusFilter}&filter_team_id=${id}`;
-                        console.log("Fetching team matches:", url);
-                        const res = await fetch(url);
-                        const data = await res.json();
-                        
-                        if (!res.ok) {
-                            console.error("API Error in team-matches:", data);
-                            // Even if matches fail, show the general payment button
-                            container.innerHTML = `
-                                <button class="btn btn-primary" onclick="openPaymentForm(${id}, '${paymentTypeFilter || 'Arbitraje'}')" 
-                                        style="margin-bottom:20px; background:linear-gradient(135deg, #f59e0b, #d97706); height:auto; padding:15px; color:white;">
-                                    💰 ABONAR / PAGO GENERAL
-                                </button>
-                                <p style="text-align:center; padding:10px; color:var(--error); font-size:0.8rem;">
-                                    Nota: No se pudieron cargar los partidos pendientes (${data.error || 'Error'}).
-                                </p>
-                            `;
-                            if (!isBack) drillStack.push({ type, id, title: title.innerText });
-                            return;
-                        }
+                    const url = `/api/telegram/matches?telegram_id=${currentUser.telegram_id}&torneo_id=${selectedTorneoId || ''}&rol=${currentUser.rol}&filter_team_id=${id}&estado=${matchStatusFilter}`;
+                    const res = await fetch(url);
+                    const data = await res.json();
+                    const matches = Array.isArray(data) ? data : [];
+                    currentMatches = matches;
+                    renderMatchesInDrilldown(matches, container, { showAbonarButton: true, teamId: id });
+                    if (!isBack) drillStack.push({ type, id, title: title.innerText });
+                    return;
+                }
 
-                        const matches = Array.isArray(data) ? data : [];
-                        currentMatches = matches; // Sincronizar estado global para que funcionen los clicks en tarjetas
-                        console.log("Matches to render:", matches.length);
-
-                        let html = `
-                            <button class="btn btn-primary" onclick="openPaymentForm(${id}, '${paymentTypeFilter || 'Arbitraje'}')" 
-                                    style="margin-bottom:20px; background:linear-gradient(135deg, #f59e0b, #d97706); height:auto; padding:15px; color:white;">
-                                💰 ABONAR / PAGO GENERAL
-                            </button>
-                            <div style="border-top: 1px dashed rgba(255,255,255,0.1); margin: 15px 0; padding-top: 10px;">
-                                <h4 style="font-size:0.75rem; color:var(--muted); margin-bottom:10px; text-transform:uppercase;">Partidos Pendientes</h4>
-                            </div>
-                        `;
-
-                        if (matches.length === 0) {
-                            html += '<p style="text-align:center; padding:20px; color:var(--muted); font-size:0.9rem;">No hay partidos pendientes para este equipo.</p>';
-                        } else {
-                            html += matches.map((m, index) => {
-                                const isMyMatch = m.arbitro_id === currentUser.id;
-                                const canEdit = ['admin', 'ejecutivo', 'dueño_liga', 'super_arbitro', 'arbitro'].includes(currentUser.rol);
-                                const isPlayable = m.estado !== 'Played' && m.estado !== 'Cancelled';
-                                const canPay = ['admin', 'ejecutivo', 'dueño_liga', 'equipo'].includes(currentUser.rol);
-                                const canOpen = isPlayable && canEdit;
-                                
-                                let statusColor = 'var(--muted)';
-                                if (m.estado === 'Live') statusColor = 'var(--error)';
-                                if (m.estado === 'HalfTime') statusColor = 'var(--warning)';
-                                if (m.estado === 'Scheduled') statusColor = 'var(--secondary)';
-
-                                return `
-                                    <div class="card" onclick="${m.estado === 'Played' ? `showMatchDetails(${m.id})` : (canOpen ? `openMatchByIndex(${index})` : '')}"
-                                         style="border-left: 4px solid ${isMyMatch ? 'var(--primary)' : 'rgba(255,255,255,0.1)'}; padding: 15px; margin-bottom:12px;">
-                                        <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                                            <span style="font-size: 0.75rem; font-weight: 800; color: var(--muted); letter-spacing: 0.05em;">JORNADA ${m.jornada}</span>
-                                            <span class="status-badge" style="color:${statusColor}; border:1px solid ${statusColor}; background:transparent;">${m.estado}</span>
-                                        </div>
-                                        <div class="teams" style="margin: 8px 0;">
-                                            <span style="font-weight: 600; font-size: 0.9rem;">${m.equipo_local}</span>
-                                            <span class="score" style="font-size: 1rem; min-width: 50px; padding: 4px 8px;">${m.goles_local || 0} - ${m.goles_visitante || 0}</span>
-                                            <span style="font-weight: 600; font-size: 0.9rem;">${m.equipo_visitante}</span>
-                                        </div>
-                                        <div style="display:flex; justify-content: space-between; align-items: flex-end; margin-top: 10px;">
-                                            <div style="font-size: 0.7rem; color: var(--muted); line-height: 1.3;">📅 ${m.fecha} ${m.hora}<br>👤 ${m.arbitro_nombre || 'P.A.'}</div>
-                                            <div style="display:flex; flex-direction: column; gap: 5px; align-items: flex-end;">
-                                                ${canPay ? `
-                                                    <div style="display:flex; gap: 5px;">
-                                                        <button class="btn-payment" onclick="event.stopPropagation(); openPaymentForm(${m.equipo_local_id}, '${paymentTypeFilter || 'Arbitraje'}', ${m.id})">PAGAR</button>
-                                                    </div>
-                                                ` : ''}
-                                            </div>
-                                        </div>
-                                    </div>
-                                `;
-                            }).join('');
-                        }
-                        container.innerHTML = html;
-                        if (!isBack) drillStack.push({ type, id, title: title.innerText });
-                        return;
-
-                    } catch (err) {
-                        console.error("Catch in team-matches:", err);
-                        container.innerHTML = '<p style="color:var(--error); text-align:center;">Error al cargar datos.</p>';
-                        if (!isBack) drillStack.push({ type, id, title: title.innerText });
-                        return;
-                    }
+                if (type === 'partidos') {
+                    title.innerText = 'PARTIDOS DEL TORNEO';
+                    const url = `/api/telegram/matches?telegram_id=${currentUser.telegram_id}&torneo_id=${id}&rol=${currentUser.rol}&estado=${matchStatusFilter}`;
+                    const res = await fetch(url);
+                    const data = await res.json();
+                    const matches = Array.isArray(data) ? data : [];
+                    currentMatches = matches;
+                    renderMatchesInDrilldown(matches, container);
+                    if (!isBack) drillStack.push({ type, id, title: title.innerText });
+                    return;
                 }
 
                 let url = '';

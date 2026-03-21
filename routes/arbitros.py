@@ -300,30 +300,51 @@ def telegram_get_matches():
     equipo_id = request.args.get('equipo_id', type=int)
     filter_team_id = request.args.get('filter_team_id', type=int)
     estado = request.args.get('estado') # 'Completed', 'Scheduled'
+    only_today = request.args.get('only_today') == 'true'
     
-    if not torneo_id:
-        return jsonify({"error": "torneo_id required"}), 400
+    query = Partido.query
+    
+    if torneo_id:
+        query = query.filter_by(torneo_id=torneo_id)
+    
+    # Si especifica telegram_id (y no torneo_id), buscar partidos de ese árbitro
+    if not torneo_id and telegram_id:
+        from models import Arbitro
+        arb = Arbitro.query.filter_by(telegram_id=str(telegram_id)).first()
+        if arb:
+            query = query.filter(Partido.arbitro_id == arb.id)
+        else:
+            # Si no es árbitro pero es Admin, tal vez quiera ver todo? 
+            # Por ahora si no es árbitro y no hay torneo, devolvemos vacío a menos que sea Admin
+            if rol not in ['admin', 'ejecutivo']:
+                return jsonify([])
+
+    # Filtro de fecha (Hoy)
+    if only_today:
+        hoy = datetime.now().date()
+        query = query.filter(db.func.date(Partido.fecha) == hoy)
         
-    query = Partido.query.filter_by(torneo_id=torneo_id)
-    
     # Seguridad y Filtrado por Liga
-    allowed_admin_roles = ['admin', 'ejecutivo', 'dueño_liga', 'super_arbitro', 'arbitro', 'resultados']
     if liga_id:
         query = query.filter(Partido.liga_id == liga_id)
-    elif rol not in ['admin', 'ejecutivo']:
-        # Si no es admin y no manda liga_id, restringir
+    elif rol not in ['admin', 'ejecutivo'] and not (telegram_id and not torneo_id):
+        # Restringir si no es admin
         return jsonify([])
 
     if estado:
         query = query.filter_by(estado=estado)
     
-    # Si es dueño de equipo, solo ver sus partidos (prioridad)
+    # Si es dueño de equipo, solo ver sus partidos
     if rol == 'equipo' and equipo_id:
         query = query.filter((Partido.equipo_local_id == equipo_id) | (Partido.equipo_visitante_id == equipo_id))
-    # Si hay un filtro específico de equipo (ej: desde el sistema de pagos)
+    # Filtro específico de equipo
     elif filter_team_id:
         query = query.filter((Partido.equipo_local_id == filter_team_id) | (Partido.equipo_visitante_id == filter_team_id))
     
+    # Limitar a 50 si no hay torneo_id para no saturar
+    if not torneo_id:
+        query = query.limit(50)
+
     partidos = query.order_by(Partido.fecha.asc(), Partido.hora.asc()).all()
     return jsonify([p.to_dict() for p in partidos])
 
