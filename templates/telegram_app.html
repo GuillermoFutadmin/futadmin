@@ -2230,7 +2230,13 @@
                     return;
                 }
 
+                console.log("Fetching drilldown level:", url);
                 const res = await fetch(url);
+                if (!res.ok) {
+                    const errorText = await res.text();
+                    console.error(`Error loading data (${res.status}):`, errorText);
+                    throw new Error(`HTTP ${res.status}`);
+                }
                 items = await res.json();
 
                 if (!isBack) drillStack.push({ type, id, title: title.innerText });

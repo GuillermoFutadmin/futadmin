@@ -277,7 +277,7 @@ def telegram_get_leagues():
     
     if liga_id:
         query = query.filter(Liga.id == liga_id)
-    elif rol not in ['admin', 'ejecutivo', 'dueño_liga']:
+    elif rol not in ['admin', 'ejecutivo', 'dueño_liga', 'arbitro', 'super_arbitro']:
         return jsonify([])
 
     leagues = query.all()
@@ -289,8 +289,7 @@ def telegram_get_tournaments():
     query = Torneo.query.filter_by(activo=True)
     if liga_id:
         query = query.filter_by(liga_id=liga_id)
-    # Si no es admin y no hay liga_id, no devolver nada para evitar leaks
-    elif request.args.get('rol') not in ['admin', 'ejecutivo']:
+    elif request.args.get('rol') not in ['admin', 'ejecutivo', 'dueño_liga', 'arbitro', 'super_arbitro']:
         return jsonify([])
         
     tournaments = query.all()
