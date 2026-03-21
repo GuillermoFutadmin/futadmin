@@ -432,11 +432,6 @@
                 SISTEMA DE PAGOS
             </button>
 
-            <button class="btn btn-primary" id="btn-menu-my-matches" onclick="showMyMatches()" style="padding: 25px; font-size: 1rem; background: linear-gradient(135deg, #10b981, #059669); display: none;">
-                <div style="font-size: 1.5rem; margin-bottom: 8px;">⚽</div>
-                MIS PARTIDOS (HOY)
-            </button>
-            
             <button class="btn btn-primary" id="btn-menu-roster" onclick="showRosterEdit()" style="padding: 25px; font-size: 1rem; background: linear-gradient(135deg, #8b5cf6, #7c3aed); display: none;">
                 <div style="font-size: 1.5rem; margin-bottom: 8px;">📝</div>
                 INGRESAR PLANTILLA
@@ -846,7 +841,6 @@
             document.getElementById('btn-menu-payments').style.display = canPay ? 'block' : 'none';
             document.getElementById('btn-menu-roster').style.display = canRoster ? 'block' : 'none';
             document.getElementById('btn-menu-ids').style.display = isAdmin ? 'block' : 'none';
-            document.getElementById('btn-menu-my-matches').style.display = canMyMatches ? 'block' : 'none';
         }
 
         async function init() {
@@ -2280,6 +2274,8 @@
         function showTournamentsFromMenu() {
             if (currentUser.rol === 'admin' || currentUser.rol === 'ejecutivo' || currentUser.rol === 'dueño_liga') {
                 showSubmenu('matches');
+            } else if (currentUser.rol === 'arbitro' || currentUser.rol === 'super_arbitro') {
+                showMyMatches();
             } else {
                 rosterMode = false;
                 showTournaments();
