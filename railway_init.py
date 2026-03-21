@@ -10,37 +10,34 @@ def init():
             db_url = app.config.get('SQLALCHEMY_DATABASE_URI') or "None"
             print(f"DATABASE_URI detectada: {db_url[:40]}...")
             
-            print("Paso 1: Aplicando migraciones a PostgreSQL...")
+            # 1. Manual Migrations Fallback (Execute before any ORM queries)
+            print("Paso 1: Aplicando mutaciones manuales (Fallback)...")
+            manual_queries = [
+                "ALTER TABLE jugadores ADD COLUMN IF NOT EXISTS fecha_nacimiento DATE;",
+                "ALTER TABLE alumnos_entrenamiento ADD COLUMN IF NOT EXISTS fecha_nacimiento DATE;",
+                "ALTER TABLE torneos ADD COLUMN IF NOT EXISTS archived BOOLEAN DEFAULT FALSE;",
+                "ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS telegram_id VARCHAR(50) UNIQUE;"
+            ]
+            
+            for q in manual_queries:
+                try:
+                    db.session.execute(db.text(q))
+                    db.session.commit()
+                    print(f"Éxito: {q}")
+                except Exception as e:
+                    db.session.rollback()
+                    print(f"Nota: {q} falló o ya existe: {e}")
+
+            # 2. Flask-Migrate Upgrade (If available)
             try:
                 from flask_migrate import upgrade
                 upgrade()
-                print("Éxito: Migraciones aplicadas correctamente.")
+                print("Éxito: Flask-Migrate upgrade completado.")
             except Exception as migrate_e:
-                print(f"Aviso: Falló o no configurado Flask-Migrate ({migrate_e}). Ejecutando db.create_all() y mutaciones manuales como fallback.")
+                print(f"Aviso: Flask-Migrate no disponible o falló: {migrate_e}")
                 db.create_all()
-                # Manual Fallback for adding missing columns
-                try:
-                    db.session.execute(db.text("ALTER TABLE jugadores ADD COLUMN IF NOT EXISTS fecha_nacimiento DATE;"))
-                    db.session.commit()
-                except Exception as e:
-                    db.session.rollback()
-                    print(f"Nota: columna jugadores.fecha_nacimiento ya existe o error: {e}")
-                
-                try:
-                    db.session.execute(db.text("ALTER TABLE alumnos_entrenamiento ADD COLUMN IF NOT EXISTS fecha_nacimiento DATE;"))
-                    db.session.commit()
-                except Exception as e:
-                    db.session.rollback()
-                    print(f"Nota: columna alumnos.fecha_nacimiento ya existe o error: {e}")
 
-                try:
-                    db.session.execute(db.text("ALTER TABLE torneos ADD COLUMN IF NOT EXISTS archived BOOLEAN DEFAULT FALSE;"))
-                    db.session.commit()
-                except Exception as e:
-                    db.session.rollback()
-                    print(f"Nota: columna torneos.archived ya existe o error: {e}")
-
-            # Verificar y crear administradores (Solo el principal del sistema)
+            # 3. Verificar y crear administradores
             for admin_email in ['admin@futadmin.com']:
                 admin = Usuario.query.filter_by(email=admin_email).first()
                 if not admin:
@@ -59,7 +56,7 @@ def init():
                 else:
                     print(f"Paso 2: El usuario {admin_email} ya existe.")
                 
-            # Crear configuración básica si no existe
+            # 4. Crear configuración básica si no existe
             privacy = Configuracion.query.get('privacy_policy')
             if not privacy:
                 print("Paso 3: Creando configuración inicial...")
@@ -75,8 +72,6 @@ def init():
             print(f"ERROR CRÍTICO EN INICIALIZACIÓN: {e}")
             import traceback
             traceback.print_exc()
-            # No salimos con error para que gunicorn al menos intente arrancar, 
-            # pero el log dirá qué falló.
             sys.exit(0) 
 
 if __name__ == "__main__":

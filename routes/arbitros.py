@@ -188,6 +188,11 @@ def telegram_verify_user():
                     eq = Equipo.query.filter_by(email=user.email).first()
                     if eq: equipo_id = eq.id
 
+                # Identificación Automática: Guardar telegram_id si se recibe
+                if telegram_id:
+                    user.telegram_id = str(telegram_id)
+                    db.session.commit()
+
                 return jsonify({
                     "authenticated": True,
                     "user": {
@@ -511,6 +516,20 @@ def telegram_post_event(id):
                 partido.goles_visitante = (partido.goles_visitante or 0) + 1
                 
         db.session.commit()
+        
+        # --- Notificaciones en Vivo vía Telegram ---
+        try:
+            from logic.notifications import notify_match_event
+            event_data = {
+                "team_name": nuevo_evento.equipo.nombre if nuevo_evento.equipo else '',
+                "player_name": nuevo_evento.jugador.nombre if nuevo_evento.jugador else '',
+                "minute": nuevo_evento.minuto
+            }
+            # Evitar bloquear la respuesta principal si falla Telegram
+            notify_match_event(partido.id, data.get('tipo'), event_data)
+        except Exception as n_err:
+            print(f"Error en notificación live: {n_err}")
+
         return jsonify({"success": True, "evento": nuevo_evento.to_dict(), "match": partido.to_dict()})
     except Exception as e:
         db.session.rollback()

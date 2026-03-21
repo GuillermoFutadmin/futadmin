@@ -126,6 +126,7 @@ class Usuario(db.Model):
     liga_id = db.Column(db.Integer, db.ForeignKey('ligas.id'), nullable=True)
     cancha_id = db.Column(db.Integer, db.ForeignKey('canchas.id'), nullable=True)
     activo = db.Column(db.Boolean, default=True)
+    telegram_id = db.Column(db.String(50), unique=True, nullable=True)
     fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
     privacy_accepted = db.Column(db.Boolean, default=False)
     privacy_accepted_at = db.Column(db.DateTime, nullable=True)
