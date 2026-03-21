@@ -769,7 +769,7 @@ export class LeaguesModule {
 
             Core.showNotification('Generando reporte PDF...', 'info');
             const data = await Core.fetchAPI(`/api/torneos/${id}/report`);
-            const { torneo, campeon, standings, leaderboard } = data;
+            const { torneo, campeon, standings, leaderboard, payments } = data;
 
             // Importar jsPDF desde el objeto global window
             const { jsPDF } = window.jspdf;
@@ -896,6 +896,44 @@ export class LeaguesModule {
             const yTarjetas = renderLeader("AMARILLAS", leaderboard.amarillas, margin + 120);
 
             y = Math.max(yGoles, yPorteros, yTarjetas) + 20;
+
+            // --- FINANCIAL REPORT ---
+            if (payments && payments.length > 0) {
+                if (y > 220) { doc.addPage(); y = 20; }
+                doc.setFontSize(14);
+                doc.setFont("helvetica", "bold");
+                doc.setTextColor(30, 30, 30);
+                doc.text("REPORTE FINANCIERO", margin, y);
+                y += 8;
+
+                // Headers
+                doc.setFillColor(240, 240, 240);
+                doc.rect(margin, y, 180, 8, 'F');
+                doc.setFontSize(8);
+                doc.setTextColor(40, 40, 40);
+                doc.text("EQUIPO", margin + 2, y + 5);
+                doc.text("P. INSCRIPCIÓN", margin + 70, y + 5);
+                doc.text("P. ARBITRAJE", margin + 110, y + 5);
+                doc.text("TOTAL PAGADO", margin + 150, y + 5);
+                y += 8;
+
+                doc.setFont("helvetica", "normal");
+                payments.forEach((p, idx) => {
+                    if (y > 270) { doc.addPage(); y = 20; }
+                    if (idx % 2 === 0) {
+                        doc.setFillColor(250, 250, 250);
+                        doc.rect(margin, y, 180, 7, 'F');
+                    }
+                    doc.text(p.equipo, margin + 2, y + 5);
+                    doc.text(`$${p.pagado_inscripcion.toFixed(0)} / $${p.pactado.toFixed(0)}`, margin + 70, y + 5);
+                    doc.text(`$${p.pagado_arbitraje.toFixed(0)}`, margin + 110, y + 5);
+                    doc.setFont("helvetica", "bold");
+                    doc.text(`$${p.total.toFixed(0)}`, margin + 150, y + 5);
+                    doc.setFont("helvetica", "normal");
+                    y += 7;
+                });
+                y += 10;
+            }
             
             // FOOTER
             doc.setFontSize(8);

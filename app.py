@@ -2666,12 +2666,41 @@ def get_torneo_report(id):
                     campeon = winner.nombre
         except Exception as e:
             print(f"Error calculating campeon for report {id}: {e}")
-        
+
+        # Summary of payments (Inscriptions and Referee fees)
+        payments_data = []
+        try:
+            inscripciones = Inscripcion.query.filter_by(torneo_id=id).all()
+            for ins in inscripciones:
+                # Sum common payment types for each inscription
+                pagado_ins = db.session.query(db.func.sum(Pago.monto)).filter(
+                    Pago.inscripcion_id == ins.id, 
+                    or_(Pago.tipo == 'Inscripción', Pago.tipo == 'Inscripcion')
+                ).scalar() or 0
+                
+                pagado_arb = db.session.query(db.func.sum(Pago.monto)).filter(
+                    Pago.inscripcion_id == ins.id, 
+                    Pago.tipo == 'Arbitraje'
+                ).scalar() or 0
+                
+                payments_data.append({
+                    "equipo": ins.equipo.nombre if ins.equipo else "Desconocido",
+                    "pactado": float(ins.monto_pactado_inscripcion or 0),
+                    "pagado_inscripcion": float(pagado_ins),
+                    "pagado_arbitraje": float(pagado_arb),
+                    "total": float(pagado_ins + pagado_arb)
+                })
+            # Sort by total paid descending
+            payments_data = sorted(payments_data, key=lambda x: x["total"], reverse=True)
+        except Exception as e:
+            print(f"Error calculating payments for report {id}: {e}")
+
         return jsonify({
             "torneo": torneo.to_dict(),
             "campeon": campeon,
             "standings": standings_data,
-            "leaderboard": leaderboard_data
+            "leaderboard": leaderboard_data,
+            "payments": payments_data
         })
     except Exception as e:
         import traceback
