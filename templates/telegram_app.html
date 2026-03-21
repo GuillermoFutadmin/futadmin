@@ -2070,6 +2070,12 @@
             startDrilldown('sede');
         }
 
+        function setPaymentType(type) {
+            paymentTypeFilter = type; // 'Inscripción' | 'Arbitraje'
+            drillPurpose = 'payments';
+            startDrilldown('sede');
+        }
+
         function setMatchSearchMode(mode) {
             drillPurpose = mode === 'team' ? 'search_team' : 'matches';
             startDrilldown('sede');
