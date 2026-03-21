@@ -795,10 +795,11 @@
                             <div style="display:flex; justify-content: space-between; align-items: flex-end; margin-top: 10px;">
                                 <div style="font-size: 0.7rem; color: var(--muted); line-height: 1.3;">📅 ${m.fecha} ${m.hora}<br>👤 ${m.arbitro_nombre || 'P.A.'}</div>
                                 <div style="display:flex; flex-direction: column; gap: 5px; align-items: flex-end;">
-                                    ${canPay ? `
-                                        <div style="display:flex; gap: 5px;">
-                                            <button class="btn-payment" onclick="event.stopPropagation(); openPaymentForm(${m.equipo_local_id}, '${paymentTypeFilter || 'Arbitraje'}', ${m.id})">PAGAR</button>
-                                        </div>
+                                    ${drillPurpose === 'matches' && canEdit && isPlayable ? `
+                                        <button class="btn-payment" style="background:linear-gradient(135deg, var(--secondary), #059669);" onclick="event.stopPropagation(); openMatchByIndex(${index})">PASE DE LISTA</button>
+                                    ` : ''}
+                                    ${drillPurpose === 'payments' && canPay ? `
+                                        <button class="btn-payment" onclick="event.stopPropagation(); openPaymentForm(${m.equipo_local_id}, '${paymentTypeFilter || 'Arbitraje'}', ${m.id})">PAGAR</button>
                                     ` : ''}
                                 </div>
                             </div>
