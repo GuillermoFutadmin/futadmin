@@ -2147,11 +2147,17 @@
             
             try {
                 const tgUserId = tg.initDataUnsafe?.user?.id || '5825342439';
-                const url = `/api/telegram/matches?telegram_id=${tgUserId}&rol=${currentUser.rol}&only_today=true`;
+                const url = `/api/telegram/matches?telegram_id=${tgUserId}&rol=${currentUser.rol}&only_today=true&liga_id=${currentUser.liga_id || ''}`;
                 const res = await fetch(url);
-                const matches = await res.json();
-                
-                if (!matches || matches.length === 0) {
+                const data = await res.json();
+
+                if (!res.ok) {
+                    container.innerHTML = `<div style="text-align:center; padding:30px; color:var(--error);">Error del servidor: ${data.error || res.status}</div>`;
+                    return;
+                }
+
+                const matches = Array.isArray(data) ? data : [];
+                if (matches.length === 0) {
                     container.innerHTML = '<div style="text-align:center; padding:40px; color:var(--muted);">No tienes partidos asignados para hoy.</div>';
                     return;
                 }
@@ -2159,7 +2165,7 @@
                 currentMatches = matches;
                 renderMatchesInDrilldown(matches, container);
             } catch (err) {
-                container.innerHTML = `<div class="error-msg">Error: ${err.message}</div>`;
+                container.innerHTML = `<div style="text-align:center; padding:30px; color:var(--error);">Error de conexión: ${err.message}</div>`;
             }
         }
 

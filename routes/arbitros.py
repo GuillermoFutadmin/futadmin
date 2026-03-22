@@ -1,7 +1,7 @@
 from flask import Blueprint, jsonify, request, session
 from models import db, Arbitro, Usuario, Cancha, Torneo, Partido, Inscripcion, Pago, EventoPartido, AsistenciaPartido, Equipo, Jugador, apply_liga_filter, bcrypt, Liga
 from utils import paginate_query
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 import secrets
 import os
 import uuid
@@ -322,36 +322,16 @@ def telegram_get_matches():
     only_today = request.args.get('only_today') == 'true'
     
     query = Partido.query
-    
-    if torneo_id:
-        query = query.filter_by(torneo_id=torneo_id)
-    
-    # Búsqueda por texto (Search Query)
-    search_q = request.args.get('search_q')
-    if search_q:
-        search_q = f"%{search_q}%"
-        query = query.join(Partido.equipo_local, aliased=True).filter(Equipo.nombre.ilike(search_q)).union(
-            query.join(Partido.equipo_visitante, aliased=True).filter(Equipo.nombre.ilike(search_q))
-        )
-        # Note: Union can be tricky with SQLAlchemy pagination/ordering if not handled carefully, 
-        # but for this simple list it should work. Or better use or_ logic.
 
-    # Alternative more robust search logic:
-    query = Partido.query
     if torneo_id:
         query = query.filter_by(torneo_id=torneo_id)
+
+    # Búsqueda por texto (limpia el valor raw antes de cualquier modificación)
+    search_q = (request.args.get('search_q') or '').strip()
 
     if search_q:
         search_term = f"%{search_q}%"
-        # We need to join with Equipo twice or use subqueries for better performance, 
-        # but let's use a simpler approach first.
-        query = query.join(Equipo, Partido.equipo_local_id == Equipo.id)
-        # We'll use or_ with the join
         from sqlalchemy import or_
-        # To search in BOTH teams, we might need two joins or a more complex filter.
-        # Actually, let's just use the to_dict() search or a simpler filter if possible.
-        # Let's try or_ with equipo_local.nombre and equipo_visitante.nombre
-        # This requires elias for teams.
         from sqlalchemy.orm import aliased
         Local = aliased(Equipo)
         Visit = aliased(Equipo)
@@ -365,49 +345,52 @@ def telegram_get_matches():
         if arb:
             query = query.filter(Partido.arbitro_id == arb.id)
         else:
-            # Si no es árbitro pero es Admin, permitimos continuar (verá todo filtrado por hoy o liga)
+            # Si no es árbitro pero es Admin/DueñoLiga, permitimos continuar (verá todo filtrado por hoy o liga)
             if rol not in ['admin', 'ejecutivo', 'dueño_liga']:
                 return jsonify([])
 
-    # Filtro de fecha mejorado
-    date_filter = request.args.get('date_filter') # 'today', 'week', 'month'
+    # Filtro de fecha
+    date_filter = request.args.get('date_filter')  # 'today', 'week', 'month'
     hoy = datetime.now().date()
-    
+
     if only_today or date_filter == 'today':
-        query = query.filter(db.func.date(Partido.fecha) == hoy)
+        query = query.filter(Partido.fecha == hoy)
     elif date_filter == 'week':
         lunes = hoy - timedelta(days=hoy.weekday())
         domingo = lunes + timedelta(days=6)
-        query = query.filter(db.func.date(Partido.fecha).between(lunes, domingo))
+        query = query.filter(Partido.fecha.between(lunes, domingo))
     elif date_filter == 'month':
         inicio_mes = hoy.replace(day=1)
         next_month = (inicio_mes + timedelta(days=32)).replace(day=1)
         fin_mes = next_month - timedelta(days=1)
-        query = query.filter(db.func.date(Partido.fecha).between(inicio_mes, fin_mes))
-        
+        query = query.filter(Partido.fecha.between(inicio_mes, fin_mes))
+
     # Seguridad y Filtrado por Liga
     if liga_id:
         query = query.filter(Partido.liga_id == liga_id)
     elif rol not in ['admin', 'ejecutivo'] and not (telegram_id and not torneo_id):
-        # Restringir si no es admin
         return jsonify([])
 
     if estado:
         query = query.filter_by(estado=estado)
-    
+
     # Si es dueño de equipo, solo ver sus partidos
     if rol == 'equipo' and equipo_id:
         query = query.filter((Partido.equipo_local_id == equipo_id) | (Partido.equipo_visitante_id == equipo_id))
-    # Filtro específico de equipo
     elif filter_team_id:
         query = query.filter((Partido.equipo_local_id == filter_team_id) | (Partido.equipo_visitante_id == filter_team_id))
-    
+
     # Limitar a 50 si no hay torneo_id para no saturar
     if not torneo_id:
         query = query.limit(50)
 
-    partidos = query.order_by(Partido.fecha.asc(), Partido.hora.asc()).all()
-    return jsonify([p.to_dict() for p in partidos])
+    try:
+        partidos = query.order_by(Partido.fecha.asc(), Partido.hora.asc()).all()
+        return jsonify([p.to_dict() for p in partidos])
+    except Exception as e:
+        import traceback
+        print('[MATCHES ERROR]', traceback.format_exc())
+        return jsonify({"error": str(e)}), 500
 
 @arbitros_bp.route('/api/telegram/matches/search', methods=['GET'])
 def telegram_search_matches_global():
