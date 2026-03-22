@@ -62,18 +62,17 @@ export class MarketingModule {
 
         const logoInput = document.getElementById('mkt-logo');
         if (logoInput) {
-            // Un 'change' capta la modificación tras subir foto por global-file-upload
-            logoInput.addEventListener('change', () => {
+            // Escuchar tanto 'input' (disparado por core.js tras upload) como 'change' (edición manual)
+            const loadLogoFromInput = () => {
                 const url = logoInput.value;
                 if(url) {
                     const img = new Image();
-                    img.crossOrigin = "Anonymous"; // Prevenir error de canvas manchado (Tainted canvas) CORS
                     img.onload = () => {
                         this.config.logoImg = img;
                         this.draw();
                     };
                     img.onerror = () => {
-                        console.error("Error cargando logo en Canvas: CORS o URL fallida.");
+                        console.error("Error cargando logo en Canvas.");
                         this.config.logoImg = null;
                         this.draw();
                     };
@@ -82,9 +81,11 @@ export class MarketingModule {
                     this.config.logoImg = null;
                     this.draw();
                 }
-            });
+            };
+            logoInput.addEventListener('input', loadLogoFromInput);
+            logoInput.addEventListener('change', loadLogoFromInput);
             // Si ya hay un valor de arranque
-            logoInput.dispatchEvent(new Event('change'));
+            if (logoInput.value) loadLogoFromInput();
         }
     }
 
