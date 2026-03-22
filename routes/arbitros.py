@@ -417,35 +417,39 @@ def telegram_search_matches_global():
     
     if not q or len(q) < 3:
         return jsonify([])
+
+    try:
+        search_term = f"%{q}%"
+        from sqlalchemy import or_
+        from sqlalchemy.orm import aliased
+        from models import Torneo, Liga
         
-    search_term = f"%{q}%"
-    from sqlalchemy import or_
-    from sqlalchemy.orm import aliased
-    from models import Torneo, Liga
-    
-    Local = aliased(Equipo)
-    Visit = aliased(Equipo)
-    
-    # Unir con Torneo y Liga para búsqueda extendida
-    query = Partido.query.join(Local, Partido.equipo_local_id == Local.id)\
-                         .join(Visit, Partido.equipo_visitante_id == Visit.id)\
-                         .join(Torneo, Partido.torneo_id == Torneo.id)\
-                         .join(Liga, Torneo.liga_id == Liga.id)
-    
-    if liga_id:
-        query = query.filter(Partido.liga_id == liga_id)
-    
-    query = query.filter(or_(
-        Local.nombre.ilike(search_term),
-        Visit.nombre.ilike(search_term),
-        Torneo.nombre.ilike(search_term),
-        Liga.nombre.ilike(search_term)
-    ))
-    
-    # Eliminamos la restricción de tiempo a petición del usuario para ver todo el histórico
-    # Opcionalmente podemos ordenar por fecha descendente para ver lo más reciente primero
-    matches = query.order_by(Partido.fecha.desc()).limit(100).all()
-    return jsonify([p.to_dict() for p in matches])
+        Local = aliased(Equipo)
+        Visit = aliased(Equipo)
+        
+        # Usamos outerjoin para Liga ya que Torneo.liga_id puede ser NULL
+        query = Partido.query\
+            .join(Local, Partido.equipo_local_id == Local.id)\
+            .join(Visit, Partido.equipo_visitante_id == Visit.id)\
+            .join(Torneo, Partido.torneo_id == Torneo.id)\
+            .outerjoin(Liga, Torneo.liga_id == Liga.id)
+        
+        if liga_id:
+            query = query.filter(Partido.liga_id == liga_id)
+        
+        query = query.filter(or_(
+            Local.nombre.ilike(search_term),
+            Visit.nombre.ilike(search_term),
+            Torneo.nombre.ilike(search_term),
+            Liga.nombre.ilike(search_term)
+        ))
+        
+        matches = query.order_by(Partido.fecha.desc()).limit(100).all()
+        return jsonify([p.to_dict() for p in matches])
+    except Exception as e:
+        import traceback
+        print("[SEARCH ERROR]", traceback.format_exc())
+        return jsonify({"error": str(e)}), 500
 
 @arbitros_bp.route('/api/telegram/players/register', methods=['POST'])
 def telegram_register_player():
