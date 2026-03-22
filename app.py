@@ -105,6 +105,7 @@ csrf.exempt(arbitros_bp)
 csrf.exempt(anonymize_bp)
 
 @app.route('/api/upload', methods=['POST'])
+@csrf.exempt
 def api_upload():
     if 'file' not in request.files:
         return jsonify({'error': 'No se envió ningún archivo'}), 400
