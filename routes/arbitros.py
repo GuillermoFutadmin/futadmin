@@ -188,10 +188,16 @@ def telegram_verify_user():
                     eq = Equipo.query.filter_by(email=user.email).first()
                     if eq: equipo_id = eq.id
 
-                # Identificación Automática: Guardar telegram_id si se recibe
+                # Identificación Automática: Guardar telegram_id si se recibe y no está en uso por otro
                 if telegram_id:
-                    user.telegram_id = str(telegram_id)
-                    db.session.commit()
+                    from sqlalchemy import or_
+                    existing = Usuario.query.filter_by(telegram_id=str(telegram_id)).first()
+                    if not existing:
+                        user.telegram_id = str(telegram_id)
+                        db.session.commit()
+                    elif existing.id != user.id:
+                        print(f"[AUTH] Telegram ID {telegram_id} ya está vinculado a usuario {existing.id} ({existing.email}). No se actualiza.")
+                        # No lanzamos error, permitimos el login con el email/pass correcto
 
                 return jsonify({
                     "authenticated": True,
