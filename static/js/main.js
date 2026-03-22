@@ -16,6 +16,7 @@ import { SettingsModule } from './modules/settings.js';
 import { AnalyticsModule } from './modules/analytics.js';
 import { PrivacyModule } from './modules/privacy.js';
 import { DashboardMap } from './modules/dashboard_map.js';
+import { MarketingModule } from './modules/marketing.js';
 
 class FutAdminUI {
     constructor() {
@@ -36,6 +37,7 @@ class FutAdminUI {
         this.analytics = new AnalyticsModule(this);
         this.privacy = new PrivacyModule(this);
         this.map = new DashboardMap();
+        this.marketing = new MarketingModule(this);
 
         this.initEventListeners();
         this.loadInitialStats();

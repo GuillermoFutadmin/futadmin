@@ -9,41 +9,99 @@
         </div>
     </div>
     
-    <div class="marketing-dashboard fade-in-up"" style="padding: 20px 0;">
-        <div class="leagues-grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));">
+    <div class="marketing-dashboard fade-in-up" style="padding: 20px 0;">
+        
+        <!-- Vista del selector de plantillas -->
+        <div id="marketing-grid" class="leagues-grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); display: grid;">
             
             <!-- Herramienta: Resultado del Partido -->
-            <div class="premium-card clickable" style="padding: 24px; text-align: center; border: 1px solid rgba(236,72,153,0.3); background: rgba(236,72,153,0.05); transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+            <div class="premium-card clickable" style="padding: 24px; text-align: center; border: 1px solid rgba(236,72,153,0.3); background: rgba(236,72,153,0.05); transition: transform 0.2s; opacity: 0.5; filter: grayscale(1);" title="Próximamente">
                 <div style="font-size: 3rem; margin-bottom: 15px;">⚽</div>
                 <h3 style="margin: 0 0 10px 0; color: #fff;">Resultado Final</h3>
                 <p class="text-muted" style="font-size: 0.85rem; margin-bottom: 20px;">Diseño con el marcador del partido y estadísticas clave.</p>
-                <button class="btn-primary" style="background: linear-gradient(135deg, #ec4899, #be185d); border: none; width: 100%;">Usar Plantilla</button>
+                <button class="btn-primary" style="background: linear-gradient(135deg, #ec4899, #be185d); border: none; width: 100%;" disabled>Próximamente</button>
             </div>
 
             <!-- Herramienta: MVP -->
-            <div class="premium-card clickable" style="padding: 24px; text-align: center; border: 1px solid rgba(139,92,246,0.3); background: rgba(139,92,246,0.05); transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+            <div class="premium-card clickable" style="padding: 24px; text-align: center; border: 1px solid rgba(139,92,246,0.3); background: rgba(139,92,246,0.05); transition: transform 0.2s; opacity: 0.5; filter: grayscale(1);" title="Próximamente">
                 <div style="font-size: 3rem; margin-bottom: 15px;">⭐</div>
                 <h3 style="margin: 0 0 10px 0; color: #fff;">Jugador MVP</h3>
                 <p class="text-muted" style="font-size: 0.85rem; margin-bottom: 20px;">Destaca al mejor jugador del partido con su foto y rendimiento.</p>
-                <button class="btn-primary" style="background: linear-gradient(135deg, #8b5cf6, #6d28d9); border: none; width: 100%;">Usar Plantilla</button>
+                <button class="btn-primary" style="background: linear-gradient(135deg, #8b5cf6, #6d28d9); border: none; width: 100%;" disabled>Próximamente</button>
             </div>
 
             <!-- Herramienta: Rol de Juegos -->
-            <div class="premium-card clickable" style="padding: 24px; text-align: center; border: 1px solid rgba(14,165,233,0.3); background: rgba(14,165,233,0.05); transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+            <div class="premium-card clickable" style="padding: 24px; text-align: center; border: 1px solid rgba(14,165,233,0.3); background: rgba(14,165,233,0.05); transition: transform 0.2s; opacity: 0.5; filter: grayscale(1);" title="Próximamente">
                 <div style="font-size: 3rem; margin-bottom: 15px;">📅</div>
                 <h3 style="margin: 0 0 10px 0; color: #fff;">Rol de Juegos</h3>
                 <p class="text-muted" style="font-size: 0.85rem; margin-bottom: 20px;">Imagen con todos los horarios de la próxima jornada.</p>
-                <button class="btn-primary" style="background: linear-gradient(135deg, #0ea5e9, #0284c7); border: none; width: 100%;">Usar Plantilla</button>
+                <button class="btn-primary" style="background: linear-gradient(135deg, #0ea5e9, #0284c7); border: none; width: 100%;" disabled>Próximamente</button>
             </div>
 
             <!-- Herramienta: Comunicado -->
-            <div class="premium-card clickable" style="padding: 24px; text-align: center; border: 1px solid rgba(245,158,11,0.3); background: rgba(245,158,11,0.05); transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+            <div class="premium-card clickable" style="padding: 24px; text-align: center; border: 1px solid rgba(245,158,11,0.5); background: rgba(245,158,11,0.1); transition: transform 0.2s; box-shadow: 0 0 20px rgba(245,158,11,0.2);" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
                 <div style="font-size: 3rem; margin-bottom: 15px;">📢</div>
                 <h3 style="margin: 0 0 10px 0; color: #fff;">Avisos Oficiales</h3>
-                <p class="text-muted" style="font-size: 0.85rem; margin-bottom: 20px;">Genera comunicados elegantes para tu comunidad.</p>
-                <button class="btn-primary" style="background: linear-gradient(135deg, #f59e0b, #d97706); border: none; width: 100%;">Usar Plantilla</button>
+                <p class="text-muted" style="font-size: 0.85rem; margin-bottom: 20px;">Genera comunicados elegantes para tu comunidad o foto de perfil.</p>
+                <button class="btn-primary" style="background: linear-gradient(135deg, #f59e0b, #d97706); border: none; width: 100%; cursor: pointer;" onclick="ui.marketing.initAvisosEditor()">Comenzar Edición</button>
             </div>
 
         </div>
+
+        <!-- Editor de Avisos Oficiales (Oculto por defecto) -->
+        <div id="marketing-editor-avisos" style="display: none; align-items: stretch; gap: 20px; flex-wrap: wrap;">
+            
+            <!-- CONTROLES -->
+            <div style="flex: 1; min-width: 320px; background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 12px; padding: 20px;">
+                <div style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+                    <h3 style="margin: 0; color: #fff;">Editor de Aviso</h3>
+                    <button class="btn-secondary" onclick="ui.marketing.closeEditor()" style="padding: 6px 12px;">← Volver</button>
+                </div>
+
+                <div class="form-group">
+                    <label>Título Principal</label>
+                    <input type="text" id="mkt-title" value="AVISO IMPORTANTE" placeholder="Ej. COMUNICADO">
+                </div>
+
+                <div class="form-group">
+                    <label>Subtítulo o Fecha</label>
+                    <input type="text" id="mkt-subtitle" value="COMUNICADO OFICIAL" placeholder="Ej. LIGA PREMIER">
+                </div>
+
+                <div class="form-group">
+                    <label>Cuerpo del Mensaje</label>
+                    <textarea id="mkt-body" rows="4" class="full-textarea" placeholder="Escribe tu mensaje..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Logo / Escudo Central</label>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="text" id="mkt-logo" placeholder="URL de la imagen" style="flex: 1;">
+                        <button class="btn-secondary" onclick="document.getElementById('global-file-upload').setAttribute('data-target', 'mkt-logo'); document.getElementById('global-file-upload').setAttribute('data-preview', ''); document.getElementById('global-file-upload').click();">Cargar</button>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group" style="flex: 1;">
+                        <label>Color Fondo 1</label>
+                        <input type="color" id="mkt-bg1" value="#0f172a" style="width: 100%; height: 40px; border: none; background: transparent; cursor: pointer;">
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label>Color Fondo 2</label>
+                        <input type="color" id="mkt-bg2" value="#020617" style="width: 100%; height: 40px; border: none; background: transparent; cursor: pointer;">
+                    </div>
+                </div>
+
+                <button class="btn-primary" style="width: 100%; margin-top: 20px; padding: 15px; font-size: 1.1rem; border-radius: 8px; font-weight: bold; background: linear-gradient(135deg, #10b981, #059669);" onclick="ui.marketing.downloadImage()">📥 Descargar Gráfico PNG</button>
+            </div>
+
+            <!-- VISTA PREVIA CANVAS -->
+            <div style="flex: 1; min-width: 320px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; background: #000; border-radius: 12px; padding: 20px; box-shadow: inset 0 0 20px rgba(0,0,0,0.8);">
+                <span class="text-muted" style="margin-bottom: 10px; font-size: 0.8rem; text-transform: uppercase;">Vista Previa Web (Alta Resolución al Descargar)</span>
+                <!-- El canvas interno se escala por CSS para caber en pantalla, pero su resolución es 1080x1080 -->
+                <canvas id="marketing-canvas" style="width: 100%; max-width: 450px; aspect-ratio: 1/1; box-shadow: 0 10px 30px rgba(0,0,0,0.5); object-fit: contain; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);"></canvas>
+            </div>
+        </div>
+
     </div>
 </div>
