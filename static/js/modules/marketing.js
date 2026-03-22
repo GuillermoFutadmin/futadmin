@@ -50,6 +50,13 @@ export class MarketingModule {
         this.closeEditor();
     }
 
+    clearLogo() {
+        this.config.logoImg = null;
+        const f = document.getElementById('mkt-logo-file');
+        if (f) f.value = '';
+        this.draw();
+    }
+
     bindEvents() {
         const attachList = ['mkt-title', 'mkt-subtitle', 'mkt-body', 'mkt-bg1', 'mkt-bg2'];
         attachList.forEach(id => {
@@ -60,33 +67,26 @@ export class MarketingModule {
             }
         });
 
-        const logoInput = document.getElementById('mkt-logo');
+        const logoInput = document.getElementById('mkt-logo-file');
         if (logoInput) {
-            // Escuchar tanto 'input' (disparado por core.js tras upload) como 'change' (edición manual)
-            const loadLogoFromInput = () => {
-                const url = logoInput.value;
-                if(url) {
+            // FileReader: lee la imagen directamente del disco, sin servidor ni CORS
+            logoInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = (evt) => {
                     const img = new Image();
                     img.onload = () => {
                         this.config.logoImg = img;
                         this.draw();
                     };
-                    img.onerror = () => {
-                        console.error("Error cargando logo en Canvas.");
-                        this.config.logoImg = null;
-                        this.draw();
-                    };
-                    img.src = url;
-                } else {
-                    this.config.logoImg = null;
-                    this.draw();
-                }
-            };
-            logoInput.addEventListener('input', loadLogoFromInput);
-            logoInput.addEventListener('change', loadLogoFromInput);
-            // Si ya hay un valor de arranque
-            if (logoInput.value) loadLogoFromInput();
+                    img.src = evt.target.result; // base64 — sin CORS, funciona al 100%
+                };
+                reader.readAsDataURL(file);
+            });
         }
+
     }
 
     updateConfigFromForm() {

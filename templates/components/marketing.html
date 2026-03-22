@@ -83,10 +83,12 @@
 
                 <div class="form-group">
                     <label>Logo / Escudo Central</label>
-                    <div style="display: flex; gap: 8px;">
-                        <input type="text" id="mkt-logo" placeholder="URL de la imagen" style="flex: 1;">
-                        <button class="btn-secondary" onclick="document.getElementById('global-file-upload').setAttribute('data-target', 'mkt-logo'); document.getElementById('global-file-upload').setAttribute('data-preview', ''); document.getElementById('global-file-upload').click();">Cargar</button>
+                    <!-- Carga DIRECTA desde el dispositivo: no usa servidor, lee en base64 al instante -->
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <input type="file" id="mkt-logo-file" accept="image/*" style="flex: 1; padding: 8px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 6px; color: #fff; cursor: pointer;">
+                        <button class="btn-secondary" onclick="ui.marketing.clearLogo()" title="Quitar logo">✕</button>
                     </div>
+                    <small class="text-muted" style="margin-top: 4px; display: block;">Se carga localmente sin subir al servidor ⚡</small>
                 </div>
 
                 <div class="form-row">
