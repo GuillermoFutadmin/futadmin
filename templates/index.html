@@ -1265,12 +1265,12 @@
     <!-- Modal para Ticket Virtual (Visual) -->
     <div id="modal-ticket" class="modal">
         <div class="modal-content"
-            style="max-width: 500px; background: #fff; color: #000; border-radius: 12px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.5);">
+            style="max-width: 500px; background: linear-gradient(145deg, #1a1c1e, #111214); color: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.05);">
             <div id="ticket-visual-content" style="padding: 0;">
                 <!-- Contenido generado dinámicamente -->
             </div>
             <div class="modal-footer"
-                style="background: #fdfdfd; padding: 1.2rem; display: flex; gap: 10px; border-top: 1px solid #eee;">
+                style="background: rgba(0,0,0,0.2); padding: 1.2rem; display: flex; gap: 10px; border-top: 1px solid rgba(255,255,255,0.05);">
                 <button type="button" class="btn-primary"
                     style="flex: 2; border-radius: 50px; padding: 12px; background: linear-gradient(135deg, #0ea5e9, #0284c7); border: none; font-weight: 700; color: #fff; box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: transform 0.2s;"
                     onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'"
@@ -1278,7 +1278,8 @@
                     <span style="font-size: 1.2rem;">📄</span> DESCARGAR FICHA TÉCNICA (PDF)
                 </button>
                 <button type="button" class="btn-secondary"
-                    style="flex: 1; border-radius: 50px; padding: 12px; background: #f0f0f0; border: 1px solid #ddd; color: #666; font-weight: 600; cursor: pointer;"
+                    style="flex: 1; border-radius: 50px; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #ccc; font-weight: 600; cursor: pointer;"
+                    onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'"
                     onclick="Core.closeModal('modal-ticket')">Cerrar</button>
             </div>
         </div>
