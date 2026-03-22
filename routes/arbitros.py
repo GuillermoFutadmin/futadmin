@@ -380,12 +380,14 @@ def telegram_get_matches():
     elif filter_team_id:
         query = query.filter((Partido.equipo_local_id == filter_team_id) | (Partido.equipo_visitante_id == filter_team_id))
 
-    # Limitar a 50 si no hay torneo_id para no saturar
+    # Ordenar y Limitar
+    query = query.order_by(Partido.fecha.asc(), Partido.hora.asc())
+    
     if not torneo_id:
         query = query.limit(50)
 
     try:
-        partidos = query.order_by(Partido.fecha.asc(), Partido.hora.asc()).all()
+        partidos = query.all()
         return jsonify([p.to_dict() for p in partidos])
     except Exception as e:
         import traceback
