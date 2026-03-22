@@ -342,12 +342,15 @@ def telegram_get_matches():
     if not torneo_id and telegram_id:
         from models import Arbitro
         arb = Arbitro.query.filter_by(telegram_id=str(telegram_id)).first()
-        if arb:
+        
+        # Si es un rol privilegiado, no filtramos por arbitro_id para que vea TODO lo del día
+        is_privileged = rol in ['admin', 'ejecutivo', 'dueño_liga']
+        
+        if arb and not is_privileged:
             query = query.filter(Partido.arbitro_id == arb.id)
-        else:
-            # Si no es árbitro pero es Admin/DueñoLiga, permitimos continuar (verá todo filtrado por hoy o liga)
-            if rol not in ['admin', 'ejecutivo', 'dueño_liga']:
-                return jsonify([])
+        elif not arb and not is_privileged:
+            # Si no es árbitro ni admin, no ve nada fuera de un torneo específico
+            return jsonify([])
 
     # Filtro de fecha
     date_filter = request.args.get('date_filter')  # 'today', 'week', 'month'
