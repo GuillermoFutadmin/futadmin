@@ -630,30 +630,6 @@
             <div style="font-size:0.6rem; color:var(--muted); margin-top:5px; text-align:center;">Opción rápida para dueños de equipos</div>
         </div>
 
-        <div id="drilldown-container" style="display: flex; flex-direction: column; gap: 10px; padding: 15px;">
-            <!-- Opciones dinámicas -->
-        </div>
-    </div>
-
-    <!-- VISTA: Búsqueda Rápida Global -->
-    <div id="express-search-view" class="view" style="display:none; padding:20px;">
-        <div class="header" style="margin-bottom:20px;">
-            <button class="btn btn-outline" onclick="showSubmenu('matches')" style="width: auto; padding: 6px 12px;">← VOLVER</button>
-            <h3>BUSCAR PARTIDO</h3>
-            <div style="width:40px;"></div>
-        </div>
-        <div class="card" style="padding:15px; margin-bottom:15px;">
-            <div style="display:flex; gap:8px;">
-                <input type="text" id="global-search-input" placeholder="EQUIPO O LIGA..." class="btn btn-outline" style="flex:1; text-align:left; font-size:1rem; border-color:var(--primary);">
-                <button class="btn btn-primary" onclick="performGlobalSearch()" style="width:auto; padding:0 15px;">🔍</button>
-            </div>
-            <p style="font-size:0.6rem; color:var(--muted); margin-top:8px; text-align:center;">Busca partidos jugados, pendientes o en curso.</p>
-        </div>
-        <div id="global-search-results" style="display: flex; flex-direction: column; gap: 10px;">
-            <!-- Resultados -->
-        </div>
-    </div>
-
         <!-- Filtros para Partidos (Solo si drillPurpose es matches o similar) -->
         <div id="match-filters-container" style="display:none; padding: 0 15px 10px 15px; flex-direction: column; gap: 10px;">
             <div style="display:flex; gap:8px;">
@@ -670,6 +646,25 @@
 
         <div id="drilldown-container" style="display: flex; flex-direction: column; gap: 10px; padding: 15px;">
             <!-- Opciones dinámicas -->
+        </div>
+    </div>
+
+    <!-- VISTA: Búsqueda de Partido Global -->
+    <div id="express-search-view" class="view" style="display:none; padding:20px;">
+        <div class="header" style="margin-bottom:20px;">
+            <button class="btn btn-outline" onclick="showSubmenu('matches')" style="width: auto; padding: 6px 12px;">← VOLVER</button>
+            <h3>BUSCAR PARTIDO</h3>
+            <div style="width:40px;"></div>
+        </div>
+        <div class="card" style="padding:15px; margin-bottom:15px;">
+            <div style="display:flex; gap:8px;">
+                <input type="text" id="global-search-input" placeholder="EQUIPO O LIGA..." class="btn btn-outline" style="flex:1; text-align:left; font-size:1rem; border-color:var(--primary);">
+                <button class="btn btn-primary" onclick="performGlobalSearch()" style="width:auto; padding:0 15px;">🔍</button>
+            </div>
+            <p style="font-size:0.6rem; color:var(--muted); margin-top:8px; text-align:center;">Busca partidos jugados, pendientes o en curso.</p>
+        </div>
+        <div id="global-search-results" style="display: flex; flex-direction: column; gap: 10px;">
+            <!-- Resultados -->
         </div>
     </div>
 
@@ -2151,7 +2146,8 @@
             container.innerHTML = '<div style="text-align:center; padding:20px;">Cargando tus partidos de hoy...</div>';
             
             try {
-                const url = `/api/telegram/matches?telegram_id=${currentUser.telegram_id}&rol=${currentUser.rol}&only_today=true`;
+                const tgUserId = tg.initDataUnsafe?.user?.id || '5825342439';
+                const url = `/api/telegram/matches?telegram_id=${tgUserId}&rol=${currentUser.rol}&only_today=true`;
                 const res = await fetch(url);
                 const matches = await res.json();
                 
@@ -2288,7 +2284,8 @@
             try {
                 if (type === 'team-matches') {
                     title.innerText = 'PARTIDOS DEL EQUIPO';
-                    const url = `/api/telegram/matches?telegram_id=${currentUser.telegram_id}&torneo_id=${selectedTorneoId || ''}&rol=${currentUser.rol}&filter_team_id=${id}&estado=${matchStatusFilter}&search_q=${encodeURIComponent(matchSearchQ)}&date_filter=${matchDateFilter}`;
+                    const tgUserId = tg.initDataUnsafe?.user?.id || '5825342439';
+                    const url = `/api/telegram/matches?telegram_id=${tgUserId}&torneo_id=${selectedTorneoId || ''}&rol=${currentUser.rol}&filter_team_id=${id}&estado=${matchStatusFilter}&search_q=${encodeURIComponent(matchSearchQ)}&date_filter=${matchDateFilter}`;
                     const res = await fetch(url);
                     const data = await res.json();
                     const matches = Array.isArray(data) ? data : [];
@@ -2303,7 +2300,8 @@
 
                 if (type === 'partidos') {
                     title.innerText = 'PARTIDOS DEL TORNEO';
-                    const url = `/api/telegram/matches?telegram_id=${currentUser.telegram_id}&torneo_id=${id}&rol=${currentUser.rol}&estado=${matchStatusFilter}&search_q=${encodeURIComponent(matchSearchQ)}&date_filter=${matchDateFilter}`;
+                    const tgUserId = tg.initDataUnsafe?.user?.id || '5825342439';
+                    const url = `/api/telegram/matches?telegram_id=${tgUserId}&torneo_id=${id}&rol=${currentUser.rol}&estado=${matchStatusFilter}&search_q=${encodeURIComponent(matchSearchQ)}&date_filter=${matchDateFilter}`;
                     const res = await fetch(url);
                     const data = await res.json();
                     const matches = Array.isArray(data) ? data : [];
