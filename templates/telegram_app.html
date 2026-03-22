@@ -2259,8 +2259,14 @@
             
             try {
                 const res = await fetch(`/api/telegram/matches/search?q=${encodeURIComponent(q)}&liga_id=${currentUser.liga_id || ''}&rol=${currentUser.rol}`);
-                const matches = await res.json();
+                const data = await res.json();
                 
+                if (!res.ok) {
+                    container.innerHTML = `<div style="text-align:center; padding:20px; color:var(--error);">Error: ${data.error || res.status}</div>`;
+                    return;
+                }
+                
+                const matches = Array.isArray(data) ? data : [];
                 if (matches.length === 0) {
                     container.innerHTML = '<p style="text-align:center; padding:20px; color:var(--muted);">No se encontraron partidos.</p>';
                     return;
@@ -2269,7 +2275,7 @@
                 currentMatches = matches;
                 renderMatchesInDrilldown(matches, container);
             } catch (e) {
-                container.innerHTML = '<p style="color:var(--error);">Error en la búsqueda.</p>';
+                container.innerHTML = '<p style="color:var(--error); text-align:center; padding:20px;">Error en la búsqueda o conexión.</p>';
             }
         }
 
@@ -2294,6 +2300,12 @@
                     const url = `/api/telegram/matches?telegram_id=${tgUserId}&torneo_id=${selectedTorneoId || ''}&rol=${currentUser.rol}&filter_team_id=${id}&estado=${matchStatusFilter}&search_q=${encodeURIComponent(matchSearchQ)}&date_filter=${matchDateFilter}`;
                     const res = await fetch(url);
                     const data = await res.json();
+                    
+                    if (!res.ok) {
+                        container.innerHTML = `<div style="text-align:center; padding:30px; color:var(--error);">Error: ${data.error || res.status}</div>`;
+                        return;
+                    }
+
                     const matches = Array.isArray(data) ? data : [];
                     currentMatches = matches;
                     renderMatchesInDrilldown(matches, container, { 
@@ -2310,6 +2322,12 @@
                     const url = `/api/telegram/matches?telegram_id=${tgUserId}&torneo_id=${id}&rol=${currentUser.rol}&estado=${matchStatusFilter}&search_q=${encodeURIComponent(matchSearchQ)}&date_filter=${matchDateFilter}`;
                     const res = await fetch(url);
                     const data = await res.json();
+                    
+                    if (!res.ok) {
+                        container.innerHTML = `<div style="text-align:center; padding:30px; color:var(--error);">Error: ${data.error || res.status}</div>`;
+                        return;
+                    }
+
                     const matches = Array.isArray(data) ? data : [];
                     currentMatches = matches;
                     renderMatchesInDrilldown(matches, container);
