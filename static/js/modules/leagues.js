@@ -919,16 +919,22 @@ export class LeaguesModule {
 
                 doc.setFont("helvetica", "normal");
                 payments.forEach((p, idx) => {
+                    // Sanity checks for numbers
+                    const pactado = Number(p.pactado || 0);
+                    const pagadoIns = Number(p.pagado_inscripcion || 0);
+                    const pagadoArb = Number(p.pagado_arbitraje || 0);
+                    const total = Number(p.total || 0);
+
                     if (y > 270) { doc.addPage(); y = 20; }
                     if (idx % 2 === 0) {
                         doc.setFillColor(250, 250, 250);
                         doc.rect(margin, y, 180, 7, 'F');
                     }
-                    doc.text(p.equipo, margin + 2, y + 5);
-                    doc.text(`$${p.pagado_inscripcion.toFixed(0)} / $${p.pactado.toFixed(0)}`, margin + 70, y + 5);
-                    doc.text(`$${p.pagado_arbitraje.toFixed(0)}`, margin + 110, y + 5);
+                    doc.text(p.equipo || "Equipo sin nombre", margin + 2, y + 5);
+                    doc.text(`$${pagadoIns.toFixed(0)} / $${pactado.toFixed(0)}`, margin + 70, y + 5);
+                    doc.text(`$${pagadoArb.toFixed(0)}`, margin + 110, y + 5);
                     doc.setFont("helvetica", "bold");
-                    doc.text(`$${p.total.toFixed(0)}`, margin + 150, y + 5);
+                    doc.text(`$${total.toFixed(0)}`, margin + 150, y + 5);
                     doc.setFont("helvetica", "normal");
                     y += 7;
                 });

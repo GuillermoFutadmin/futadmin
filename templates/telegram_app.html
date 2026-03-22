@@ -382,6 +382,25 @@
             margin-top: 4px;
             text-align: center;
         }
+
+        /* ── Filtros y chips ────────────────────────────── */
+        .filter-chip {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--muted);
+            border-radius: 20px;
+            padding: 5px 12px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            white-space: nowrap;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .filter-chip.active {
+            background: var(--primary);
+            color: #000;
+            border-color: var(--primary);
+        }
     </style>
 </head>
 
@@ -609,6 +628,44 @@
                 <button class="btn btn-primary" onclick="lookupByUid()" style="width:auto; padding:0 15px;">BUSCAR</button>
             </div>
             <div style="font-size:0.6rem; color:var(--muted); margin-top:5px; text-align:center;">Opción rápida para dueños de equipos</div>
+        </div>
+
+        <div id="drilldown-container" style="display: flex; flex-direction: column; gap: 10px; padding: 15px;">
+            <!-- Opciones dinámicas -->
+        </div>
+    </div>
+
+    <!-- VISTA: Búsqueda Rápida Global -->
+    <div id="express-search-view" class="view" style="display:none; padding:20px;">
+        <div class="header" style="margin-bottom:20px;">
+            <button class="btn btn-outline" onclick="showMenu()" style="width: auto; padding: 6px 12px;">← MENU</button>
+            <h3>BÚSQUEDA RÁPIDA</h3>
+            <div style="width:40px;"></div>
+        </div>
+        <div class="card" style="padding:15px; margin-bottom:15px;">
+            <div style="display:flex; gap:8px;">
+                <input type="text" id="global-search-input" placeholder="ESCRIBE NOMBRE DE EQUIPO..." class="btn btn-outline" style="flex:1; text-align:left; font-size:1rem; border-color:var(--primary);">
+                <button class="btn btn-primary" onclick="performGlobalSearch()" style="width:auto; padding:0 15px;">🔍</button>
+            </div>
+            <p style="font-size:0.6rem; color:var(--muted); margin-top:8px; text-align:center;">Busca partidos próximos o jugados en cualquier torneo.</p>
+        </div>
+        <div id="global-search-results" style="display: flex; flex-direction: column; gap: 10px;">
+            <!-- Resultados -->
+        </div>
+    </div>
+
+        <!-- Filtros para Partidos (Solo si drillPurpose es matches o similar) -->
+        <div id="match-filters-container" style="display:none; padding: 0 15px 10px 15px; flex-direction: column; gap: 10px;">
+            <div style="display:flex; gap:8px;">
+                <input type="text" id="match-filter-search" placeholder="🔍 BUSCAR EQUIPO O LIGA..." class="btn btn-outline" style="flex:1; text-align:left; font-size:0.85rem; border-color:rgba(255,255,255,0.2);">
+                <button class="btn btn-primary" onclick="applyMatchFilters()" style="width:auto; padding:0 12px; font-size:0.8rem;">FILTRAR</button>
+            </div>
+            <div style="display:flex; gap:8px; overflow-x:auto; padding-bottom:5px; scrollbar-width: none;">
+                <button class="filter-chip active" id="filter-date-all" onclick="updateMatchDateFilter('')">TODOS</button>
+                <button class="filter-chip" id="filter-date-today" onclick="updateMatchDateFilter('today')">HOY</button>
+                <button class="filter-chip" id="filter-date-week" onclick="updateMatchDateFilter('week')">SEMANA</button>
+                <button class="filter-chip" id="filter-date-month" onclick="updateMatchDateFilter('month')">MES</button>
+            </div>
         </div>
 
         <div id="drilldown-container" style="display: flex; flex-direction: column; gap: 10px; padding: 15px;">
@@ -2038,6 +2095,8 @@
         let drillPurpose = 'roster'; // 'roster' | 'matches' | 'payments'
         let matchStatusFilter = ''; // 'Completed' | 'Scheduled'
         let paymentTypeFilter = ''; // 'Inscripción' | 'Arbitraje'
+        let matchDateFilter = ''; // '', 'today', 'week', 'month'
+        let matchSearchQ = '';
 
         function showSubmenu(type) {
             showView('submenu-view');
@@ -2048,6 +2107,7 @@
             if (type === 'matches') {
                 title.innerText = 'GESTIONAR PARTIDO';
                 container.innerHTML = `
+                    <button class="btn btn-primary" onclick="showExpressSearch()" style="padding:20px; font-weight:800; background:linear-gradient(135deg, #22c55e, #10b981);">🔎 BÚSQUEDA RÁPIDA</button>
                     <button class="btn btn-primary" onclick="setMatchStatus('Scheduled')" style="padding:20px; font-weight:800; background:linear-gradient(135deg, #0ea5e9, #0284c7);">📅 LISTA POR TORNEO</button>
                     <button class="btn btn-primary" onclick="setMatchSearchMode('team')" style="padding:20px; font-weight:800; background:linear-gradient(135deg, #f59e0b, #d97706);">🔍 BUSCAR POR EQUIPO</button>
                     <button class="btn btn-primary" onclick="showMyMatches()" style="padding:20px; font-weight:800; background:linear-gradient(135deg, #10b981, #059669);">⚽ MIS PARTIDOS (HOY)</button>
@@ -2066,6 +2126,8 @@
 
         function setMatchStatus(status) {
             matchStatusFilter = status;
+            matchDateFilter = ''; // Reset date filter when changing category
+            matchSearchQ = '';
             drillPurpose = 'matches';
             startDrilldown('sede');
         }
@@ -2162,21 +2224,72 @@
             }
         }
 
+        function updateMatchDateFilter(filter) {
+            matchDateFilter = filter;
+            // Actualizar UI de chips
+            document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+            const activeId = filter === '' ? 'filter-date-all' : `filter-date-${filter}`;
+            const activeChip = document.getElementById(activeId);
+            if (activeChip) activeChip.classList.add('active');
+            
+            // Recargar nivel actual
+            const current = drillStack[drillStack.length - 1];
+            if (current) loadDrillLevel(current.type, current.id, true);
+        }
+
+        function applyMatchFilters() {
+            matchSearchQ = document.getElementById('match-filter-search').value.trim();
+            const current = drillStack[drillStack.length - 1];
+            if (current) loadDrillLevel(current.type, current.id, true);
+        }
+
+        function showExpressSearch() {
+            showView('express-search-view');
+            document.getElementById('global-search-input').value = '';
+            document.getElementById('global-search-results').innerHTML = '';
+        }
+
+        async function performGlobalSearch() {
+            const q = document.getElementById('global-search-input').value.trim();
+            if (q.length < 3) return alert("Ingresa al menos 3 caracteres");
+            
+            const container = document.getElementById('global-search-results');
+            container.innerHTML = '<div class="loading">Buscando...</div>';
+            
+            try {
+                const res = await fetch(`/api/telegram/matches/search?q=${encodeURIComponent(q)}&liga_id=${currentUser.liga_id || ''}&rol=${currentUser.rol}`);
+                const matches = await res.json();
+                
+                if (matches.length === 0) {
+                    container.innerHTML = '<p style="text-align:center; padding:20px; color:var(--muted);">No se encontraron partidos.</p>';
+                    return;
+                }
+                
+                currentMatches = matches;
+                renderMatchesInDrilldown(matches, container);
+            } catch (e) {
+                container.innerHTML = '<p style="color:var(--error);">Error en la búsqueda.</p>';
+            }
+        }
+
         async function loadDrillLevel(type, id, isBack = false) {
             showView('drilldown-view');
             const container = document.getElementById('drilldown-container');
             const title = document.getElementById('drilldown-title');
             const uidContainer = document.getElementById('uid-input-container');
+            const filterContainer = document.getElementById('match-filters-container');
             
             // Mostrar input de UID solo en el primer paso de Roster
             uidContainer.style.display = (drillPurpose === 'roster' && type === 'sede') ? 'block' : 'none';
+            // Mostrar filtros solo en listas de partidos
+            filterContainer.style.display = (type === 'partidos' || type === 'team-matches') ? 'flex' : 'none';
 
             container.innerHTML = '<div class="loading">Cargando...</div>';
 
             try {
                 if (type === 'team-matches') {
                     title.innerText = 'PARTIDOS DEL EQUIPO';
-                    const url = `/api/telegram/matches?telegram_id=${currentUser.telegram_id}&torneo_id=${selectedTorneoId || ''}&rol=${currentUser.rol}&filter_team_id=${id}&estado=${matchStatusFilter}`;
+                    const url = `/api/telegram/matches?telegram_id=${currentUser.telegram_id}&torneo_id=${selectedTorneoId || ''}&rol=${currentUser.rol}&filter_team_id=${id}&estado=${matchStatusFilter}&search_q=${encodeURIComponent(matchSearchQ)}&date_filter=${matchDateFilter}`;
                     const res = await fetch(url);
                     const data = await res.json();
                     const matches = Array.isArray(data) ? data : [];
@@ -2191,7 +2304,7 @@
 
                 if (type === 'partidos') {
                     title.innerText = 'PARTIDOS DEL TORNEO';
-                    const url = `/api/telegram/matches?telegram_id=${currentUser.telegram_id}&torneo_id=${id}&rol=${currentUser.rol}&estado=${matchStatusFilter}`;
+                    const url = `/api/telegram/matches?telegram_id=${currentUser.telegram_id}&torneo_id=${id}&rol=${currentUser.rol}&estado=${matchStatusFilter}&search_q=${encodeURIComponent(matchSearchQ)}&date_filter=${matchDateFilter}`;
                     const res = await fetch(url);
                     const data = await res.json();
                     const matches = Array.isArray(data) ? data : [];

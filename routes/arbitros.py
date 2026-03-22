@@ -326,6 +326,38 @@ def telegram_get_matches():
     if torneo_id:
         query = query.filter_by(torneo_id=torneo_id)
     
+    # Búsqueda por texto (Search Query)
+    search_q = request.args.get('search_q')
+    if search_q:
+        search_q = f"%{search_q}%"
+        query = query.join(Partido.equipo_local, aliased=True).filter(Equipo.nombre.ilike(search_q)).union(
+            query.join(Partido.equipo_visitante, aliased=True).filter(Equipo.nombre.ilike(search_q))
+        )
+        # Note: Union can be tricky with SQLAlchemy pagination/ordering if not handled carefully, 
+        # but for this simple list it should work. Or better use or_ logic.
+
+    # Alternative more robust search logic:
+    query = Partido.query
+    if torneo_id:
+        query = query.filter_by(torneo_id=torneo_id)
+
+    if search_q:
+        search_term = f"%{search_q}%"
+        # We need to join with Equipo twice or use subqueries for better performance, 
+        # but let's use a simpler approach first.
+        query = query.join(Equipo, Partido.equipo_local_id == Equipo.id)
+        # We'll use or_ with the join
+        from sqlalchemy import or_
+        # To search in BOTH teams, we might need two joins or a more complex filter.
+        # Actually, let's just use the to_dict() search or a simpler filter if possible.
+        # Let's try or_ with equipo_local.nombre and equipo_visitante.nombre
+        # This requires elias for teams.
+        from sqlalchemy.orm import aliased
+        Local = aliased(Equipo)
+        Visit = aliased(Equipo)
+        query = query.join(Local, Partido.equipo_local_id == Local.id).join(Visit, Partido.equipo_visitante_id == Visit.id)
+        query = query.filter(or_(Local.nombre.ilike(search_term), Visit.nombre.ilike(search_term)))
+
     # Si especifica telegram_id (y no torneo_id), buscar partidos de ese árbitro
     if not torneo_id and telegram_id:
         from models import Arbitro
@@ -337,10 +369,21 @@ def telegram_get_matches():
             if rol not in ['admin', 'ejecutivo', 'dueño_liga']:
                 return jsonify([])
 
-    # Filtro de fecha (Hoy)
-    if only_today:
-        hoy = datetime.now().date()
+    # Filtro de fecha mejorado
+    date_filter = request.args.get('date_filter') # 'today', 'week', 'month'
+    hoy = datetime.now().date()
+    
+    if only_today or date_filter == 'today':
         query = query.filter(db.func.date(Partido.fecha) == hoy)
+    elif date_filter == 'week':
+        lunes = hoy - timedelta(days=hoy.weekday())
+        domingo = lunes + timedelta(days=6)
+        query = query.filter(db.func.date(Partido.fecha).between(lunes, domingo))
+    elif date_filter == 'month':
+        inicio_mes = hoy.replace(day=1)
+        next_month = (inicio_mes + timedelta(days=32)).replace(day=1)
+        fin_mes = next_month - timedelta(days=1)
+        query = query.filter(db.func.date(Partido.fecha).between(inicio_mes, fin_mes))
         
     # Seguridad y Filtrado por Liga
     if liga_id:
@@ -365,6 +408,38 @@ def telegram_get_matches():
 
     partidos = query.order_by(Partido.fecha.asc(), Partido.hora.asc()).all()
     return jsonify([p.to_dict() for p in partidos])
+
+@arbitros_bp.route('/api/telegram/matches/search', methods=['GET'])
+def telegram_search_matches_global():
+    q = request.args.get('q', '').strip()
+    liga_id = request.args.get('liga_id', type=int)
+    rol = request.args.get('rol')
+    
+    if not q or len(q) < 3:
+        return jsonify([])
+        
+    search_term = f"%{q}%"
+    from sqlalchemy import or_
+    from sqlalchemy.orm import aliased
+    Local = aliased(Equipo)
+    Visit = aliased(Equipo)
+    
+    query = Partido.query.join(Local, Partido.equipo_local_id == Local.id).join(Visit, Partido.equipo_visitante_id == Visit.id)
+    
+    if liga_id:
+        query = query.filter(Partido.liga_id == liga_id)
+    
+    query = query.filter(or_(
+        Local.nombre.ilike(search_term),
+        Visit.nombre.ilike(search_term)
+    ))
+    
+    # Solo mostrar partidos próximos o recientes (ej. últimos 30 días y todos los futuros)
+    hace_un_mes = datetime.now().date() - timedelta(days=30)
+    query = query.filter(Partido.fecha >= hace_un_mes)
+    
+    matches = query.order_by(Partido.fecha.desc()).limit(30).all()
+    return jsonify([p.to_dict() for p in matches])
 
 @arbitros_bp.route('/api/telegram/players/register', methods=['POST'])
 def telegram_register_player():
