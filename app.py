@@ -1463,7 +1463,7 @@ def generar_rol(torneo_id):
     equipos = Equipo.query.filter_by(torneo_id=torneo_id).all()
     
     if len(equipos) < 2:
-        return jsonify({'error': 'Se necesitan al menos 2 equipos para generar el rol.'}), 400
+        return jsonify({'success': False, 'error': 'Se necesitan al menos 2 equipos para generar el rol.'}), 200
 
     try:
         # 1. Identificar partidos que se pueden borrar (los que no han empezado ni tienen marcador)
@@ -1680,7 +1680,7 @@ def auto_schedule_torneo(torneo_id):
     partidos = Partido.query.filter_by(torneo_id=torneo_id).order_by(Partido.jornada, Partido.id).all()
     
     if not partidos:
-        return jsonify({'error': 'No hay partidos generados para este torneo.'}), 400
+        return jsonify({'success': False, 'error': 'No hay partidos generados para este torneo.'}), 200
 
     data = request.json or {}
     manual_weekdays = data.get('allowed_weekdays')

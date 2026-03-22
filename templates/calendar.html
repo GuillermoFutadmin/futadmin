@@ -2504,7 +2504,11 @@
                 try {
                     const reset = existing > 0;
                     const result = await api('POST', `/api/torneos/${state.torneoId}/generar_rol?reset=${reset}&tipo=${tipo}&teams_per_group=${teamsPerGroup}`);
-                    toast(`✅ ${result.message}`, 'success');
+                    if (result.success === false) {
+                        toast(`Error al generar el rol: ${result.error}`, 'error');
+                        return;
+                    }
+                    toast(`✅ Rol generado correctamente. Partidos creados: ${result.partidos_generados || 0}`, 'success');
                     closeGenModal();
                     await loadMatches();
                     if (state.currentView === 'calendar') renderCalendar();
@@ -2780,7 +2784,11 @@
 
                 try {
                     const res = await api('POST', `/api/torneos/${state.torneoId}/auto_schedule`, payload);
-                    toast(`¡Listo! Se programaron ${res.scheduled_count} partidos.`, 'success');
+                    if (res.success === false) {
+                        toast(res.error || 'Error al auto-programar', 'error');
+                        return;
+                    }
+                    toast(`¡Listo! Se programaron ${res.scheduled_count || 0} partidos.`, 'success');
                     closeScheduleModal();
                     await refreshData();
                 } catch (e) {
