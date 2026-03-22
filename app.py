@@ -104,6 +104,20 @@ csrf.exempt(users_bp)
 csrf.exempt(arbitros_bp)
 csrf.exempt(anonymize_bp)
 
+@app.route('/api/upload', methods=['POST'])
+def api_upload():
+    if 'file' not in request.files:
+        return jsonify({'error': 'No se envió ningún archivo'}), 400
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'Archivo sin nombre'}), 400
+    
+    url, error = handle_image_upload(file)
+    if error:
+        return jsonify({'error': error}), 500
+    
+    return jsonify({'url': url, 'success': True})
+
 @app.route('/telegram_app')
 @app.route('/telegram')
 def telegram_app_view():

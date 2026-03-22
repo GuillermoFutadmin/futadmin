@@ -20,6 +20,7 @@ export class MarketingModule {
 
     initAvisosEditor() {
         document.getElementById('marketing-grid').style.display = 'none';
+        document.getElementById('marketing-editor-logos').style.display = 'none';
         document.getElementById('marketing-editor-avisos').style.display = 'flex';
         
         const canvas = document.getElementById(this.canvasId);
@@ -35,7 +36,18 @@ export class MarketingModule {
 
     closeEditor() {
         document.getElementById('marketing-editor-avisos').style.display = 'none';
-        document.getElementById('marketing-grid').style.display = 'block';
+        document.getElementById('marketing-editor-logos').style.display = 'none';
+        document.getElementById('marketing-grid').style.display = 'grid';
+    }
+
+    initLogosGallery() {
+        document.getElementById('marketing-grid').style.display = 'none';
+        document.getElementById('marketing-editor-avisos').style.display = 'none';
+        document.getElementById('marketing-editor-logos').style.display = 'flex';
+    }
+
+    closeLogosGallery() {
+        this.closeEditor();
     }
 
     bindEvents() {
@@ -195,7 +207,7 @@ export class MarketingModule {
         // Footer Brand (Marca de agua o pie de imagen)
         ctx.fillStyle = 'rgba(255,255,255,0.3)';
         ctx.font = '700 24px "Inter", Arial, sans-serif';
-        ctx.fillText('POWERED BY FUTADMIN', width/2, height - 85);
+        ctx.fillText('CREADO POR FUTADMIN.COM.MX', width/2, height - 85);
     }
 
     downloadImage() {
