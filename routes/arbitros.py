@@ -722,6 +722,34 @@ def telegram_match_checkin(id):
         db.session.rollback()
         return jsonify({"error": str(e)}), 500
 
+@arbitros_bp.route('/api/telegram/match/<int:id>/players', methods=['GET'])
+def telegram_match_players(id):
+    """Devuelve la plantilla de jugadores de ambos equipos para un partido (no requiere sesión)."""
+    try:
+        partido = Partido.query.get_or_404(id)
+        local_players = Jugador.query.filter_by(equipo_id=partido.equipo_local_id).all()
+        visitante_players = Jugador.query.filter_by(equipo_id=partido.equipo_visitante_id).all()
+
+        asistencias = AsistenciaPartido.query.filter_by(partido_id=id).all()
+        asistencia_map = {a.jugador_id: a.presente for a in asistencias}
+
+        return jsonify({
+            "local": [{
+                "id": j.id,
+                "nombre": j.nombre,
+                "numero": j.numero,
+                "presente": asistencia_map.get(j.id, False)
+            } for j in local_players],
+            "visitante": [{
+                "id": j.id,
+                "nombre": j.nombre,
+                "numero": j.numero,
+                "presente": asistencia_map.get(j.id, False)
+            } for j in visitante_players]
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @arbitros_bp.route('/api/telegram/match/<int:id>/detalles', methods=['GET'])
 def telegram_match_detalles(id):
     try:

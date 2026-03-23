@@ -1228,7 +1228,7 @@
             // Cargar jugadores y ESPERAR a que carguen antes de retornar
             matchPlayers = { local: [], visitante: [] };
             try {
-                const res = await fetch(`/api/partido/${activeMatch.id}/players`);
+                const res = await fetch(`/api/telegram/match/${activeMatch.id}/players`);
                 if (res.ok) {
                     matchPlayers = await res.json();
                 } else {
