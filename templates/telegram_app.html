@@ -1228,13 +1228,20 @@
             // Cargar jugadores y ESPERAR a que carguen antes de retornar
             matchPlayers = { local: [], visitante: [] };
             try {
-                const res = await fetch(`/api/telegram/match/${activeMatch.id}/players`);
+                const url = `/api/telegram/match/${activeMatch.id}/players`;
+                console.log('[DEBUG] Fetching players from:', url);
+                const res = await fetch(url);
+                console.log('[DEBUG] Players response status:', res.status, res.ok);
                 if (res.ok) {
-                    matchPlayers = await res.json();
+                    const data = await res.json();
+                    console.log('[DEBUG] Players data:', JSON.stringify(data).substring(0, 200));
+                    matchPlayers = data;
                 } else {
-                    console.warn('No se pudieron cargar jugadores:', res.status);
+                    const txt = await res.text();
+                    console.warn('[DEBUG] Players error body:', txt.substring(0, 300));
                 }
-            } catch (e) { console.error("Error cargando jugadores:", e); }
+            } catch (e) { console.error('[DEBUG] Error cargando jugadores:', e); }
+            console.log('[DEBUG] matchPlayers after load:', matchPlayers.local.length, 'local,', matchPlayers.visitante.length, 'visitante');
             // Retorna solo cuando matchPlayers ya está listo
         }
 
@@ -1702,40 +1709,57 @@
         }
 
         async function openCheckIn() {
-            if (!matchPlayers || (!matchPlayers.local.length && !matchPlayers.visitante.length)) {
-                alert("Cargando lista de jugadores, por favor espera un momento...");
-                return;
-            }
+            console.log('[DEBUG] openCheckIn called. matchPlayers:', JSON.stringify(matchPlayers).substring(0, 100));
 
             // Si es dueño de equipo, mostrar botón de registro
-            const canRegister = currentUser.rol === 'equipo' || ['admin', 'ejecutivo', 'dueño_liga'].includes(currentUser.rol);
-            const regButton = canRegister ? `<button class="btn btn-outline" onclick="openRegistration()" style="margin: 10px; width: calc(100% - 20px);">➕ REGISTRAR NUEVO JUGADOR</button>` : '';
+            const canRegister = currentUser.rol === 'equipo' || ['admin', 'ejecutivo', 'duéño_liga'].includes(currentUser.rol);
 
             showView('checkin-view');
             const container = document.getElementById('checkin-container');
-            container.innerHTML = regButton;
+            if (!container) {
+                console.error('[DEBUG] checkin-container element NOT FOUND!');
+                return;
+            }
 
-            let html = `<div style="padding:10px; color:var(--primary); font-weight:bold;">${activeMatch.equipo_local}</div>`;
-            html += (matchPlayers.local || []).map(p => `
+            const localList = (matchPlayers && matchPlayers.local) ? matchPlayers.local : [];
+            const visitList = (matchPlayers && matchPlayers.visitante) ? matchPlayers.visitante : [];
+
+            if (localList.length === 0 && visitList.length === 0) {
+                console.warn('[DEBUG] No players found for either team.');
+                container.innerHTML = `
+                    ${canRegister ? `<button class="btn btn-outline" onclick="openRegistration()" style="margin: 10px; width: calc(100% - 20px);">&#x2795; REGISTRAR NUEVO JUGADOR</button>` : ''}
+                    <div style="text-align:center; padding:30px; color:var(--muted); font-size:0.9rem;">&#x26BD; No hay jugadores registrados todavía.<br><small>Puedes iniciar el partido sin lista de asistencia.</small></div>
+                `;
+                return;
+            }
+
+            let html = '';
+            if (canRegister) {
+                html += `<button class="btn btn-outline" onclick="openRegistration()" style="margin:10px; width:calc(100% - 20px);">&#x2795; REGISTRAR NUEVO JUGADOR</button>`;
+            }
+
+            html += `<div style="padding:10px; color:var(--primary); font-weight:bold;">${activeMatch.equipo_local}</div>`;
+            html += localList.map(p => `
                 <div class="player-item" onclick="togglePresence(${p.id}, ${activeMatch.equipo_local_id}, this)">
                     <span>#${p.numero || '?'} ${p.nombre}</span>
                     <span class="presence-indicator" style="color: ${p.presente ? 'var(--primary)' : 'var(--muted)'}">
-                        ${p.presente ? '✅ PRESENTE' : '❌ Ausente'}
+                        ${p.presente ? '&#x2705; PRESENTE' : '&#x274C; Ausente'}
                     </span>
                 </div>
             `).join('');
 
             html += `<div style="padding:10px; color:var(--primary); font-weight:bold; margin-top:20px;">${activeMatch.equipo_visitante}</div>`;
-            html += (matchPlayers.visitante || []).map(p => `
+            html += visitList.map(p => `
                 <div class="player-item" onclick="togglePresence(${p.id}, ${activeMatch.equipo_visitante_id}, this)">
                     <span>#${p.numero || '?'} ${p.nombre}</span>
                     <span class="presence-indicator" style="color: ${p.presente ? 'var(--primary)' : 'var(--muted)'}">
-                        ${p.presente ? '✅ PRESENTE' : '❌ Ausente'}
+                        ${p.presente ? '&#x2705; PRESENTE' : '&#x274C; Ausente'}
                     </span>
                 </div>
             `).join('');
 
             container.innerHTML = html;
+            console.log('[DEBUG] checkin rendered:', localList.length, 'local +', visitList.length, 'visitante');
         }
 
         async function togglePresence(playerId, equipoId, el) {
