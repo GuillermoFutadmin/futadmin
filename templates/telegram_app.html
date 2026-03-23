@@ -1407,33 +1407,50 @@
             }
         }
 
-        // (updatePauseButtonUI and updateTimerDisplay are defined above in the server-synced timer section)
-
-        function confirmEndMatch() {
-            if (!confirm('ATENCIÓN: ¿Seguro que deseas FINALIZAR el partido? Esta acción no se puede deshacer.')) return;
-            gameAction('Fin');
-        }
-
         async function gameAction(type) {
-            const extra = document.getElementById('extra-minutes') ? document.getElementById('extra-minutes').value : 0;
+            console.log(`[DEBUG] gameAction called: ${type}`);
             const currentMinute = Math.floor(calcElapsedSeconds() / 60);
 
             const data = {
                 tipo: type,
                 minuto: currentMinute,
-                nota: type === 'Fin' ? `Tiempo extra: ${extra} min` : ''
+                nota: ''
             };
-            const result = await sendEvent(data);
-            if (result) {
-                // Server returns updated match state - sync it
-                if (result.match) {
-                    activeMatch = { ...activeMatch, ...result.match };
+            
+            console.log(`[DEBUG] Sending event:`, data);
+            try {
+                const result = await sendEvent(data);
+                console.log(`[DEBUG] sendEvent result:`, result);
+
+                if (result) {
+                    if (result.match) {
+                        activeMatch = { ...activeMatch, ...result.match };
+                        console.log(`[DEBUG] Updated activeMatch state:`, activeMatch.estado);
+                    }
+                    
+                    const scoreEl = document.getElementById('live-score');
+                    if (scoreEl) {
+                        scoreEl.innerText = `${activeMatch.goles_local || 0} - ${activeMatch.goles_visitante || 0}`;
+                    }
+                    
+                    // Al iniciar o reanudar, vamos a la vista de seguimiento
+                    if (type === 'Inicio' || type === 'Reanudación') {
+                        showView('match-view');
+                    }
+                    
+                    updateControlsVisibility();
+                    logEvent(type, null, currentMinute);
+                    
+                    if (tg.isVersionAtLeast('6.1')) {
+                        tg.HapticFeedback.notificationOccurred('success');
+                    }
+                } else {
+                    console.error(`[DEBUG] gameAction failed: result is null`);
+                    alert("Error: El servidor no respondió correctamente.");
                 }
-                document.getElementById('live-score').innerText = `${activeMatch.goles_local || 0} - ${activeMatch.goles_visitante || 0}`;
-                if (type === 'Reanudación') showView('match-view');
-                updateControlsVisibility();
-                logEvent(type, null, currentMinute);
-                tg.HapticFeedback.notificationOccurred('success');
+            } catch (err) {
+                console.error(`[DEBUG] gameAction EXCEPTION:`, err);
+                alert("Error de ejecución: " + err.message);
             }
         }
 
@@ -1649,22 +1666,34 @@
 
             if (!teamId || teamId === activeMatch.equipo_local_id) {
                 html += `<div style="color:var(--primary); font-weight:bold; margin: 10px 0;">${activeMatch.equipo_local}</div>`;
-                html += (matchPlayers.local || []).map(p => `
-                    <div class="player-item" onclick="initEventDetails(${p.id}, ${activeMatch.equipo_local_id}, '${p.nombre}')">
-                        <span>#${p.numero || '?'} ${p.nombre}</span>
-                        <span>➔</span>
-                    </div>
-                `).join('');
+                // Solo mostrar jugadores marcados como PRESENTES
+                const presentes = (matchPlayers.local || []).filter(p => p.presente);
+                if (presentes.length === 0) {
+                    html += `<div style="padding:10px; color:var(--muted); font-size:0.8rem;">(Sin jugadores presentes)</div>`;
+                } else {
+                    html += presentes.map(p => `
+                        <div class="player-item" onclick="initEventDetails(${p.id}, ${activeMatch.equipo_local_id}, '${p.nombre}')">
+                            <span>#${p.numero || '?'} ${p.nombre}</span>
+                            <span>➔</span>
+                        </div>
+                    `).join('');
+                }
             }
 
             if (!teamId || teamId === activeMatch.equipo_visitante_id) {
                 html += `<div style="color:var(--primary); font-weight:bold; margin: 20px 0 10px 0;">${activeMatch.equipo_visitante}</div>`;
-                html += (matchPlayers.visitante || []).map(p => `
-                    <div class="player-item" onclick="initEventDetails(${p.id}, ${activeMatch.equipo_visitante_id}, '${p.nombre}')">
-                        <span>#${p.numero || '?'} ${p.nombre}</span>
-                        <span>➔</span>
-                    </div>
-                `).join('');
+                // Solo mostrar jugadores marcados como PRESENTES
+                const presentes = (matchPlayers.visitante || []).filter(p => p.presente);
+                if (presentes.length === 0) {
+                    html += `<div style="padding:10px; color:var(--muted); font-size:0.8rem;">(Sin jugadores presentes)</div>`;
+                } else {
+                    html += presentes.map(p => `
+                        <div class="player-item" onclick="initEventDetails(${p.id}, ${activeMatch.equipo_visitante_id}, '${p.nombre}')">
+                            <span>#${p.numero || '?'} ${p.nombre}</span>
+                            <span>➔</span>
+                        </div>
+                    `).join('');
+                }
             }
 
             container.innerHTML = html || '<div style="text-align:center; padding:20px; color:var(--muted);">No hay jugadores registrados</div>';
@@ -1782,11 +1811,12 @@
             `).join('');
 
             container.innerHTML = html;
-            console.log('[DEBUG] checkin rendered:', localList.length, 'local +', visitList.length, 'visitante');
         }
 
         async function togglePresence(playerId, equipoId, el) {
             const indicator = el.querySelector('.presence-indicator');
+            if (!indicator) return;
+            
             const isPresent = indicator.innerText.includes('PRESENTE');
             const newStatus = !isPresent;
 
@@ -1803,13 +1833,13 @@
                 });
                 
                 if (!res.ok) {
-                    // Revertir si falla
-                    alert("Error al guardar asistencia. Intenta de nuevo.");
+                    const err = await res.json().catch(() => ({ error: 'Error desconocido' }));
+                    alert("Error servidor: " + (err.error || "No se pudo guardar"));
+                    
+                    // Revertir UI
                     indicator.innerHTML = isPresent ? '&#x2705; PRESENTE' : '&#x274C; Ausente';
                     indicator.style.color = isPresent ? 'var(--primary)' : 'var(--muted)';
                     el.style.background = isPresent ? 'rgba(34, 197, 94, 0.1)' : 'rgba(255, 255, 255, 0.03)';
-                    const err = await res.json();
-                    alert("Error servidor: " + (err.error || "Desconocido"));
                 } else {
                     if (tg.isVersionAtLeast('6.1')) {
                         tg.HapticFeedback.impactOccurred('light');
@@ -1819,13 +1849,11 @@
                     const list = (matchPlayers.local || []).some(p => p.id === playerId) ? matchPlayers.local : matchPlayers.visitante;
                     const player = list.find(p => p.id === playerId);
                     if (player) player.presente = newStatus;
-
-                    tg.HapticFeedback.impactOccurred('light');
-                } else {
-                    const err = await res.json();
-                    alert("Error servidor: " + (err.error || "Desconocido"));
                 }
-            } catch (e) { alert("Error de red al registrar asistencia"); }
+            } catch (e) { 
+                console.error("Error toggling presence:", e);
+                alert("Error de red al registrar asistencia"); 
+            }
         }
 
         function showMatchView() { showView('match-view'); }
