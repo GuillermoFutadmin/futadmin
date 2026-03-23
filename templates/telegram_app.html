@@ -2365,7 +2365,7 @@
                 } else if (type === 'torneo') {
                     title.innerText = 'SELECCIONAR TORNEO';
                     url = `/api/telegram/tours?liga_id=${id}&rol=${currentUser.rol}&_v=${Date.now()}`;
-                    nextType = (drillPurpose === 'matches') ? 'matches' : 'equipo';
+                    nextType = (drillPurpose === 'matches') ? 'partidos' : 'equipo';
                 } else if (type === 'equipo') {
                     title.innerText = 'SELECCIONAR EQUIPO';
                     url = `/api/telegram/tournaments/teams?torneo_id=${id}&liga_id=${currentUser.liga_id || ''}&rol=${currentUser.rol}`;
