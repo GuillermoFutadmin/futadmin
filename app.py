@@ -2545,12 +2545,7 @@ def get_torneo_standings(id):
 
 @app.route('/api/torneos/<int:id>/leaderboard', methods=['GET'])
 def get_torneo_leaderboard(id):
-    try:
-        return run_leaderboard_query(id)
-    except Exception as e:
-        import traceback
-        print(traceback.format_exc())
-        return jsonify({"error": str(e), "traceback": traceback.format_exc()}), 500
+    return run_leaderboard_query(id)
 
 def run_leaderboard_query(id):
     # Goles (Eventos + Legacy)
@@ -2561,7 +2556,8 @@ def run_leaderboard_query(id):
         Equipo.escudo_url,
         Jugador.goles_legacy,
         db.func.count(EventoPartido.id).label('event_total')
-    ).outerjoin(EventoPartido, db.and_(Jugador.id == EventoPartido.jugador_id, EventoPartido.tipo == 'Gol', 
+    ).select_from(Jugador)\
+     .outerjoin(EventoPartido, db.and_(Jugador.id == EventoPartido.jugador_id, EventoPartido.tipo == 'Gol', 
                                       EventoPartido.partido_id.in_(db.session.query(Partido.id).filter_by(torneo_id=id))))\
      .join(Equipo, Jugador.equipo_id == Equipo.id)\
      .filter(Equipo.torneo_id == id)\
@@ -2584,7 +2580,8 @@ def run_leaderboard_query(id):
         Equipo.escudo_url,
         Jugador.amarillas_legacy,
         db.func.count(EventoPartido.id).label('event_total')
-    ).outerjoin(EventoPartido, db.and_(Jugador.id == EventoPartido.jugador_id, EventoPartido.tipo == 'Amarilla',
+    ).select_from(Jugador)\
+     .outerjoin(EventoPartido, db.and_(Jugador.id == EventoPartido.jugador_id, EventoPartido.tipo == 'Amarilla',
                                       EventoPartido.partido_id.in_(db.session.query(Partido.id).filter_by(torneo_id=id))))\
      .join(Equipo, Jugador.equipo_id == Equipo.id)\
      .filter(Equipo.torneo_id == id)\
@@ -2607,7 +2604,8 @@ def run_leaderboard_query(id):
         Equipo.escudo_url,
         Jugador.rojas_legacy,
         db.func.count(EventoPartido.id).label('event_total')
-    ).outerjoin(EventoPartido, db.and_(Jugador.id == EventoPartido.jugador_id, EventoPartido.tipo == 'Roja',
+    ).select_from(Jugador)\
+     .outerjoin(EventoPartido, db.and_(Jugador.id == EventoPartido.jugador_id, EventoPartido.tipo == 'Roja',
                                       EventoPartido.partido_id.in_(db.session.query(Partido.id).filter_by(torneo_id=id))))\
      .join(Equipo, Jugador.equipo_id == Equipo.id)\
      .filter(Equipo.torneo_id == id)\
