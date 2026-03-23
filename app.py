@@ -484,7 +484,15 @@ def handle_equipos():
             "ticket": ticket_data
         }), 201
 
-    return jsonify({"error": "Método no permitido"}), 405
+    torneo_id = request.args.get('torneo_id', type=int)
+    query = Equipo.query
+    query = apply_liga_filter(query, Equipo)
+    
+    if torneo_id:
+        query = query.filter_by(torneo_id=torneo_id)
+    
+    rol = session.get('user_rol')
+    return paginate_query(query, renderer=lambda e: e.to_dict(user_rol=rol))
 
 @app.route('/api/equipos/bulk', methods=['POST'])
 @csrf.exempt
