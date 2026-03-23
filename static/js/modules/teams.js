@@ -527,6 +527,10 @@ export class TeamsModule {
                     oninput="ui.teams.updateBulkCounter()">
             </td>
             <td style="padding: 8px;">
+                <input type="text" class="bulk-team-delegado" placeholder="Nombre del Capitán" 
+                    style="width: 100%; padding: 8px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 6px; color: #fff;">
+            </td>
+            <td style="padding: 8px;">
                 <input type="email" class="bulk-team-email" placeholder="delegado@correo.com" 
                     style="width: 100%; padding: 8px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 6px; color: #fff;">
             </td>
@@ -562,11 +566,12 @@ export class TeamsModule {
 
         rows.forEach(row => {
             const nombre = row.querySelector('.bulk-team-name').value.trim();
+            const delegado = row.querySelector('.bulk-team-delegado').value.trim();
             const email = row.querySelector('.bulk-team-email').value.trim();
             const grupo = row.querySelector('.bulk-team-grupo').value.trim();
 
             if (nombre) {
-                equipos.push({ nombre, email, grupo });
+                equipos.push({ nombre, delegado, email, grupo });
             }
         });
 

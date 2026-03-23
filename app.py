@@ -532,9 +532,22 @@ def bulk_create_equipos():
             ins = Inscripcion(
                 torneo_id=torneo_id,
                 equipo_id=nuevo.id,
-                monto_pactado_inscripcion=float(torneo.costo_inscripcion or 0)
+                monto_pactado_inscripcion=float(torneo.costo_inscripcion or 0),
+                liga_id=torneo.liga_id
             )
             db.session.add(ins)
+
+            # Crear delegado como jugador si se proporciona nombre
+            nombre_delegado = item.get('delegado', '').strip()
+            if nombre_delegado:
+                jug = Jugador(
+                    nombre=nombre_delegado,
+                    equipo_id=nuevo.id,
+                    liga_id=torneo.liga_id,
+                    es_capitan=True
+                )
+                db.session.add(jug)
+
             creados += 1
         except Exception as e:
             errores.append(f"Error en {nombre}: {str(e)}")
