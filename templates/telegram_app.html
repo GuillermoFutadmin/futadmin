@@ -555,14 +555,14 @@
     </div>
 
     <!-- Vista de Pase de Lista (Check-in) -->
-    <div id="checkin-view">
+    <div id="checkin-view" style="padding: 16px; overflow-y: auto; min-height: 50px;">
         <div class="header">
             <button class="btn btn-outline" onclick="showMatchView()" style="width: auto; padding: 6px 12px;">← VOLVER</button>
             <h3>PASE DE LISTA</h3>
             <button class="btn btn-primary" onclick="showMatchView()" style="width: auto; padding: 6px 12px;">LISTO</button>
         </div>
         <!-- Botón INICIAR PARTIDO siempre visible en el pase de lista -->
-        <button class="btn btn-primary" onclick="gameAction('Inicio')" style="width: calc(100% - 30px); margin: 10px 15px; background: linear-gradient(135deg, #22c55e, #10b981); font-weight:900; height:50px; font-size:1rem;">🚀 INICIAR PARTIDO</button>
+        <button class="btn btn-primary" onclick="gameAction('Inicio')" style="width: 100%; margin-bottom: 12px; background: linear-gradient(135deg, #22c55e, #10b981); font-weight:900; height:50px; font-size:1rem;">🚀 INICIAR PARTIDO</button>
         <div id="checkin-container" style="padding-bottom: 30px;">
             <!-- Jugadores -->
         </div>
