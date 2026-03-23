@@ -557,12 +557,12 @@
     <!-- Vista de Pase de Lista (Check-in) -->
     <div id="checkin-view">
         <div class="header">
-            <button class="btn btn-outline" onclick="showMatchView()" style="width: auto; padding: 6px 12px;">←
-                VOLVER</button>
+            <button class="btn btn-outline" onclick="showMatchView()" style="width: auto; padding: 6px 12px;">← VOLVER</button>
             <h3>PASE DE LISTA</h3>
-            <button class="btn btn-primary" onclick="showMatchView()"
-                style="width: auto; padding: 6px 12px;">LISTO</button>
+            <button class="btn btn-primary" onclick="showMatchView()" style="width: auto; padding: 6px 12px;">LISTO</button>
         </div>
+        <!-- Botón INICIAR PARTIDO siempre visible en el pase de lista -->
+        <button class="btn btn-primary" onclick="gameAction('Inicio')" style="width: calc(100% - 30px); margin: 10px 15px; background: linear-gradient(135deg, #22c55e, #10b981); font-weight:900; height:50px; font-size:1rem;">🚀 INICIAR PARTIDO</button>
         <div id="checkin-container" style="padding-bottom: 30px;">
             <!-- Jugadores -->
         </div>
@@ -1205,7 +1205,10 @@
         }
 
         async function openMatchAndCheckIn(index) {
+            // Primero cargar el partido (incluye la fetch de jugadores) y LUEGO abrir el checkin
+            // Así evitamos la race condition donde matchPlayers todavía está vacío
             await openMatch(currentMatches[index]);
+            // openMatch ya cargó matchPlayers, podemos abrir checkin de forma segura
             openCheckIn();
         }
 
@@ -1222,12 +1225,17 @@
 
             updateControlsVisibility();
 
-            // Load players for check-in and event recording
+            // Cargar jugadores y ESPERAR a que carguen antes de retornar
             matchPlayers = { local: [], visitante: [] };
             try {
                 const res = await fetch(`/api/partido/${activeMatch.id}/players`);
-                matchPlayers = await res.json();
+                if (res.ok) {
+                    matchPlayers = await res.json();
+                } else {
+                    console.warn('No se pudieron cargar jugadores:', res.status);
+                }
             } catch (e) { console.error("Error cargando jugadores:", e); }
+            // Retorna solo cuando matchPlayers ya está listo
         }
 
         // ===== SERVER-SYNCED TIMER SYSTEM =====
