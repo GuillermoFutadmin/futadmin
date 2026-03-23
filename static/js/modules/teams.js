@@ -502,6 +502,7 @@ export class TeamsModule {
 
         const body = document.getElementById('bulk-teams-body');
         body.innerHTML = '';
+        this.bulkTeams = []; // Almacén de datos en memoria para V3
         
         // Iniciamos con 5 filas vacías
         for (let i = 0; i < 5; i++) {
@@ -514,29 +515,49 @@ export class TeamsModule {
 
     addBulkRow() {
         const body = document.getElementById('bulk-teams-body');
-        const rowCount = body.children.length + 1;
+        const index = body.children.length;
+        
+        // Inicializar datos del equipo en memoria
+        this.bulkTeams[index] = {
+            nombre: '',
+            email: '',
+            grupo: '',
+            jugadores: []
+        };
+
         const tr = document.createElement('tr');
         tr.className = 'bulk-row fade-in';
+        tr.dataset.index = index;
         tr.style.borderBottom = '1px solid var(--border)';
         
         tr.innerHTML = `
-            <td style="padding: 12px; color: var(--text-muted); font-weight: bold;">${rowCount}</td>
+            <td style="padding: 12px; color: var(--text-muted); font-weight: bold;">${index + 1}</td>
             <td style="padding: 8px;">
                 <input type="text" class="bulk-team-name" placeholder="Ej. Los Galácticos" 
+                    value="${this.bulkTeams[index].nombre}"
                     style="width: 100%; padding: 8px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 6px; color: #fff;"
-                    oninput="ui.teams.updateBulkCounter()">
+                    oninput="ui.teams.updateBulkTeamData(${index}, 'nombre', this.value)">
             </td>
-            <td style="padding: 8px;">
-                <input type="text" class="bulk-team-delegado" placeholder="Nombre del Capitán" 
-                    style="width: 100%; padding: 8px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 6px; color: #fff;">
+            <td style="padding: 8px; text-align: center;">
+                <button onclick="ui.teams.editBulkPlayers(${index})" 
+                    class="btn-outline" style="padding: 4px 10px; font-size: 0.8rem; display: flex; align-items: center; gap: 5px; margin: 0 auto; min-width: 80px; justify-content: center;">
+                    👥 <span id="team-players-count-${index}">0</span>
+                </button>
             </td>
+            <td style="padding: 8px; text-align: center; color: var(--primary); font-weight: bold;" id="team-sum-goles-${index}">0</td>
+            <td style="padding: 8px; text-align: center; color: #fbbf24;" id="team-sum-amarillas-${index}">0</td>
+            <td style="padding: 8px; text-align: center; color: #ef4444;" id="team-sum-rojas-${index}">0</td>
             <td style="padding: 8px;">
                 <input type="email" class="bulk-team-email" placeholder="delegado@correo.com" 
-                    style="width: 100%; padding: 8px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 6px; color: #fff;">
+                    value="${this.bulkTeams[index].email}"
+                    style="width: 100%; padding: 8px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 6px; color: #fff;"
+                    oninput="ui.teams.updateBulkTeamData(${index}, 'email', this.value)">
             </td>
             <td style="padding: 8px;">
                 <input type="text" class="bulk-team-grupo" placeholder="A, B..." 
-                    style="width: 100%; padding: 8px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 6px; color: #fff;">
+                    value="${this.bulkTeams[index].grupo}"
+                    style="width: 100%; padding: 8px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 6px; color: #fff;"
+                    oninput="ui.teams.updateBulkTeamData(${index}, 'grupo', this.value)">
             </td>
             <td style="padding: 8px; text-align: center;">
                 <button onclick="this.closest('tr').remove(); ui.teams.updateBulkCounter();" 
@@ -549,11 +570,109 @@ export class TeamsModule {
         this.updateBulkCounter();
     }
 
+    updateBulkTeamData(index, field, value) {
+        if (this.bulkTeams[index]) {
+            this.bulkTeams[index][field] = value;
+        }
+        this.updateBulkCounter();
+    }
+
+    // Modal de Jugadores (V3)
+    editBulkPlayers(index) {
+        this.currentEditingTeamIndex = index;
+        const team = this.bulkTeams[index];
+        const title = document.getElementById('bulk-players-title');
+        title.innerText = `👥 Plantilla: ${team.nombre || 'Equipo ' + (index+1)}`;
+        
+        const body = document.getElementById('bulk-players-body');
+        body.innerHTML = '';
+        
+        if (team.jugadores.length === 0) {
+            // Empezamos con 3 filas vacías si no hay nada
+            for (let i = 0; i < 3; i++) this.addBulkPlayerRow();
+        } else {
+            team.jugadores.forEach(j => this.addBulkPlayerRow(j.nombre, j.goles, j.amarillas, j.rojas));
+        }
+        
+        Core.openModal('modal-bulk-players');
+    }
+
+    addBulkPlayerRow(nombre = '', goles = 0, amarillas = 0, rojas = 0) {
+        const body = document.getElementById('bulk-players-body');
+        const tr = document.createElement('tr');
+        tr.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
+        
+        tr.innerHTML = `
+            <td style="padding: 8px;">
+                <input type="text" class="p-name" placeholder="Nombre completo" value="${nombre}"
+                    style="width: 100%; padding: 6px; background: rgba(0,0,0,0.2); border: 1px solid var(--border); border-radius: 4px; color: #fff;">
+            </td>
+            <td style="padding: 8px; width: 60px;">
+                <input type="number" class="p-goles" value="${goles}" min="0" title="Goles Históricos"
+                    style="width: 100%; padding: 6px; background: rgba(0,0,0,0.2); border: 1px solid var(--border); border-radius: 4px; color: #fff; text-align: center;">
+            </td>
+            <td style="padding: 8px; width: 60px;">
+                <input type="number" class="p-amarillas" value="${amarillas}" min="0" title="Amarillas"
+                    style="width: 100%; padding: 6px; background: rgba(0,0,0,0.2); border: 1px solid var(--border); border-radius: 4px; color: #fff; text-align: center;">
+            </td>
+            <td style="padding: 8px; width: 60px;">
+                <input type="number" class="p-rojas" value="${rojas}" min="0" title="Rojas"
+                    style="width: 100%; padding: 6px; background: rgba(0,0,0,0.2); border: 1px solid var(--border); border-radius: 4px; color: #fff; text-align: center;">
+            </td>
+            <td style="padding: 8px; text-align: center; width: 40px;">
+                <button onclick="this.closest('tr').remove()" style="color: #ef4444; background: none; border: none; cursor: pointer;">✕</button>
+            </td>
+        `;
+        body.appendChild(tr);
+    }
+
+    saveBulkPlayerList() {
+        const index = this.currentEditingTeamIndex;
+        const rows = document.querySelectorAll('#bulk-players-body tr');
+        const jugadores = [];
+        
+        rows.forEach(row => {
+            const nombre = row.querySelector('.p-name').value.trim();
+            const goles = parseInt(row.querySelector('.p-goles').value) || 0;
+            const amarillas = parseInt(row.querySelector('.p-amarillas').value) || 0;
+            const rojas = parseInt(row.querySelector('.p-rojas').value) || 0;
+            
+            if (nombre) {
+                jugadores.push({ nombre, goles, amarillas, rojas });
+            }
+        });
+        
+        this.bulkTeams[index].jugadores = jugadores;
+        this.syncTeamStats(index);
+        Core.closeModal('modal-bulk-players');
+    }
+
+    syncTeamStats(index) {
+        const team = this.bulkTeams[index];
+        const jugadores = team.jugadores;
+        
+        const sumGoles = jugadores.reduce((acc, j) => acc + j.goles, 0);
+        const sumAmarillas = jugadores.reduce((acc, j) => acc + j.amarillas, 0);
+        const sumRojas = jugadores.reduce((acc, j) => acc + j.rojas, 0);
+        
+        const countSpan = document.getElementById(`team-players-count-${index}`);
+        if (countSpan) countSpan.innerText = jugadores.length;
+        
+        const golesTd = document.getElementById(`team-sum-goles-${index}`);
+        if (golesTd) golesTd.innerText = sumGoles;
+        
+        const amarillasTd = document.getElementById(`team-sum-amarillas-${index}`);
+        if (amarillasTd) amarillasTd.innerText = sumAmarillas;
+        
+        const rojasTd = document.getElementById(`team-sum-rojas-${index}`);
+        if (rojasTd) rojasTd.innerText = sumRojas;
+    }
+
     updateBulkCounter() {
-        const rows = document.querySelectorAll('.bulk-team-name');
+        if (!this.bulkTeams) return;
         let count = 0;
-        rows.forEach(input => {
-            if (input.value.trim().length > 0) count++;
+        this.bulkTeams.forEach(t => {
+            if (t.nombre && t.nombre.trim().length > 0) count++;
         });
         const counter = document.getElementById('bulk-counter');
         if (counter) counter.innerText = `${count} equipo(s) listo(s) para registrar`;
@@ -561,49 +680,37 @@ export class TeamsModule {
 
     async saveBulkTeams() {
         const torneoId = document.getElementById('team-league-filter').value;
-        const rows = document.querySelectorAll('#bulk-teams-body tr');
-        const equipos = [];
+        const finalEquipos = this.bulkTeams.filter(t => t.nombre.trim().length > 0);
 
-        rows.forEach(row => {
-            const nombre = row.querySelector('.bulk-team-name').value.trim();
-            const delegado = row.querySelector('.bulk-team-delegado').value.trim();
-            const email = row.querySelector('.bulk-team-email').value.trim();
-            const grupo = row.querySelector('.bulk-team-grupo').value.trim();
-
-            if (nombre) {
-                equipos.push({ nombre, delegado, email, grupo });
-            }
-        });
-
-        if (equipos.length === 0) {
-            alert('Por favor ingresa al menos un nombre de equipo.');
+        if (finalEquipos.length === 0) {
+            alert('Por favor agrega al menos un equipo con nombre.');
             return;
         }
 
         try {
-            Core.showNotification('Registrando equipos masivamente...', 'info');
+            Core.showNotification('🚀 Registrando equipos y estadísticas históricas...', 'info');
             const response = await fetch('/api/equipos/bulk', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     torneo_id: torneoId,
-                    equipos: equipos
+                    equipos: finalEquipos
                 })
             });
 
             if (response.ok) {
                 const res = await response.json();
-                Core.showNotification(`${res.creados} equipos registrados con éxito`, 'success');
+                Core.showNotification(`✨ ${res.creados} equipos registrados con éxito`, 'success');
                 Core.closeModal('modal-bulk-teams');
                 this.loadEquipos();
                 this.ui.loadInitialStats();
             } else {
                 const err = await response.json();
-                alert('Error al registrar equipos: ' + (err.error || 'Error desconocido'));
+                alert('Error al registrar: ' + (err.error || 'Error desconocido'));
             }
         } catch (error) {
             console.error('Bulk save error:', error);
-            alert('Error de conexión.');
+            alert('Hubo un error al procesar la solicitud.');
         }
     }
 }

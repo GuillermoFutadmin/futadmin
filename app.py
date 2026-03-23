@@ -517,13 +517,22 @@ def bulk_create_equipos():
             continue
             
         try:
-            # Lógica simplificada de creación
+            # Procesar plantilla para sumar totales legacy (Alta Calidad)
+            jugadores_list = item.get('jugadores', [])
+            total_goles = sum(int(j.get('goles', 0)) for j in jugadores_list)
+            total_amarillas = sum(int(j.get('amarillas', 0)) for j in jugadores_list)
+            total_rojas = sum(int(j.get('rojas', 0)) for j in jugadores_list)
+
+            # Lógica de creación del equipo con totales históricos
             nuevo = Equipo(
                 nombre=nombre,
                 torneo_id=torneo_id,
                 email=item.get('email'),
                 grupo=item.get('grupo'),
-                liga_id=torneo.liga_id
+                liga_id=torneo.liga_id,
+                goles_f_legacy=total_goles,
+                amarillas_legacy=total_amarillas,
+                rojas_legacy=total_rojas
             )
             db.session.add(nuevo)
             db.session.flush()
@@ -537,15 +546,19 @@ def bulk_create_equipos():
             )
             db.session.add(ins)
 
-            # Crear delegado como jugador si se proporciona nombre
-            nombre_delegado = item.get('delegado', '').strip()
-            if nombre_delegado:
+            # Crear todos los jugadores con su historial individual
+            for idx, j_data in enumerate(jugadores_list):
                 jug = Jugador(
-                    nombre=nombre_delegado,
+                    nombre=j_data.get('nombre'),
                     equipo_id=nuevo.id,
                     liga_id=torneo.liga_id,
-                    es_capitan=True
+                    goles_legacy=int(j_data.get('goles', 0)),
+                    amarillas_legacy=int(j_data.get('amarillas', 0)),
+                    rojas_legacy=int(j_data.get('rojas', 0))
                 )
+                # El primer jugador se marca como capitán por defecto si no se especifica
+                if idx == 0:
+                    jug.es_capitan = True
                 db.session.add(jug)
 
             creados += 1
