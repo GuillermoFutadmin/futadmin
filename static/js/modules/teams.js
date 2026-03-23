@@ -346,14 +346,67 @@ export class TeamsModule {
 
     // --- REGISTRO MASIVO V4 (INLINE) ---
     showBulkModal() {
-        const torneoId = document.getElementById('team-league-filter').value;
-        if (!torneoId) { alert('Selecciona una liga.'); return; }
-        const body = document.getElementById('bulk-teams-body');
-        body.innerHTML = '';
+        const filterSelect = document.getElementById('team-league-filter');
+        const torneoId = filterSelect ? filterSelect.value : null;
+        if (!torneoId) { alert('Selecciona una liga en el filtro principal.'); return; }
+        
+        // Mostrar nombre de la liga en el header
+        const leagueName = filterSelect.options[filterSelect.selectedIndex]?.text || 'Liga Desconocida';
+        const nameSpan = document.getElementById('bulk-modal-league-name');
+        if (nameSpan) nameSpan.innerText = `LIGA: ${leagueName}`;
+
         this.bulkTeams = [];
+        this.bulkMatches = [];
+        this.bulkFinances = [];
+        
+        // Limpiar cuerpos
+        const teamsBody = document.getElementById('bulk-teams-body');
+        const matchesBody = document.getElementById('bulk-matches-body');
+        const financesBody = document.getElementById('bulk-finances-body');
+        if (teamsBody) teamsBody.innerHTML = '';
+        if (matchesBody) matchesBody.innerHTML = '';
+        if (financesBody) financesBody.innerHTML = '';
+
+        // Reset a pestaña Equipos
+        this.switchBulkTab('teams');
+
+        // Precargar filas de equipo
         for (let i = 0; i < 3; i++) this.addBulkRow();
+        
         Core.openModal('modal-bulk-teams');
         this.updateBulkCounter();
+    }
+
+    switchBulkTab(tabId) {
+        // Toggle Botones
+        document.querySelectorAll('.bulk-tab-btn').forEach(btn => {
+            btn.classList.remove('active');
+            btn.style.borderBottom = '3px solid transparent';
+            btn.style.color = 'rgba(255,255,255,0.6)';
+            btn.style.opacity = '0.8';
+        });
+        const activeBtn = document.getElementById(`tab-btn-${tabId}`);
+        if (activeBtn) {
+            activeBtn.classList.add('active');
+            activeBtn.style.borderBottom = '3px solid #fff';
+            activeBtn.style.color = '#fff';
+            activeBtn.style.opacity = '1';
+        }
+
+        // Toggle Contenidos
+        document.querySelectorAll('.bulk-tab-content').forEach(c => {
+            c.style.display = 'none';
+            c.classList.remove('active');
+        });
+        const target = document.getElementById(`bulk-content-${tabId}`);
+        if (target) {
+            target.style.display = 'flex';
+            target.classList.add('active');
+        }
+
+        // Cargas específicas
+        if (tabId === 'finances') this.loadBulkFinances();
+        else if (tabId === 'matches' && this.bulkMatches.length === 0) this.addBulkMatch();
     }
 
     addBulkRow() {
@@ -523,19 +576,116 @@ export class TeamsModule {
         if (c) c.innerText = `${count} equipo(s) listo(s)`;
     }
 
-    async saveBulkTeams() {
+    addBulkMatch() {
+        const body = document.getElementById('bulk-matches-body');
+        if (!body) return;
+        const index = this.bulkMatches.length;
+        this.bulkMatches.push({ local_id: '', visitante_id: '', goles_local: 0, goles_visitante: 0 });
+
+        // Obtener lista de equipos actuales (si ya existen en la liga)
+        const filterSelect = document.getElementById('team-league-filter');
+        const currentLeagueTeams = this._currentLoadedTeams || []; 
+        
+        const optionsHtml = currentLeagueTeams.map(t => `<option value="${t.id}">${t.nombre}</option>`).join('');
+
+        const tr = document.createElement('tr');
+        tr.style.borderBottom = '1px solid var(--border)';
+        tr.innerHTML = `
+            <td style="padding: 10px;">
+                <select onchange="ui.teams.bulkMatches[${index}].local_id = this.value" style="width:100%; padding:8px; background:#000; color:#fff; border:1px solid #333; border-radius:6px;">
+                    <option value="">Seleccionar Local...</option>
+                    ${optionsHtml}
+                </select>
+            </td>
+            <td style="padding: 10px;">
+                <input type="number" value="0" min="0" oninput="ui.teams.bulkMatches[${index}].goles_local = parseInt(this.value)||0" 
+                    style="width:60px; text-align:center; padding:8px; background:#000; color:#fff; border:1px solid #333; border-radius:6px;">
+            </td>
+            <td style="padding: 10px;">
+                <input type="number" value="0" min="0" oninput="ui.teams.bulkMatches[${index}].goles_visitante = parseInt(this.value)||0" 
+                    style="width:60px; text-align:center; padding:8px; background:#000; color:#fff; border:1px solid #333; border-radius:6px;">
+            </td>
+            <td style="padding: 10px;">
+                <select onchange="ui.teams.bulkMatches[${index}].visitante_id = this.value" style="width:100%; padding:8px; background:#000; color:#fff; border:1px solid #333; border-radius:6px;">
+                    <option value="">Seleccionar Visitante...</option>
+                    ${optionsHtml}
+                </select>
+            </td>
+            <td style="text-align:center;">
+                <button onclick="this.closest('tr').remove()" style="color:#ef4444; background:none; border:none; cursor:pointer;">&times;</button>
+            </td>
+        `;
+        body.appendChild(tr);
+    }
+
+    async loadBulkFinances() {
+        const body = document.getElementById('bulk-finances-body');
+        if (!body) return;
+        body.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px;">Cargando equipos...</td></tr>';
+        
         const torneoId = document.getElementById('team-league-filter').value;
-        const eq = this.bulkTeams.filter(t => t.nombre.trim().length > 0);
-        if (!eq.length) return alert('Agrega un equipo.');
         try {
-            Core.showNotification('Enviando...', 'info');
-            const res = await fetch('/api/equipos/bulk', {
+            const response = await Core.fetchAPI(`/api/equipos?torneo_id=${torneoId}`);
+            const equipos = response.items || response;
+            this._currentLoadedTeams = equipos; // Guardar para la pestaña de encuentros tambien
+            this.bulkFinances = equipos.map(e => ({ id: e.id, inscripcion: false, arbitraje: false, metodo: 'Efectivo' }));
+
+            body.innerHTML = equipos.map((e, index) => `
+                <tr style="border-bottom: 1px solid var(--border);">
+                    <td style="padding:15px; font-weight:bold; color:var(--primary);">${e.nombre}</td>
+                    <td style="text-align:center;">
+                        <input type="checkbox" onchange="ui.teams.bulkFinances[${index}].inscripcion = this.checked" style="width:20px; height:20px; cursor:pointer;">
+                    </td>
+                    <td style="text-align:center;">
+                        <input type="checkbox" onchange="ui.teams.bulkFinances[${index}].arbitraje = this.checked" style="width:20px; height:20px; cursor:pointer;">
+                    </td>
+                    <td style="padding:15px;">
+                        <select onchange="ui.teams.bulkFinances[${index}].metodo = this.value" style="width:100%; padding:8px; background:#000; color:#fff; border:1px solid #333; border-radius:6px;">
+                            <option value="Efectivo">Efectivo</option>
+                            <option value="Transferencia">Transferencia</option>
+                            <option value="Tarjeta">Tarjeta</option>
+                        </select>
+                    </td>
+                </tr>
+            `).join('');
+        } catch (e) {
+            body.innerHTML = '<tr><td colspan="4" style="color:#ef4444; text-align:center; padding:20px;">Error al cargar equipos. Asegúrate de que existan equipos en la liga.</td></tr>';
+        }
+    }
+
+    async saveBulkAll() {
+        const torneoId = document.getElementById('team-league-filter').value;
+        const payload = {
+            torneo_id: torneoId,
+            equipos: this.bulkTeams.filter(t => t.nombre.trim().length > 0),
+            encuentros: this.bulkMatches.filter(m => m.local_id && m.visitante_id),
+            finanzas: this.bulkFinances.filter(f => f.inscripcion || f.arbitraje)
+        };
+
+        if (payload.equipos.length === 0 && payload.encuentros.length === 0 && payload.finanzas.length === 0) {
+            alert('No hay cambios para guardar.');
+            return;
+        }
+
+        try {
+            Core.showNotification('Sincronizando Hub V5...', 'info');
+            const res = await fetch('/api/hub/bulk', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ torneo_id: torneoId, equipos: eq })
+                body: JSON.stringify(payload)
             });
-            if (res.ok) { Core.closeModal('modal-bulk-teams'); this.loadEquipos(); }
-            else alert('Error al guardar');
-        } catch (e) { console.error(e); }
+            const data = await res.json();
+            if (res.ok) {
+                Core.showNotification('¡Hub V5 Sincronizado!', 'success');
+                Core.closeModal('modal-bulk-teams');
+                this.loadEquipos();
+                this.ui.loadInitialStats();
+            } else {
+                alert('Error al guardar: ' + (data.error || 'Desconocido'));
+            }
+        } catch (e) {
+            console.error(e);
+            alert('Error de conexión al guardar el Hub.');
+        }
     }
 }

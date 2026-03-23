@@ -494,12 +494,14 @@ def handle_equipos():
     rol = session.get('user_rol')
     return paginate_query(query, renderer=lambda e: e.to_dict(user_rol=rol))
 
-@app.route('/api/equipos/bulk', methods=['POST'])
+@app.route('/api/hub/bulk', methods=['POST'])
 @csrf.exempt
-def bulk_create_equipos():
+def handle_hub_bulk():
     data = request.json
     torneo_id = data.get('torneo_id')
     equipos_data = data.get('equipos', [])
+    encuentros_data = data.get('encuentros', [])
+    finanzas_data = data.get('finanzas', [])
 
     if not torneo_id:
         return jsonify({"error": "Torneo ID es requerido"}), 400
@@ -508,23 +510,18 @@ def bulk_create_equipos():
     if not torneo:
         return jsonify({"error": "Torneo no encontrado"}), 404
 
-    creados = 0
-    errores = []
-
-    for item in equipos_data:
-        nombre = item.get('nombre')
-        if not nombre:
-            continue
+    try:
+        # 1. PROCESAR EQUIPOS Y JUGADORES
+        for item in equipos_data:
+            nombre = item.get('nombre')
+            if not nombre: continue
             
-        try:
-            # Procesar plantilla para sumar totales legacy (Alta Calidad)
             jugadores_list = item.get('jugadores', [])
             total_goles = sum(int(j.get('goles', 0)) for j in jugadores_list)
             total_amarillas = sum(int(j.get('amarillas', 0)) for j in jugadores_list)
             total_rojas = sum(int(j.get('rojas', 0)) for j in jugadores_list)
 
-            # Lógica de creación del equipo con totales históricos
-            nuevo = Equipo(
+            nuevo_eq = Equipo(
                 nombre=nombre,
                 torneo_id=torneo_id,
                 email=item.get('email'),
@@ -534,48 +531,94 @@ def bulk_create_equipos():
                 amarillas_legacy=total_amarillas,
                 rojas_legacy=total_rojas
             )
-            db.session.add(nuevo)
+            db.session.add(nuevo_eq)
             db.session.flush()
 
             # Inscripción automática
             ins = Inscripcion(
                 torneo_id=torneo_id,
-                equipo_id=nuevo.id,
+                equipo_id=nuevo_eq.id,
                 monto_pactado_inscripcion=float(torneo.costo_inscripcion or 0),
                 liga_id=torneo.liga_id
             )
             db.session.add(ins)
 
-            # Crear todos los jugadores con su historial individual
             for idx, j_data in enumerate(jugadores_list):
                 jug = Jugador(
                     nombre=j_data.get('nombre'),
-                    equipo_id=nuevo.id,
+                    equipo_id=nuevo_eq.id,
                     liga_id=torneo.liga_id,
                     goles_legacy=int(j_data.get('goles', 0)),
                     amarillas_legacy=int(j_data.get('amarillas', 0)),
-                    rojas_legacy=int(j_data.get('rojas', 0))
+                    rojas_legacy=int(j_data.get('rojas', 0)),
+                    es_capitan=(idx == 0)
                 )
-                # El primer jugador se marca como capitán por defecto si no se especifica
-                if idx == 0:
-                    jug.es_capitan = True
                 db.session.add(jug)
 
-            creados += 1
-        except Exception as e:
-            errores.append(f"Error en {nombre}: {str(e)}")
+        # 2. PROCESAR ENCUENTROS HISTÓRICOS
+        for m_item in encuentros_data:
+            l_id = m_item.get('local_id')
+            v_id = m_item.get('visitante_id')
+            if not l_id or not v_id: continue
 
-    try:
+            nuevo_partido = Partido(
+                torneo_id=torneo_id,
+                liga_id=torneo.liga_id,
+                equipo_local_id=l_id,
+                equipo_visitante_id=v_id,
+                goles_local=int(m_item.get('goles_local', 0)),
+                goles_visitante=int(m_item.get('goles_visitante', 0)),
+                estado='Finished',
+                jornada=1, # Por defecto jornada 1 para históricos
+                fecha=datetime.utcnow().date()
+            )
+            db.session.add(nuevo_partido)
+
+        # 3. PROCESAR FINANZAS (PAGOS EN BLOQUE)
+        for f_item in finanzas_data:
+            e_id = f_item.get('id')
+            if not e_id: continue
+            
+            # Buscar inscripción de este equipo en este torneo
+            ins = Inscripcion.query.filter_by(equipo_id=e_id, torneo_id=torneo_id).first()
+            if not ins: continue
+
+            metodo = f_item.get('metodo', 'Efectivo')
+
+            # Pago de Inscripción
+            if f_item.get('inscripcion'):
+                # Evitar duplicados (si ya tiene un pago tipo 'Inscripcion')
+                exists = Pago.query.filter_by(inscripcion_id=ins.id, tipo='Inscripcion').first()
+                if not exists:
+                    pago_ins = Pago(
+                        inscripcion_id=ins.id,
+                        monto=ins.monto_pactado_inscripcion,
+                        tipo='Inscripcion',
+                        metodo=metodo,
+                        liga_id=torneo.liga_id,
+                        comentario='Pago masivo Hub V5'
+                    )
+                    db.session.add(pago_ins)
+
+            # Pago de Arbitraje (J1)
+            if f_item.get('arbitraje'):
+                pago_arb = Pago(
+                    torneo_id=torneo_id,
+                    monto=float(torneo.costo_arbitraje or 0),
+                    tipo='Arbitraje',
+                    metodo=metodo,
+                    liga_id=torneo.liga_id,
+                    comentario='Pago arbitraje masivo J1 - Hub V5'
+                )
+                # Encontrar el partido correspondiente si existe (opcional, aquí lo creamos genérico al torneo)
+                db.session.add(pago_arb)
+
         db.session.commit()
+        return jsonify({"success": True, "message": "Hub V5 sincronizado correctamente"}), 200
     except Exception as e:
         db.session.rollback()
-        return jsonify({"error": f"Error fatal al guardar: {str(e)}"}), 500
-
-    return jsonify({
-        "success": True,
-        "creados": creados,
-        "errores": errores
-    }), 200
+        print(f"Error en Hub Bulk: {e}")
+        return jsonify({"error": str(e)}), 500
 
 # --- Rutas API: Jugadores ---
 

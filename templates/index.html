@@ -827,12 +827,29 @@
     <!-- Modal para Registro Masivo de Equipos -->
     <div id="modal-bulk-teams" class="modal">
         <div class="modal-content" style="max-width: none !important; width: 100vw !important; height: 100vh !important; display: flex; flex-direction: column; border-radius: 0 !important; margin: 0 !important; top: 0 !important; left: 0 !important;">
-            <div class="modal-header" style="background: linear-gradient(135deg, #10b981, #059669); padding: 20px 30px; flex-shrink: 0;">
-                <h2 style="margin: 0; color: #fff; display: flex; align-items: center; gap: 15px;">
-                    <span>📦 Registro Masivo de Alta Calidad (V4)</span>
-                    <span style="font-size: 0.8rem; background: rgba(0,0,0,0.2); padding: 4px 12px; border-radius: 20px; font-weight: normal; border: 1px solid rgba(255,255,255,0.1);">Equipos + Plantillas</span>
-                </h2>
-                <button class="close-btn" onclick="Core.closeModal('modal-bulk-teams')" style="color: #fff; opacity: 0.8;">&times;</button>
+            <div class="modal-header" style="background: linear-gradient(135deg, #10b981, #059669); padding: 15px 30px; flex-shrink: 0; display: flex; flex-direction: column; align-items: stretch; gap: 10px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h2 style="margin: 0; color: #fff; display: flex; align-items: center; gap: 15px;">
+                        <span>📦 Hub de Gestión de Liga (V5)</span>
+                        <span id="bulk-modal-league-name" style="font-size: 0.9rem; background: rgba(0,0,0,0.3); padding: 5px 15px; border-radius: 20px; font-weight: bold; border: 1px solid rgba(255,255,255,0.2); color: #fff;">Liga: Cargando...</span>
+                    </h2>
+                    <button class="close-btn" onclick="Core.closeModal('modal-bulk-teams')" style="color: #fff; opacity: 0.8; font-size: 2rem;">&times;</button>
+                </div>
+                
+                <div class="bulk-tabs" style="display: flex; gap: 5px; margin-top: 5px;">
+                    <button id="tab-btn-teams" class="bulk-tab-btn active" onclick="ui.teams.switchBulkTab('teams')" 
+                        style="background: none; border: none; color: #fff; padding: 10px 20px; cursor: pointer; font-weight: bold; border-bottom: 3px solid #fff; opacity: 1; transition: all 0.2s;">
+                        👥 Equipos y Plantillas
+                    </button>
+                    <button id="tab-btn-matches" class="bulk-tab-btn" onclick="ui.teams.switchBulkTab('matches')" 
+                        style="background: none; border: none; color: rgba(255,255,255,0.6); padding: 10px 20px; cursor: pointer; font-weight: bold; border-bottom: 3px solid transparent; opacity: 0.8; transition: all 0.2s;">
+                        📅 Encuentros Históricos
+                    </button>
+                    <button id="tab-btn-finances" class="bulk-tab-btn" onclick="ui.teams.switchBulkTab('finances')" 
+                        style="background: none; border: none; color: rgba(255,255,255,0.6); padding: 10px 20px; cursor: pointer; font-weight: bold; border-bottom: 3px solid transparent; opacity: 0.8; transition: all 0.2s;">
+                        💰 Finanzas (Pagos en Bloque)
+                    </button>
+                </div>
             </div>
             <div class="modal-body" style="background: #0f1113; padding: 25px; flex: 1; overflow: hidden; display: flex; flex-direction: column;">
                 <div style="background: rgba(16,185,129,0.05); border-left: 4px solid #10b981; padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; flex-shrink: 0;">
@@ -841,26 +858,73 @@
                     </p>
                 </div>
 
-                <div class="custom-scrollbar" style="flex: 1; overflow-y: auto; border: 1px solid var(--border); border-radius: 12px; background: rgba(0,0,0,0.2); padding: 5px;">
-                    <table style="width: 100%; border-collapse: collapse;">
-                        <tbody id="bulk-teams-body">
-                            <!-- Filas generadas por JS - Layout Vertical -->
-                        </tbody>
-                    </table>
+                <div id="bulk-content-teams" class="bulk-tab-content active" style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+                    <div class="custom-scrollbar" style="flex: 1; overflow-y: auto; border: 1px solid var(--border); border-radius: 12px; background: rgba(0,0,0,0.2); padding: 5px;">
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <tbody id="bulk-teams-body">
+                                <!-- Filas generadas por JS - Layout Vertical -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div style="margin-top: 20px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
+                        <button class="btn-secondary" onclick="ui.teams.addBulkRow()" style="padding: 10px 20px; display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.05);">
+                            <span style="font-size: 1.2rem; font-weight: bold;">+</span> Agregar más equipos
+                        </button>
+                        <span id="bulk-counter" class="text-muted" style="font-size: 0.85rem;">0 equipos listos para registrar</span>
+                    </div>
                 </div>
 
-                <div style="margin-top: 20px; display: flex; justify-content: space-between; align-items: center;">
-                    <button class="btn-secondary" onclick="ui.teams.addBulkRow()" style="padding: 10px 20px; display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.05);">
-                        <span style="font-size: 1.2rem; font-weight: bold;">+</span> Agregar más equipos
-                    </button>
-                    <span id="bulk-counter" class="text-muted" style="font-size: 0.85rem;">0 equipos listos para registrar</span>
+                <div id="bulk-content-matches" class="bulk-tab-content" style="flex: 1; display: none; flex-direction: column; overflow: hidden;">
+                    <div style="background: rgba(59,130,246,0.1); border-left: 4px solid #3b82f6; padding: 15px; border-radius: 8px; margin-bottom: 15px; flex-shrink: 0;">
+                        <p style="margin:0; font-size: 0.85rem; color: #e2e8f0;">
+                            <b>Nota:</b> Registra resultados de partidos ya jugados para alimentar la tabla de posiciones inicial.
+                        </p>
+                    </div>
+                    <div class="custom-scrollbar" style="flex: 1; overflow-y: auto; border: 1px solid var(--border); border-radius: 12px; background: rgba(0,0,0,0.2); padding: 15px;">
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="color: #666; font-size: 0.75rem; text-transform: uppercase;">
+                                    <th style="text-align: left; padding: 10px;">Equipo Local</th>
+                                    <th style="width: 80px; text-align: center;">Goles</th>
+                                    <th style="width: 80px; text-align: center;">Goles</th>
+                                    <th style="text-align: right; padding: 10px;">Equipo Visitante</th>
+                                    <th style="width: 50px;"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="bulk-matches-body"></tbody>
+                        </table>
+                    </div>
+                    <div style="margin-top: 15px; flex-shrink: 0;">
+                        <button class="btn-secondary" onclick="ui.teams.addBulkMatch()" style="font-size: 0.8rem; padding: 8px 15px;">+ Agregar Encuentro</button>
+                    </div>
+                </div>
+
+                <div id="bulk-content-finances" class="bulk-tab-content" style="flex: 1; display: none; flex-direction: column; overflow: hidden;">
+                    <div style="background: rgba(251,191,36,0.1); border-left: 4px solid #fbbf24; padding: 15px; border-radius: 8px; margin-bottom: 15px; flex-shrink: 0;">
+                        <p style="margin:0; font-size: 0.85rem; color: #e2e8f0;">
+                            <b>Control de Caja:</b> Marca los pagos de inscripción y arbitraje para todos los equipos registrados.
+                        </p>
+                    </div>
+                    <div class="custom-scrollbar" style="flex: 1; overflow-y: auto; border: 1px solid var(--border); border-radius: 12px; background: rgba(0,0,0,0.2); padding: 5px;">
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="color: #666; font-size: 0.75rem; text-transform: uppercase;">
+                                    <th style="text-align: left; padding: 15px;">Equipo</th>
+                                    <th style="text-align: center; width: 150px;">Inscripción</th>
+                                    <th style="text-align: center; width: 150px;">Arbitraje J1</th>
+                                    <th style="text-align: center; width: 150px;">Método</th>
+                                </tr>
+                            </thead>
+                            <tbody id="bulk-finances-body"></tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
             <div class="modal-footer" style="padding: 20px; background: rgba(0,0,0,0.1); border-top: 1px solid var(--border);">
                 <button type="button" class="btn-secondary" onclick="Core.closeModal('modal-bulk-teams')">Cancelar</button>
-                <button type="button" class="btn-primary" onclick="ui.teams.saveBulkTeams()" 
+                <button type="button" class="btn-primary" onclick="ui.teams.saveBulkAll()" 
                     style="background: linear-gradient(135deg, #10b981, #059669); border: none; padding: 12px 30px; font-weight: bold; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.2);">
-                    🚀 Finalizar y Guardar Equipos
+                    🚀 Guardar Cambios del Hub (V5)
                 </button>
             </div>
         </div>
@@ -1346,7 +1410,7 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="" defer></script>
     <script src="{{ url_for('static', filename='js/resources/mexico_geo.js') }}" defer></script>
     <script src="{{ url_for('static', filename='js/resources/mexico_geo_data.js') }}" defer></script>
-    <script type="module" src="{{ url_for('static', filename='js/main.js') }}?v=31"></script>
+    <script type="module" src="{{ url_for('static', filename='js/main.js') }}?v=35"></script>
 </body>
 
 </html>
