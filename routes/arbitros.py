@@ -647,6 +647,11 @@ def get_telegram_active_matches():
         "matches": [m.to_dict() for m in active_matches]
     })
 
+@arbitros_bp.route('/api/telegram/match/<int:id>', methods=['GET'])
+def get_telegram_match(id):
+    partido = Partido.query.get_or_404(id)
+    return jsonify(partido.to_dict())
+
 @arbitros_bp.route('/api/telegram/match/<int:id>/payment', methods=['POST'])
 def telegram_match_payment(id):
     data = request.json
