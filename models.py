@@ -408,6 +408,7 @@ class Pago(db.Model):
     torneo_id = db.Column(db.Integer, db.ForeignKey('torneos.id'), nullable=True, index=True)
     alumno_id = db.Column(db.Integer, db.ForeignKey('alumnos_entrenamiento.id'), nullable=True)
     liga_id = db.Column(db.Integer, db.ForeignKey('ligas.id'), nullable=True, index=True)
+    comprobante_url = db.Column(db.String(255))
 
 class GrupoEntrenamiento(db.Model):
     __tablename__ = 'grupos_entrenamiento'

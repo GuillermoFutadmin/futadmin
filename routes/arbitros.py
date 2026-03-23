@@ -594,10 +594,31 @@ def telegram_post_event(id):
             
             db.session.commit()
             
-            try:
-                from app import auto_avanzar_ronda, check_and_start_liguilla_auto
-                auto_avanzar_ronda(partido.torneo_id)
-                check_and_start_liguilla_auto(partido.torneo_id)
+        except Exception as e:
+            print(f"Error post-match logic: {e}")
+        
+    db.session.commit()
+    return jsonify({"success": True})
+
+@arbitros_bp.route('/api/telegram/matches/active', methods=['GET'])
+def get_telegram_active_matches():
+    telegram_id = request.args.get('telegram_id')
+    if not telegram_id:
+        return jsonify({"error": "telegram_id required"}), 400
+        
+    arbitro = Arbitro.query.filter_by(telegram_id=str(telegram_id)).first()
+    if not arbitro:
+        return jsonify({"matches": []})
+        
+    # Buscar partidos en vivo o medio tiempo
+    active_matches = Partido.query.filter(
+        Partido.arbitro_id == arbitro.id,
+        Partido.estado.in_(['Live', 'HalfTime'])
+    ).all()
+    
+    return jsonify({
+        "matches": [m.to_dict() for m in active_matches]
+    })
             except ImportError:
                 pass
             
@@ -660,7 +681,7 @@ def telegram_match_payment(id):
             tipo='Arbitraje',
             metodo=metodo,
             partido_id=id,
-            foto_url=foto_url,
+            comprobante_url=foto_url,
             comentario=f'Cobro de arbitraje vía Telegram App'
         )
         db.session.add(nuevo_pago)

@@ -199,9 +199,9 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(15, 23, 42, 0.95);
-            backdrop-filter: blur(8px);
-            z-index: 100;
+            background: rgba(15, 23, 42, 0.98);
+            backdrop-filter: blur(10px);
+            z-index: 300;
             display: none;
             padding: 24px;
             overflow-y: auto;
@@ -460,6 +460,13 @@
                 🔍 CONSULTAR IDS UNICOS (ADMIN)
             </button>
         </div>
+
+        <div id="active-matches-section" style="margin-top: 35px; display: none;">
+            <h4 style="color: var(--secondary); margin-bottom: 15px; font-weight: 800; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px;">⏱️ PARTIDOS EN CURSO</h4>
+            <div id="active-matches-container" style="display: flex; flex-direction: column; gap: 12px;">
+                <!-- Partidos en vivo se cargarán aquí -->
+            </div>
+        </div>
     </div>
 
     <div id="tournament-view" class="view" style="display: none;">
@@ -595,9 +602,9 @@
 
     <!-- Modal para seleccionar jugador -->
     <div id="modal-players">
+        <div class="header">
             <h3 id="modal-title" style="color: var(--primary);">SELECCIONAR JUGADOR</h3>
-            <button class="btn btn-outline" onclick="closePlayerList()"
-                style="width: auto; padding: 6px 12px;">CERRAR</button>
+            <button class="btn btn-outline" onclick="closePlayerList()" style="width: auto; padding: 6px 12px;">CERRAR</button>
         </div>
         <div id="players-container" style="margin-top: 20px;"></div>
     </div>
@@ -917,6 +924,65 @@
             document.getElementById('btn-menu-payments').style.display = canPay ? 'block' : 'none';
             document.getElementById('btn-menu-roster').style.display = canRoster ? 'block' : 'none';
             document.getElementById('btn-menu-ids').style.display = isAdmin ? 'block' : 'none';
+
+            if (canManage) {
+                loadActiveMatches();
+            }
+        }
+
+        async function loadActiveMatches() {
+            const container = document.getElementById('active-matches-container');
+            const section = document.getElementById('active-matches-section');
+            if (!container || !section) return;
+
+            try {
+                const res = await fetch(`/api/telegram/matches/active?telegram_id=${currentUser.telegram_id}`);
+                const data = await res.json();
+                
+                if (data.matches && data.matches.length > 0) {
+                    section.style.display = 'block';
+                    container.innerHTML = '';
+                    data.matches.forEach(m => {
+                        const card = document.createElement('div');
+                        card.className = 'card';
+                        card.style = 'padding: 15px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid var(--secondary);';
+                        
+                        const statusText = m.estado === 'HalfTime' ? '⏳ MEDIO TIEMPO' : '🔴 EN VIVO';
+                        
+                        card.innerHTML = `
+                            <div style="flex: 1;">
+                                <div style="font-size: 0.6rem; color: var(--muted); text-transform: uppercase;">${m.torneo_name || 'PARTIDO'}</div>
+                                <div style="font-weight: 700; font-size: 0.9rem;">${m.equipo_local} vs ${m.equipo_visitante}</div>
+                                <div style="font-size: 0.75rem; color: var(--secondary); margin-top: 4px; font-weight: 800;">${statusText}</div>
+                            </div>
+                            <button class="btn btn-primary" onclick="resumeMatchFromMenu(${m.id})" style="width: auto; padding: 8px 15px; font-size: 0.8rem;">RETOMAR</button>
+                        `;
+                        container.appendChild(card);
+                    });
+                } else {
+                    section.style.display = 'none';
+                }
+            } catch (e) {
+                console.error("Error loading active matches:", e);
+                section.style.display = 'none';
+            }
+        }
+
+        async function resumeMatchFromMenu(matchId) {
+            tg.HapticFeedback.impactOccurred('medium');
+            try {
+                // Primero obtenemos el objeto completo del partido
+                const res = await fetch(`/api/telegram/match/${matchId}`);
+                if (!res.ok) throw new Error("No se pudo cargar el partido");
+                const match = await res.json();
+                
+                activeMatch = match;
+                selectedTorneoId = match.torneo_id;
+                
+                showMatchView();
+            } catch (e) {
+                alert("Error al retomar el partido: " + e.message);
+            }
         }
 
         async function init() {
@@ -1701,6 +1767,13 @@
 
         function closePlayerList() {
             document.getElementById('modal-players').style.display = 'none';
+            document.getElementById('players-container').innerHTML = ''; // Limpiar para evitar duplicados
+        }
+
+        function confirmEndMatch() {
+            if (confirm("¿Deseas finalizar el partido definitivamente? Una vez finalizado no podrás registrar más eventos.")) {
+                gameAction('Fin');
+            }
         }
 
         let pendingEventData = null;
