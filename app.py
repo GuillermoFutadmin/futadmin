@@ -2562,7 +2562,7 @@ def run_leaderboard_query(id):
                                       EventoPartido.partido_id.in_(db.session.query(Partido.id).filter_by(torneo_id=id))))\
      .join(Equipo, Jugador.equipo_id == Equipo.id)\
      .filter(Equipo.torneo_id == id)\
-     .group_by(Jugador.id, Equipo.id)\
+     .group_by(Jugador.id, Jugador.nombre, Equipo.id, Equipo.nombre, Equipo.escudo_url, Jugador.goles_legacy)\
      .all()
 
     goles_list = []
@@ -2575,6 +2575,7 @@ def run_leaderboard_query(id):
 
     # Amarillas (Eventos + Legacy)
     amarillas_raw = db.session.query(
+        Jugador.id,
         Jugador.nombre, 
         Equipo.nombre.label('equipo_nombre'),
         Equipo.escudo_url,
@@ -2584,7 +2585,7 @@ def run_leaderboard_query(id):
                                       EventoPartido.partido_id.in_(db.session.query(Partido.id).filter_by(torneo_id=id))))\
      .join(Equipo, Jugador.equipo_id == Equipo.id)\
      .filter(Equipo.torneo_id == id)\
-     .group_by(Jugador.id, Equipo.id)\
+     .group_by(Jugador.id, Jugador.nombre, Equipo.id, Equipo.nombre, Equipo.escudo_url, Jugador.amarillas_legacy)\
      .all()
 
     amarillas_list = []
@@ -2597,6 +2598,7 @@ def run_leaderboard_query(id):
 
     # Rojas (Eventos + Legacy)
     rojas_raw = db.session.query(
+        Jugador.id,
         Jugador.nombre, 
         Equipo.nombre.label('equipo_nombre'),
         Equipo.escudo_url,
@@ -2606,7 +2608,7 @@ def run_leaderboard_query(id):
                                       EventoPartido.partido_id.in_(db.session.query(Partido.id).filter_by(torneo_id=id))))\
      .join(Equipo, Jugador.equipo_id == Equipo.id)\
      .filter(Equipo.torneo_id == id)\
-     .group_by(Jugador.id, Equipo.id)\
+     .group_by(Jugador.id, Jugador.nombre, Equipo.id, Equipo.nombre, Equipo.escudo_url, Jugador.rojas_legacy)\
      .all()
 
     rojas_list = []
