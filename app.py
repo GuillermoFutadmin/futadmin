@@ -503,15 +503,8 @@ def bulk_create_equipos():
         "creados": creados,
         "errores": errores
     }), 200
-                    password_hash=hashed_pw,
-                    rol=rol_solicitado,
-                    liga_id=torneo.liga_id,
-                    activo=True
-                )
-                db.session.add(new_user)
-            else:
-                existing.rol = rol_solicitado
-            db.session.commit()
+
+# --- Rutas API: Jugadores ---
 
         # Resolver sede del torneo
         import string as _str, random as _rnd
