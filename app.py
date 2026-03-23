@@ -2545,9 +2545,12 @@ def get_torneo_standings(id):
 
 @app.route('/api/torneos/<int:id>/leaderboard', methods=['GET'])
 def get_torneo_leaderboard(id):
-    # ... existing implementation ...
-    # (keeping the existing one for compatibility, but the code below will be identical)
-    return run_leaderboard_query(id)
+    try:
+        return run_leaderboard_query(id)
+    except Exception as e:
+        import traceback
+        print(traceback.format_exc())
+        return jsonify({"error": str(e), "traceback": traceback.format_exc()}), 500
 
 def run_leaderboard_query(id):
     # Goles (Eventos + Legacy)
