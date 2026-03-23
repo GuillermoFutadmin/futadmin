@@ -1607,6 +1607,18 @@
 
             function teamCard(side, teamId, teamName) {
                 const sideId = side; // 'local' or 'visitante'
+                const isPaid = activeMatch.pagos && activeMatch.pagos[side];
+
+                if (isPaid) {
+                    return `
+                    <div style="border:1px solid #22c55e; border-radius:14px; padding:20px; margin-bottom:16px; background:rgba(34,197,94,0.08); text-align:center; position:relative; overflow:hidden;">
+                        <div style="position:absolute; top: -10px; right: -10px; font-size:4rem; opacity:0.1; color:#22c55e; transform: rotate(15deg);">✅</div>
+                        <div style="font-size:0.65rem; color:var(--muted); font-weight:800; letter-spacing:2px; margin-bottom:5px; text-transform:uppercase;">${teamName}</div>
+                        <div style="color:#22c55e; font-weight:900; font-size:1.3rem; margin:5px 0;">✅ PAGADO</div>
+                        <div style="font-size:0.75rem; color:rgba(255,255,255,0.6);">Cobro de arbitraje registrado con éxito</div>
+                    </div>`;
+                }
+
                 return `
                 <div style="border:1px solid rgba(255,255,255,0.08); border-radius:14px; padding:16px; margin-bottom:16px; background:rgba(255,255,255,0.03);">
                     <div style="font-size:0.65rem; color:var(--muted); font-weight:800; letter-spacing:2px; margin-bottom:10px;">${teamName}</div>
@@ -1699,6 +1711,12 @@
                 const data = await res.json();
                 if (data.success) {
                     tg.HapticFeedback.notificationOccurred('success');
+                    
+                    // Actualizar estado de pago localmente para mostrar "PAGADO" de inmediato
+                    if (!activeMatch.pagos) activeMatch.pagos = {};
+                    activeMatch.pagos[side] = true;
+                    renderPaymentForms(); 
+
                     showArbitrageTicket(data, side);
                 } else {
                     alert(data.error || 'Error al registrar pago');

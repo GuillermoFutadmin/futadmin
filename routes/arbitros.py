@@ -660,6 +660,14 @@ def get_telegram_match(id):
             "equipo_nombre": e.equipo.nombre if e.equipo else None
         } for e in partido.eventos_rel
     ]
+
+    # Checar si ya se cobró el arbitraje para este partido
+    pagos = Pago.query.filter_by(partido_id=id, tipo='Arbitraje').all()
+    data['pagos'] = {
+        "local": any(p.inscripcion.equipo_id == partido.equipo_local_id for p in pagos if p.inscripcion),
+        "visitante": any(p.inscripcion.equipo_id == partido.equipo_visitante_id for p in pagos if p.inscripcion)
+    }
+
     return jsonify(data)
 
 @arbitros_bp.route('/api/telegram/match/<int:id>/payment', methods=['POST'])
