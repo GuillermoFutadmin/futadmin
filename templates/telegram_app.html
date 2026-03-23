@@ -1781,18 +1781,29 @@
             const isPresent = indicator.innerText.includes('PRESENTE');
             const newStatus = !isPresent;
 
+            // Feedback visual inmediato (optimista)
+            indicator.innerHTML = newStatus ? '&#x2705; PRESENTE' : '&#x274C; Ausente';
+            indicator.style.color = newStatus ? 'var(--primary)' : 'var(--muted)';
+            el.style.background = newStatus ? 'rgba(34, 197, 94, 0.1)' : 'rgba(255, 255, 255, 0.03)';
+
             try {
                 const res = await fetch(`/api/telegram/match/${activeMatch.id}/checkin`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ jugador_id: playerId, equipo_id: equipoId, presente: newStatus })
                 });
-                if (res.ok) {
-                    indicator.innerText = newStatus ? '✅ PRESENTE' : '❌ Ausente';
-                    indicator.style.color = newStatus ? 'var(--primary)' : 'var(--muted)';
-
+                
+                if (!res.ok) {
+                    // Revertir si falla
+                    alert("Error al guardar asistencia. Intenta de nuevo.");
+                    indicator.innerHTML = isPresent ? '&#x2705; PRESENTE' : '&#x274C; Ausente';
+                    indicator.style.color = isPresent ? 'var(--primary)' : 'var(--muted)';
+                    el.style.background = isPresent ? 'rgba(34, 197, 94, 0.1)' : 'rgba(255, 255, 255, 0.03)';
+                } else {
+                    tg.HapticFeedback.impactOccurred('light');
+                    
                     // Actualizar estado en memoria
-                    const list = matchPlayers.local.some(p => p.id === playerId) ? matchPlayers.local : matchPlayers.visitante;
+                    const list = (matchPlayers.local || []).some(p => p.id === playerId) ? matchPlayers.local : matchPlayers.visitante;
                     const player = list.find(p => p.id === playerId);
                     if (player) player.presente = newStatus;
 
