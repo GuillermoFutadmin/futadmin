@@ -826,38 +826,25 @@
 
     <!-- Modal para Registro Masivo de Equipos -->
     <div id="modal-bulk-teams" class="modal">
-        <div class="modal-content" style="max-width: 900px; width: 95%;">
-            <div class="modal-header">
-                <h3 style="display: flex; align-items: center; gap: 10px;">
-                    <span style="font-size: 1.5rem;">📦</span> Registro Masivo de Equipos
-                </h3>
-                <button class="close-btn" onclick="Core.closeModal('modal-bulk-teams')">&times;</button>
+        <div class="modal-content" style="max-width: none !important; width: 100vw !important; height: 100vh !important; display: flex; flex-direction: column; border-radius: 0 !important; margin: 0 !important; top: 0 !important; left: 0 !important;">
+            <div class="modal-header" style="background: linear-gradient(135deg, #10b981, #059669); padding: 20px 30px; flex-shrink: 0;">
+                <h2 style="margin: 0; color: #fff; display: flex; align-items: center; gap: 15px;">
+                    <span>📦 Registro Masivo de Alta Calidad (V4)</span>
+                    <span style="font-size: 0.8rem; background: rgba(0,0,0,0.2); padding: 4px 12px; border-radius: 20px; font-weight: normal; border: 1px solid rgba(255,255,255,0.1);">Equipos + Plantillas</span>
+                </h2>
+                <button class="close-btn" onclick="Core.closeModal('modal-bulk-teams')" style="color: #fff; opacity: 0.8;">&times;</button>
             </div>
-            <div class="modal-body">
-                <div style="background: rgba(251, 191, 36, 0.05); border-left: 4px solid #fbbf24; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-                    <p style="margin:0; font-size: 0.9rem; color: #fbbf24;">
-                        <b>Instrucciones:</b> Ingresa los nombres de los equipos que deseas registrar. 
-                        El sistema creará automáticamente las inscripciones en la liga seleccionada.
+            <div class="modal-body" style="background: #0f1113; padding: 25px; flex: 1; overflow: hidden; display: flex; flex-direction: column;">
+                <div style="background: rgba(16,185,129,0.05); border-left: 4px solid #10b981; padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; flex-shrink: 0;">
+                    <p style="margin:0; font-size: 0.9rem; color: #e2e8f0; line-height: 1.5;">
+                        <strong>Ing. FutAdmin:</strong> Captura los datos del equipo y su plantilla directamente abajo. Las estadísticas se desplazan y suman automáticamente para mantener el historial de alta calidad.
                     </p>
                 </div>
 
-                <div class="custom-scrollbar" style="max-height: 450px; overflow-y: auto; border: 1px solid var(--border); border-radius: 12px; background: rgba(0,0,0,0.2);">
-                    <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
-                        <thead style="position: sticky; top: 0; background: #1a1c1e; z-index: 10;">
-                            <tr>
-                                <th style="text-align: left; padding: 12px; border-bottom: 2px solid var(--primary); width: 40px;">#</th>
-                                <th style="text-align: left; padding: 12px; border-bottom: 2px solid var(--primary);">Nombre del Equipo *</th>
-                                <th style="text-align: left; padding: 12px; border-bottom: 2px solid var(--primary); width: 140px;">Plantilla</th>
-                                <th style="text-align: center; padding: 12px; border-bottom: 2px solid var(--primary); width: 60px;">⚽</th>
-                                <th style="text-align: center; padding: 12px; border-bottom: 2px solid var(--primary); width: 60px;">🟨</th>
-                                <th style="text-align: center; padding: 12px; border-bottom: 2px solid var(--primary); width: 60px;">🟥</th>
-                                <th style="text-align: left; padding: 12px; border-bottom: 2px solid var(--primary); width: 120px;">Email Delegado</th>
-                                <th style="text-align: left; padding: 12px; border-bottom: 2px solid var(--primary); width: 80px;">Grupo</th>
-                                <th style="text-align: center; padding: 12px; border-bottom: 2px solid var(--primary); width: 60px;">Acción</th>
-                            </tr>
-                        </thead>
+                <div class="custom-scrollbar" style="flex: 1; overflow-y: auto; border: 1px solid var(--border); border-radius: 12px; background: rgba(0,0,0,0.2); padding: 5px;">
+                    <table style="width: 100%; border-collapse: collapse;">
                         <tbody id="bulk-teams-body">
-                            <!-- Filas generadas por JS -->
+                            <!-- Filas generadas por JS - Layout Vertical -->
                         </tbody>
                     </table>
                 </div>
@@ -1359,7 +1346,7 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="" defer></script>
     <script src="{{ url_for('static', filename='js/resources/mexico_geo.js') }}" defer></script>
     <script src="{{ url_for('static', filename='js/resources/mexico_geo_data.js') }}" defer></script>
-    <script type="module" src="{{ url_for('static', filename='js/main.js') }}?v=29"></script>
+    <script type="module" src="{{ url_for('static', filename='js/main.js') }}?v=31"></script>
 </body>
 
 </html>

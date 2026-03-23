@@ -2,13 +2,13 @@
  * Punto de entrada principal - FutAdmin ESM
  */
 import { Core } from './modules/core.js';
-import { LeaguesModule } from './modules/leagues.js?v=28';
-import { TeamsModule } from './modules/teams.js?v=28';
-import { PlayersModule } from './modules/players.js?v=28';
-import { FinanceModule } from './modules/finance.js?v=28';
+import { LeaguesModule } from './modules/leagues.js?v=31';
+import { TeamsModule } from './modules/teams.js?v=31';
+import { PlayersModule } from './modules/players.js?v=31';
+import { FinanceModule } from './modules/finance.js?v=31';
 import { ArbitrosModule } from './modules/arbitros.js';
 import { DashboardModule } from './modules/dashboard.js';
-import EntrenamientosModule from './modules/entrenamientos.js?v=28';
+import EntrenamientosModule from './modules/entrenamientos.js?v=31';
 import PagosAcademiaModule from './modules/pagos-academia.js';
 import { CanchasModule } from './modules/canchas.js';
 import { PagosCanchasModule } from './modules/pagos-canchas.js';
