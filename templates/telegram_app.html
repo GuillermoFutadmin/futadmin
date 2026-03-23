@@ -792,6 +792,15 @@
         tg.expand();
         tg.ready();
 
+        // Silenciar warnings de HapticFeedback si la version es < 6.1
+        if (!tg.isVersionAtLeast('6.1')) {
+            tg.HapticFeedback = {
+                impactOccurred: () => {},
+                notificationOccurred: () => {},
+                selectionChanged: () => {}
+            };
+        }
+
         let currentUser = null;
         let activeMatch = null;
         let matchPlayers = { local: [], visitante: [] };
@@ -1799,8 +1808,12 @@
                     indicator.innerHTML = isPresent ? '&#x2705; PRESENTE' : '&#x274C; Ausente';
                     indicator.style.color = isPresent ? 'var(--primary)' : 'var(--muted)';
                     el.style.background = isPresent ? 'rgba(34, 197, 94, 0.1)' : 'rgba(255, 255, 255, 0.03)';
+                    const err = await res.json();
+                    alert("Error servidor: " + (err.error || "Desconocido"));
                 } else {
-                    tg.HapticFeedback.impactOccurred('light');
+                    if (tg.isVersionAtLeast('6.1')) {
+                        tg.HapticFeedback.impactOccurred('light');
+                    }
                     
                     // Actualizar estado en memoria
                     const list = (matchPlayers.local || []).some(p => p.id === playerId) ? matchPlayers.local : matchPlayers.visitante;
