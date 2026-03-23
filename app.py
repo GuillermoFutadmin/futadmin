@@ -437,6 +437,72 @@ def handle_equipos():
                 new_user = Usuario(
                     nombre=f"Delegado {nuevo.nombre}",
                     email=email_equipo,
+                    password=hashed_pw,
+                    rol=rol_solicitado
+                )
+                db.session.add(new_user)
+                db.session.commit()
+        
+        return jsonify({"success": True, "id": nuevo.id}), 201
+
+    return jsonify({"error": "Método no permitido"}), 405
+
+@app.route('/api/equipos/bulk', methods=['POST'])
+@csrf.exempt
+def bulk_create_equipos():
+    data = request.json
+    torneo_id = data.get('torneo_id')
+    equipos_data = data.get('equipos', [])
+
+    if not torneo_id:
+        return jsonify({"error": "Torneo ID es requerido"}), 400
+    
+    torneo = Torneo.query.get(torneo_id)
+    if not torneo:
+        return jsonify({"error": "Torneo no encontrado"}), 404
+
+    creados = 0
+    errores = []
+
+    for item in equipos_data:
+        nombre = item.get('nombre')
+        if not nombre:
+            continue
+            
+        try:
+            # Lógica simplificada de creación (basada en handle_equipos)
+            nuevo = Equipo(
+                nombre=nombre,
+                torneo_id=torneo_id,
+                email=item.get('email'),
+                grupo=item.get('grupo'),
+                liga_id=torneo.liga_id
+            )
+            db.session.add(nuevo)
+            db.session.flush()
+
+            # Inscripción automática
+            ins = Inscripcion(
+                torneo_id=torneo_id,
+                equipo_id=nuevo.id,
+                monto_pactado_inscripcion=float(torneo.costo_inscripcion or 0)
+            )
+            db.session.add(ins)
+            creados += 1
+        except Exception as e:
+            errores.append(f"Error en {nombre}: {str(e)}")
+
+    try:
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": f"Error fatal al guardar: {str(e)}"}), 500
+
+    return jsonify({
+        "success": True,
+        "creados": creados,
+        "errores": errores
+    }), 200
                     password_hash=hashed_pw,
                     rol=rol_solicitado,
                     liga_id=torneo.liga_id,

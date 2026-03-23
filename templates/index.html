@@ -317,6 +317,10 @@
                             <button class="btn-outline" onclick="ui.teams.downloadTemplate()" style="border: 1px dashed var(--primary); padding: 8px 12px; font-size: 0.8rem;">📥 Plantilla Excel</button>
                             <button class="btn-primary" onclick="document.getElementById('import-excel-input').click()">📁 Importar Torneo</button>
                             <input type="file" id="import-excel-input" style="display: none;" accept=".xlsx" onchange="ui.teams.importExcel(this)">
+                            
+                            <!-- Botón de Registro Masivo In-App -->
+                            <button class="btn-primary" onclick="ui.teams.showBulkModal()" style="background: #fbbf24; color: #000; font-weight: bold; border: none;">📦 Meter masivamente equipos</button>
+
                             <button class="btn-primary" onclick="ui.teams.showEquipoModal()" style="background: var(--primary); color: #000;">+ Nuevo Equipo</button>
                         </div>
                         {% endif %}
@@ -817,6 +821,57 @@
                         <button type="submit" class="btn-primary">Registrar Equipo</button>
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Registro Masivo de Equipos -->
+    <div id="modal-bulk-teams" class="modal">
+        <div class="modal-content" style="max-width: 900px; width: 95%;">
+            <div class="modal-header">
+                <h3 style="display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 1.5rem;">📦</span> Registro Masivo de Equipos
+                </h3>
+                <button class="close-btn" onclick="Core.closeModal('modal-bulk-teams')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div style="background: rgba(251, 191, 36, 0.05); border-left: 4px solid #fbbf24; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                    <p style="margin:0; font-size: 0.9rem; color: #fbbf24;">
+                        <b>Instrucciones:</b> Ingresa los nombres de los equipos que deseas registrar. 
+                        El sistema creará automáticamente las inscripciones en la liga seleccionada.
+                    </p>
+                </div>
+
+                <div class="custom-scrollbar" style="max-height: 450px; overflow-y: auto; border: 1px solid var(--border); border-radius: 12px; background: rgba(0,0,0,0.2);">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+                        <thead style="position: sticky; top: 0; background: #1a1c1e; z-index: 10;">
+                            <tr>
+                                <th style="text-align: left; padding: 12px; border-bottom: 2px solid var(--primary); width: 40px;">#</th>
+                                <th style="text-align: left; padding: 12px; border-bottom: 2px solid var(--primary);">Nombre del Equipo *</th>
+                                <th style="text-align: left; padding: 12px; border-bottom: 2px solid var(--primary);">Email Delegado</th>
+                                <th style="text-align: left; padding: 12px; border-bottom: 2px solid var(--primary); width: 100px;">Grupo</th>
+                                <th style="text-align: center; padding: 12px; border-bottom: 2px solid var(--primary); width: 60px;">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bulk-teams-body">
+                            <!-- Filas generadas por JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div style="margin-top: 20px; display: flex; justify-content: space-between; align-items: center;">
+                    <button class="btn-secondary" onclick="ui.teams.addBulkRow()" style="padding: 10px 20px; display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.05);">
+                        <span style="font-size: 1.2rem; font-weight: bold;">+</span> Agregar más equipos
+                    </button>
+                    <span id="bulk-counter" class="text-muted" style="font-size: 0.85rem;">0 equipos listos para registrar</span>
+                </div>
+            </div>
+            <div class="modal-footer" style="padding: 20px; background: rgba(0,0,0,0.1); border-top: 1px solid var(--border);">
+                <button type="button" class="btn-secondary" onclick="Core.closeModal('modal-bulk-teams')">Cancelar</button>
+                <button type="button" class="btn-primary" onclick="ui.teams.saveBulkTeams()" 
+                    style="background: linear-gradient(135deg, #10b981, #059669); border: none; padding: 12px 30px; font-weight: bold; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.2);">
+                    🚀 Finalizar y Guardar Equipos
+                </button>
             </div>
         </div>
     </div>

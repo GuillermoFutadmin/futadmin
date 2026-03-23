@@ -491,4 +491,114 @@ export class TeamsModule {
             input.value = '';
         }
     }
+
+    // --- REGISTRO MASIVO IN-APP ---
+    showBulkModal() {
+        const torneoId = document.getElementById('team-league-filter').value;
+        if (!torneoId) {
+            alert('Por favor selecciona una liga/torneo primero.');
+            return;
+        }
+
+        const body = document.getElementById('bulk-teams-body');
+        body.innerHTML = '';
+        
+        // Iniciamos con 5 filas vacías
+        for (let i = 0; i < 5; i++) {
+            this.addBulkRow();
+        }
+
+        Core.openModal('modal-bulk-teams');
+        this.updateBulkCounter();
+    }
+
+    addBulkRow() {
+        const body = document.getElementById('bulk-teams-body');
+        const rowCount = body.children.length + 1;
+        const tr = document.createElement('tr');
+        tr.className = 'bulk-row fade-in';
+        tr.style.borderBottom = '1px solid var(--border)';
+        
+        tr.innerHTML = `
+            <td style="padding: 12px; color: var(--text-muted); font-weight: bold;">${rowCount}</td>
+            <td style="padding: 8px;">
+                <input type="text" class="bulk-team-name" placeholder="Ej. Los Galácticos" 
+                    style="width: 100%; padding: 8px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 6px; color: #fff;"
+                    oninput="ui.teams.updateBulkCounter()">
+            </td>
+            <td style="padding: 8px;">
+                <input type="email" class="bulk-team-email" placeholder="delegado@correo.com" 
+                    style="width: 100%; padding: 8px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 6px; color: #fff;">
+            </td>
+            <td style="padding: 8px;">
+                <input type="text" class="bulk-team-grupo" placeholder="A, B..." 
+                    style="width: 100%; padding: 8px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 6px; color: #fff;">
+            </td>
+            <td style="padding: 8px; text-align: center;">
+                <button onclick="this.closest('tr').remove(); ui.teams.updateBulkCounter();" 
+                    style="background: rgba(239,68,68,0.1); color: #ef4444; border: 1px solid rgba(239,68,68,0.2); border-radius: 6px; padding: 4px 8px; cursor: pointer;">
+                    ✕
+                </button>
+            </td>
+        `;
+        body.appendChild(tr);
+        this.updateBulkCounter();
+    }
+
+    updateBulkCounter() {
+        const rows = document.querySelectorAll('.bulk-team-name');
+        let count = 0;
+        rows.forEach(input => {
+            if (input.value.trim().length > 0) count++;
+        });
+        const counter = document.getElementById('bulk-counter');
+        if (counter) counter.innerText = `${count} equipo(s) listo(s) para registrar`;
+    }
+
+    async saveBulkTeams() {
+        const torneoId = document.getElementById('team-league-filter').value;
+        const rows = document.querySelectorAll('#bulk-teams-body tr');
+        const equipos = [];
+
+        rows.forEach(row => {
+            const nombre = row.querySelector('.bulk-team-name').value.trim();
+            const email = row.querySelector('.bulk-team-email').value.trim();
+            const grupo = row.querySelector('.bulk-team-grupo').value.trim();
+
+            if (nombre) {
+                equipos.push({ nombre, email, grupo });
+            }
+        });
+
+        if (equipos.length === 0) {
+            alert('Por favor ingresa al menos un nombre de equipo.');
+            return;
+        }
+
+        try {
+            Core.showNotification('Registrando equipos masivamente...', 'info');
+            const response = await fetch('/api/equipos/bulk', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    torneo_id: torneoId,
+                    equipos: equipos
+                })
+            });
+
+            if (response.ok) {
+                const res = await response.json();
+                Core.showNotification(`${res.creados} equipos registrados con éxito`, 'success');
+                Core.closeModal('modal-bulk-teams');
+                this.loadEquipos();
+                this.ui.loadInitialStats();
+            } else {
+                const err = await response.json();
+                alert('Error al registrar equipos: ' + (err.error || 'Error desconocido'));
+            }
+        } catch (error) {
+            console.error('Bulk save error:', error);
+            alert('Error de conexión.');
+        }
+    }
 }
