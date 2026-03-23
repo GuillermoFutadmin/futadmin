@@ -1973,7 +1973,35 @@
             }
         }
 
-        function showMatchView() { showView('match-view'); }
+        function showMatchView() { 
+            showView('match-view'); 
+            if (activeMatch) {
+                // Actualizar Marcador y Nombres
+                const scoreEl = document.getElementById('live-score');
+                if (scoreEl) scoreEl.innerText = `${activeMatch.goles_local || 0} - ${activeMatch.goles_visitante || 0}`;
+                
+                const localEl = document.getElementById('local-name');
+                if (localEl) localEl.innerText = (activeMatch.equipo_local || 'LOCAL').toUpperCase();
+                
+                const visitEl = document.getElementById('visitante-name');
+                if (visitEl) visitEl.innerText = (activeMatch.equipo_visitante || 'VISITANTE').toUpperCase();
+                
+                const torneoEl = document.getElementById('match-torneo-info');
+                if (torneoEl) torneoEl.innerText = (activeMatch.torneo_name || 'TORNEO').toUpperCase();
+
+                // Reconstruir el Log de Eventos si existen
+                const logContainer = document.getElementById('event-log');
+                if (logContainer && activeMatch.eventos) {
+                    logContainer.innerHTML = ''; 
+                    // Ordenar por minuto para que al hacer prepend queden los ms recientes arriba
+                    [...activeMatch.eventos].sort((a,b) => a.minuto - b.minuto).forEach(ev => {
+                        let subject = ev.jugador_nombre || ev.equipo_nombre || '';
+                        logEvent(ev.tipo, subject, ev.minuto);
+                    });
+                }
+                updateControlsVisibility(); 
+            }
+        }
 
         async function sendEvent(payload) {
             const user = tg.initDataUnsafe?.user;

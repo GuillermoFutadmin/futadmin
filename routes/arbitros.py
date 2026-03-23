@@ -650,7 +650,17 @@ def get_telegram_active_matches():
 @arbitros_bp.route('/api/telegram/match/<int:id>', methods=['GET'])
 def get_telegram_match(id):
     partido = Partido.query.get_or_404(id)
-    return jsonify(partido.to_dict())
+    data = partido.to_dict()
+    # Incluir eventos para reconstruir el log en el frontend
+    data['eventos'] = [
+        {
+            "tipo": e.tipo,
+            "minuto": e.minuto,
+            "jugador_nombre": e.jugador.nombre if e.jugador else None,
+            "equipo_nombre": e.equipo.nombre if e.equipo else None
+        } for e in partido.eventos_rel
+    ]
+    return jsonify(data)
 
 @arbitros_bp.route('/api/telegram/match/<int:id>/payment', methods=['POST'])
 def telegram_match_payment(id):
