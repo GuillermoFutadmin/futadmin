@@ -930,10 +930,14 @@
             }
         }
 
+        let menuTimersInterval = null;
+
         async function loadActiveMatches() {
             const container = document.getElementById('active-matches-container');
             const section = document.getElementById('active-matches-section');
             if (!container || !section) return;
+
+            if (menuTimersInterval) clearInterval(menuTimersInterval);
 
             try {
                 const res = await fetch(`/api/telegram/matches/active?telegram_id=${currentUser.telegram_id}`);
@@ -947,18 +951,27 @@
                         card.className = 'card';
                         card.style = 'padding: 15px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid var(--secondary);';
                         
-                        const statusText = m.estado === 'HalfTime' ? '⏳ MEDIO TIEMPO' : '🔴 EN VIVO';
+                        const statusColor = m.estado === 'HalfTime' ? '#f59e0b' : '#ef4444';
+                        const statusIcon = m.estado === 'HalfTime' ? '⏳' : '🔴';
                         
                         card.innerHTML = `
                             <div style="flex: 1;">
                                 <div style="font-size: 0.6rem; color: var(--muted); text-transform: uppercase;">${m.torneo_name || 'PARTIDO'}</div>
                                 <div style="font-weight: 700; font-size: 0.9rem;">${m.equipo_local} vs ${m.equipo_visitante}</div>
-                                <div style="font-size: 0.75rem; color: var(--secondary); margin-top: 4px; font-weight: 800;">${statusText}</div>
+                                <div style="display:flex; align-items:center; gap:5px; margin-top:4px;">
+                                    <span style="font-size: 0.75rem; color: ${statusColor}; font-weight: 800;">${statusIcon} ${m.estado === 'HalfTime' ? 'MEDIO TIEMPO' : 'EN VIVO'}</span>
+                                    <span class="menu-match-timer" data-start="${m.timer_started_at || ''}" data-acc="${m.tiempo_corrido_segundos || 0}" style="font-size: 0.8rem; font-family:monospace; color:var(--secondary); font-weight:bold;">--:--</span>
+                                </div>
                             </div>
                             <button class="btn btn-primary" onclick="resumeMatchFromMenu(${m.id})" style="width: auto; padding: 8px 15px; font-size: 0.8rem;">RETOMAR</button>
                         `;
                         container.appendChild(card);
                     });
+
+                    // Iniciar intervalo de actualización de relojes
+                    updateMenuTimers();
+                    menuTimersInterval = setInterval(updateMenuTimers, 1000);
+
                 } else {
                     section.style.display = 'none';
                 }
@@ -966,6 +979,23 @@
                 console.error("Error loading active matches:", e);
                 section.style.display = 'none';
             }
+        }
+
+        function updateMenuTimers() {
+            const now = Date.now();
+            document.querySelectorAll('.menu-match-timer').forEach(el => {
+                const startAt = el.getAttribute('data-start');
+                const acc = parseInt(el.getAttribute('data-acc') || '0');
+                
+                let totalSecs = acc;
+                if (startAt) {
+                    totalSecs += Math.floor((now - parseInt(startAt)) / 1000);
+                }
+                
+                const mm = String(Math.floor(totalSecs / 60)).padStart(2, '0');
+                const ss = String(totalSecs % 60).padStart(2, '0');
+                el.innerText = `${mm}:${ss}`;
+            });
         }
 
         async function resumeMatchFromMenu(matchId) {
@@ -1035,6 +1065,9 @@
                 const data = await res.json();
                 if (data.authenticated) {
                     currentUser = data.user;
+                    // Asegurar que el ID de Telegram esté presente para la visibilidad del menú
+                    if (!currentUser.telegram_id) currentUser.telegram_id = telegram_id;
+                    
                     const refNameEl = document.getElementById('ref-name');
                     if (refNameEl) refNameEl.innerText = currentUser.nombre;
                     
@@ -1120,8 +1153,10 @@
             const telegram_id = user?.id || '5825342439';
             
             if (!selectedTorneoId) {
-                console.error("EROR: selectedTorneoId is missing callback");
-                alert("Error: No se ha seleccionado un torneo válido.");
+                console.warn("loadMatches called without selectedTorneoId. Possibly redirecting...");
+                // Si no hay torneo seleccionado, volvemos al menú o torneos para evitar el alert molesto
+                if (currentUser) showMenu();
+                else showView('login-view');
                 return;
             }
 
@@ -1702,6 +1737,15 @@
             if (extraRow) extraRow.style.display = 'flex';
 
             showView('ticket-view');
+        }
+
+        function goBackFromTicket() {
+            tg.HapticFeedback.impactOccurred('light');
+            if (activeMatch) {
+                showMatchView();
+            } else {
+                showView('drilldown-view');
+            }
         }
 
 
@@ -3288,7 +3332,7 @@
     <!-- Vista de Ticket Digital -->
     <div id="ticket-view" class="view" style="display: none; padding: 16px; background: #0a0a0b; z-index: 100;">
         <div class="header">
-            <button class="btn btn-outline" id="ticket-back-btn" onclick="showView('drilldown-view')" style="width: auto; padding: 6px 12px;">← VOLVER</button>
+            <button class="btn btn-outline" id="ticket-back-btn" onclick="goBackFromTicket()" style="width: auto; padding: 6px 12px;">← VOLVER</button>
             <h3>TICKET DIGITAL</h3>
             <div style="width:60px;"></div>
         </div>
