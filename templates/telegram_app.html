@@ -871,8 +871,17 @@
                     el.style.display = (v === id) ? 'block' : 'none';
                 }
             });
+            // Log dimensions of the active view
+            setTimeout(() => {
+                const active = document.getElementById(id);
+                if (active) {
+                    const rect = active.getBoundingClientRect();
+                    const cs = window.getComputedStyle(active);
+                    console.log(`[DIAG] ${id} → display:${cs.display} visibility:${cs.visibility} opacity:${cs.opacity} rect:${Math.round(rect.width)}x${Math.round(rect.height)} top:${Math.round(rect.top)}`);
+                }
+            }, 100);
             // Ocultar TODOS los posibles modales y capas superpuestas
-            const overlays = ['modal-players', 'modal-edit-player', 'qr-modal'];
+            const overlays = ['modal-players', 'modal-edit-player', 'qr-modal', 'modal-note', 'modal-penalties'];
             overlays.forEach(oid => {
                 const oel = document.getElementById(oid);
                 if (oel) oel.style.display = 'none';
