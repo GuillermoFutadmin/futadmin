@@ -949,8 +949,18 @@ export class TeamsModule {
                     if (!td) return;
                     let label = td.querySelector('.match-extra-label');
                     if (label) {
-                        const detailsStr = (matchStats.details || []).join(', ');
-                        label.innerText = val > 0 ? `+${val} ${labelText} (${detailsStr})` : '';
+                        const uniqueDetails = [...new Set(matchStats.details || [])];
+                        const detailsStr = uniqueDetails.join(', ');
+                        if (val > 0) {
+                            label.innerText = detailsStr;
+                            label.style.fontSize = '0.6rem';
+                            label.style.color = 'rgba(255,255,255,0.4)'; // Gris muy discreto
+                            label.style.textTransform = 'none';
+                            label.style.marginTop = '2px';
+                            label.style.lineHeight = '1';
+                        } else {
+                            label.innerText = '';
+                        }
                     }
                 };
 
