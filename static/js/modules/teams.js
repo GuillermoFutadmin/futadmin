@@ -511,10 +511,11 @@ export class TeamsModule {
                             <thead>
                                 <tr style="color: #444; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px;">
                                     <th style="text-align: left; padding: 10px; border-bottom: 1px solid var(--border);">Nombre del Jugador</th>
-                                    <th style="text-align: center; padding: 10px; border-bottom: 1px solid var(--border); width: 100px;">Goles</th>
-                                    <th style="text-align: center; padding: 10px; border-bottom: 1px solid var(--border); width: 100px;">Amarillas</th>
-                                    <th style="text-align: center; padding: 10px; border-bottom: 1px solid var(--border); width: 100px;">Rojas</th>
-                                    <th style="width: 50px; border-bottom: 1px solid var(--border);"></th>
+                                    <th style="text-align: center; padding: 10px; border-bottom: 1px solid var(--border); width: 80px;">Historial</th>
+                                    <th style="text-align: center; padding: 10px; border-bottom: 1px solid var(--border); width: 100px; color: var(--primary);">TOTAL (Hub)</th>
+                                    <th style="text-align: center; padding: 10px; border-bottom: 1px solid var(--border); width: 70px;">🟨</th>
+                                    <th style="text-align: center; padding: 10px; border-bottom: 1px solid var(--border); width: 70px;">🟥</th>
+                                    <th style="width: 40px; border-bottom: 1px solid var(--border);"></th>
                                 </tr>
                             </thead>
                             <tbody id="players-list-${index}"></tbody>
@@ -560,7 +561,11 @@ export class TeamsModule {
             <td style="padding: 8px 10px;">
                 <input type="number" class="p-goles" value="${goles}" min="0" 
                     oninput="ui.teams.syncInlinePlayerStats(${index})" 
-                    style="width: 100%; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05); border-radius: 4px; padding: 8px; color: #fff; text-align: center; font-weight: bold;">
+                    style="width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; padding: 8px; color: #fff; text-align: center; font-weight: bold;">
+            </td>
+            <td style="padding: 8px 10px; text-align: center;">
+                <div class="p-total-goles" style="font-size: 1.1rem; font-weight: 800; color: var(--primary); text-shadow: 0 0 10px rgba(0,255,157,0.3);">0</div>
+                <div class="match-extra-label"></div>
             </td>
             <td style="padding: 8px 10px;">
                 <input type="number" class="p-amarillas" value="${amarillas}" min="0" 
@@ -917,7 +922,15 @@ export class TeamsModule {
                 updateExtraLabel(2, matchStats.a, '#fbbf24', 'am.');
                 updateExtraLabel(3, matchStats.r, '#ef4444', 'roja');
 
-                legacyGoles += parseInt(row.querySelector('.p-goles').value) || 0;
+                const legacyG = parseInt(row.querySelector('.p-goles').value) || 0;
+                const totalG = legacyG + matchStats.g;
+                const totalDiv = row.querySelector('.p-total-goles');
+                if (totalDiv) {
+                    totalDiv.innerText = totalG;
+                    totalDiv.style.color = totalG > 0 ? 'var(--primary)' : '#666';
+                }
+
+                legacyGoles += legacyG;
                 legacyAmarillas += parseInt(row.querySelector('.p-amarillas').value) || 0;
                 legacyRojas += parseInt(row.querySelector('.p-rojas').value) || 0;
                 
