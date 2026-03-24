@@ -927,7 +927,7 @@ export class TeamsModule {
 
                 return `
                     <tr style="border-bottom: 1px solid var(--border);">
-                        <td style="padding:15px; font-weight:bold; color:var(--primary);">${e.nombre} ${e.id.startsWith('NEW') ? '<small style="color:#666; font-weight:normal;">(Nuevo)</small>' : ''}</td>
+                        <td style="padding:15px; font-weight:bold; color:var(--primary);">${e.nombre} ${String(e.id).startsWith('NEW') ? '<small style="color:#666; font-weight:normal;">(Nuevo)</small>' : ''}</td>
                         <td style="text-align:center;">
                             <input type="checkbox" ${p.inscripcion ? 'checked' : ''} onchange="ui.teams.bulkFinances['${e.id}'].inscripcion = this.checked" style="width:20px; height:20px; cursor:pointer;">
                         </td>
