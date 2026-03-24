@@ -92,16 +92,30 @@ export class SettingsModule {
             document.getElementById('combo-color').value = liga.color || '#00ff88';
             document.getElementById('combo-contacto').value = liga.contacto || '';
             
+            // Cargar datos del titular
+            document.getElementById('combo-owner-nombre').value = liga.nombre; // O el nombre del primer usuario
+            document.getElementById('combo-owner-email').value = liga.owner_email || '';
+            document.getElementById('combo-owner-pass').value = ''; // Mantener vacío al editar a menos que se quiera cambiar
+            document.getElementById('combo-owner-pass').placeholder = 'Dejar vacío para no cambiar';
+
             title.innerText = '✏️ Editar Organización';
             submitBtn.innerText = 'Guardar Cambios';
             
-            // Ocultar secciones no editables en este flujo
+            // Ajustar secciones para edición
             if (planSection) planSection.style.display = 'none';
-            if (ownerSection) ownerSection.style.display = 'none';
+            if (ownerSection) {
+                ownerSection.style.display = 'block';
+                const ownerTitle = document.getElementById('combo-owner-title');
+                const ownerHelp = document.getElementById('combo-owner-help');
+                const ownerNameGroup = document.getElementById('combo-owner-name-group');
+                if (ownerTitle) ownerTitle.innerText = 'Credenciales de Acceso Principal';
+                if (ownerHelp) ownerHelp.innerText = 'Si cambias la contraseña, se actualizarán las 4 cuentas vinculadas.';
+                if (ownerNameGroup) ownerNameGroup.style.display = 'none'; // El nombre del titular suele ser el de la liga en el registro auto
+            }
             
-            // Los campos de owner no son requeridos en edición
+            // Los campos de owner no son requeridos en edición (para permitir no cambiar pass)
             document.getElementById('combo-owner-nombre').required = false;
-            document.getElementById('combo-owner-email').required = false;
+            document.getElementById('combo-owner-email').required = true; // Email sí es necesario si se quiere cambiar
             document.getElementById('combo-owner-pass').required = false;
         } else {
             // Modo Creación
@@ -111,11 +125,20 @@ export class SettingsModule {
             submitBtn.innerText = '✚ Crear Combo';
             
             if (planSection) planSection.style.display = 'block';
-            if (ownerSection) ownerSection.style.display = 'block';
+            if (ownerSection) {
+                ownerSection.style.display = 'block';
+                const ownerTitle = document.getElementById('combo-owner-title');
+                const ownerHelp = document.getElementById('combo-owner-help');
+                const ownerNameGroup = document.getElementById('combo-owner-name-group');
+                if (ownerTitle) ownerTitle.innerText = 'Cuenta del Responsable Titular';
+                if (ownerHelp) ownerHelp.innerText = 'Se crearán automáticamente 3 subcuentas extra usando esta misma contraseña.';
+                if (ownerNameGroup) ownerNameGroup.style.display = 'block';
+            }
             
             document.getElementById('combo-owner-nombre').value = '';
             document.getElementById('combo-owner-email').value = '';
             document.getElementById('combo-owner-pass').value = '';
+            document.getElementById('combo-owner-pass').placeholder = 'Mínimo 6 caracteres';
             document.getElementById('combo-contacto').value = '';
             document.getElementById('combo-owner-nombre').required = true;
             document.getElementById('combo-owner-email').required = true;
@@ -149,6 +172,13 @@ export class SettingsModule {
             data.owner_pass = document.getElementById('combo-owner-pass').value.trim();
             data.owner_rol = document.getElementById('combo-owner-rol').value;
         } else {
+            // Datos extra para edición (opcionales)
+            const newEmail = document.getElementById('combo-owner-email').value.trim();
+            const newPass = document.getElementById('combo-owner-pass').value.trim();
+            
+            if (newEmail) data.owner_email = newEmail;
+            if (newPass) data.owner_pass = newPass;
+            
             // En edición, permitimos actualizar el contacto/email personal
             data.contacto = document.getElementById('combo-contacto').value.trim();
         }

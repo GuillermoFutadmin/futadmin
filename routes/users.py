@@ -286,6 +286,31 @@ def handle_liga_single(liga_id):
         liga.tipo_cliente = data.get('tipo_cliente', liga.tipo_cliente)
         liga.contacto = data.get('contacto', liga.contacto)
         
+        # Actualizar credenciales si se proporcionan
+        owner_email = data.get('owner_email')
+        owner_pass = data.get('owner_pass')
+
+        if owner_email or owner_pass:
+            # Identificar el usuario titular
+            from models import Usuario, Arbitro
+            titular = Usuario.query.filter_by(liga_id=liga.id).filter(Usuario.rol.in_(['dueño_liga', 'super_arbitro', 'equipo'])).first()
+            
+            if titular:
+                if owner_email:
+                    titular.email = owner_email
+                
+                if owner_pass:
+                    from app import bcrypt
+                    hashed_pw = bcrypt.generate_password_hash(owner_pass).decode('utf-8')
+                    # Sincronizar contraseña para TODOS los usuarios de la liga (Combo)
+                    for u in liga.usuarios:
+                        u.password_hash = hashed_pw
+                    
+                    # Sincronizar también con la tabla de Árbitros (password en plano según modelo actual)
+                    arbitros_asociados = Arbitro.query.filter_by(liga_id=liga.id).all()
+                    for arb in arbitros_asociados:
+                        arb.password = owner_pass
+        
         try:
             db.session.commit()
             return jsonify(liga.to_dict())

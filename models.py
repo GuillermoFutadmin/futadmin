@@ -63,6 +63,7 @@ class Liga(db.Model):
             "tipo_cliente": self.tipo_cliente,
             "subdominio": self.subdominio,
             "contacto": self.contacto,
+            "owner_email": owner.email if owner else None,
             "activa": self.activa,
             "color": self.color,
             "monto_mensual": self.monto_mensual,
