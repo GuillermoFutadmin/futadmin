@@ -10,6 +10,7 @@ export class DashboardModule {
         this.activeTab = 'resumen';
         this.leagueData = null;
         this._matchDetailsCache = {}; // cache: partido_id -> detail data
+        this.liveInterval = null;
     }
 
     async init() {
@@ -102,6 +103,74 @@ export class DashboardModule {
             case 'rol': this.renderSchedule(); break;
             case 'lideres': this.renderLeaderboards(); break;
         }
+
+        if (this.activeTab === 'resumen') {
+            this.startLiveUpdates();
+        } else {
+            this.stopLiveUpdates();
+        }
+    }
+
+    startLiveUpdates() {
+        this.stopLiveUpdates(); // Clear any existing
+        this.fetchAndRenderLiveMatches(); // Initial fetch
+        this.liveInterval = setInterval(() => {
+            if (this.activeTab === 'resumen') {
+                this.fetchAndRenderLiveMatches();
+            } else {
+                this.stopLiveUpdates();
+            }
+        }, 20000); // Poll every 20s
+    }
+
+    stopLiveUpdates() {
+        if (this.liveInterval) {
+            clearInterval(this.liveInterval);
+            this.liveInterval = null;
+        }
+    }
+
+    async fetchAndRenderLiveMatches() {
+        const liveContainer = document.getElementById('live-matches-banner-container');
+        if (!liveContainer) return;
+
+        try {
+            const torneoId = this.currentLeagueId === 'all' ? 0 : this.currentLeagueId;
+            const liveMatches = await Core.fetchAPI(`/api/torneos/${torneoId}/partidos/live`);
+
+            if (!liveMatches || liveMatches.length === 0) {
+                liveContainer.innerHTML = '';
+                liveContainer.style.display = 'none';
+                return;
+            }
+
+            liveContainer.style.display = 'flex';
+            liveContainer.innerHTML = liveMatches.map(m => `
+                <div class="live-match-card-mini pulse-border">
+                    <div class="live-indicator-small">
+                        <span class="dot-pulse"></span>
+                        <span style="color: #ff4444; font-weight: 800; font-size: 0.6rem;">EN VIVO</span>
+                    </div>
+                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 15px;">
+                        <div class="live-team-mini">
+                            <img src="${m.equipo_local_escudo || ''}" onerror="this.src='https://cdn-icons-png.flaticon.com/512/53/53283.png'">
+                            <span>${m.equipo_local}</span>
+                        </div>
+                        <div class="live-score-mini">
+                            <span>${m.goles_local}</span>
+                            <span>-</span>
+                            <span>${m.goles_visitante}</span>
+                        </div>
+                        <div class="live-team-mini">
+                            <img src="${m.equipo_visitante_escudo || ''}" onerror="this.src='https://cdn-icons-png.flaticon.com/512/53/53283.png'">
+                            <span>${m.equipo_visitante}</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        } catch (e) {
+            console.error("Error al cargar partidos en vivo:", e);
+        }
     }
 
     async renderResumen() {
@@ -112,11 +181,16 @@ export class DashboardModule {
         const data = this.leagueData;
 
         banner.innerHTML = `
-            <div style="display: flex; align-items: center; gap: 20px;">
-                <img src="${data.logo_url || 'https://cdn-icons-png.flaticon.com/512/53/53283.png'}" style="width: 80px; height: 80px; object-fit: contain;">
-                <div>
-                    <h2 style="margin:0">${data.nombre}</h2>
-                    <p style="margin:5px 0 0 0; color: var(--primary); font-weight: bold;">${data.tipo} • ${data.formato}</p>
+            <div style="display: flex; flex-direction: column; gap: 20px;">
+                <div style="display: flex; align-items: center; gap: 20px;">
+                    <img src="${data.logo_url || 'https://cdn-icons-png.flaticon.com/512/53/53283.png'}" style="width: 80px; height: 80px; object-fit: contain;">
+                    <div>
+                        <h2 style="margin:0; font-size: 1.8rem;">${data.nombre}</h2>
+                        <p style="margin:5px 0 0 0; color: var(--primary); font-weight: bold;">${data.tipo} • ${data.formato}</p>
+                    </div>
+                </div>
+                <div id="live-matches-banner-container" style="display: none; flex-wrap: wrap; gap: 15px; margin-top: 10px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px;">
+                    <!-- Cargados via polling -->
                 </div>
             </div>
         `;

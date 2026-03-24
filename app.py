@@ -1391,6 +1391,18 @@ def handle_partido(id):
             
         return jsonify(partido.to_dict())
 
+@app.route('/api/torneos/<int:torneo_id>/partidos/live', methods=['GET'])
+def get_live_matches(torneo_id):
+    """Returns only live matches for a specific tournament or all tournaments if id is 0."""
+    query = Partido.query.filter_by(estado='Live')
+    query = apply_liga_filter(query, Partido)
+    
+    if torneo_id > 0:
+        query = query.filter_by(torneo_id=torneo_id)
+        
+    partidos = query.all()
+    return jsonify([p.to_dict() for p in partidos])
+
 def sync_match_goals(partido):
     import random
     target_local = partido.goles_local or 0
