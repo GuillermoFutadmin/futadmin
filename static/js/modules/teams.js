@@ -430,11 +430,22 @@ export class TeamsModule {
         const teams = this.getCombinedTeams();
         const optionsHtml = teams.map(t => `<option value="${t.id}">${t.nombre}</option>`).join('');
         
-        document.querySelectorAll('.bulk-match-row select').forEach(select => {
-            const currentVal = select.value;
-            const placeholder = select.options[0].text;
-            select.innerHTML = `<option value="">${placeholder}</option>${optionsHtml}`;
-            select.value = currentVal;
+        document.querySelectorAll('.bulk-match-row').forEach((row, index) => {
+            const localSelect = row.querySelector('select[onchange*="local_id"]');
+            const visitorSelect = row.querySelector('select[onchange*="visitante_id"]');
+            
+            if (localSelect) {
+                const cur = localSelect.value;
+                localSelect.innerHTML = `<option value="">Seleccionar Local...</option>${optionsHtml}`;
+                localSelect.value = cur;
+            }
+            if (visitorSelect) {
+                const cur = visitorSelect.value;
+                visitorSelect.innerHTML = `<option value="">Seleccionar Visitante...</option>${optionsHtml}`;
+                visitorSelect.value = cur;
+            }
+            // Refrescar rosters si ya hay equipos seleccionados
+            this.refreshMatchScorersUI(index);
         });
     }
 
@@ -755,9 +766,21 @@ export class TeamsModule {
                             </tr>
                         `).join('')}
                     </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="4" style="padding-top:10px;">
+                                <div style="display:flex; gap:5px;">
+                                    <input type="text" placeholder="+ Agregar Jugador..." style="flex:1; background:#000; border:1px solid #444; color:#fff; font-size:0.7rem; padding:4px; border-radius:4px;">
+                                    <button onclick="ui.teams.addExtraPlayerToMatch(${index}, '${teamId}', this.previousElementSibling.value, '${containerId}')" 
+                                        style="background:var(--primary); color:#000; border:none; padding:2px 8px; border-radius:4px; cursor:pointer; font-weight:bold;">+</button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tfoot>
                 </table>
             `;
         };
+
 
         renderRoster(m.local_id, `scorers-local-${index}`);
         renderRoster(m.visitante_id, `scorers-visitante-${index}`);
@@ -774,6 +797,19 @@ export class TeamsModule {
         }
         s[field] = parseInt(value) || 0;
         
+        this.syncAllStats();
+    }
+
+    addExtraPlayerToMatch(matchIdx, teamId, playerName, containerId) {
+        if (!playerName) return;
+        const m = this.bulkMatches[matchIdx];
+        if (!m) return;
+
+        let s = m.goleadores.find(x => x.team_id === teamId && x.nombre === playerName);
+        if (!s) {
+            m.goleadores.push({ team_id: teamId, nombre: playerName, goles: 1, amarillas: 0, rojas: 0 });
+        }
+        this.refreshMatchScorersUI(matchIdx);
         this.syncAllStats();
     }
 
