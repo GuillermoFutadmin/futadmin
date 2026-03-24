@@ -106,8 +106,9 @@
                                         <span
                                             onclick="event.stopPropagation(); ui.switchView('inscripciones', null, this.closest('.has-submenu'));">🔹
                                             Inscripciones</span>
-                                        <i class="arrow">▼</i>
                                     </div>
+                                </li>
+                                <li onclick="event.stopPropagation(); ui.teams.openPagosMasivos(this)">🔹 Pagos en Bloque</li>
                                     <ul class="submenu-nested">
                                         <li onclick="event.stopPropagation(); ui.switchView('arbitrajes', null, this)">
                                             🔸 Arbitrajes</li>
@@ -372,8 +373,14 @@
                             </select>
                         </div>
                     </div>
-                    <button class="btn-primary" onclick="ui.finance.showInscripcionModal()"
-                        style="height: fit-content; align-self: flex-end;">+ Inscribir Equipo</button>
+                    <div style="display: flex; gap: 10px; align-self: flex-end;">
+                        <button class="btn-secondary" onclick="ui.teams.openPagosMasivos()" 
+                            style="height: fit-content; display: flex; align-items: center; gap: 8px; background: rgba(251,191,36,0.1); border-color: rgba(251,191,36,0.2); color: #fbbf24;">
+                            📍 Pagos en Bloque
+                        </button>
+                        <button class="btn-primary" onclick="ui.finance.showInscripcionModal()"
+                            style="height: fit-content;">+ Inscribir Equipo</button>
+                    </div>
                 </div>
                 
                 <!-- Resumen de Cifras Rápidas -->
@@ -845,10 +852,6 @@
                         style="background: none; border: none; color: rgba(255,255,255,0.6); padding: 10px 20px; cursor: pointer; font-weight: bold; border-bottom: 3px solid transparent; opacity: 0.8; transition: all 0.2s;">
                         📅 Encuentros Históricos
                     </button>
-                    <button id="tab-btn-finances" class="bulk-tab-btn" onclick="ui.teams.switchBulkTab('finances')" 
-                        style="background: none; border: none; color: rgba(255,255,255,0.6); padding: 10px 20px; cursor: pointer; font-weight: bold; border-bottom: 3px solid transparent; opacity: 0.8; transition: all 0.2s;">
-                        💰 Finanzas (Pagos en Bloque)
-                    </button>
                 </div>
             </div>
             <div class="modal-body" style="background: #0f1113; padding: 25px; flex: 1; overflow: hidden; display: flex; flex-direction: column;">
@@ -899,26 +902,6 @@
                     </div>
                 </div>
 
-                <div id="bulk-content-finances" class="bulk-tab-content" style="flex: 1; display: none; flex-direction: column; overflow: hidden;">
-                    <div style="background: rgba(251,191,36,0.1); border-left: 4px solid #fbbf24; padding: 15px; border-radius: 8px; margin-bottom: 15px; flex-shrink: 0;">
-                        <p style="margin:0; font-size: 0.85rem; color: #e2e8f0;">
-                            <b>Control de Caja:</b> Marca los pagos de inscripción y arbitraje para todos los equipos registrados.
-                        </p>
-                    </div>
-                    <div class="custom-scrollbar" style="flex: 1; overflow-y: auto; border: 1px solid var(--border); border-radius: 12px; background: rgba(0,0,0,0.2); padding: 5px;">
-                        <table style="width: 100%; border-collapse: collapse;">
-                            <thead>
-                                <tr style="color: #666; font-size: 0.75rem; text-transform: uppercase;">
-                                    <th style="text-align: left; padding: 15px;">Equipo</th>
-                                    <th style="text-align: center; width: 150px;">Inscripción</th>
-                                    <th style="text-align: center; width: 150px;">Arbitraje J1</th>
-                                    <th style="text-align: center; width: 150px;">Método</th>
-                                </tr>
-                            </thead>
-                            <tbody id="bulk-finances-body"></tbody>
-                        </table>
-                    </div>
-                </div>
             </div>
             <div class="modal-footer" style="padding: 20px; background: rgba(0,0,0,0.1); border-top: 1px solid var(--border);">
                 <button type="button" class="btn-secondary" onclick="Core.closeModal('modal-bulk-teams')">Cancelar</button>
@@ -1403,6 +1386,51 @@
     </div>
 
     <!-- Los modales de entrenamiento han sido movidos a components/entrenamientos.html -->
+
+    <!-- Modal: Pagos Masivos (Fase 5) -->
+    <div id="modal-pagos-masivos" class="modal">
+        <div class="modal-content" style="max-width: 900px; height: 80vh; border: 2px solid #fbbf24; border-radius: 16px; overflow: hidden; display: flex; flex-direction: column;">
+            <div class="modal-header" style="background: linear-gradient(135deg, #fbbf24, #d97706); padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; border: none;">
+                <h2 style="margin: 0; color: #000; display: flex; align-items: center; gap: 15px; font-weight: 800;">
+                    <span>📍 Control de Caja en Bloque</span>
+                    <span id="pmasivos-league-name" style="font-size: 0.8rem; background: rgba(0,0,0,0.8); padding: 5px 15px; border-radius: 20px; font-weight: bold; color: #fbbf24; text-transform: uppercase;">Liga: ...</span>
+                </h2>
+                <button class="close-btn" onclick="Core.closeModal('modal-pagos-masivos')" style="color: #000; opacity: 0.8; font-size: 2rem; border: none; background: none;">&times;</button>
+            </div>
+            
+            <div class="modal-body" style="background: #0f1113; padding: 25px; flex: 1; overflow: hidden; display: flex; flex-direction: column;">
+                <div style="background: rgba(251,191,36,0.05); border-left: 4px solid #fbbf24; padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; flex-shrink: 0;">
+                    <p style="margin:0; font-size: 0.9rem; color: #e2e8f0; line-height: 1.5;">
+                        <strong>Control Centralizado:</strong> Registra rápidamente los pagos de inscripción y arbitraje. Los cambios se sincronizan con los reportes financieros globales.
+                    </p>
+                </div>
+
+                <div class="custom-scrollbar" style="flex: 1; overflow-y: auto; border: 1px solid var(--border); border-radius: 12px; background: rgba(0,0,0,0.2); padding: 5px;">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="color: #666; font-size: 0.75rem; text-transform: uppercase; border-bottom: 1px solid var(--border);">
+                                <th style="text-align: left; padding: 15px;">Equipo</th>
+                                <th style="text-align: center; width: 140px;">Inscripción ✅</th>
+                                <th style="text-align: center; width: 140px;">Arbitraje J1 ⚽</th>
+                                <th style="text-align: center; width: 160px;">Método 💳</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pmasivos-body">
+                            <!-- Se genera dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="modal-footer" style="padding: 20px 30px; background: rgba(0,0,0,0.2); border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 15px;">
+                <button type="button" class="btn-secondary" onclick="Core.closeModal('modal-pagos-masivos')" style="border-radius: 8px; padding: 10px 25px;">Cancelar</button>
+                <button type="button" class="btn-primary" onclick="ui.teams.savePagosMasivos()" 
+                    style="background: #fbbf24; color: #000; border: none; font-weight: 800; padding: 12px 35px; border-radius: 8px; box-shadow: 0 4px 15px rgba(251,191,36,0.2); cursor: pointer;">
+                    Confirmar Cobros Masivos 🚀
+                </button>
+            </div>
+        </div>
+    </div>
 
     <input type="file" id="global-file-upload" style="display: none;" accept="image/*"
         onchange="Core.handleGlobalFileUpload(event)">

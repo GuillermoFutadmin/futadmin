@@ -1088,4 +1088,140 @@ export class TeamsModule {
             alert('Error de conexión al guardar el Hub.');
         }
     }
+
+    // --- FASE 5: Pagos Masivos Independientes ---
+
+    async openPagosMasivos(element = null) {
+        // Si viene del sidebar, cambiar vista
+        if (element) {
+            this.ui.switchView('inscripciones', null, element);
+        }
+
+        let torneoId = document.getElementById('inscripciones-league-filter')?.value;
+        
+        // Si no hay liga seleccionada en Inscripciones, intentar con la del Hub o la primera disponible
+        if (!torneoId) {
+            torneoId = document.getElementById('team-league-filter')?.value;
+        }
+
+        if (!torneoId) {
+            alert('Por favor selecciona una liga primero en la sección de Inscripciones.');
+            return;
+        }
+
+        const leagueSelect = document.getElementById('inscripciones-league-filter');
+        const leagueName = leagueSelect.options[leagueSelect.selectedIndex].text;
+        document.getElementById('pmasivos-league-name').innerText = `Liga: ${leagueName}`;
+
+        Core.openModal('modal-pagos-masivos');
+        this.loadBulkFinancesPagosMasivos(torneoId);
+    }
+
+    async loadBulkFinancesPagosMasivos(torneoId) {
+        const body = document.getElementById('pmasivos-body');
+        if (!body) return;
+        body.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:30px; color:var(--text-muted);">Cargando equipos y estados de cuenta...</td></tr>';
+        
+        try {
+            const response = await Core.fetchAPI(`/api/equipos?torneo_id=${torneoId}`);
+            const existentes = response.items || response;
+            
+            // Inicializar bulkFinances si no existe
+            if (!this.bulkFinances || Array.isArray(this.bulkFinances)) this.bulkFinances = {};
+
+            if (existentes.length === 0) {
+                body.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:30px; color:var(--text-muted);">No hay equipos registrados en esta liga.</td></tr>';
+                return;
+            }
+
+            body.innerHTML = existentes.map((e) => {
+                if (!this.bulkFinances[e.id]) {
+                    this.bulkFinances[e.id] = { id: e.id, inscripcion: false, arbitraje: false, metodo: 'Efectivo' };
+                }
+                const p = this.bulkFinances[e.id];
+
+                return `
+                    <tr style="border-bottom: 1px solid var(--border); transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.02)'" onmouseout="this.style.background='transparent'">
+                        <td style="padding:15px;">
+                            <div style="font-weight:bold; color:var(--primary); font-size:1rem;">${e.nombre}</div>
+                            <div style="font-size:0.7rem; color:#666; margin-top:2px;">ID: ${e.id}</div>
+                        </td>
+                        <td style="text-align:center;">
+                            <input type="checkbox" ${p.inscripcion ? 'checked' : ''} 
+                                onchange="ui.teams.bulkFinances['${e.id}'].inscripcion = this.checked" 
+                                style="width:22px; height:22px; cursor:pointer; accent-color:#fbbf24;">
+                        </td>
+                        <td style="text-align:center;">
+                            <input type="checkbox" ${p.arbitraje ? 'checked' : ''} 
+                                onchange="ui.teams.bulkFinances['${e.id}'].arbitraje = this.checked" 
+                                style="width:22px; height:22px; cursor:pointer; accent-color:#fbbf24;">
+                        </td>
+                        <td style="padding:15px;">
+                            <select onchange="ui.teams.bulkFinances['${e.id}'].metodo = this.value" 
+                                style="width:100%; padding:10px; background:#1a1c1e; color:#fff; border:1px solid #333; border-radius:8px; font-size:0.85rem; outline:none; cursor:pointer;">
+                                <option value="Efectivo" ${p.metodo === 'Efectivo' ? 'selected' : ''}>💵 Efectivo</option>
+                                <option value="Transferencia" ${p.metodo === 'Transferencia' ? 'selected' : ''}>🏦 Transferencia</option>
+                                <option value="Tarjeta" ${p.metodo === 'Tarjeta' ? 'selected' : ''}>💳 Tarjeta</option>
+                                <option value="Otro" ${p.metodo === 'Otro' ? 'selected' : ''}>🌀 Otro</option>
+                            </select>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        } catch (e) {
+            console.error(e);
+            body.innerHTML = '<tr><td colspan="4" style="color:#ef4444; text-align:center; padding:20px;">Error al conectar con la base de datos.</td></tr>';
+        }
+    }
+
+    async savePagosMasivos() {
+        let torneoId = document.getElementById('inscripciones-league-filter')?.value;
+        if (!torneoId) torneoId = document.getElementById('team-league-filter')?.value;
+
+        const pagos = Object.values(this.bulkFinances || {}).filter(f => f.inscripcion || f.arbitraje);
+
+        if (pagos.length === 0) {
+            alert('No has marcado ningún pago para procesar.');
+            return;
+        }
+
+        const payload = {
+            torneo_id: torneoId,
+            equipos: [],
+            encuentros: [],
+            finanzas: pagos
+        };
+
+        try {
+            Core.showNotification('Procesando pagos masivos...', 'info');
+            const res = await fetch('/api/hub/bulk', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            
+            if (res.ok) {
+                Core.showNotification('¡Pagos registrados exitosamente!', 'success');
+                Core.closeModal('modal-pagos-masivos');
+                
+                // Limpiar temporales para no duplicar si se vuelve a abrir
+                this.bulkFinances = {};
+
+                // Recargar vistas financieras si están activas
+                if (this.ui.currentView === 'inscripciones') {
+                    this.ui.finance.loadInscripciones();
+                } else if (this.ui.currentView === 'arbitrajes') {
+                    this.ui.finance.loadArbitrajes();
+                }
+                
+                this.ui.loadInitialStats(true);
+            } else {
+                const data = await res.json();
+                alert('Error al procesar pagos: ' + (data.error || 'Desconocido'));
+            }
+        } catch (e) {
+            console.error(e);
+            alert('Error de red al intentar procesar los pagos.');
+        }
+    }
 }
