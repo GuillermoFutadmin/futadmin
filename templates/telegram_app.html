@@ -696,7 +696,7 @@
                         🖼️ GALERÍA
                     </button>
                 </div>
-                <input type="file" id="edit-photo-camera" accept="image/*" capture="environment" style="display:none;" onchange="handlePhotoSelect(this)">
+                <input type="file" id="edit-photo-camera" accept="image/*" capture="camera" style="display:none;" onchange="handlePhotoSelect(this)">
                 <input type="file" id="edit-photo-gallery" accept="image/*" style="display:none;" onchange="handlePhotoSelect(this)">
                 <input type="hidden" id="edit-player-photo-url">
             </div>
@@ -1632,7 +1632,7 @@
                             <button class="btn btn-outline" onclick="document.getElementById('arb-photo-cam-${sideId}').click()" style="flex:1; padding:8px; font-size:0.7rem; border-color:var(--secondary); color:var(--secondary);">📷 CÁMARA</button>
                             <button class="btn btn-outline" onclick="document.getElementById('arb-photo-gal-${sideId}').click()" style="flex:1; padding:8px; font-size:0.7rem;">🖼️ GALERÍA</button>
                         </div>
-                        <input type="file" id="arb-photo-cam-${sideId}" accept="image/*" capture="environment" style="display:none;" onchange="handleArbPhoto(this, '${sideId}')">
+                        <input type="file" id="arb-photo-cam-${sideId}" accept="image/*" capture="camera" style="display:none;" onchange="handleArbPhoto(this, '${sideId}')">
                         <input type="file" id="arb-photo-gal-${sideId}" accept="image/*" style="display:none;" onchange="handleArbPhoto(this, '${sideId}')">
                     </div>
 
@@ -3230,7 +3230,7 @@
                     <button class="btn btn-outline" onclick="document.getElementById('reg-photo-camera').click()" style="width: auto; font-size: 0.65rem; border-color:var(--primary); color:var(--primary); padding:8px 10px;">📸 TOMAR FOTO</button>
                     <button class="btn btn-outline" onclick="document.getElementById('reg-photo-gallery').click()" style="width: auto; font-size: 0.65rem; border-color:var(--primary); color:var(--primary); padding:8px 10px;">🖼️ GALERÍA</button>
                 </div>
-                <input type="file" id="reg-photo-camera" accept="image/*" capture="environment" style="display: none;" onchange="handlePhoto(this)">
+                <input type="file" id="reg-photo-camera" accept="image/*" capture="camera" style="display: none;" onchange="handlePhoto(this)">
                 <input type="file" id="reg-photo-gallery" accept="image/*" style="display: none;" onchange="handlePhoto(this)">
             </div>
 
@@ -3367,7 +3367,7 @@
                     <button class="btn btn-outline" onclick="document.getElementById('pay-photo-input').click()" style="font-size:0.7rem; padding:8px;">📸 SUBIR FOTO</button>
                     <div id="pay-photo-status" style="font-size:0.6rem; color:var(--muted); display:flex; align-items:center;">Sin archivo</div>
                 </div>
-                <input type="file" id="pay-photo-input" accept="image/*" capture="environment" style="display:none;" onchange="handlePaymentPhoto(this)">
+                <input type="file" id="pay-photo-input" accept="image/*" capture="camera" style="display:none;" onchange="handlePaymentPhoto(this)">
                 <input type="hidden" id="pay-photo-url">
             </div>
 
