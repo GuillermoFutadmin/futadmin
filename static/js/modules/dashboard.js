@@ -144,30 +144,82 @@ export class DashboardModule {
                 return;
             }
 
+            // Helper para calcular el minuto en tiempo real
+            const getMatchMinute = (m) => {
+                if (!m.timer_started_at) return '';
+                const now = Date.now();
+                const elapsedMs = now - m.timer_started_at;
+                const totalSeconds = Math.floor(elapsedMs / 1000) + (m.tiempo_corrido_segundos || 0);
+                const minutes = Math.floor(totalSeconds / 60);
+                return `${minutes}'`;
+            };
+
             liveContainer.style.display = 'flex';
-            liveContainer.innerHTML = liveMatches.map(m => `
-                <div class="live-match-card-mini pulse-border">
-                    <div class="live-indicator-small">
-                        <span class="dot-pulse"></span>
-                        <span style="color: #ff4444; font-weight: 800; font-size: 0.6rem;">EN VIVO</span>
-                    </div>
-                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 15px;">
-                        <div class="live-team-mini">
-                            <img src="${m.equipo_local_escudo || ''}" onerror="this.src='https://cdn-icons-png.flaticon.com/512/53/53283.png'">
-                            <span>${m.equipo_local}</span>
+            liveContainer.style.justifyContent = liveMatches.length === 1 ? 'center' : 'flex-start';
+            
+            liveContainer.innerHTML = `
+                <div class="live-scroll-wrapper">
+                    ${liveMatches.map(m => {
+                        const minute = getMatchMinute(m);
+                        const eventosArr = m.eventos || [];
+                        const goalsCount = eventosArr.filter(e => e.tipo === 'Gol').length;
+                        
+                        return `
+                        <div class="live-match-card-mini pulse-border">
+                            <div class="live-header-row">
+                                <div class="live-indicator-tag">
+                                    <span class="dot-pulse"></span>
+                                    <span>EN VIVO</span>
+                                </div>
+                                ${minute ? `<div class="live-minute-badge">${minute}</div>` : ''}
+                            </div>
+
+                            <div class="live-teams-container">
+                                <div class="live-team-box">
+                                    <img src="${m.equipo_local_escudo || ''}" onerror="this.src='https://cdn-icons-png.flaticon.com/512/53/53283.png'">
+                                    <span>${m.equipo_local}</span>
+                                </div>
+                                <div class="live-score-box">
+                                    <div class="score-numerals">
+                                        <span>${m.goles_local}</span>
+                                        <span class="score-divider">-</span>
+                                        <span>${m.goles_visitante}</span>
+                                    </div>
+                                </div>
+                                <div class="live-team-box">
+                                    <img src="${m.equipo_visitante_escudo || ''}" onerror="this.src='https://cdn-icons-png.flaticon.com/512/53/53283.png'">
+                                    <span>${m.equipo_visitante}</span>
+                                </div>
+                            </div>
+
+                            <div class="live-footer-info">
+                                <div class="referee-tag">
+                                    <span>⚖️</span>
+                                    <span>${m.arbitro_nombre || 'Sin asignar'}</span>
+                                </div>
+                                
+                                <div class="live-events-scroll">
+                                    ${eventosArr.map(e => {
+                                        let icon = '⚽';
+                                        let classType = 'event-icon-goal';
+                                        if (e.tipo === 'Tarjeta Amarilla') { icon = '🟨'; classType = 'event-icon-yellow'; }
+                                        if (e.tipo === 'Tarjeta Roja') { icon = '🟥'; classType = 'event-icon-red'; }
+                                        
+                                        return `
+                                            <div class="event-chip-mini">
+                                                <span class="${classType}">${icon}</span>
+                                                <span>${e.minuto}' ${e.jugador_nombre || 'NN'}</span>
+                                            </div>
+                                        `;
+                                    }).join('')}
+                                    ${eventosArr.length === 0 ? '<div style="font-size: 0.6rem; color: var(--text-muted); opacity: 0.5;">Sin eventos recientes</div>' : ''}
+                                </div>
+                            </div>
                         </div>
-                        <div class="live-score-mini">
-                            <span>${m.goles_local}</span>
-                            <span>-</span>
-                            <span>${m.goles_visitante}</span>
-                        </div>
-                        <div class="live-team-mini">
-                            <img src="${m.equipo_visitante_escudo || ''}" onerror="this.src='https://cdn-icons-png.flaticon.com/512/53/53283.png'">
-                            <span>${m.equipo_visitante}</span>
-                        </div>
-                    </div>
+                        `;
+                    }).join('')}
                 </div>
-            `).join('');
+            `;
         } catch (e) {
             console.error("Error al cargar partidos en vivo:", e);
         }

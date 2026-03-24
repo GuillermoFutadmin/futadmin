@@ -516,8 +516,10 @@ class Partido(db.Model):
     equipo_visitante = db.relationship('Equipo', foreign_keys=[equipo_visitante_id], lazy=True)
     arbitro = db.relationship('Arbitro', backref=db.backref('partidos_rel', lazy=True), lazy=True)
 
-    def to_dict(self):
         t = self.torneo
+        # Obtener eventos relevantes (Goles y Tarjetas)
+        eventos = [e.to_dict() for e in self.eventos_rel]
+        
         return {
             "id": self.id,
             "liga_id": self.liga_id,
@@ -552,6 +554,7 @@ class Partido(db.Model):
             "timer_started_at": self.timer_started_at,
             "tiempo_corrido_segundos": self.tiempo_corrido_segundos or 0,
             "periodo_actual": self.periodo_actual or 1,
+            "eventos": eventos
         }
 
 
@@ -612,7 +615,9 @@ class EventoPartido(db.Model):
             "id": self.id,
             "partido_id": self.partido_id,
             "equipo_id": self.equipo_id,
+            "equipo_nombre": self.equipo.nombre if self.equipo else "—",
             "jugador_id": self.jugador_id,
+            "jugador_nombre": self.jugador.nombre if self.jugador else "NN",
             "minuto": self.minuto,
             "tipo": self.tipo,
             "periodo": self.periodo,
