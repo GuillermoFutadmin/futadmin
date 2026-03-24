@@ -845,22 +845,56 @@ export class TeamsModule {
 
             // 2. Actualizar UI de Goles/Tarjetas en la fila del equipo (Tab 1)
             let legacyGoles = 0, legacyAmarillas = 0, legacyRojas = 0;
+            let matchGolesThisTeam = 0;
+            let matchAmarillasThisTeam = 0;
+            let matchRojasThisTeam = 0;
+
             const rows = document.querySelectorAll(`#players-list-${tIdx} tr`);
             rows.forEach(row => {
+                const pNameInput = row.querySelector('.p-name');
+                if (!pNameInput) return;
+                const pName = pNameInput.value.trim();
+                const matchStats = extraGolesPorJugador[pName] || { g:0, a:0, r:0 };
+                
+                // Mostrar "extras" visuales en la Tab 1
+                const updateExtraLabel = (tdIdx, val, color) => {
+                    const td = row.querySelectorAll('td')[tdIdx];
+                    if (!td) return;
+                    let label = td.querySelector('.match-extra-label');
+                    if (!label) {
+                        label = document.createElement('div');
+                        label.className = 'match-extra-label';
+                        label.style.cssText = `font-size:0.65rem; font-weight:bold; color:${color}; margin-top:2px;`;
+                        td.appendChild(label);
+                    }
+                    label.innerText = val > 0 ? `+${val} part.` : '';
+                };
+
+                updateExtraLabel(1, matchStats.g, 'var(--primary)');
+                updateExtraLabel(2, matchStats.a, '#fbbf24');
+                updateExtraLabel(3, matchStats.r, '#ef4444');
+
                 legacyGoles += parseInt(row.querySelector('.p-goles').value) || 0;
                 legacyAmarillas += parseInt(row.querySelector('.p-amarillas').value) || 0;
                 legacyRojas += parseInt(row.querySelector('.p-rojas').value) || 0;
+                
+                matchGolesThisTeam += matchStats.g;
+                matchAmarillasThisTeam += matchStats.a;
+                matchRojasThisTeam += matchStats.r;
             });
+
+            // El total del equipo es el MAX entre el marcador del partido y la suma de sus goleadores
+            const finalMatchGoles = Math.max(extraGolesEquipo, matchGolesThisTeam);
 
             const sumG = document.getElementById(`team-sum-goles-${tIdx}`);
             if (sumG) {
-                sumG.innerText = legacyGoles + extraGolesEquipo;
-                sumG.style.color = extraGolesEquipo > 0 ? 'var(--primary)' : '#fff';
+                sumG.innerText = legacyGoles + finalMatchGoles;
+                sumG.style.color = finalMatchGoles > 0 ? 'var(--primary)' : '#fff';
             }
             const sumA = document.getElementById(`team-sum-amarillas-${tIdx}`);
-            if (sumA) sumA.innerText = legacyAmarillas + (Object.values(extraGolesPorJugador).reduce((acc, curr) => acc + curr.a, 0));
+            if (sumA) sumA.innerText = legacyAmarillas + matchAmarillasThisTeam;
             const sumR = document.getElementById(`team-sum-rojas-${tIdx}`);
-            if (sumR) sumR.innerText = legacyRojas + (Object.values(extraGolesPorJugador).reduce((acc, curr) => acc + curr.r, 0));
+            if (sumR) sumR.innerText = legacyRojas + matchRojasThisTeam;
         });
     }
 
