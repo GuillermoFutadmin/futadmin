@@ -3,6 +3,9 @@ import uuid
 from PIL import Image
 from flask import request, jsonify, current_app
 from werkzeug.utils import secure_filename
+import cloudinary
+import cloudinary.uploader
+import cloudinary.api
 
 def paginate_query(query, renderer=None):
     """Universal helper for paginated SQLAlchemy queries."""
@@ -47,24 +50,36 @@ def handle_image_upload(file, folder=None):
     os.makedirs(folder, exist_ok=True)
 
     try:
-        # Cargar imagen
+        # Verificar si Cloudinary está configurado
+        cloudinary_url = os.environ.get('CLOUDINARY_URL') or current_app.config.get('CLOUDINARY_URL')
+        if cloudinary_url:
+            # Subir directo a Cloudinary sin guardar localmente
+            upload_result = cloudinary.uploader.upload(
+                file,
+                folder="futadmin_uploads",
+                resource_type="image",
+                transformation=[
+                    {'width': 800, 'height': 800, 'crop': 'limit'},
+                    {'quality': 'auto:good'},
+                    {'fetch_format': 'auto'}
+                ]
+            )
+            # Retornamos la URL segura de Cloudinary (https://...)
+            return upload_result.get('secure_url'), None
+    except Exception as e:
+        print(f"Error subiendo a Cloudinary: {e}, intentando fallback local...")
+
+    try:
+        # ---------------- FALLBACK LOCAL (RAILWAY EPÍMERO) ----------------
+        file.seek(0)
         img = Image.open(file)
-        # Convertir a RGB (maneja RGBA o paleta)
         if img.mode in ("RGBA", "P"):
             img = img.convert("RGB")
-        
-        # Redimensionar (Max 800px)
         max_size = (800, 800)
         img.thumbnail(max_size, Image.Resampling.LANCZOS)
-        
-        # Nombre único con extensión .jpg
         unique_name = f"{uuid.uuid4().hex}.jpg"
         save_path = os.path.join(folder, unique_name)
-        
-        # Guardar comprimido
         img.save(save_path, "JPEG", optimize=True, quality=70)
-        
-        # Retornar URL estándar
         return f"/static/uploads/{unique_name}", None
     except Exception as e:
         print(f"Error procesando imagen: {e}")
