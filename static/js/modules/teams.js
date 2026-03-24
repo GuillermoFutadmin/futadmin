@@ -1123,6 +1123,11 @@ export class TeamsModule {
         body.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:30px; color:var(--text-muted);">Cargando equipos y estados de cuenta...</td></tr>';
         
         try {
+            // Obtener costos base de la liga para placeholders (Fase 6)
+            const torneo = await Core.fetchAPI(`/api/torneos/${torneoId}`);
+            const costoIns = torneo.costo_inscripcion || 0;
+            const costoArb = torneo.costo_arbitraje || 0;
+
             const response = await Core.fetchAPI(`/api/equipos?torneo_id=${torneoId}`);
             const existentes = response.items || response;
             
@@ -1136,7 +1141,12 @@ export class TeamsModule {
 
             body.innerHTML = existentes.map((e) => {
                 if (!this.bulkFinances[e.id]) {
-                    this.bulkFinances[e.id] = { id: e.id, inscripcion: false, arbitraje: false, metodo: 'Efectivo' };
+                    this.bulkFinances[e.id] = { 
+                        id: e.id, 
+                        monto_inscripcion: 0, 
+                        monto_arbitraje: 0, 
+                        metodo: 'Efectivo' 
+                    };
                 }
                 const p = this.bulkFinances[e.id];
 
@@ -1144,17 +1154,25 @@ export class TeamsModule {
                     <tr style="border-bottom: 1px solid var(--border); transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.02)'" onmouseout="this.style.background='transparent'">
                         <td style="padding:15px;">
                             <div style="font-weight:bold; color:var(--primary); font-size:1rem;">${e.nombre}</div>
-                            <div style="font-size:0.7rem; color:#666; margin-top:2px;">ID: ${e.id}</div>
+                            <div style="font-size:0.7rem; color:#666; margin-top:2px;">Saldo Pendiente puede variar</div>
                         </td>
-                        <td style="text-align:center;">
-                            <input type="checkbox" ${p.inscripcion ? 'checked' : ''} 
-                                onchange="ui.teams.bulkFinances['${e.id}'].inscripcion = this.checked" 
-                                style="width:22px; height:22px; cursor:pointer; accent-color:#fbbf24;">
+                        <td style="text-align:center; padding:10px;">
+                            <div style="position:relative;">
+                                <span style="position:absolute; left:10px; top:50%; transform:translateY(-50%); color:#666; font-size:0.8rem;">$</span>
+                                <input type="number" value="${p.monto_inscripcion || 0}" step="10"
+                                    placeholder="${costoIns}"
+                                    onchange="ui.teams.bulkFinances['${e.id}'].monto_inscripcion = parseFloat(this.value) || 0" 
+                                    style="width:100%; padding:10px 10px 10px 25px; background:#000; color:#fbbf24; border:1px solid #333; border-radius:8px; font-weight:bold; outline:none;">
+                            </div>
                         </td>
-                        <td style="text-align:center;">
-                            <input type="checkbox" ${p.arbitraje ? 'checked' : ''} 
-                                onchange="ui.teams.bulkFinances['${e.id}'].arbitraje = this.checked" 
-                                style="width:22px; height:22px; cursor:pointer; accent-color:#fbbf24;">
+                        <td style="text-align:center; padding:10px;">
+                            <div style="position:relative;">
+                                <span style="position:absolute; left:10px; top:50%; transform:translateY(-50%); color:#666; font-size:0.8rem;">$</span>
+                                <input type="number" value="${p.monto_arbitraje || 0}" step="10"
+                                    placeholder="${costoArb}"
+                                    onchange="ui.teams.bulkFinances['${e.id}'].monto_arbitraje = parseFloat(this.value) || 0" 
+                                    style="width:100%; padding:10px 10px 10px 25px; background:#000; color:#fbbf24; border:1px solid #333; border-radius:8px; font-weight:bold; outline:none;">
+                            </div>
                         </td>
                         <td style="padding:15px;">
                             <select onchange="ui.teams.bulkFinances['${e.id}'].metodo = this.value" 
@@ -1178,10 +1196,12 @@ export class TeamsModule {
         let torneoId = document.getElementById('inscripciones-league-filter')?.value;
         if (!torneoId) torneoId = document.getElementById('team-league-filter')?.value;
 
-        const pagos = Object.values(this.bulkFinances || {}).filter(f => f.inscripcion || f.arbitraje);
+        const pagos = Object.values(this.bulkFinances || {}).filter(f => 
+            (f.monto_inscripcion > 0) || (f.monto_arbitraje > 0)
+        );
 
         if (pagos.length === 0) {
-            alert('No has marcado ningún pago para procesar.');
+            alert('No has ingresado ningún monto de abono para procesar.');
             return;
         }
 
@@ -1193,7 +1213,7 @@ export class TeamsModule {
         };
 
         try {
-            Core.showNotification('Procesando pagos masivos...', 'info');
+            Core.showNotification('Procesando abonos masivos...', 'info');
             const res = await fetch('/api/hub/bulk', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -1201,13 +1221,13 @@ export class TeamsModule {
             });
             
             if (res.ok) {
-                Core.showNotification('¡Pagos registrados exitosamente!', 'success');
+                Core.showNotification('¡Abonos registrados exitosamente!', 'success');
                 Core.closeModal('modal-pagos-masivos');
                 
-                // Limpiar temporales para no duplicar si se vuelve a abrir
+                // Limpiar temporales
                 this.bulkFinances = {};
 
-                // Recargar vistas financieras si están activas
+                // Recargar vistas financieras
                 if (this.ui.currentView === 'inscripciones') {
                     this.ui.finance.loadInscripciones();
                 } else if (this.ui.currentView === 'arbitrajes') {
@@ -1217,11 +1237,11 @@ export class TeamsModule {
                 this.ui.loadInitialStats(true);
             } else {
                 const data = await res.json();
-                alert('Error al procesar pagos: ' + (data.error || 'Desconocido'));
+                alert('Error al procesar abonos: ' + (data.error || 'Desconocido'));
             }
         } catch (e) {
             console.error(e);
-            alert('Error de red al intentar procesar los pagos.');
+            alert('Error de red al intentar procesar los abonos.');
         }
     }
 }

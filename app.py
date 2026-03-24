@@ -662,27 +662,30 @@ def handle_hub_bulk():
             if not ins: continue
 
             metodo = f_item.get('metodo', 'Efectivo')
-            if f_item.get('inscripcion'):
-                exists = Pago.query.filter_by(inscripcion_id=ins.id, tipo='Inscripcion').first()
-                if not exists:
-                    pago_ins = Pago(
-                        inscripcion_id=ins.id,
-                        monto=ins.monto_pactado_inscripcion,
-                        tipo='Inscripcion',
-                        metodo=metodo,
-                        liga_id=torneo.liga_id,
-                        comentario='Pago masivo Hub V5'
-                    )
-                    db.session.add(pago_ins)
+            
+            # Montos explícitos (Fase 6: Abonos)
+            monto_ins = float(f_item.get('monto_inscripcion', 0))
+            monto_arb = float(f_item.get('monto_arbitraje', 0))
 
-            if f_item.get('arbitraje'):
+            if monto_ins > 0:
+                pago_ins = Pago(
+                    inscripcion_id=ins.id,
+                    monto=monto_ins,
+                    tipo='Inscripcion',
+                    metodo=metodo,
+                    liga_id=torneo.liga_id,
+                    comentario=f'Abono Inscripción - Liga: {torneo.nombre}'
+                )
+                db.session.add(pago_ins)
+
+            if monto_arb > 0:
                 pago_arb = Pago(
                     torneo_id=torneo_id,
-                    monto=float(torneo.costo_arbitraje or 0),
+                    monto=monto_arb,
                     tipo='Arbitraje',
                     metodo=metodo,
                     liga_id=torneo.liga_id,
-                    comentario='Pago arbitraje masivo J1 - Hub V5'
+                    comentario=f'Abono Arbitraje J1 - Liga: {torneo.nombre}'
                 )
                 db.session.add(pago_arb)
 
