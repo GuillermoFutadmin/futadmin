@@ -826,21 +826,63 @@ export class TeamsModule {
             let extraGolesEquipo = 0;
             const extraGolesPorJugador = {};
 
-            this.bulkMatches.forEach(m => {
+            this.bulkMatches.forEach((m, mIdx) => {
                 if (!m) return;
-                // Si el equipo tIdx (NEW_tIdx) es local o visitante
-                if (m.local_id === `NEW_${tIdx}`) extraGolesEquipo += m.goles_local;
-                if (m.visitante_id === `NEW_${tIdx}`) extraGolesEquipo += m.goles_visitante;
 
-                // Goleadores, Amarillas, Rojas individuales
+                // Sumar goles de goleadores por equipo para este partido específico
+                let sumLocal = 0, sumVisitante = 0;
                 m.goleadores.forEach(s => {
-                    if (s.team_id === `NEW_${tIdx}`) {
-                        if (!extraGolesPorJugador[s.nombre]) extraGolesPorJugador[s.nombre] = { g:0, a:0, r:0 };
-                        extraGolesPorJugador[s.nombre].g += (s.goles || 0);
-                        extraGolesPorJugador[s.nombre].a += (s.amarillas || 0);
-                        extraGolesPorJugador[s.nombre].r += (s.rojas || 0);
-                    }
+                    if (s.team_id === m.local_id) sumLocal += (s.goles || 0);
+                    if (s.team_id === m.visitante_id) sumVisitante += (s.goles || 0);
                 });
+
+                // Si la suma de goleadores es mayor al marcador manual, actualizamos el marcador
+                if (sumLocal > m.goles_local) {
+                    m.goles_local = sumLocal;
+                    const input = document.querySelector(`.bulk-match-row:nth-child(${mIdx+1}) input[oninput*="goles_local"]`);
+                    if (input) input.value = sumLocal;
+                }
+                if (sumVisitante > m.goles_visitante) {
+                    m.goles_visitante = sumVisitante;
+                    const input = document.querySelector(`.bulk-match-row:nth-child(${mIdx+1}) input[oninput*="goles_visitante"]`);
+                    if (input) input.value = sumVisitante;
+                }
+
+                // Acumular para los totales globales (Tab 1)
+                if (m.local_id === `NEW_${tIdx}`) {
+                    extraGolesEquipo += m.goles_local;
+                    const opponent = this.getCombinedTeams().find(x => x.id === m.visitante_id)?.nombre || '?',
+                          opponentName = opponent.replace('(NUEVO) ', '');
+                    
+                    m.goleadores.forEach(s => {
+                        if (s.team_id === `NEW_${tIdx}`) {
+                            if (!extraGolesPorJugador[s.nombre]) extraGolesPorJugador[s.nombre] = { g:0, a:0, r:0, details: [] };
+                            extraGolesPorJugador[s.nombre].g += (s.goles || 0);
+                            extraGolesPorJugador[s.nombre].a += (s.amarillas || 0);
+                            extraGolesPorJugador[s.nombre].r += (s.rojas || 0);
+                            if (s.goles > 0 || s.amarillas > 0 || s.rojas > 0) {
+                                extraGolesPorJugador[s.nombre].details.push(`vs ${opponentName}`);
+                            }
+                        }
+                    });
+                }
+                if (m.visitante_id === `NEW_${tIdx}`) {
+                    extraGolesEquipo += m.goles_visitante;
+                    const opponent = this.getCombinedTeams().find(x => x.id === m.local_id)?.nombre || '?',
+                          opponentName = opponent.replace('(NUEVO) ', '');
+
+                    m.goleadores.forEach(s => {
+                        if (s.team_id === `NEW_${tIdx}`) {
+                            if (!extraGolesPorJugador[s.nombre]) extraGolesPorJugador[s.nombre] = { g:0, a:0, r:0, details: [] };
+                            extraGolesPorJugador[s.nombre].g += (s.goles || 0);
+                            extraGolesPorJugador[s.nombre].a += (s.amarillas || 0);
+                            extraGolesPorJugador[s.nombre].r += (s.rojas || 0);
+                            if (s.goles > 0 || s.amarillas > 0 || s.rojas > 0) {
+                                extraGolesPorJugador[s.nombre].details.push(`vs ${opponentName}`);
+                            }
+                        }
+                    });
+                }
             });
 
             // 2. Actualizar UI de Goles/Tarjetas en la fila del equipo (Tab 1)
@@ -854,25 +896,26 @@ export class TeamsModule {
                 const pNameInput = row.querySelector('.p-name');
                 if (!pNameInput) return;
                 const pName = pNameInput.value.trim();
-                const matchStats = extraGolesPorJugador[pName] || { g:0, a:0, r:0 };
+                const matchStats = extraGolesPorJugador[pName] || { g:0, a:0, r:0, details: [] };
                 
                 // Mostrar "extras" visuales en la Tab 1
-                const updateExtraLabel = (tdIdx, val, color) => {
+                const updateExtraLabel = (tdIdx, val, color, labelText) => {
                     const td = row.querySelectorAll('td')[tdIdx];
                     if (!td) return;
                     let label = td.querySelector('.match-extra-label');
                     if (!label) {
                         label = document.createElement('div');
                         label.className = 'match-extra-label';
-                        label.style.cssText = `font-size:0.65rem; font-weight:bold; color:${color}; margin-top:2px;`;
+                        label.style.cssText = `font-size:0.6rem; color:${color}; margin-top:2px; line-height:1;`;
                         td.appendChild(label);
                     }
-                    label.innerText = val > 0 ? `+${val} part.` : '';
+                    const detailsStr = (matchStats.details || []).join(', ');
+                    label.innerText = val > 0 ? `+${val} ${labelText} (${detailsStr})` : '';
                 };
 
-                updateExtraLabel(1, matchStats.g, 'var(--primary)');
-                updateExtraLabel(2, matchStats.a, '#fbbf24');
-                updateExtraLabel(3, matchStats.r, '#ef4444');
+                updateExtraLabel(1, matchStats.g, 'var(--primary)', 'goles');
+                updateExtraLabel(2, matchStats.a, '#fbbf24', 'am.');
+                updateExtraLabel(3, matchStats.r, '#ef4444', 'roja');
 
                 legacyGoles += parseInt(row.querySelector('.p-goles').value) || 0;
                 legacyAmarillas += parseInt(row.querySelector('.p-amarillas').value) || 0;
