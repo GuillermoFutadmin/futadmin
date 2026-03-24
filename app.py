@@ -1732,45 +1732,55 @@ def generar_rol(torneo_id):
     ab_idx = 0
     
     # Mapa de partidos que ya existen y no queremos duplicar
-    partidos_protegidos = {
-        (p.equipo_local_id, p.equipo_visitante_id, p.jornada, p.fase) 
-        for p in Partido.query.filter_by(torneo_id=torneo_id).filter(
-            or_(Partido.estado.in_(['Played', 'Live']), Partido.goles_local != None, Partido.goles_visitante != None)
-        ).all()
-    }
+    partidos_protegidos = set()
+    team_jornadas = {}
+    
+    partidos_previos = Partido.query.filter_by(torneo_id=torneo_id).filter(
+        or_(Partido.estado.in_(['Played', 'Live']), Partido.goles_local != None, Partido.goles_visitante != None)
+    ).all()
+    
+    for p in partidos_previos:
+        partidos_protegidos.add((p.equipo_local_id, p.equipo_visitante_id, p.fase))
+        # Actualizamos el track de jornada por equipo
+        j_num_actual = p.jornada or 1
+        team_jornadas[p.equipo_local_id] = max(team_jornadas.get(p.equipo_local_id, 0), j_num_actual)
+        team_jornadas[p.equipo_visitante_id] = max(team_jornadas.get(p.equipo_visitante_id, 0), j_num_actual)
 
     if formato == "Liga":
         if len(equipos) % 2 != 0: equipos.append(None)
         n = len(equipos)
         iteraciones = 2 if tipo_rol == 'doble' else 1
-        jornada_offset = 0
+        
         for vuelta in range(iteraciones):
             temp_equipos = list(equipos)
             for round_num in range(1, n):
-                j_num = round_num + jornada_offset
                 for i in range(n // 2):
                     loc, vis = temp_equipos[i], temp_equipos[n - 1 - i]
                     if loc and vis:
                         l_id, v_id = (vis.id, loc.id) if vuelta == 1 else (loc.id, vis.id)
                         
-                        # Saltar si ya existe un partido jugado para esta combinación
-                        if (l_id, v_id, j_num, "Regular") in partidos_protegidos:
+                        # Saltar si ya existe un partido jugado para esta combinación en esta fase
+                        if (l_id, v_id, "Regular") in partidos_protegidos:
                             continue
                             
+                        # Calcular la jornada dinámicamente según el conteo real de cada equipo
+                        j_num_dinamico = max(team_jornadas.get(l_id, 0), team_jornadas.get(v_id, 0)) + 1
+                        team_jornadas[l_id] = j_num_dinamico
+                        team_jornadas[v_id] = j_num_dinamico
+                        
                         arb_id = arbitro_oficial_id or (arbitros[ab_idx % len(arbitros)].id if arbitros else None)
                         if not arbitro_oficial_id and arbitros: ab_idx += 1
                         p = Partido(
                             torneo_id=torneo_id, 
-                            jornada=j_num, 
+                            jornada=j_num_dinamico, 
                             equipo_local_id=l_id, 
                             equipo_visitante_id=v_id, 
                             arbitro_id=arb_id,
                             liga_id=torneo.liga_id
                         )
-                        # db.session.add(p)  # Quitamos del bucle para eficiencia
                         partidos_creados.append(p)
+                        partidos_protegidos.add((l_id, v_id, "Regular"))
                 temp_equipos.insert(1, temp_equipos.pop())
-            jornada_offset += (n - 1)
 
     elif formato == "Eliminación Directa":
         import random
@@ -1780,23 +1790,28 @@ def generar_rol(torneo_id):
         for i in range(0, n_e - 1, 2):
             l_id, v_id = equipos[i].id, equipos[i+1].id
             
-            # Saltar si ya existe un partido jugado para esta combinación en jornada 1
-            if (l_id, v_id, 1, fase) in partidos_protegidos:
+            # Saltar si ya existe un partido jugado para esta combinación en eliminatoria
+            if (l_id, v_id, fase) in partidos_protegidos:
                 continue
                 
+            # Calculamos la jornada igual de forma dinámica aunque en eliminatoria suele ser 1
+            j_num_dinamico = max(team_jornadas.get(l_id, 0), team_jornadas.get(v_id, 0)) + 1
+            team_jornadas[l_id] = j_num_dinamico
+            team_jornadas[v_id] = j_num_dinamico
+            
             arb_id = arbitro_oficial_id or (arbitros[ab_idx % len(arbitros)].id if arbitros else None)
             if not arbitro_oficial_id and arbitros: ab_idx += 1
             p = Partido(
                 torneo_id=torneo_id, 
-                jornada=1, 
+                jornada=j_num_dinamico, 
                 equipo_local_id=l_id, 
                 equipo_visitante_id=v_id, 
                 arbitro_id=arb_id, 
                 fase=fase,
                 liga_id=torneo.liga_id
             )
-            # db.session.add(p) # Fuera del bucle
             partidos_creados.append(p)
+            partidos_protegidos.add((l_id, v_id, fase))
 
     elif formato == "Fase de Grupos":
         import random
