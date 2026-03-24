@@ -375,6 +375,20 @@ export class TeamsModule {
         
         Core.openModal('modal-bulk-teams');
         this.updateBulkCounter();
+        this.loadPlayersToCache();
+    }
+
+    async loadPlayersToCache() {
+        const torneoId = document.getElementById('team-league-filter').value;
+        try {
+            const res = await Core.fetchAPI(`/api/jugadores?torneo_id=${torneoId}`);
+            const data = res.items || res;
+            this._playersCache = {};
+            data.forEach(p => {
+                if (!this._playersCache[p.equipo_id]) this._playersCache[p.equipo_id] = [];
+                this._playersCache[p.equipo_id].push(p.nombre);
+            });
+        } catch (e) { console.error("Error cargando jugadores al cache:", e); }
     }
 
     switchBulkTab(tabId) {
@@ -406,7 +420,22 @@ export class TeamsModule {
 
         // Cargas específicas
         if (tabId === 'finances') this.loadBulkFinances();
-        else if (tabId === 'matches' && this.bulkMatches.length === 0) this.addBulkMatch();
+        else if (tabId === 'matches') {
+            this.refreshAllMatchDropdowns();
+            if (this.bulkMatches.length === 0) this.addBulkMatch();
+        }
+    }
+
+    refreshAllMatchDropdowns() {
+        const teams = this.getCombinedTeams();
+        const optionsHtml = teams.map(t => `<option value="${t.id}">${t.nombre}</option>`).join('');
+        
+        document.querySelectorAll('.bulk-match-row select').forEach(select => {
+            const currentVal = select.value;
+            const placeholder = select.options[0].text;
+            select.innerHTML = `<option value="">${placeholder}</option>${optionsHtml}`;
+            select.value = currentVal;
+        });
     }
 
     addBulkRow() {
@@ -567,6 +596,8 @@ export class TeamsModule {
         document.getElementById(`team-sum-amarillas-${index}`).innerText = ta;
         document.getElementById(`team-sum-rojas-${index}`).innerText = tr;
         document.getElementById(`team-players-count-${index}`).innerText = `(${jugadores.length})`;
+
+        this.syncAllStats(); // Sincronizar con encuentros
     }
 
     updateBulkCounter() {
@@ -576,46 +607,229 @@ export class TeamsModule {
         if (c) c.innerText = `${count} equipo(s) listo(s)`;
     }
 
+    getCombinedTeams() {
+        const existing = this._currentLoadedTeams || [];
+        const newTeams = (this.bulkTeams || [])
+            .filter(t => t.nombre.trim().length > 0)
+            .map((t, idx) => ({ id: `NEW_${idx}`, nombre: `(NUEVO) ${t.nombre}`, isNew: true, name: t.nombre }));
+        return [...existing, ...newTeams];
+    }
+
     addBulkMatch() {
         const body = document.getElementById('bulk-matches-body');
         if (!body) return;
         const index = this.bulkMatches.length;
-        this.bulkMatches.push({ local_id: '', visitante_id: '', goles_local: 0, goles_visitante: 0 });
+        this.bulkMatches.push({ 
+            local_id: '', visitante_id: '', 
+            goles_local: 0, goles_visitante: 0,
+            goleadores: [] 
+        });
 
-        // Obtener lista de equipos actuales (si ya existen en la liga)
-        const filterSelect = document.getElementById('team-league-filter');
-        const currentLeagueTeams = this._currentLoadedTeams || []; 
-        
-        const optionsHtml = currentLeagueTeams.map(t => `<option value="${t.id}">${t.nombre}</option>`).join('');
+        const teams = this.getCombinedTeams();
+        const optionsHtml = teams.map(t => `<option value="${t.id}">${t.nombre}</option>`).join('');
 
         const tr = document.createElement('tr');
         tr.style.borderBottom = '1px solid var(--border)';
+        tr.className = 'bulk-match-row';
         tr.innerHTML = `
-            <td style="padding: 10px;">
-                <select onchange="ui.teams.bulkMatches[${index}].local_id = this.value" style="width:100%; padding:8px; background:#000; color:#fff; border:1px solid #333; border-radius:6px;">
-                    <option value="">Seleccionar Local...</option>
-                    ${optionsHtml}
-                </select>
-            </td>
-            <td style="padding: 10px;">
-                <input type="number" value="0" min="0" oninput="ui.teams.bulkMatches[${index}].goles_local = parseInt(this.value)||0" 
-                    style="width:60px; text-align:center; padding:8px; background:#000; color:#fff; border:1px solid #333; border-radius:6px;">
-            </td>
-            <td style="padding: 10px;">
-                <input type="number" value="0" min="0" oninput="ui.teams.bulkMatches[${index}].goles_visitante = parseInt(this.value)||0" 
-                    style="width:60px; text-align:center; padding:8px; background:#000; color:#fff; border:1px solid #333; border-radius:6px;">
-            </td>
-            <td style="padding: 10px;">
-                <select onchange="ui.teams.bulkMatches[${index}].visitante_id = this.value" style="width:100%; padding:8px; background:#000; color:#fff; border:1px solid #333; border-radius:6px;">
-                    <option value="">Seleccionar Visitante...</option>
-                    ${optionsHtml}
-                </select>
-            </td>
-            <td style="text-align:center;">
-                <button onclick="this.closest('tr').remove()" style="color:#ef4444; background:none; border:none; cursor:pointer;">&times;</button>
+            <td colspan="5" style="padding: 0;">
+                <div style="display: grid; grid-template-columns: 2fr 1fr 1fr 2fr 50px; align-items: center; padding: 10px;">
+                    <div style="padding: 5px;">
+                        <select onchange="ui.teams.updateMatchTeam(${index}, 'local_id', this.value)" style="width:100%; padding:8px; background:#000; color:#fff; border:1px solid #333; border-radius:6px; font-weight:bold;">
+                            <option value="">Seleccionar Local...</option>
+                            ${optionsHtml}
+                        </select>
+                    </div>
+                    <div style="padding: 5px; text-align: center;">
+                        <input type="number" value="0" min="0" oninput="ui.teams.updateMatchScore(${index}, 'goles_local', this.value)" 
+                            style="width:60px; text-align:center; padding:8px; background:#000; color:#fff; border:1px solid #333; border-radius:6px; font-size: 1.1rem; font-weight: bold;">
+                    </div>
+                    <div style="padding: 5px; text-align: center;">
+                        <input type="number" value="0" min="0" oninput="ui.teams.updateMatchScore(${index}, 'goles_visitante', this.value)" 
+                            style="width:60px; text-align:center; padding:8px; background:#000; color:#fff; border:1px solid #333; border-radius:6px; font-size: 1.1rem; font-weight: bold;">
+                    </div>
+                    <div style="padding: 5px;">
+                        <select onchange="ui.teams.updateMatchTeam(${index}, 'visitante_id', this.value)" style="width:100%; padding:8px; background:#000; color:#fff; border:1px solid #333; border-radius:6px; font-weight:bold;">
+                            <option value="">Seleccionar Visitante...</option>
+                            ${optionsHtml}
+                        </select>
+                    </div>
+                    <td style="text-align:center;">
+                        <button onclick="ui.teams.removeBulkMatch(${index}, this)" style="color:#ef4444; background:none; border:none; cursor:pointer; font-size: 1.2rem;">&times;</button>
+                    </td>
+                </div>
+                <!-- Detalle de Goleadores (Se expande al seleccionar equipos) -->
+                <div id="match-scorers-${index}" style="padding: 0 15px 15px 15px; display: none; background: rgba(0,0,0,0.1);">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div id="scorers-local-${index}">
+                            <div style="font-size: 0.7rem; color: var(--primary); margin-bottom: 5px; font-weight: bold;">GOLEADORES LOCAL</div>
+                            <div class="scorers-list"></div>
+                        </div>
+                        <div id="scorers-visitante-${index}">
+                            <div style="font-size: 0.7rem; color: var(--primary); margin-bottom: 5px; font-weight: bold;">GOLEADORES VISITANTE</div>
+                            <div class="scorers-list"></div>
+                        </div>
+                    </div>
+                </div>
             </td>
         `;
         body.appendChild(tr);
+    }
+
+    updateMatchTeam(index, field, value) {
+        if (!this.bulkMatches[index]) return;
+        this.bulkMatches[index][field] = value;
+        
+        // Mostrar área de goleadores
+        const detail = document.getElementById(`match-scorers-${index}`);
+        if (this.bulkMatches[index].local_id && this.bulkMatches[index].visitante_id) {
+            detail.style.display = 'block';
+            this.refreshMatchScorersUI(index);
+        } else {
+            detail.style.display = 'none';
+        }
+    }
+
+    updateMatchScore(index, field, value) {
+        if (!this.bulkMatches[index]) return;
+        this.bulkMatches[index][field] = parseInt(value) || 0;
+        this.syncAllStats();
+    }
+
+    removeBulkMatch(index, btn) {
+        this.bulkMatches[index] = null;
+        btn.closest('tr').remove();
+        this.syncAllStats();
+    }
+
+    refreshMatchScorersUI(index) {
+        const m = this.bulkMatches[index];
+        if (!m) return;
+
+        const renderList = (teamId, containerId) => {
+            const container = document.querySelector(`#${containerId} .scorers-list`);
+            if (!container) return;
+            
+            // Obtener jugadores del equipo seleccionado
+            let jugadores = [];
+            if (teamId.startsWith('NEW_')) {
+                const teamIdx = parseInt(teamId.split('_')[1]);
+                jugadores = (this.bulkTeams[teamIdx]?.jugadores || []).map(j => j.nombre);
+            } else {
+                // Para equipos existentes, idealmente cargaríamos sus jugadores si los tenemos
+                // Por ahora, si es existente, permitimos escribir el nombre o lo buscamos en el cache global
+                jugadores = (this._playersCache && this._playersCache[teamId]) || [];
+            }
+
+            const options = jugadores.map(j => `<option value="${j}">${j}</option>`).join('');
+            
+            container.innerHTML = `
+                <div style="display: flex; gap: 5px; margin-top: 5px;">
+                    <input type="text" list="players-dl-${teamId}" placeholder="Jugador..." class="sc-name" style="flex:1; padding:5px; background:#111; border:1px solid #333; color:#fff; font-size:0.8rem;">
+                    <datalist id="players-dl-${teamId}">${options}</datalist>
+                    <input type="number" value="1" min="1" class="sc-goals" style="width:40px; padding:5px; background:#111; border:1px solid #333; color:#fff; text-align:center;">
+                    <button onclick="ui.teams.addScorerToMatch(${index}, '${containerId}', this.previousElementSibling.previousElementSibling.value, this.previousElementSibling.value)" 
+                        style="background:var(--primary); color:#000; border:none; padding:0 10px; border-radius:4px; font-weight:bold; cursor:pointer;">+</button>
+                </div>
+                <div class="current-scorers" style="margin-top:10px; display:flex; flex-wrap:wrap; gap:5px;"></div>
+            `;
+            this.renderCurrentScorers(index, containerId);
+        };
+
+        renderList(m.local_id, `scorers-local-${index}`);
+        renderList(m.visitante_id, `scorers-visitante-${index}`);
+    }
+
+    addScorerToMatch(matchIdx, sideId, playerName, goals) {
+        if (!playerName) return;
+        const m = this.bulkMatches[matchIdx];
+        const teamId = sideId.includes('local') ? m.local_id : m.visitante_id;
+        
+        m.goleadores.push({
+            team_id: teamId,
+            nombre: playerName,
+            goles: parseInt(goals) || 1
+        });
+        
+        this.renderCurrentScorers(matchIdx, sideId);
+        this.syncAllStats();
+    }
+
+    renderCurrentScorers(matchIdx, sideId) {
+        const m = this.bulkMatches[matchIdx];
+        const container = document.querySelector(`#${sideId} .current-scorers`);
+        if (!container) return;
+
+        const teamId = sideId.includes('local') ? m.local_id : m.visitante_id;
+        const scorers = m.goleadores.filter(s => s.team_id === teamId);
+
+        container.innerHTML = scorers.map((s, i) => `
+            <span style="background: rgba(255,255,255,0.05); border: 1px solid var(--border); padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; display: flex; align-items: center; gap: 5px;">
+                ${s.nombre} (${s.goles})
+                <b onclick="ui.teams.removeScorer(${matchIdx}, '${sideId}', ${i})" style="color:#ef4444; cursor:pointer;">&times;</b>
+            </span>
+        `).join('');
+    }
+
+    removeScorer(matchIdx, sideId, scorerIdxInSide) {
+        const m = this.bulkMatches[matchIdx];
+        const teamId = sideId.includes('local') ? m.local_id : m.visitante_id;
+        
+        // Encontrar el índice real en el array global de goleadores
+        let count = 0;
+        for (let i = 0; i < m.goleadores.length; i++) {
+            if (m.goleadores[i].team_id === teamId) {
+                if (count === scorerIdxInSide) {
+                    m.goleadores.splice(i, 1);
+                    break;
+                }
+                count++;
+            }
+        }
+        this.renderCurrentScorers(matchIdx, sideId);
+        this.syncAllStats();
+    }
+
+    syncAllStats() {
+        // Esta función recalcula los totales de la Pestaña 1 basados en los Encuentros de la Pestaña 2
+        // Solo afecta a los equipos que están en bulkTeams
+        this.bulkTeams.forEach((team, tIdx) => {
+            if (!team.nombre) return;
+            
+            // 1. Resetear contadores de goleadores (sumaremos el extra de los matches al legacy)
+            // No podemos resetear el legacy, así que sumaremos
+            let extraGolesEquipo = 0;
+            const extraGolesPorJugador = {};
+
+            this.bulkMatches.forEach(m => {
+                if (!m) return;
+                // Si el equipo tIdx (NEW_tIdx) es local o visitante
+                if (m.local_id === `NEW_${tIdx}`) extraGolesEquipo += m.goles_local;
+                if (m.visitante_id === `NEW_${tIdx}`) extraGolesEquipo += m.goles_visitante;
+
+                // Goleadores individuales
+                m.goleadores.forEach(s => {
+                    if (s.team_id === `NEW_${tIdx}`) {
+                        extraGolesPorJugador[s.nombre] = (extraGolesPorJugador[s.nombre] || 0) + s.goles;
+                    }
+                });
+            });
+
+            // 2. Actualizar UI de Goles en la fila del equipo (Tab 1)
+            // El usuario captura "Goles Legacy" en los inputs. 
+            // Queremos que el número mostrado sea Total = Legacy + Matches.
+            const sumSpan = document.getElementById(`team-sum-goles-${tIdx}`);
+            if (sumSpan) {
+                // El legacy se saca sumando los inputs actuales de la columna goles en esa tabla
+                let legacyGoles = 0;
+                const rows = document.querySelectorAll(`#players-list-${tIdx} tr`);
+                rows.forEach(row => {
+                    legacyGoles += parseInt(row.querySelector('.p-goles').value) || 0;
+                });
+                sumSpan.innerText = legacyGoles + extraGolesEquipo;
+                sumSpan.style.color = extraGolesEquipo > 0 ? 'var(--primary)' : '#fff';
+            }
+        });
     }
 
     async loadBulkFinances() {

@@ -511,12 +511,18 @@ def handle_hub_bulk():
         return jsonify({"error": "Torneo no encontrado"}), 404
 
     try:
+        new_teams_map = {} # Mapeo de "NEW_X" -> ID de base de datos
+        new_players_map = {} # Mapeo de (team_id, nombre) -> ID de jugador
+
         # 1. PROCESAR EQUIPOS Y JUGADORES
-        for item in equipos_data:
+        for idx, item in enumerate(equipos_data):
             nombre = item.get('nombre')
             if not nombre: continue
             
             jugadores_list = item.get('jugadores', [])
+            # Los goles legacy aquí son lo que el usuario capturó manualmente en la Tab 1
+            # (que ahora el usuario dice que solo es el "acumulado", pero los de los encuentros 
+            # se sumarán después)
             total_goles = sum(int(j.get('goles', 0)) for j in jugadores_list)
             total_amarillas = sum(int(j.get('amarillas', 0)) for j in jugadores_list)
             total_rojas = sum(int(j.get('rojas', 0)) for j in jugadores_list)
@@ -533,6 +539,7 @@ def handle_hub_bulk():
             )
             db.session.add(nuevo_eq)
             db.session.flush()
+            new_teams_map[f"NEW_{idx}"] = nuevo_eq.id
 
             # Inscripción automática
             ins = Inscripcion(
@@ -543,7 +550,7 @@ def handle_hub_bulk():
             )
             db.session.add(ins)
 
-            for idx, j_data in enumerate(jugadores_list):
+            for p_idx, j_data in enumerate(jugadores_list):
                 jug = Jugador(
                     nombre=j_data.get('nombre'),
                     equipo_id=nuevo_eq.id,
@@ -551,43 +558,90 @@ def handle_hub_bulk():
                     goles_legacy=int(j_data.get('goles', 0)),
                     amarillas_legacy=int(j_data.get('amarillas', 0)),
                     rojas_legacy=int(j_data.get('rojas', 0)),
-                    es_capitan=(idx == 0)
+                    es_capitan=(p_idx == 0)
                 )
                 db.session.add(jug)
+                db.session.flush()
+                new_players_map[(nuevo_eq.id, jug.nombre)] = jug.id
 
         # 2. PROCESAR ENCUENTROS HISTÓRICOS
         for m_item in encuentros_data:
-            l_id = m_item.get('local_id')
-            v_id = m_item.get('visitante_id')
-            if not l_id or not v_id: continue
+            if not m_item: continue
+            l_id_raw = m_item.get('local_id')
+            v_id_raw = m_item.get('visitante_id')
+            if not l_id_raw or not v_id_raw: continue
+
+            # Resolver IDs si son nuevos
+            l_id = new_teams_map.get(l_id_raw, l_id_raw)
+            v_id = new_teams_map.get(v_id_raw, v_id_raw)
+
+            g_l = int(m_item.get('goles_local', 0))
+            g_v = int(m_item.get('goles_visitante', 0))
 
             nuevo_partido = Partido(
                 torneo_id=torneo_id,
                 liga_id=torneo.liga_id,
                 equipo_local_id=l_id,
                 equipo_visitante_id=v_id,
-                goles_local=int(m_item.get('goles_local', 0)),
-                goles_visitante=int(m_item.get('goles_visitante', 0)),
+                goles_local=g_l,
+                goles_visitante=g_v,
                 estado='Finished',
-                jornada=1, # Por defecto jornada 1 para históricos
+                jornada=1,
                 fecha=datetime.utcnow().date()
             )
             db.session.add(nuevo_partido)
+            db.session.flush()
+
+            # Procesar Goleadores del Encuentro
+            goleadores = m_item.get('goleadores', [])
+            for g_data in goleadores:
+                t_id_raw = g_data.get('team_id')
+                t_id = new_teams_map.get(t_id_raw, t_id_raw)
+                p_nombre = g_data.get('nombre')
+                p_goles = int(g_data.get('goles', 1))
+
+                # Intentar encontrar el ID del jugador
+                p_id = new_players_map.get((t_id, p_nombre))
+                if not p_id:
+                    # Si no es nuevo, buscar en DB
+                    exist_p = Jugador.query.filter_by(equipo_id=t_id, nombre=p_nombre).first()
+                    if exist_p: p_id = exist_p.id
+
+                if p_id:
+                    # Registrar evento de gol
+                    for _ in range(p_goles):
+                        ev = EventoPartido(
+                            partido_id=nuevo_partido.id,
+                            equipo_id=t_id,
+                            jugador_id=p_id,
+                            tipo='Gol',
+                            liga_id=torneo.liga_id
+                        )
+                        db.session.add(ev)
+                    
+                    # ACTUALIZAR STATS LEGACY (Sync requested by user)
+                    # El usuario quiere que los goles del encuentro se sumen al acumulado global
+                    jug_obj = Jugador.query.get(p_id)
+                    if jug_obj:
+                        jug_obj.goles_legacy = (jug_obj.goles_legacy or 0) + p_goles
+            
+            # Actualizar equipo (Global)
+            eq_l = Equipo.query.get(l_id)
+            if eq_l: eq_l.goles_f_legacy = (eq_l.goles_f_legacy or 0) + g_l
+            eq_v = Equipo.query.get(v_id)
+            if eq_v: eq_v.goles_f_legacy = (eq_v.goles_f_legacy or 0) + g_v
 
         # 3. PROCESAR FINANZAS (PAGOS EN BLOQUE)
         for f_item in finanzas_data:
-            e_id = f_item.get('id')
-            if not e_id: continue
+            e_id_raw = f_item.get('id')
+            if not e_id_raw: continue
+            e_id = new_teams_map.get(e_id_raw, e_id_raw)
             
-            # Buscar inscripción de este equipo en este torneo
             ins = Inscripcion.query.filter_by(equipo_id=e_id, torneo_id=torneo_id).first()
             if not ins: continue
 
             metodo = f_item.get('metodo', 'Efectivo')
-
-            # Pago de Inscripción
             if f_item.get('inscripcion'):
-                # Evitar duplicados (si ya tiene un pago tipo 'Inscripcion')
                 exists = Pago.query.filter_by(inscripcion_id=ins.id, tipo='Inscripcion').first()
                 if not exists:
                     pago_ins = Pago(
@@ -600,7 +654,6 @@ def handle_hub_bulk():
                     )
                     db.session.add(pago_ins)
 
-            # Pago de Arbitraje (J1)
             if f_item.get('arbitraje'):
                 pago_arb = Pago(
                     torneo_id=torneo_id,
@@ -610,14 +663,14 @@ def handle_hub_bulk():
                     liga_id=torneo.liga_id,
                     comentario='Pago arbitraje masivo J1 - Hub V5'
                 )
-                # Encontrar el partido correspondiente si existe (opcional, aquí lo creamos genérico al torneo)
                 db.session.add(pago_arb)
 
         db.session.commit()
         return jsonify({"success": True, "message": "Hub V5 sincronizado correctamente"}), 200
     except Exception as e:
         db.session.rollback()
-        print(f"Error en Hub Bulk: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({"error": str(e)}), 500
 
 # --- Rutas API: Jugadores ---
