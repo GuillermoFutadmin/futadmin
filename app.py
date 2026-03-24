@@ -592,44 +592,65 @@ def handle_hub_bulk():
             db.session.add(nuevo_partido)
             db.session.flush()
 
-            # Procesar Goleadores del Encuentro
+            # Procesar Goleadores y Tarjetas del Encuentro
             goleadores = m_item.get('goleadores', [])
             for g_data in goleadores:
                 t_id_raw = g_data.get('team_id')
                 t_id = new_teams_map.get(t_id_raw, t_id_raw)
                 p_nombre = g_data.get('nombre')
-                p_goles = int(g_data.get('goles', 1))
+                p_goles = int(g_data.get('goles', 0))
+                p_amarillas = int(g_data.get('amarillas', 0))
+                p_rojas = int(g_data.get('rojas', 0))
+
+                if p_goles + p_amarillas + p_rojas == 0: continue
 
                 # Intentar encontrar el ID del jugador
                 p_id = new_players_map.get((t_id, p_nombre))
                 if not p_id:
-                    # Si no es nuevo, buscar en DB
                     exist_p = Jugador.query.filter_by(equipo_id=t_id, nombre=p_nombre).first()
                     if exist_p: p_id = exist_p.id
 
                 if p_id:
-                    # Registrar evento de gol
+                    # Registrar Goles
                     for _ in range(p_goles):
-                        ev = EventoPartido(
-                            partido_id=nuevo_partido.id,
-                            equipo_id=t_id,
-                            jugador_id=p_id,
-                            tipo='Gol',
-                            liga_id=torneo.liga_id
-                        )
+                        ev = EventoPartido(partido_id=nuevo_partido.id, equipo_id=t_id, jugador_id=p_id, tipo='Gol', liga_id=torneo.liga_id)
                         db.session.add(ev)
                     
-                    # ACTUALIZAR STATS LEGACY (Sync requested by user)
-                    # El usuario quiere que los goles del encuentro se sumen al acumulado global
+                    # Registrar Amarillas
+                    for _ in range(p_amarillas):
+                        ev = EventoPartido(partido_id=nuevo_partido.id, equipo_id=t_id, jugador_id=p_id, tipo='Amarilla', liga_id=torneo.liga_id)
+                        db.session.add(ev)
+                    
+                    # Registrar Rojas
+                    for _ in range(p_rojas):
+                        ev = EventoPartido(partido_id=nuevo_partido.id, equipo_id=t_id, jugador_id=p_id, tipo='Roja', liga_id=torneo.liga_id)
+                        db.session.add(ev)
+                    
+                    # ACTUALIZAR STATS LEGACY
                     jug_obj = Jugador.query.get(p_id)
                     if jug_obj:
                         jug_obj.goles_legacy = (jug_obj.goles_legacy or 0) + p_goles
+                        jug_obj.amarillas_legacy = (jug_obj.amarillas_legacy or 0) + p_amarillas
+                        jug_obj.rojas_legacy = (jug_obj.rojas_legacy or 0) + p_rojas
             
             # Actualizar equipo (Global)
             eq_l = Equipo.query.get(l_id)
-            if eq_l: eq_l.goles_f_legacy = (eq_l.goles_f_legacy or 0) + g_l
+            if eq_l:
+                eq_l.goles_f_legacy = (eq_l.goles_f_legacy or 0) + g_l
+                # Sumar las tarjetas del equipo en el encuentro a sus legacy stats
+                total_a = sum(int(g.get('amarillas', 0)) for g in goleadores if new_teams_map.get(g.get('team_id'), g.get('team_id')) == l_id)
+                total_r = sum(int(g.get('rojas', 0)) for g in goleadores if new_teams_map.get(g.get('team_id'), g.get('team_id')) == l_id)
+                eq_l.amarillas_legacy = (eq_l.amarillas_legacy or 0) + total_a
+                eq_l.rojas_legacy = (eq_l.rojas_legacy or 0) + total_r
+
             eq_v = Equipo.query.get(v_id)
-            if eq_v: eq_v.goles_f_legacy = (eq_v.goles_f_legacy or 0) + g_v
+            if eq_v:
+                eq_v.goles_f_legacy = (eq_v.goles_f_legacy or 0) + g_v
+                total_a = sum(int(g.get('amarillas', 0)) for g in goleadores if new_teams_map.get(g.get('team_id'), g.get('team_id')) == v_id)
+                total_r = sum(int(g.get('rojas', 0)) for g in goleadores if new_teams_map.get(g.get('team_id'), g.get('team_id')) == v_id)
+                eq_v.amarillas_legacy = (eq_v.amarillas_legacy or 0) + total_a
+                eq_v.rojas_legacy = (eq_v.rojas_legacy or 0) + total_r
+
 
         # 3. PROCESAR FINANZAS (PAGOS EN BLOQUE)
         for f_item in finanzas_data:

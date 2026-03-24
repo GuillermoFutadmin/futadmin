@@ -706,89 +706,78 @@ export class TeamsModule {
         const m = this.bulkMatches[index];
         if (!m) return;
 
-        const renderList = (teamId, containerId) => {
+        const renderRoster = (teamId, containerId) => {
             const container = document.querySelector(`#${containerId} .scorers-list`);
             if (!container) return;
             
-            // Obtener jugadores del equipo seleccionado
-            let jugadores = [];
+            let playersData = []; // [{nombre, goles, amarillas, rojas}]
             if (teamId.startsWith('NEW_')) {
                 const teamIdx = parseInt(teamId.split('_')[1]);
-                jugadores = (this.bulkTeams[teamIdx]?.jugadores || []).map(j => j.nombre);
+                playersData = (this.bulkTeams[teamIdx]?.jugadores || []).map(j => ({
+                    nombre: j.nombre,
+                    goles: 0, amarillas: 0, rojas: 0
+                }));
             } else {
-                // Para equipos existentes, idealmente cargaríamos sus jugadores si los tenemos
-                // Por ahora, si es existente, permitimos escribir el nombre o lo buscamos en el cache global
-                jugadores = (this._playersCache && this._playersCache[teamId]) || [];
+                const names = (this._playersCache && this._playersCache[teamId]) || [];
+                playersData = names.map(n => ({ nombre: n, goles: 0, amarillas: 0, rojas: 0 }));
             }
 
-            const options = jugadores.map(j => `<option value="${j}">${j}</option>`).join('');
-            
+            // Mezclar con lo que ya está en m.goleadores (si existe)
+            playersData.forEach(p => {
+                const existing = m.goleadores.find(s => s.team_id === teamId && s.nombre === p.nombre);
+                if (existing) {
+                    p.goles = existing.goles || 0;
+                    p.amarillas = existing.amarillas || 0;
+                    p.rojas = existing.rojas || 0;
+                }
+            });
+
             container.innerHTML = `
-                <div style="display: flex; gap: 5px; margin-top: 5px;">
-                    <input type="text" list="players-dl-${teamId}" placeholder="Jugador..." class="sc-name" style="flex:1; padding:5px; background:#111; border:1px solid #333; color:#fff; font-size:0.8rem;">
-                    <datalist id="players-dl-${teamId}">${options}</datalist>
-                    <input type="number" value="1" min="1" class="sc-goals" style="width:40px; padding:5px; background:#111; border:1px solid #333; color:#fff; text-align:center;">
-                    <button onclick="ui.teams.addScorerToMatch(${index}, '${containerId}', this.previousElementSibling.previousElementSibling.value, this.previousElementSibling.value)" 
-                        style="background:var(--primary); color:#000; border:none; padding:0 10px; border-radius:4px; font-weight:bold; cursor:pointer;">+</button>
-                </div>
-                <div class="current-scorers" style="margin-top:10px; display:flex; flex-wrap:wrap; gap:5px;"></div>
+                <table style="width:100%; font-size:0.75rem; border-collapse:collapse; margin-top:10px;">
+                    <thead>
+                        <tr style="color:#666; text-align:center;">
+                            <th style="text-align:left;">JUGADOR</th>
+                            <th style="width:40px;">⚽</th>
+                            <th style="width:40px;">🟨</th>
+                            <th style="width:40px;">🟥</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${playersData.map((p, pIdx) => `
+                            <tr>
+                                <td style="padding:4px 0; color:#fff;">${p.nombre}</td>
+                                <td><input type="number" value="${p.goles}" min="0" oninput="ui.teams.updatePlayerStat(${index}, '${teamId}', '${p.nombre}', 'goles', this.value)" 
+                                    style="width:30px; background:#111; border:1px solid #333; color:#fff; text-align:center; padding:2px; border-radius:4px;"></td>
+                                <td><input type="number" value="${p.amarillas}" min="0" oninput="ui.teams.updatePlayerStat(${index}, '${teamId}', '${p.nombre}', 'amarillas', this.value)" 
+                                    style="width:30px; background:#111; border:1px solid #333; color:#fbbf24; text-align:center; padding:2px; border-radius:4px;"></td>
+                                <td><input type="number" value="${p.rojas}" min="0" oninput="ui.teams.updatePlayerStat(${index}, '${teamId}', '${p.nombre}', 'rojas', this.value)" 
+                                    style="width:30px; background:#111; border:1px solid #333; color:#ef4444; text-align:center; padding:2px; border-radius:4px;"></td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
             `;
-            this.renderCurrentScorers(index, containerId);
         };
 
-        renderList(m.local_id, `scorers-local-${index}`);
-        renderList(m.visitante_id, `scorers-visitante-${index}`);
+        renderRoster(m.local_id, `scorers-local-${index}`);
+        renderRoster(m.visitante_id, `scorers-visitante-${index}`);
     }
 
-    addScorerToMatch(matchIdx, sideId, playerName, goals) {
-        if (!playerName) return;
+    updatePlayerStat(matchIdx, teamId, playerName, field, value) {
         const m = this.bulkMatches[matchIdx];
-        const teamId = sideId.includes('local') ? m.local_id : m.visitante_id;
+        if (!m) return;
         
-        m.goleadores.push({
-            team_id: teamId,
-            nombre: playerName,
-            goles: parseInt(goals) || 1
-        });
-        
-        this.renderCurrentScorers(matchIdx, sideId);
-        this.syncAllStats();
-    }
-
-    renderCurrentScorers(matchIdx, sideId) {
-        const m = this.bulkMatches[matchIdx];
-        const container = document.querySelector(`#${sideId} .current-scorers`);
-        if (!container) return;
-
-        const teamId = sideId.includes('local') ? m.local_id : m.visitante_id;
-        const scorers = m.goleadores.filter(s => s.team_id === teamId);
-
-        container.innerHTML = scorers.map((s, i) => `
-            <span style="background: rgba(255,255,255,0.05); border: 1px solid var(--border); padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; display: flex; align-items: center; gap: 5px;">
-                ${s.nombre} (${s.goles})
-                <b onclick="ui.teams.removeScorer(${matchIdx}, '${sideId}', ${i})" style="color:#ef4444; cursor:pointer;">&times;</b>
-            </span>
-        `).join('');
-    }
-
-    removeScorer(matchIdx, sideId, scorerIdxInSide) {
-        const m = this.bulkMatches[matchIdx];
-        const teamId = sideId.includes('local') ? m.local_id : m.visitante_id;
-        
-        // Encontrar el índice real en el array global de goleadores
-        let count = 0;
-        for (let i = 0; i < m.goleadores.length; i++) {
-            if (m.goleadores[i].team_id === teamId) {
-                if (count === scorerIdxInSide) {
-                    m.goleadores.splice(i, 1);
-                    break;
-                }
-                count++;
-            }
+        let s = m.goleadores.find(x => x.team_id === teamId && x.nombre === playerName);
+        if (!s) {
+            s = { team_id: teamId, nombre: playerName, goles: 0, amarillas: 0, rojas: 0 };
+            m.goleadores.push(s);
         }
-        this.renderCurrentScorers(matchIdx, sideId);
+        s[field] = parseInt(value) || 0;
+        
         this.syncAllStats();
     }
+
+
 
     syncAllStats() {
         // Esta función recalcula los totales de la Pestaña 1 basados en los Encuentros de la Pestaña 2
@@ -807,28 +796,35 @@ export class TeamsModule {
                 if (m.local_id === `NEW_${tIdx}`) extraGolesEquipo += m.goles_local;
                 if (m.visitante_id === `NEW_${tIdx}`) extraGolesEquipo += m.goles_visitante;
 
-                // Goleadores individuales
+                // Goleadores, Amarillas, Rojas individuales
                 m.goleadores.forEach(s => {
                     if (s.team_id === `NEW_${tIdx}`) {
-                        extraGolesPorJugador[s.nombre] = (extraGolesPorJugador[s.nombre] || 0) + s.goles;
+                        if (!extraGolesPorJugador[s.nombre]) extraGolesPorJugador[s.nombre] = { g:0, a:0, r:0 };
+                        extraGolesPorJugador[s.nombre].g += (s.goles || 0);
+                        extraGolesPorJugador[s.nombre].a += (s.amarillas || 0);
+                        extraGolesPorJugador[s.nombre].r += (s.rojas || 0);
                     }
                 });
             });
 
-            // 2. Actualizar UI de Goles en la fila del equipo (Tab 1)
-            // El usuario captura "Goles Legacy" en los inputs. 
-            // Queremos que el número mostrado sea Total = Legacy + Matches.
-            const sumSpan = document.getElementById(`team-sum-goles-${tIdx}`);
-            if (sumSpan) {
-                // El legacy se saca sumando los inputs actuales de la columna goles en esa tabla
-                let legacyGoles = 0;
-                const rows = document.querySelectorAll(`#players-list-${tIdx} tr`);
-                rows.forEach(row => {
-                    legacyGoles += parseInt(row.querySelector('.p-goles').value) || 0;
-                });
-                sumSpan.innerText = legacyGoles + extraGolesEquipo;
-                sumSpan.style.color = extraGolesEquipo > 0 ? 'var(--primary)' : '#fff';
+            // 2. Actualizar UI de Goles/Tarjetas en la fila del equipo (Tab 1)
+            let legacyGoles = 0, legacyAmarillas = 0, legacyRojas = 0;
+            const rows = document.querySelectorAll(`#players-list-${tIdx} tr`);
+            rows.forEach(row => {
+                legacyGoles += parseInt(row.querySelector('.p-goles').value) || 0;
+                legacyAmarillas += parseInt(row.querySelector('.p-amarillas').value) || 0;
+                legacyRojas += parseInt(row.querySelector('.p-rojas').value) || 0;
+            });
+
+            const sumG = document.getElementById(`team-sum-goles-${tIdx}`);
+            if (sumG) {
+                sumG.innerText = legacyGoles + extraGolesEquipo;
+                sumG.style.color = extraGolesEquipo > 0 ? 'var(--primary)' : '#fff';
             }
+            const sumA = document.getElementById(`team-sum-amarillas-${tIdx}`);
+            if (sumA) sumA.innerText = legacyAmarillas + (Object.values(extraGolesPorJugador).reduce((acc, curr) => acc + curr.a, 0));
+            const sumR = document.getElementById(`team-sum-rojas-${tIdx}`);
+            if (sumR) sumR.innerText = legacyRojas + (Object.values(extraGolesPorJugador).reduce((acc, curr) => acc + curr.r, 0));
         });
     }
 
