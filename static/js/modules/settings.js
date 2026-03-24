@@ -817,7 +817,7 @@ export class SettingsModule {
                         owner_email: liga ? liga.contacto : 'Sistema',
                         owner_pass: 'Confirmado'
                     };
-                    const pagoObj = result.pago || { ...data, id: result.id };
+                    const pagoObj = (result.id && result.liga_nombre) ? result : { ...data, id: result.id || 'NUEVO', liga_nombre: (liga ? liga.nombre : 'Organización'), fecha: new Date().toLocaleDateString() };
                     // Usar el nuevo generador profesional PDF
                     this.downloadComboPaymentPDF(pagoObj.id, { 
                         isActivation: false, 
@@ -1712,9 +1712,9 @@ export class SettingsModule {
 
             transDetails.forEach(row => {
                 doc.setFont("helvetica", "bold");
-                doc.text(row[0], 25, currentY);
+                doc.text(String(row[0] || ''), 25, currentY);
                 doc.setFont("helvetica", "normal");
-                doc.text(row[1], 85, currentY);
+                doc.text(String(row[1] || ''), 85, currentY);
                 currentY += 8;
             });
 
