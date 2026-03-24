@@ -285,6 +285,7 @@ def handle_liga_single(liga_id):
         liga.color = data.get('color', liga.color)
         liga.tipo_cliente = data.get('tipo_cliente', liga.tipo_cliente)
         liga.contacto = data.get('contacto', liga.contacto)
+        liga.subdominio = data.get('subdominio', liga.subdominio)
         
         # Actualizar credenciales si se proporcionan
         owner_email = data.get('owner_email')

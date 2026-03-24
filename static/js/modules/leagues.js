@@ -43,7 +43,7 @@ export class LeaguesModule {
 
         select.innerHTML = '<option value="">Cargando...</option>';
         try {
-            const response = await Core.fetchAPI('/api/arbitros');
+            const response = await Core.fetchAPI('/api/arbitros?per_page=1000');
             const arbitros = response.items || response;
             this.cachedArbitros = Array.isArray(arbitros) ? arbitros.filter(a => a.activo) : [];
             this.filterOfficialReferees(null, selectedId);
@@ -85,7 +85,7 @@ export class LeaguesModule {
 
         select.innerHTML = '<option value="">Cargando...</option>';
         try {
-            const res = await Core.fetchAPI('/api/canchas');
+            const res = await Core.fetchAPI('/api/canchas?per_page=1000');
             const canchas = res.items || res;
             select.innerHTML = '<option value="">-- Sin Cancha Asignada --</option>';
             canchas.forEach(c => {
@@ -308,7 +308,7 @@ export class LeaguesModule {
 
     async editLeague(id) {
         try {
-            const response = await Core.fetchAPI('/api/torneos');
+            const response = await Core.fetchAPI('/api/torneos?per_page=1000');
             const torneos = response.items || response;
             const t = Array.isArray(torneos) ? torneos.find(torneo => torneo.id === id) : null;
 
@@ -393,14 +393,14 @@ export class LeaguesModule {
         container.innerHTML = '<p>Cargando torneos...</p>';
 
         try {
-            const response = await Core.fetchAPI('/api/torneos');
+            const response = await Core.fetchAPI('/api/torneos?per_page=1000');
             const torneos = response.items || response;
             this.pagination = response.pagination || null;
             
             // Poblar filtro de sedes si está vacío (excluyendo la opción por defecto)
             const venueFilter = document.getElementById('league-venue-filter');
             if (venueFilter && venueFilter.options.length <= 1) {
-                const resCanchas = await Core.fetchAPI('/api/canchas');
+                const resCanchas = await Core.fetchAPI('/api/canchas?per_page=1000');
                 const canchas = resCanchas.items || resCanchas;
                 canchas.forEach(c => {
                     const opt = document.createElement('option');

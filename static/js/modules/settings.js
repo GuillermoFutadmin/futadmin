@@ -89,15 +89,26 @@ export class SettingsModule {
 
             idInput.value = liga.id;
             document.getElementById('combo-nombre').value = liga.nombre;
+            if (document.getElementById('combo-subdominio')) document.getElementById('combo-subdominio').value = liga.subdominio || '';
             document.getElementById('combo-color').value = liga.color || '#00ff88';
             document.getElementById('combo-contacto').value = liga.contacto || '';
             
             // Cargar datos del titular
             document.getElementById('combo-owner-nombre').value = liga.nombre; // O el nombre del primer usuario
-            document.getElementById('combo-owner-email').value = liga.owner_email || '';
-            document.getElementById('combo-owner-pass').value = ''; // Mantener vacío al editar a menos que se quiera cambiar
-            document.getElementById('combo-owner-pass').placeholder = 'Dejar vacío para no cambiar';
-
+            
+            // Permitir edición de credenciales (Opcional en edición)
+            const ownerEmailInput = document.getElementById('combo-owner-email');
+            const ownerPassInput = document.getElementById('combo-owner-pass');
+            if (ownerEmailInput) {
+                ownerEmailInput.value = liga.owner_email || '';
+                ownerEmailInput.required = false;
+            }
+            if (ownerPassInput) {
+                ownerPassInput.value = ''; // No mostrar contraseña actual
+                ownerPassInput.required = false;
+                ownerPassInput.placeholder = 'Dejar vacío para no cambiar';
+            }
+            
             title.innerText = '✏️ Editar Organización';
             submitBtn.innerText = 'Guardar Cambios';
             
@@ -115,8 +126,8 @@ export class SettingsModule {
             
             // Los campos de owner no son requeridos en edición (para permitir no cambiar pass)
             document.getElementById('combo-owner-nombre').required = false;
-            document.getElementById('combo-owner-email').required = true; // Email sí es necesario si se quiere cambiar
-            document.getElementById('combo-owner-pass').required = false;
+            // ownerEmailInput.required is set above
+            // ownerPassInput.required is set above
         } else {
             // Modo Creación
             idInput.value = '';
@@ -140,6 +151,8 @@ export class SettingsModule {
             document.getElementById('combo-owner-pass').value = '';
             document.getElementById('combo-owner-pass').placeholder = 'Mínimo 6 caracteres';
             document.getElementById('combo-contacto').value = '';
+            if (document.getElementById('combo-subdominio')) document.getElementById('combo-subdominio').value = '';
+
             document.getElementById('combo-owner-nombre').required = true;
             document.getElementById('combo-owner-email').required = true;
             document.getElementById('combo-owner-pass').required = true;
@@ -164,6 +177,15 @@ export class SettingsModule {
             nombre: document.getElementById('combo-nombre').value.trim(),
             color: document.getElementById('combo-color').value
         };
+
+        // Always send subdominio if present
+        const subdominioInput = document.getElementById('combo-subdominio');
+        if (subdominioInput) {
+            data.subdominio = subdominioInput.value.trim();
+        }
+
+        // Always send contacto if present (for creation or edition)
+        data.contacto = document.getElementById('combo-contacto').value.trim();
 
         if (!isEdit) {
             // Datos extra solo para creación

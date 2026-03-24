@@ -516,6 +516,7 @@ class Partido(db.Model):
     equipo_visitante = db.relationship('Equipo', foreign_keys=[equipo_visitante_id], lazy=True)
     arbitro = db.relationship('Arbitro', backref=db.backref('partidos_rel', lazy=True), lazy=True)
 
+    def to_dict(self):
         t = self.torneo
         # Obtener eventos relevantes (Goles y Tarjetas)
         eventos = [e.to_dict() for e in self.eventos_rel]

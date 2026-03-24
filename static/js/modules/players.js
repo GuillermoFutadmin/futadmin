@@ -7,7 +7,7 @@ export class PlayersModule {
 
     async populateTeamSelects() {
         try {
-            const response = await Core.fetchAPI('/api/equipos');
+            const response = await Core.fetchAPI('/api/equipos?per_page=1000');
             const equipos = response.items || response;
             const options = '<option value="">Seleccionar Equipo...</option>' +
                 (Array.isArray(equipos) ? equipos.map(e => `<option value="${e.id}">${e.nombre}</option>`).join('') : '');
@@ -15,7 +15,9 @@ export class PlayersModule {
             const filterSelect = document.getElementById('player-team-filter');
             const modalSelect = document.getElementById('player-equipo-id');
 
-            let currentFilterValue = filterSelect ? filterSelect.value : '';
+            let currentFilterValue = this.pendingTeamId || (filterSelect ? filterSelect.value : '');
+            this.pendingTeamId = null; // Consumir el ID pendiente
+
             if (filterSelect) filterSelect.innerHTML = options;
             if (modalSelect) modalSelect.innerHTML = options;
 

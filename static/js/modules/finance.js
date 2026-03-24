@@ -9,7 +9,7 @@ export class FinanceModule {
 
     async populateInscripcionLeagueSelect() {
         try {
-            const response = await Core.fetchAPI('/api/torneos');
+            const response = await Core.fetchAPI('/api/torneos?per_page=1000');
             const torneos = response.items || response;
             const select = document.getElementById('report-league-id');
             if (select) {
@@ -32,7 +32,7 @@ export class FinanceModule {
 
     async populateArbitrajeLeagueSelect() {
         try {
-            const response = await Core.fetchAPI('/api/torneos');
+            const response = await Core.fetchAPI('/api/torneos?per_page=1000');
             const torneos = response.items || response;
             const select = document.getElementById('arbitrajes-league-filter');
             if (!select) return;
@@ -405,13 +405,13 @@ export class FinanceModule {
             const select = document.getElementById('ins-equipo-id');
             select.innerHTML = equipos.map(e => `<option value="${e.id}">${e.nombre}</option>`).join('');
 
-            const torneos = await Core.fetchAPI('/api/torneos');
+            const torneos = await Core.fetchAPI('/api/torneos?per_page=1000');
             const t = torneos.find(x => x.id == torneoId);
             document.getElementById('ins-monto-pactado').value = t ? t.costo_inscripcion : 0;
 
             Core.openModal('modal-inscripcion');
         } catch (error) {
-            const equipos = await Core.fetchAPI(`/api/equipos?torneo_id=${torneoId}`);
+            const equipos = await Core.fetchAPI(`/api/equipos?torneo_id=${torneoId}&per_page=1000`);
             const select = document.getElementById('ins-equipo-id');
             select.innerHTML = equipos.map(e => `<option value="${e.id}">${e.nombre}</option>`).join('');
             Core.openModal('modal-inscripcion');
@@ -426,7 +426,7 @@ export class FinanceModule {
     // The original instruction had a syntax error in the middle of the `Core.fetchAPI` call.
     // I've corrected it to be a standalone block.
     async populateLeagueDetailsSelect() {
-        const response = await Core.fetchAPI('/api/torneos');
+        const response = await Core.fetchAPI('/api/torneos?per_page=1000');
         const torneos = response.items || response;
         const select = document.getElementById('league-details-filter');
         if (select) {
@@ -854,7 +854,7 @@ ${data.reglamento ? `<strong>REGLAMENTO:</strong>\n${data.reglamento}\n\n` : ''}
             if (!insData) return;
 
             // Buscar el costo del torneo
-            const torneos = await Core.fetchAPI('/api/torneos');
+            const torneos = await Core.fetchAPI('/api/torneos?per_page=1000');
             const torneoInfo = torneos.find(t => t.id === insData.torneo_id);
             const costoOriginal = torneoInfo ? (torneoInfo.costo_inscripcion || 0) : 0;
 
@@ -894,7 +894,7 @@ ${data.reglamento ? `<strong>REGLAMENTO:</strong>\n${data.reglamento}\n\n` : ''}
             const insData = Array.isArray(dataInscripciones) ? dataInscripciones.find(i => i.id === id) : null;
             if (!insData) { alert('No se encontraron datos del equipo.'); return; }
 
-            const responseTorneos = await Core.fetchAPI('/api/torneos');
+            const responseTorneos = await Core.fetchAPI('/api/torneos?per_page=1000');
             const torneos = responseTorneos.items || responseTorneos || [];
             const torneoInfo = Array.isArray(torneos) ? torneos.find(t => t.id === (insData.torneo_id || torneoId)) : null;
             const reglamento = torneoInfo ? (torneoInfo.reglamento || 'Sin reglamento registrado.') : 'Sin reglamento registrado.';

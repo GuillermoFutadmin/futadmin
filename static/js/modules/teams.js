@@ -8,7 +8,7 @@ export class TeamsModule {
 
     async populateLeagueSelects() {
         try {
-            const response = await Core.fetchAPI('/api/torneos');
+            const response = await Core.fetchAPI('/api/torneos?per_page=1000');
             const torneos = response.items || response;
 
             const select = document.getElementById('inhouse-torneo-id');
@@ -199,10 +199,8 @@ export class TeamsModule {
     }
 
     goToJugadores(equipoId) {
-        const filterSelect = document.getElementById('player-team-filter');
-        if (filterSelect) {
-            filterSelect.value = equipoId;
-            setTimeout(() => this.ui.players.loadJugadores(), 0);
+        if (this.ui.players) {
+            this.ui.players.pendingTeamId = equipoId;
         }
         this.ui.switchTorneosTab('jugadores');
     }
@@ -301,7 +299,7 @@ export class TeamsModule {
                     const selectTorneo = document.getElementById('team-torneo-id');
                     let ciudad = 'Tijuana';
                     if (selectTorneo?.value) {
-                        const torneos = await Core.fetchAPI('/api/torneos');
+                        const torneos = await Core.fetchAPI('/api/torneos?per_page=1000');
                         const current = Array.isArray(torneos) ? torneos.find(t => String(t.id) === String(selectTorneo.value)) : null;
                         if (current?.cancha_municipio) ciudad = current.cancha_municipio;
                     }
@@ -1013,7 +1011,7 @@ export class TeamsModule {
         
         const torneoId = document.getElementById('team-league-filter').value;
         try {
-            const response = await Core.fetchAPI(`/api/equipos?torneo_id=${torneoId}`);
+            const response = await Core.fetchAPI(`/api/equipos?torneo_id=${torneoId}&per_page=1000`);
             const existentes = response.items || response;
             this._currentLoadedTeams = existentes;
 
