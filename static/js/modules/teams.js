@@ -1120,18 +1120,22 @@ export class TeamsModule {
     async loadBulkFinancesPagosMasivos(torneoId) {
         const body = document.getElementById('pmasivos-body');
         if (!body) return;
-        body.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:30px; color:var(--text-muted);">Cargando equipos y estados de cuenta...</td></tr>';
+        body.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:30px; color:var(--text-muted);">Cargando equipos y calendario...</td></tr>';
         
         try {
-            // Obtener costos base de la liga para placeholders (Fase 6)
-            const torneo = await Core.fetchAPI(`/api/torneos/${torneoId}`);
+            // 1. Obtener costos base y calendario (Fase 7)
+            const [torneo, partidosData, equiposData] = await Promise.all([
+                Core.fetchAPI(`/api/torneos/${torneoId}`),
+                Core.fetchAPI(`/api/torneos/${torneoId}/partidos`),
+                Core.fetchAPI(`/api/equipos?torneo_id=${torneoId}`)
+            ]);
+
             const costoIns = torneo.costo_inscripcion || 0;
             const costoArb = torneo.costo_arbitraje || 0;
-
-            const response = await Core.fetchAPI(`/api/equipos?torneo_id=${torneoId}`);
-            const existentes = response.items || response;
+            const existentes = equiposData.items || equiposData;
+            const partidos = Array.isArray(partidosData) ? partidosData : [];
             
-            // Inicializar bulkFinances si no existe
+            // Inicializar bulkFinances
             if (!this.bulkFinances || Array.isArray(this.bulkFinances)) this.bulkFinances = {};
 
             if (existentes.length === 0) {
@@ -1140,21 +1144,41 @@ export class TeamsModule {
             }
 
             body.innerHTML = existentes.map((e) => {
+                // Buscar Próximo Partido (Fase 7)
+                const proximoJuego = partidos.find(p => 
+                    (p.equipo_local_id == e.id || p.equipo_visitante_id == e.id) && 
+                    p.estado !== 'Played'
+                );
+
+                let matchLabel = '<span style="color:#666;">Sin juego programado</span>';
+                let p_id = null;
+
+                if (proximoJuego) {
+                    const rival = proximoJuego.equipo_local_id == e.id ? proximoJuego.equipo_visitante : proximoJuego.equipo_local;
+                    matchLabel = `<span style="color:var(--primary); font-weight:bold;">J${proximoJuego.jornada} vs ${rival}</span>`;
+                    p_id = proximoJuego.id;
+                }
+
                 if (!this.bulkFinances[e.id]) {
                     this.bulkFinances[e.id] = { 
                         id: e.id, 
                         monto_inscripcion: 0, 
                         monto_arbitraje: 0, 
+                        partido_id: p_id,
                         metodo: 'Efectivo' 
                     };
+                } else {
+                    // Actualizar el partido_id por si cambió el calendario
+                    this.bulkFinances[e.id].partido_id = p_id;
                 }
+
                 const p = this.bulkFinances[e.id];
 
                 return `
                     <tr style="border-bottom: 1px solid var(--border); transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.02)'" onmouseout="this.style.background='transparent'">
                         <td style="padding:15px;">
                             <div style="font-weight:bold; color:var(--primary); font-size:1rem;">${e.nombre}</div>
-                            <div style="font-size:0.7rem; color:#666; margin-top:2px;">Saldo Pendiente puede variar</div>
+                            <div style="font-size:0.75rem; margin-top:4px;">${matchLabel}</div>
                         </td>
                         <td style="text-align:center; padding:10px;">
                             <div style="position:relative;">
@@ -1188,7 +1212,7 @@ export class TeamsModule {
             }).join('');
         } catch (e) {
             console.error(e);
-            body.innerHTML = '<tr><td colspan="4" style="color:#ef4444; text-align:center; padding:20px;">Error al conectar con la base de datos.</td></tr>';
+            body.innerHTML = '<tr><td colspan="4" style="color:#ef4444; text-align:center; padding:20px;">Error al conectar con la base de datos o cargar el calendario.</td></tr>';
         }
     }
 

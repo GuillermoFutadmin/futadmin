@@ -679,13 +679,24 @@ def handle_hub_bulk():
                 db.session.add(pago_ins)
 
             if monto_arb > 0:
+                p_id = f_item.get('partido_id')
+                comentario_arb = f'Abono Arbitraje - Liga: {torneo.nombre}'
+                
+                # Enriquecer comentario con datos del partido si existe
+                if p_id:
+                    match_obj = Partido.query.get(p_id)
+                    if match_obj:
+                        rival = match_obj.equipo_visitante.nombre if match_obj.equipo_local_id == e_id else match_obj.equipo_local.nombre
+                        comentario_arb = f'Abono Arbitraje J{match_obj.jornada} vs {rival} - Liga: {torneo.nombre}'
+
                 pago_arb = Pago(
                     torneo_id=torneo_id,
+                    partido_id=p_id,
                     monto=monto_arb,
                     tipo='Arbitraje',
                     metodo=metodo,
                     liga_id=torneo.liga_id,
-                    comentario=f'Abono Arbitraje J1 - Liga: {torneo.nombre}'
+                    comentario=comentario_arb
                 )
                 db.session.add(pago_arb)
 
