@@ -2,14 +2,17 @@
 <div id="view-ajustes" class="sub-view view-container" style="display: none;">
     <!-- Navegación de Subpestañas -->
     <div class="tabs-nav" style="display: flex; gap: 1rem; margin-bottom: 2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">
+        {% if user_rol.lower() == 'admin' %}
         <button class="tab-btn active" onclick="ui.settings.switchTab('users')" id="tab-btn-users" style="background: none; border: none; color: var(--text); padding: 0.5rem 1rem; cursor: pointer; border-bottom: 2px solid var(--primary); transition: all 0.3s;">Usuarios</button>
-        <button class="tab-btn" onclick="ui.settings.switchTab('linked')" id="tab-btn-linked" style="background: none; border: none; color: var(--text-muted); padding: 0.5rem 1rem; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.3s;">Cuentas Vinculadas</button>
+        {% endif %}
+        <button class="tab-btn {% if user_rol.lower() != 'admin' %}active{% endif %}" onclick="ui.settings.switchTab('linked')" id="tab-btn-linked" style="background: none; border: none; color: {% if user_rol.lower() != 'admin' %}var(--text){% else %}var(--text-muted){% endif %}; padding: 0.5rem 1rem; cursor: pointer; border-bottom: 2px solid {% if user_rol.lower() != 'admin' %}var(--primary){% else %}transparent{% endif %}; transition: all 0.3s;">Cuentas Vinculadas</button>
         <button class="tab-btn" onclick="ui.settings.switchTab('roles')" id="tab-btn-roles" style="background: none; border: none; color: var(--text-muted); padding: 0.5rem 1rem; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.3s;">Roles y Permisos</button>
     </div>
 
 
+    {% if user_rol.lower() == 'admin' %}
     <!-- Pestaña: Usuarios -->
-    <div id="settings-tab-users" class="settings-tab-content">
+    <div id="settings-tab-users" class="settings-tab-content" style="display: block;">
         <div class="action-bar"
             style="background: rgba(255,255,255,0.03); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center;">
             <div>
@@ -36,9 +39,10 @@
             </table>
         </div>
     </div>
+    {% endif %}
 
     <!-- Pestaña: Cuentas Vinculadas -->
-    <div id="settings-tab-linked" class="settings-tab-content" style="display: none;">
+    <div id="settings-tab-linked" class="settings-tab-content" style="display: {% if user_rol.lower() != 'admin' %}block{% else %}none{% endif %};">
         <div class="action-bar" style="background: rgba(255,255,255,0.03); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 2rem; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 1rem;">
             <div>
                 <h3 style="margin: 0;">Accesos por Organización</h3>
