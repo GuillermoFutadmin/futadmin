@@ -248,6 +248,8 @@ class Equipo(db.Model):
     uid = db.Column(db.String(20), unique=True, index=True) # ID Único Identitario (12-15 chars)
     escudo_url = db.Column(db.String(255))
     email = db.Column(db.String(100)) # Email del delegado
+    responsable = db.Column(db.String(100)) # Nombre del responsable / DT
+    telefono = db.Column(db.String(20)) # Teléfono del responsable / DT
     colonia = db.Column(db.String(100)) # Ubicación más precisa
     colonia_geojson = db.Column(db.Text) # GeoJSON perimetral
     grupo = db.Column(db.String(50))
@@ -283,6 +285,8 @@ class Equipo(db.Model):
             "torneo_id": self.torneo_id,
             "escudo_url": self.escudo_url,
             "email": self.email or "",
+            "responsable": self.responsable or "",
+            "telefono": self.telefono or "",
             "colonia": self.colonia or "",
             "colonia_geojson": self.colonia_geojson or "",
             "grupo": self.grupo or "",

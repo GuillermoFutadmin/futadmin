@@ -76,8 +76,11 @@ export class TeamsModule {
             if (e) {
                 document.getElementById('team-id').value = e.id;
                 document.getElementById('team-name').value = e.nombre;
+                document.getElementById('team-responsable').value = e.responsable || '';
+                document.getElementById('team-phone').value = e.telefono || '';
                 document.getElementById('team-torneo-id').value = e.torneo_id;
                 document.getElementById('team-image').value = e.escudo_url || '';
+                document.getElementById('team-email').value = e.email || '';
                 document.getElementById('team-grupo').value = e.grupo || '';
                 if (document.getElementById('team-colonia')) document.getElementById('team-colonia').value = e.colonia || '';
                 if (document.getElementById('team-colonia-geojson')) document.getElementById('team-colonia-geojson').value = e.colonia_geojson || '';
@@ -231,6 +234,8 @@ export class TeamsModule {
         const data = {
             nombre: document.getElementById('team-name').value,
             email: document.getElementById('team-email').value,
+            responsable: document.getElementById('team-responsable').value,
+            telefono: document.getElementById('team-phone').value,
             torneo_id: document.getElementById('team-torneo-id').value,
             escudo_url: document.getElementById('team-image').value,
             grupo: document.getElementById('team-grupo').value,

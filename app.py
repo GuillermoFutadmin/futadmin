@@ -391,6 +391,9 @@ def handle_equipos():
             nombre=data.get('nombre'),
             torneo_id=torneo_id,
             escudo_url=data.get('escudo_url'),
+            email=data.get('email'),
+            responsable=data.get('responsable'),
+            telefono=data.get('telefono'),
             colonia=data.get('colonia'),
             colonia_geojson=data.get('colonia_geojson'),
             liga_id=torneo.liga_id
@@ -746,6 +749,8 @@ def handle_equipo_single(id):
         equipo.escudo_url = data.get('escudo_url', equipo.escudo_url)
         equipo.colonia = data.get('colonia', equipo.colonia)
         equipo.email = data.get('email', equipo.email)
+        equipo.responsable = data.get('responsable', equipo.responsable)
+        equipo.telefono = data.get('telefono', equipo.telefono)
         equipo.grupo = data.get('grupo', equipo.grupo)
         
         if 'colonia_geojson' in data:
