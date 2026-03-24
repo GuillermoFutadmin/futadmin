@@ -822,6 +822,22 @@ export class TeamsModule {
         }
         s[field] = parseInt(value) || 0;
         
+        if (field === 'goles') {
+            let total = 0;
+            m.goleadores.forEach(g => {
+                if (g.team_id === teamId) total += (parseInt(g.goles) || 0);
+            });
+            if (m.local_id === teamId) {
+                m.goles_local = total;
+                const input = document.querySelector(`.bulk-match-row:nth-child(${matchIdx+1}) input[oninput*="goles_local"]`);
+                if (input) input.value = total;
+            } else if (m.visitante_id === teamId) {
+                m.goles_visitante = total;
+                const input = document.querySelector(`.bulk-match-row:nth-child(${matchIdx+1}) input[oninput*="goles_visitante"]`);
+                if (input) input.value = total;
+            }
+        }
+
         this.syncAllStats();
     }
 
@@ -862,17 +878,7 @@ export class TeamsModule {
                     if (s.team_id === m.visitante_id) sumVisitante += (s.goles || 0);
                 });
 
-                // Si la suma de goleadores es mayor al marcador manual, actualizamos el marcador
-                if (sumLocal > m.goles_local) {
-                    m.goles_local = sumLocal;
-                    const input = document.querySelector(`.bulk-match-row:nth-child(${mIdx+1}) input[oninput*="goles_local"]`);
-                    if (input) input.value = sumLocal;
-                }
-                if (sumVisitante > m.goles_visitante) {
-                    m.goles_visitante = sumVisitante;
-                    const input = document.querySelector(`.bulk-match-row:nth-child(${mIdx+1}) input[oninput*="goles_visitante"]`);
-                    if (input) input.value = sumVisitante;
-                }
+                // El marcador ya se actualizó en updatePlayerStat si el usuario interactuó con los inputs de goles.
 
                 // Acumular para los totales globales (Tab 1)
                 if (m.local_id === `NEW_${tIdx}`) {
