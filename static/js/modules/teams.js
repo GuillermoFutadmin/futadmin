@@ -872,30 +872,47 @@ export class TeamsModule {
         const torneoId = document.getElementById('team-league-filter').value;
         try {
             const response = await Core.fetchAPI(`/api/equipos?torneo_id=${torneoId}`);
-            const equipos = response.items || response;
-            this._currentLoadedTeams = equipos; // Guardar para la pestaña de encuentros tambien
-            this.bulkFinances = equipos.map(e => ({ id: e.id, inscripcion: false, arbitraje: false, metodo: 'Efectivo' }));
+            const existentes = response.items || response;
+            this._currentLoadedTeams = existentes;
 
-            body.innerHTML = equipos.map((e, index) => `
-                <tr style="border-bottom: 1px solid var(--border);">
-                    <td style="padding:15px; font-weight:bold; color:var(--primary);">${e.nombre}</td>
-                    <td style="text-align:center;">
-                        <input type="checkbox" onchange="ui.teams.bulkFinances[${index}].inscripcion = this.checked" style="width:20px; height:20px; cursor:pointer;">
-                    </td>
-                    <td style="text-align:center;">
-                        <input type="checkbox" onchange="ui.teams.bulkFinances[${index}].arbitraje = this.checked" style="width:20px; height:20px; cursor:pointer;">
-                    </td>
-                    <td style="padding:15px;">
-                        <select onchange="ui.teams.bulkFinances[${index}].metodo = this.value" style="width:100%; padding:8px; background:#000; color:#fff; border:1px solid #333; border-radius:6px;">
-                            <option value="Efectivo">Efectivo</option>
-                            <option value="Transferencia">Transferencia</option>
-                            <option value="Tarjeta">Tarjeta</option>
-                        </select>
-                    </td>
-                </tr>
-            `).join('');
+            // Combinar con nuevos de la Pestaña 1
+            const nuevos = this.bulkTeams
+                .map((t, i) => ({ id: `NEW_${i}`, nombre: t.nombre }))
+                .filter(t => t.nombre);
+
+            const todos = [...existentes, ...nuevos];
+            
+            // Inicializar bulkFinances como OBJETO por ID si no existe
+            if (!this.bulkFinances || Array.isArray(this.bulkFinances)) this.bulkFinances = {};
+
+            body.innerHTML = todos.map((e) => {
+                if (!this.bulkFinances[e.id]) {
+                    this.bulkFinances[e.id] = { id: e.id, inscripcion: false, arbitraje: false, metodo: 'Efectivo' };
+                }
+                const p = this.bulkFinances[e.id];
+
+                return `
+                    <tr style="border-bottom: 1px solid var(--border);">
+                        <td style="padding:15px; font-weight:bold; color:var(--primary);">${e.nombre} ${e.id.startsWith('NEW') ? '<small style="color:#666; font-weight:normal;">(Nuevo)</small>' : ''}</td>
+                        <td style="text-align:center;">
+                            <input type="checkbox" ${p.inscripcion ? 'checked' : ''} onchange="ui.teams.bulkFinances['${e.id}'].inscripcion = this.checked" style="width:20px; height:20px; cursor:pointer;">
+                        </td>
+                        <td style="text-align:center;">
+                            <input type="checkbox" ${p.arbitraje ? 'checked' : ''} onchange="ui.teams.bulkFinances['${e.id}'].arbitraje = this.checked" style="width:20px; height:20px; cursor:pointer;">
+                        </td>
+                        <td style="padding:15px;">
+                            <select onchange="ui.teams.bulkFinances['${e.id}'].metodo = this.value" style="width:100%; padding:8px; background:#000; color:#fff; border:1px solid #333; border-radius:6px;">
+                                <option value="Efectivo" ${p.metodo === 'Efectivo' ? 'selected' : ''}>Efectivo</option>
+                                <option value="Transferencia" ${p.metodo === 'Transferencia' ? 'selected' : ''}>Transferencia</option>
+                                <option value="Tarjeta" ${p.metodo === 'Tarjeta' ? 'selected' : ''}>Tarjeta</option>
+                            </select>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
         } catch (e) {
-            body.innerHTML = '<tr><td colspan="4" style="color:#ef4444; text-align:center; padding:20px;">Error al cargar equipos. Asegúrate de que existan equipos en la liga.</td></tr>';
+            console.error(e);
+            body.innerHTML = '<tr><td colspan="4" style="color:#ef4444; text-align:center; padding:20px;">Error al cargar equipos.</td></tr>';
         }
     }
 
@@ -905,7 +922,7 @@ export class TeamsModule {
             torneo_id: torneoId,
             equipos: this.bulkTeams.filter(t => t.nombre.trim().length > 0),
             encuentros: this.bulkMatches.filter(m => m.local_id && m.visitante_id),
-            finanzas: this.bulkFinances.filter(f => f.inscripcion || f.arbitraje)
+            finanzas: Object.values(this.bulkFinances || {}).filter(f => f.inscripcion || f.arbitraje)
         };
 
         if (payload.equipos.length === 0 && payload.encuentros.length === 0 && payload.finanzas.length === 0) {
