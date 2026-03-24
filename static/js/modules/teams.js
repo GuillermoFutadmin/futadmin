@@ -511,11 +511,10 @@ export class TeamsModule {
                             <thead>
                                 <tr style="color: #444; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px;">
                                     <th style="text-align: left; padding: 10px; border-bottom: 1px solid var(--border);">Nombre del Jugador</th>
-                                    <th style="text-align: center; padding: 10px; border-bottom: 1px solid var(--border); width: 80px;">Historial</th>
-                                    <th style="text-align: center; padding: 10px; border-bottom: 1px solid var(--border); width: 100px; color: var(--primary);">TOTAL (Hub)</th>
-                                    <th style="text-align: center; padding: 10px; border-bottom: 1px solid var(--border); width: 70px;">🟨</th>
-                                    <th style="text-align: center; padding: 10px; border-bottom: 1px solid var(--border); width: 70px;">🟥</th>
-                                    <th style="width: 40px; border-bottom: 1px solid var(--border);"></th>
+                                    <th style="text-align: center; padding: 10px; border-bottom: 1px solid var(--border); width: 100px;">Goles</th>
+                                    <th style="text-align: center; padding: 10px; border-bottom: 1px solid var(--border); width: 100px;">Amarillas</th>
+                                    <th style="text-align: center; padding: 10px; border-bottom: 1px solid var(--border); width: 100px;">Rojas</th>
+                                    <th style="width: 50px; border-bottom: 1px solid var(--border);"></th>
                                 </tr>
                             </thead>
                             <tbody id="players-list-${index}"></tbody>
@@ -559,23 +558,22 @@ export class TeamsModule {
                     style="width: 100%; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05); border-radius: 4px; padding: 8px; color: #fff; font-size: 0.85rem;">
             </td>
             <td style="padding: 8px 10px;">
-                <input type="number" class="p-goles" value="${goles}" min="0" 
-                    oninput="ui.teams.syncInlinePlayerStats(${index})" 
-                    style="width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; padding: 8px; color: #fff; text-align: center; font-weight: bold;">
-            </td>
-            <td style="padding: 8px 10px; text-align: center;">
-                <div class="p-total-goles" style="font-size: 1.1rem; font-weight: 800; color: var(--primary); text-shadow: 0 0 10px rgba(0,255,157,0.3);">0</div>
+                <input type="number" class="p-goles" value="${goles}" min="0" data-manual="${goles}"
+                    oninput="ui.teams.updateManualStat(this, 'g'); ui.teams.syncInlinePlayerStats(${index})" 
+                    style="width: 100%; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05); border-radius: 4px; padding: 8px; color: #fff; text-align: center; font-weight: bold;">
                 <div class="match-extra-label"></div>
             </td>
             <td style="padding: 8px 10px;">
-                <input type="number" class="p-amarillas" value="${amarillas}" min="0" 
-                    oninput="ui.teams.syncInlinePlayerStats(${index})" 
+                <input type="number" class="p-amarillas" value="${amarillas}" min="0" data-manual="${amarillas}"
+                    oninput="ui.teams.updateManualStat(this, 'a'); ui.teams.syncInlinePlayerStats(${index})" 
                     style="width: 100%; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05); border-radius: 4px; padding: 8px; color: #fbbf24; text-align: center; font-weight: bold;">
+                <div class="match-extra-label"></div>
             </td>
             <td style="padding: 8px 10px;">
-                <input type="number" class="p-rojas" value="${rojas}" min="0" 
-                    oninput="ui.teams.syncInlinePlayerStats(${index})" 
+                <input type="number" class="p-rojas" value="${rojas}" min="0" data-manual="${rojas}"
+                    oninput="ui.teams.updateManualStat(this, 'r'); ui.teams.syncInlinePlayerStats(${index})" 
                     style="width: 100%; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05); border-radius: 4px; padding: 8px; color: #ef4444; text-align: center; font-weight: bold;">
+                <div class="match-extra-label"></div>
             </td>
             <td style="padding: 8px 10px; text-align: center;">
                 <button onclick="this.closest('tr').remove(); ui.teams.syncInlinePlayerStats(${index})" 
@@ -591,6 +589,18 @@ export class TeamsModule {
         this.syncInlinePlayerStats(index);
     }
 
+    updateManualStat(input, type) {
+        const row = input.closest('tr');
+        const pName = row.querySelector('.p-name').value.trim();
+        const matchStats = (this.extraGolesCache && this.extraGolesCache[pName]) || { g:0, a:0, r:0 };
+        const val = parseInt(input.value) || 0;
+        let diff = val;
+        if (type === 'g') diff = Math.max(0, val - matchStats.g);
+        if (type === 'a') diff = Math.max(0, val - matchStats.a);
+        if (type === 'r') diff = Math.max(0, val - matchStats.r);
+        input.dataset.manual = diff;
+    }
+
     syncInlinePlayerStats(index) {
         const list = document.getElementById(`players-list-${index}`);
         if (!list) return;
@@ -599,18 +609,28 @@ export class TeamsModule {
         let tg = 0, ta = 0, tr = 0;
         rows.forEach(row => {
             const nombre = row.querySelector('.p-name').value.trim();
-            const goles = parseInt(row.querySelector('.p-goles').value) || 0;
-            const amarillas = parseInt(row.querySelector('.p-amarillas').value) || 0;
-            const rojas = parseInt(row.querySelector('.p-rojas').value) || 0;
+            const gInput = row.querySelector('.p-goles');
+            const aInput = row.querySelector('.p-amarillas');
+            const rInput = row.querySelector('.p-rojas');
+            
+            let goles = parseInt(gInput.dataset.manual);
+            if (isNaN(goles)) { goles = parseInt(gInput.value) || 0; gInput.dataset.manual = goles; }
+            
+            let amarillas = parseInt(aInput.dataset.manual);
+            if (isNaN(amarillas)) { amarillas = parseInt(aInput.value) || 0; aInput.dataset.manual = amarillas; }
+            
+            let rojas = parseInt(rInput.dataset.manual);
+            if (isNaN(rojas)) { rojas = parseInt(rInput.value) || 0; rInput.dataset.manual = rojas; }
+
             if (nombre || (goles + amarillas + rojas > 0)) {
                 jugadores.push({ nombre, goles, amarillas, rojas });
                 tg += goles; ta += amarillas; tr += rojas;
             }
         });
         if (this.bulkTeams[index]) this.bulkTeams[index].jugadores = jugadores;
-        document.getElementById(`team-sum-goles-${index}`).innerText = tg;
-        document.getElementById(`team-sum-amarillas-${index}`).innerText = ta;
-        document.getElementById(`team-sum-rojas-${index}`).innerText = tr;
+        document.getElementById(`team-sum-goles-${index}`).dataset.legacy = tg;
+        document.getElementById(`team-sum-amarillas-${index}`).dataset.legacy = ta;
+        document.getElementById(`team-sum-rojas-${index}`).dataset.legacy = tr;
         document.getElementById(`team-players-count-${index}`).innerText = `(${jugadores.length})`;
 
         this.syncAllStats(); // Sincronizar con encuentros
@@ -823,6 +843,7 @@ export class TeamsModule {
     syncAllStats() {
         // Esta función recalcula los totales de la Pestaña 1 basados en los Encuentros de la Pestaña 2
         // Solo afecta a los equipos que están en bulkTeams
+        if (!this.extraGolesCache) this.extraGolesCache = {};
         this.bulkTeams.forEach((team, tIdx) => {
             if (!team.nombre) return;
             
@@ -890,8 +911,10 @@ export class TeamsModule {
                 }
             });
 
+            // Guardar en caché local para oninput
+            Object.assign(this.extraGolesCache, extraGolesPorJugador);
+
             // 2. Actualizar UI de Goles/Tarjetas en la fila del equipo (Tab 1)
-            let legacyGoles = 0, legacyAmarillas = 0, legacyRojas = 0;
             let matchGolesThisTeam = 0;
             let matchAmarillasThisTeam = 0;
             let matchRojasThisTeam = 0;
@@ -903,37 +926,38 @@ export class TeamsModule {
                 const pName = pNameInput.value.trim();
                 const matchStats = extraGolesPorJugador[pName] || { g:0, a:0, r:0, details: [] };
                 
-                // Mostrar "extras" visuales en la Tab 1
-                const updateExtraLabel = (tdIdx, val, color, labelText) => {
+                const gInput = row.querySelector('.p-goles');
+                const aInput = row.querySelector('.p-amarillas');
+                const rInput = row.querySelector('.p-rojas');
+
+                let mG = parseInt(gInput.dataset.manual); if(isNaN(mG)){ mG = parseInt(gInput.value) || 0; gInput.dataset.manual = mG; }
+                let mA = parseInt(aInput.dataset.manual); if(isNaN(mA)){ mA = parseInt(aInput.value) || 0; aInput.dataset.manual = mA; }
+                let mR = parseInt(rInput.dataset.manual); if(isNaN(mR)){ mR = parseInt(rInput.value) || 0; rInput.dataset.manual = mR; }
+
+                // Mostrar el valor TOTAL (manual + partidos_hub)
+                gInput.value = mG + matchStats.g;
+                aInput.value = mA + matchStats.a;
+                rInput.value = mR + matchStats.r;
+
+                gInput.style.color = matchStats.g > 0 ? 'var(--primary)' : '#fff';
+                aInput.style.color = matchStats.a > 0 ? '#fbbf24' : '#fbbf24';
+                rInput.style.color = matchStats.r > 0 ? '#ef4444' : '#ef4444';
+
+                // Mostrar "extras" visuales en la Tab 1 debajo del input
+                const updateExtraLabel = (tdIdx, val, labelText) => {
                     const td = row.querySelectorAll('td')[tdIdx];
                     if (!td) return;
                     let label = td.querySelector('.match-extra-label');
-                    if (!label) {
-                        label = document.createElement('div');
-                        label.className = 'match-extra-label';
-                        label.style.cssText = `font-size:0.6rem; color:${color}; margin-top:2px; line-height:1;`;
-                        td.appendChild(label);
+                    if (label) {
+                        const detailsStr = (matchStats.details || []).join(', ');
+                        label.innerText = val > 0 ? `+${val} ${labelText} (${detailsStr})` : '';
                     }
-                    const detailsStr = (matchStats.details || []).join(', ');
-                    label.innerText = val > 0 ? `+${val} ${labelText} (${detailsStr})` : '';
                 };
 
-                updateExtraLabel(1, matchStats.g, 'var(--primary)', 'goles');
-                updateExtraLabel(2, matchStats.a, '#fbbf24', 'am.');
-                updateExtraLabel(3, matchStats.r, '#ef4444', 'roja');
+                updateExtraLabel(1, matchStats.g, 'goles');
+                updateExtraLabel(2, matchStats.a, 'am.');
+                updateExtraLabel(3, matchStats.r, 'roja');
 
-                const legacyG = parseInt(row.querySelector('.p-goles').value) || 0;
-                const totalG = legacyG + matchStats.g;
-                const totalDiv = row.querySelector('.p-total-goles');
-                if (totalDiv) {
-                    totalDiv.innerText = totalG;
-                    totalDiv.style.color = totalG > 0 ? 'var(--primary)' : '#666';
-                }
-
-                legacyGoles += legacyG;
-                legacyAmarillas += parseInt(row.querySelector('.p-amarillas').value) || 0;
-                legacyRojas += parseInt(row.querySelector('.p-rojas').value) || 0;
-                
                 matchGolesThisTeam += matchStats.g;
                 matchAmarillasThisTeam += matchStats.a;
                 matchRojasThisTeam += matchStats.r;
@@ -944,13 +968,20 @@ export class TeamsModule {
 
             const sumG = document.getElementById(`team-sum-goles-${tIdx}`);
             if (sumG) {
-                sumG.innerText = legacyGoles + finalMatchGoles;
+                const legacy = parseInt(sumG.dataset.legacy || 0);
+                sumG.innerText = legacy + finalMatchGoles;
                 sumG.style.color = finalMatchGoles > 0 ? 'var(--primary)' : '#fff';
             }
             const sumA = document.getElementById(`team-sum-amarillas-${tIdx}`);
-            if (sumA) sumA.innerText = legacyAmarillas + matchAmarillasThisTeam;
+            if (sumA) {
+                const legacy = parseInt(sumA.dataset.legacy || 0);
+                sumA.innerText = legacy + matchAmarillasThisTeam;
+            }
             const sumR = document.getElementById(`team-sum-rojas-${tIdx}`);
-            if (sumR) sumR.innerText = legacyRojas + matchRojasThisTeam;
+            if (sumR) {
+                const legacy = parseInt(sumR.dataset.legacy || 0);
+                sumR.innerText = legacy + matchRojasThisTeam;
+            }
         });
     }
 
