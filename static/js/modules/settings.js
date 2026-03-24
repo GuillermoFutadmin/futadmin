@@ -90,6 +90,7 @@ export class SettingsModule {
             idInput.value = liga.id;
             document.getElementById('combo-nombre').value = liga.nombre;
             document.getElementById('combo-color').value = liga.color || '#00ff88';
+            document.getElementById('combo-contacto').value = liga.contacto || '';
             
             title.innerText = '✏️ Editar Organización';
             submitBtn.innerText = 'Guardar Cambios';
@@ -112,6 +113,10 @@ export class SettingsModule {
             if (planSection) planSection.style.display = 'block';
             if (ownerSection) ownerSection.style.display = 'block';
             
+            document.getElementById('combo-owner-nombre').value = '';
+            document.getElementById('combo-owner-email').value = '';
+            document.getElementById('combo-owner-pass').value = '';
+            document.getElementById('combo-contacto').value = '';
             document.getElementById('combo-owner-nombre').required = true;
             document.getElementById('combo-owner-email').required = true;
             document.getElementById('combo-owner-pass').required = true;
@@ -143,7 +148,13 @@ export class SettingsModule {
             data.owner_email = document.getElementById('combo-owner-email').value.trim();
             data.owner_pass = document.getElementById('combo-owner-pass').value.trim();
             data.owner_rol = document.getElementById('combo-owner-rol').value;
+        } else {
+            // En edición, permitimos actualizar el contacto/email personal
+            data.contacto = document.getElementById('combo-contacto').value.trim();
         }
+
+        // Siempre enviamos el contacto si está presente (para creación o edición)
+        data.contacto = document.getElementById('combo-contacto').value.trim();
 
         if (!data.nombre) { alert('El nombre de la organización es requerido.'); return; }
 
@@ -1709,6 +1720,11 @@ export class SettingsModule {
                 ["Monto Total:", `$${(pago.monto || 0).toFixed(2)} MXN`],
                 ["Estado:", "VERIFICADO Y ACTIVADO"]
             ];
+
+            // Inyectar Email Personal si está presente
+            if (liga.contacto) {
+                transDetails.splice(1, 0, ["Email de Contacto:", liga.contacto]);
+            }
 
             transDetails.forEach(row => {
                 doc.setFont("helvetica", "bold");
