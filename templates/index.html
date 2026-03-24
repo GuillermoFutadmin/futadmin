@@ -100,21 +100,8 @@
                                 <i class="arrow">▼</i>
                             </a>
                             <ul class="submenu">
-                                <li class="has-submenu" onclick="event.stopPropagation(); ui.toggleSubmenu(this)">
-                                    <div class="nav-item-row"
-                                        style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                                        <span
-                                            onclick="event.stopPropagation(); ui.switchView('inscripciones', null, this.closest('.has-submenu'));">🔹
-                                            Inscripciones</span>
-                                    </div>
-                                </li>
-                                <li onclick="event.stopPropagation(); ui.teams.openPagosMasivos(this)">🔹 Pagos en Bloque</li>
-                                    <ul class="submenu-nested">
-                                        <li onclick="event.stopPropagation(); ui.switchView('arbitrajes', null, this)">
-                                            🔸 Arbitrajes</li>
-                                    </ul>
-                                </li>
-
+                                <li onclick="event.stopPropagation(); ui.switchView('inscripciones', null, this)">🔹 Inscripciones</li>
+                                <li onclick="event.stopPropagation(); ui.switchView('arbitrajes', null, this)">🔹 Arbitraje</li>
                                 <li onclick="event.stopPropagation(); ui.switchView('pagos-academia', null, this)">🏫 Aportaciones Academia</li>
                                 <li onclick="event.stopPropagation(); ui.switchView('pagos-canchas', null, this)">🏟️ Aportaciones Sedes</li>
                             </ul>
