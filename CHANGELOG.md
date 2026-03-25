@@ -4,6 +4,16 @@ Este archivo registra los hitos importantes, nuevas funciones y despliegues (sub
 
 ---
 
+## [2026-03-24] - Corrección de Envío de Recibos y Logs
+**Commit:** `pending`
+- **Email:** 
+    - Aumento de timeout SMTP (10s -> 30s) para mayor estabilidad con Hostinger.
+    - Nueva ubicación absoluta para `mail_debug.log` en la raíz del proyecto.
+    - Logs detallados por cada etapa (Conexión, Login, Envío) para facilitar diagnóstico.
+- **Backend:** Mejor reporte de errores en el endpoint de re-envío de recibos.
+
+---
+
 ## [2026-03-18] - Firma Digital del Tutor (Vuelo actual)
 **Commit:** `f0c802f`
 - **Función:** Implementación de firma digital interactiva para padres/tutores de jugadores menores de edad.

@@ -1460,7 +1460,7 @@ def resend_pago_receipt(id):
         if success:
             return jsonify({"success": True, "message": f"¡Recibo re-enviado con éxito a {destinatario}!"})
         else:
-            return jsonify({"error": "El servidor SMTP rechazó el envío. Verifique su bandeja de salida o carpetas de spam."}), 500
+            return jsonify({"error": "El servidor SMTP rechazó el envío. Consulte 'mail_debug.log' para más detalles."}), 500
     except Exception as e:
         return jsonify({"error": f"Error técnico al generar el envío: {str(e)}"}), 500
 

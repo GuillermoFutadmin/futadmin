@@ -128,12 +128,14 @@ def generate_receipt_pdf(data, filename):
 
 def _log_mail(message):
     try:
-        log_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "mail_debug.log")
+        # Usar ruta absoluta basada en el script actual para evitar confusiones de CWD
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        log_path = os.path.join(base_dir, "mail_debug.log")
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         with open(log_path, "a", encoding="utf-8") as f:
             f.write(f"[{timestamp}] {message}\n")
-    except:
-        pass
+    except Exception as e:
+        print(f"CRITICAL: Failed to write to mail_debug.log: {e}")
 
 def send_receipt_email(to_email, subject, body, attachment_path=None):
     """
@@ -166,18 +168,28 @@ def send_receipt_email(to_email, subject, body, attachment_path=None):
 
         # Connect and send
         port = int(smtp_port)
+        _log_mail(f"DEBUG: Intentando conexión a {smtp_host}:{port}...")
+        
         if port == 465:
-            server = smtplib.SMTP_SSL(smtp_host, port, timeout=10)
+            server = smtplib.SMTP_SSL(smtp_host, port, timeout=30)
         else:
-            server = smtplib.SMTP(smtp_host, port, timeout=10)
+            server = smtplib.SMTP(smtp_host, port, timeout=30)
             server.starttls()
             
+        _log_mail(f"DEBUG: Conectado. Intentando login como {smtp_user}...")
         server.login(smtp_user, smtp_pass)
+        
+        _log_mail(f"DEBUG: Login exitoso. Enviando mensaje a {to_email}...")
         server.send_message(msg)
         server.quit()
         
-        _log_mail(f"SUCCESS: Correo enviado a {to_email} (Port: {port})")
+        _log_mail(f"SUCCESS: Correo enviado correctamente a {to_email}")
         return True
+    except smtplib.SMTPException as se:
+        _log_mail(f"ERROR SMTP enviando correo a {to_email}: {str(se)}")
+        return False
     except Exception as e:
-        _log_mail(f"ERROR enviando correo a {to_email}: {str(e)}")
+        import traceback
+        error_msg = f"ERROR GENERAL enviando correo a {to_email}: {str(e)}\n{traceback.format_exc()}"
+        _log_mail(error_msg)
         return False
