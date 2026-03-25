@@ -1398,6 +1398,52 @@ def _trigger_receipt_email(ticket_data, recipient_email, recipient_name="Adminis
     import threading
     threading.Thread(target=internal_worker, args=(ticket_data, recipient_email, recipient_name), daemon=True).start()
 
+@app.route('/api/pagos/<int:id>/resend_receipt', methods=['POST'])
+@csrf.exempt
+def resend_pago_receipt(id):
+    pago = Pago.query.get_or_404(id)
+    ins = pago.inscripcion
+    if not ins:
+        return jsonify({"error": "No se encontró la inscripción vinculada al pago."}), 404
+        
+    torneo = ins.torneo
+    if not torneo:
+        return jsonify({"error": "Torneo no encontrado."}), 404
+
+    # Re-generar los datos del ticket para el recibo
+    partido_info = None
+    if pago.partido_id:
+        p = Partido.query.get(pago.partido_id)
+        if p:
+            partido_info = {
+                "rivales": f"{p.equipo_local.nombre} vs {p.equipo_visitante.nombre}",
+                "jornada": p.jornada,
+                "fecha": p.fecha.strftime('%d/%m/%Y') if p.fecha else "S/F"
+            }
+
+    ticket_data = {
+        "pago_id": pago.id,
+        "folio": f"RESEND-{pago.id}",
+        "fecha": pago.fecha.strftime('%d/%m/%Y %H:%M'),
+        "equipo": ins.equipo.nombre,
+        "torneo": torneo.nombre,
+        "monto_abonado": float(pago.monto),
+        "tipo": pago.tipo,
+        "metodo": pago.metodo or "Efectivo",
+        "partido": partido_info,
+        "premios": torneo.premios or "",
+        "reglamento": torneo.reglamento or ""
+    }
+    
+    # Usar el email que tiene actualmente el equipo en la BD
+    destinatario = ins.equipo.email
+    if not destinatario:
+        return jsonify({"error": "El equipo no tiene un correo registrado."}), 400
+        
+    _trigger_receipt_email(ticket_data, destinatario, ins.equipo.responsable or "Delegado")
+    
+    return jsonify({"success": True, "message": f"Recibo enviado a {destinatario}"})
+
 @app.route('/api/pagos/<int:id>', methods=['DELETE'])
 @csrf.exempt
 def handle_pago_delete(id):

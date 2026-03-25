@@ -137,6 +137,9 @@ export class FinanceModule {
                                         <td style="padding: 8px; text-align: right; font-weight: bold; color: ${saldoColor};">$${dp.saldo.toFixed(2)}</td>
                                         <td style="padding: 8px; text-align: center;">
                                             ${dp.ultimo_pago_id ? `
+                                                <button onclick="event.stopPropagation(); ui.finance.resendReceipt(${dp.ultimo_pago_id})" 
+                                                    style="background:none; border:none; color:#00ff88; cursor:pointer; font-size:1rem; margin-right:5px;" 
+                                                    title="Re-enviar recibo por correo">📩</button>
                                                 <button onclick="event.stopPropagation(); ui.finance.deletePago(${dp.ultimo_pago_id}, true)" 
                                                     style="background:none; border:none; color:#ff4d4d; cursor:pointer; font-size:1rem;" 
                                                     title="Anular pago de esta jornada">🗑️</button>
@@ -854,6 +857,20 @@ ${data.reglamento ? `<strong>REGLAMENTO:</strong>\n${data.reglamento}\n\n` : ''}
             }
         } catch (error) {
             alert('Error de conexión al eliminar pago.');
+        }
+    }
+
+    async resendReceipt(id) {
+        try {
+            const res = await fetch(`/api/pagos/${id}/resend_receipt`, { method: 'POST' });
+            const data = await res.json();
+            if (res.ok) {
+                alert(data.message || 'Recibo re-enviado correctamente.');
+            } else {
+                alert('Error al re-enviar: ' + (data.error || 'Desconocido'));
+            }
+        } catch (e) {
+            alert('Error de conexión al re-enviar recibo.');
         }
     }
 
