@@ -200,21 +200,21 @@ export class DashboardModule {
                                 </div>
                                 
                                 <div class="live-events-list">
-                                    ${eventosArr.map(e => {
+                                    ${eventosArr.sort((a, b) => b.minuto - a.minuto).map(e => {
                                         const tipoLow = (e.tipo || '').toLowerCase();
                                         let icon = '⚽';
-                                        let iconColor = '#fff';
+                                        let classType = 'event-icon-goal-white';
                                         if (tipoLow.includes('amarilla') || tipoLow.includes('yellow')) {
-                                            icon = '🟨'; iconColor = '#fbbf24';
+                                            icon = '🟨'; classType = 'event-icon-yellow';
                                         } else if (tipoLow.includes('roja') || tipoLow.includes('red')) {
-                                            icon = '🟥'; iconColor = '#ef4444';
+                                            icon = '🟥'; classType = 'event-icon-red';
                                         } else if (tipoLow.includes('azul') || tipoLow.includes('blue')) {
-                                            icon = '🟦'; iconColor = '#60a5fa';
+                                            icon = '🟦'; classType = 'event-icon-blue';
                                         }
                                         return `
                                             <div class="event-row-mini">
                                                 <span class="event-min-mini">${e.minuto}'</span>
-                                                <span>${icon}</span>
+                                                <span class="${classType}">${icon}</span>
                                                 <span class="event-name-mini">${e.jugador_nombre || 'NN'}</span>
                                             </div>
                                         `;
