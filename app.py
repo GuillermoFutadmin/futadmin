@@ -1382,8 +1382,6 @@ def _trigger_receipt_email(ticket_data, recipient_email, recipient_name="Adminis
             temp_dir = tempfile.gettempdir()
             filename = f"recibo_{data.get('folio', 'pago')}.pdf"
             pdf_path = os.path.join(temp_dir, filename)
-            
-                data['fecha'] = fecha_str
 
             print(f"DEBUG: Generando recibo en {pdf_path} para {email}")
             generate_receipt_pdf(data, pdf_path)
