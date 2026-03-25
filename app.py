@@ -16,8 +16,9 @@ load_dotenv()
 
 # Fallback para SMTP en Railway si no están configuradas en el dashboard (Sincronización solicitada por Ing)
 if not os.getenv('SMTP_HOST') and os.getenv('RAILWAY_ENVIRONMENT'):
-    os.environ['SMTP_HOST'] = 'smtp.office365.com'
-    os.environ['SMTP_PORT'] = '587'
+    print("AVISO: Usando configuración SMTP de respaldo (fallback) vinculada por código para producción.")
+    os.environ['SMTP_HOST'] = 'smtp.hostinger.com'
+    os.environ['SMTP_PORT'] = '465'
     os.environ['SMTP_USER'] = 'gdiaz@futadmin.com.mx'
     os.environ['SMTP_PASS'] = 'Gd012354R1.'
     os.environ['MAIL_DEFAULT_SENDER'] = 'gdiaz@futadmin.com.mx'
