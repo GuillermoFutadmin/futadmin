@@ -551,8 +551,11 @@ export class LeaguesModule {
                 </div>
                 <div style="flex-shrink: 0; width: 160px;">
                     ${t.imagen_url ? `
-                        <div style="background-image: url('${t.imagen_url}'); height: 100%; width: 100%; min-height: 150px; background-size: cover; background-position: center; border-radius: 16px; border: 2px solid var(--border); box-shadow: 0 10px 25px rgba(0,0,0,0.4);"></div>
-                    ` : `
+                        <div style="height: 100%; width: 100%; min-height: 150px; border-radius: 16px; border: 2px solid var(--border); box-shadow: 0 10px 25px rgba(0,0,0,0.4); overflow: hidden; background: rgba(0,0,0,0.2);">
+                            <img src="${t.imagen_url}" 
+                                 onerror="this.parentElement.style.display='none'" 
+                                 style="width: 100%; height: 100%; object-fit: cover;">
+                        </div>` : `
                         <div style="height: 100%; width: 100%; min-height: 150px; background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center; font-size: 4rem; border-radius: 16px; border: 1px dashed var(--border);">⚽</div>
                     `}
                 </div>

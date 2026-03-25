@@ -97,7 +97,11 @@ export class PlayersModule {
                     </div>
                     <div style="flex-shrink: 0;">
                         ${j.foto_url ?
-                    `<div style="background-image: url('${j.foto_url}'); height: 110px; width: 110px; background-size: cover; background-position: center; border-radius: 50%; border: 3px solid var(--glass); box-shadow: 0 4px 15px rgba(0,0,0,0.5);"></div>` :
+                    `<div style="height: 110px; width: 110px; border-radius: 50%; border: 3px solid var(--glass); box-shadow: 0 4px 15px rgba(0,0,0,0.5); overflow: hidden; background: rgba(0,0,0,0.2);">
+                        <img src="${j.foto_url}" 
+                             onerror="this.parentElement.innerHTML='<div style=\'height:110px; width:110px; background:rgba(255,255,255,0.03); display:flex; align-items:center; justify-content:center; font-size:2.5rem; font-weight:800; border-radius:50%; border:2px solid ${j.color || 'var(--border)'}; color:${j.color || 'var(--primary)'}; text-shadow:0 0 15px ${j.color ? j.color + '66' : 'var(--primary-glow)'}; flex-direction:column;\'><span style=\'font-size:0.8rem; opacity:0.5; margin-bottom:-5px;\'>Nº</span>${j.numero || '--'}</div>'" 
+                             style="width: 100%; height: 100%; object-fit: cover;">
+                    </div>` :
                     `<div style="height: 110px; width: 110px; background: rgba(255,255,255,0.03); display: flex; align-items: center; justify-content: center; font-size: 2.5rem; font-weight: 800; border-radius: 50%; border: 2px solid ${j.color || 'var(--border)'}; color: ${j.color || 'var(--primary)'}; text-shadow: 0 0 15px ${j.color ? j.color + '66' : 'var(--primary-glow)'}; flex-direction: column;">
                         <span style="font-size: 0.8rem; opacity: 0.5; margin-bottom: -5px;">Nº</span>
                         ${j.numero || '--'}

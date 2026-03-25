@@ -102,7 +102,11 @@ export class ArbitrosModule {
                 <div class="stat-card" style="padding: 1.2rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; ${!isActive ? 'opacity: 0.6;' : ''} border-left: 4px solid ${group.color};">
                     <div style="flex: 1; text-align: left;">
                         <div style="display: flex; gap: 12px; align-items: center;">
-                            <div style="width: 45px; height: 45px; border-radius: 50%; background-image: url('${a.foto_url || 'https://via.placeholder.com/50'}'); background-size: cover; border: 2px solid rgba(255,255,255,0.1);"></div>
+                            <div style="width: 45px; height: 45px; border-radius: 50%; overflow: hidden; border: 2px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.2); flex-shrink: 0;">
+                                <img src="${a.foto_url || 'https://placehold.co/50'}" 
+                                     onerror="this.src='https://placehold.co/50'; this.onerror=null;" 
+                                     style="width: 100%; height: 100%; object-fit: cover;">
+                            </div>
                             <div style="flex: 1;">
                                 <h4 style="margin: 0; font-size: 0.95rem;">${a.nombre}</h4>
                                 <div style="display: flex; align-items: center; gap: 6px; margin-top: 3px;">

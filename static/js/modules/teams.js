@@ -176,7 +176,11 @@ export class TeamsModule {
                     </div>
                     <div style="flex-shrink: 0;">
                         ${e.escudo_url ?
-                    `<div style="background-image: url('${e.escudo_url}'); height: 100px; width: 100px; background-size: cover; background-position: center; border-radius: 20px; border: 2px solid var(--border); box-shadow: 0 8px 20px rgba(0,0,0,0.3);"></div>` :
+                    `<div style="height: 100px; width: 100px; border-radius: 20px; border: 2px solid var(--border); box-shadow: 0 8px 20px rgba(0,0,0,0.3); overflow: hidden; background: rgba(0,0,0,0.2);">
+                        <img src="${e.escudo_url}" 
+                             onerror="this.parentElement.innerHTML='<div style=\'height:100px; width:100px; background:rgba(255,255,255,0.05); display:flex; align-items:center; justify-content:center; font-size:3rem; border-radius:20px; border:1px dashed var(--border);\'>🛡️</div>'" 
+                             style="width: 100%; height: 100%; object-fit: cover;">
+                    </div>` :
                     `<div style="height: 100px; width: 100px; background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center; font-size: 3rem; border-radius: 20px; border: 1px dashed var(--border);">🛡️</div>`}
                     </div>
                 </div>
