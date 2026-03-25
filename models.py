@@ -619,6 +619,7 @@ class EventoPartido(db.Model):
             "equipo_nombre": self.equipo.nombre if self.equipo else "—",
             "jugador_id": self.jugador_id,
             "jugador_nombre": self.jugador.nombre if self.jugador else "NN",
+            "jugador_numero": self.jugador.numero if self.jugador else "?",
             "minuto": self.minuto,
             "tipo": self.tipo,
             "periodo": self.periodo,

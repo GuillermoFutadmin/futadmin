@@ -177,7 +177,7 @@ export class DashboardModule {
 
                             <div class="live-teams-container">
                                 <div class="live-team-box">
-                                    <img src="${m.equipo_local_escudo || ''}" onerror="this.src='https://cdn-icons-png.flaticon.com/512/53/53283.png'">
+                                    <img src="${m.equipo_local_escudo || ''}" class="${!m.equipo_local_escudo ? 'white-placeholder' : ''}" onerror="this.src='https://cdn-icons-png.flaticon.com/512/53/53283.png'; this.classList.add('white-placeholder');">
                                     <span>${m.equipo_local}</span>
                                 </div>
                                 <div class="live-score-box">
@@ -188,7 +188,7 @@ export class DashboardModule {
                                     </div>
                                 </div>
                                 <div class="live-team-box">
-                                    <img src="${m.equipo_visitante_escudo || ''}" onerror="this.src='https://cdn-icons-png.flaticon.com/512/53/53283.png'">
+                                    <img src="${m.equipo_visitante_escudo || ''}" class="${!m.equipo_visitante_escudo ? 'white-placeholder' : ''}" onerror="this.src='https://cdn-icons-png.flaticon.com/512/53/53283.png'; this.classList.add('white-placeholder');">
                                     <span>${m.equipo_visitante}</span>
                                 </div>
                             </div>
@@ -215,7 +215,7 @@ export class DashboardModule {
                                             <div class="event-row-mini">
                                                 <span class="event-min-mini">${e.minuto}'</span>
                                                 <span class="${classType}">${icon}</span>
-                                                <span class="event-name-mini">${e.jugador_nombre || 'NN'}</span>
+                                                <span class="event-name-mini"><b>#${e.jugador_numero || '?'}</b> ${e.jugador_nombre || 'NN'} <small style="opacity:0.7;">(${e.equipo_nombre || ''})</small></span>
                                             </div>
                                         `;
                                     }).join('')}
