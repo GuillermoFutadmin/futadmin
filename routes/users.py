@@ -449,6 +449,7 @@ def handle_combo_creation():
             from datetime import datetime
             ticket_data = {
                 "is_futadmin": True,
+                "pago_obj": nuevo_pago, # Pasamos el objeto para ajuste de hora global
                 "folio": f"COMB-{nueva_liga.id}-{datetime.now().strftime('%y%m%d')}",
                 "fecha": datetime.now().strftime('%d/%m/%Y %H:%M'),
                 "liga_nombre": nueva_liga.nombre,

@@ -467,11 +467,13 @@ def handle_equipos():
         # Generar datos del ticket virtual COMPLETO
         ticket_data = {
             "pago_id": pago_id or nueva_ins.id,
+            "pago_obj": nuevo.inscripcion.pagos[0] if nuevo.inscripcion and nuevo.inscripcion.pagos else None,
             "folio": folio,
             "fecha": datetime.utcnow().strftime('%d/%m/%Y %H:%M'),
             "equipo": nuevo.nombre,
             "torneo": torneo.nombre,
             "sede": sede_nombre_eq,
+            "liga_nombre": torneo.liga.nombre if torneo.liga else "Liga FutAdmin",
             "monto_abonado": abono_inicial,
             "tipo": "Inscripción Inicial",
             "metodo": data.get('metodo_pago', 'Efectivo'),
@@ -957,11 +959,13 @@ def handle_inscripciones():
 
         ticket_data = {
             "pago_id": nueva.id,
+            "pago_obj": nueva.pagos[0] if nueva.pagos else None,
             "folio": folio_ins,
             "fecha": datetime.utcnow().strftime('%d/%m/%Y %H:%M'),
             "equipo": equipo.nombre if equipo else "Equipo",
             "torneo": torneo.nombre if torneo else "Torneo",
             "sede": sede_nombre.strip() if sede_nombre else "Por definir",
+            "liga_nombre": torneo.liga.nombre if torneo and torneo.liga else "FutAdmin",
             "monto_abonado": float(abono_inicial),
             "tipo": "Registro de Inscripción",
             "metodo": metodo_pago,
@@ -1283,10 +1287,12 @@ def handle_pagos():
         result = {
             "success": True,
             "pago_id": nuevo_pago.id,
+            "pago_obj": nuevo_pago,
             "folio": folio_pago,
             "equipo": ins.equipo.nombre,
             "torneo": torneo.nombre,
             "sede": sede_nombre.strip() if sede_nombre else "Por definir",
+            "liga_nombre": torneo.liga.nombre if torneo and torneo.liga else "FutAdmin",
             "monto_abonado": float(nuevo_pago.monto),
             "tipo": nuevo_pago.tipo,
             "fecha": nuevo_pago.fecha.strftime('%d/%m/%Y %H:%M'),
@@ -1362,12 +1368,23 @@ def _trigger_receipt_email(ticket_data, recipient_email, recipient_name="Adminis
         try:
             from logic.receipts import generate_receipt_pdf, send_receipt_email, build_receipt_email_html
             import os, tempfile
+            from datetime import timedelta, datetime
             
-            # 1. Usar directorio temporal del sistema (funciona en Linux y Windows)
+            # --- AJUSTE DE HORA LOCAL (Tijuana -7) ---
+            # Si recibimos el objeto datetime original lo ajustamos, si no, intentamos parsear
+            if 'pago_obj' in data and data['pago_obj'].fecha:
+                local_dt = data['pago_obj'].fecha - timedelta(hours=7)
+                data['fecha'] = local_dt.strftime('%d/%m/%Y %H:%M')
+            elif not data.get('fecha'):
+                data['fecha'] = (datetime.now() - timedelta(hours=7)).strftime('%d/%m/%Y %H:%M')
+
+            # 1. Usar directorio temporal del sistema
             temp_dir = tempfile.gettempdir()
             filename = f"recibo_{data.get('folio', 'pago')}.pdf"
             pdf_path = os.path.join(temp_dir, filename)
             
+                data['fecha'] = fecha_str
+
             print(f"DEBUG: Generando recibo en {pdf_path} para {email}")
             generate_receipt_pdf(data, pdf_path)
             
@@ -1435,14 +1452,19 @@ def resend_pago_receipt(id):
     _monto_pactado = float(ins.monto_pactado_inscripcion or 0)
     _saldo_pendiente = max(0, _monto_pactado - _total_pagado)
 
+    from datetime import timedelta
+    _fecha_local = pago.fecha - timedelta(hours=7)
+    _liga_obj = pago.liga or ins.liga
+    _liga_n = _liga_obj.nombre if _liga_obj else session.get('user_name', 'Liga FutAdmin')
+
     ticket_data = {
         "pago_id": pago.id,
-        "folio": f"RESEND-{pago.id}-{datetime.now().strftime('%y%m%d')}",
-        "fecha": pago.fecha.strftime('%d/%m/%Y %H:%M'),
+        "pago_obj": pago, # Pasamos el objeto para ajuste de hora en el worker
+        "folio": f"FUT-{pago.id:04d}-{_fecha_local.strftime('%y%m%d')}",
         "equipo": ins.equipo.nombre,
         "torneo": torneo.nombre,
         "sede": torneo.cancha or "Por definir",
-        "liga_nombre": session.get('user_name', 'Liga FutAdmin'),
+        "liga_nombre": _liga_n,
         "monto_abonado": float(pago.monto),
         "monto_pactado": _monto_pactado,
         "total_pagado": _total_pagado,

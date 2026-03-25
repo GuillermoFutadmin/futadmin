@@ -78,7 +78,7 @@ def build_receipt_email_html(nombre, liga_nombre, equipo, torneo, tipo, monto_ab
           <td style="padding:15px 40px 10px;">
             <p style="margin:0;font-size:15px;color:#333;">Hola <strong>{nombre}</strong>,</p>
             <p style="margin:5px 0 0;font-size:14px;color:#666;line-height:1.4;">
-              Adjuntamos el recibo oficial de tu pago en <strong>{liga_nombre}</strong>. 
+                Este documento acredita el pago realizado por el equipo <strong>{equipo}</strong> en el torneo <strong>{torneo}</strong> de la liga <strong>{liga_nombre}</strong>. Consérvalo como comprobante oficial.
             </p>
           </td>
         </tr>
@@ -225,12 +225,18 @@ def generate_receipt_pdf(data, filename):
 
     # --- SALUDO ---
     equipo_nombre = data.get('equipo', '')
-    greeting_style = ParagraphStyle('Greeting', fontName='Helvetica', fontSize=11,
-                                    textColor=DARK_TEXT, alignment=TA_LEFT, leading=16)
-    story.append(Paragraph(
-        f"Este documento acredita el pago realizado por el equipo <b>{equipo_nombre}</b> "
-        f"en la liga <b>{liga_nombre}</b>. Consérvelo como comprobante oficial.",
-        greeting_style))
+    torneo_nombre = data.get('torneo', '')
+    liga_m = data.get('liga_nombre', 'FutAdmin')
+    
+    greeting_style = ParagraphStyle('Greeting', fontName='Helvetica', fontSize=10,
+                                    textColor=DARK_TEXT, alignment=TA_LEFT, leading=14)
+    
+    if is_futadmin:
+        greeting_text = f"Este documento acredita el pago realizado por la liga <b>{liga_m}</b> a la plataforma <b>FutAdmin</b>. Consérvelo como comprobante oficial."
+    else:
+        greeting_text = f"Este documento acredita el pago realizado por el equipo <b>{equipo_nombre}</b> en el torneo <b>{torneo_nombre}</b> de la liga <b>{liga_m}</b>. Consérvelo como comprobante oficial."
+        
+    story.append(Paragraph(greeting_text, greeting_style))
     story.append(Spacer(1, 8))
 
     # --- SECCIÓN: Detalles del Pago ---
