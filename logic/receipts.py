@@ -8,6 +8,10 @@ from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from reportlab.lib.units import inch
 from reportlab.lib import colors
+import base64
+import requests
+
+RESEND_API_URL = "https://api.resend.com/emails"
 
 def generate_receipt_pdf(data, filename):
     """
@@ -140,16 +144,65 @@ def _log_mail(message):
 def send_receipt_email(to_email, subject, body, attachment_path=None):
     """
     Envía un correo electrónico con un archivo adjunto.
-    Utiliza variables de entorno para la configuración SMTP.
+    Si existe RESEND_API_KEY se usa la API de Resend (puerto 443), si no se usa SMTP como fallback.
     """
+    resend_api_key = os.getenv('RESEND_API_KEY')
+    smtp_user = os.getenv('SMTP_USER')
+    sender_email = os.getenv('MAIL_DEFAULT_SENDER', smtp_user or 'no-reply@futadmin.com.mx')
+
+    if resend_api_key:
+        return _send_via_resend(resend_api_key, sender_email, to_email, subject, body, attachment_path)
+    else:
+        return _send_via_smtp(to_email, subject, body, attachment_path, sender_email)
+
+def _send_via_resend(api_key, sender_email, to_email, subject, body, attachment_path):
+    _log_mail("DEBUG: Intentando conexión a Resend API...")
+    try:
+        payload = {
+            "from": f"FutAdmin <{sender_email}>",
+            "to": [to_email],
+            "subject": subject,
+            "html": body.replace('\n', '<br>')
+        }
+        
+        if attachment_path and os.path.exists(attachment_path):
+            with open(attachment_path, "rb") as f:
+                encoded_file = base64.b64encode(f.read()).decode('utf-8')
+            payload["attachments"] = [
+                {
+                    "filename": os.path.basename(attachment_path),
+                    "content": encoded_file
+                }
+            ]
+            
+        headers = {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json"
+        }
+        
+        response = requests.post(RESEND_API_URL, json=payload, headers=headers, timeout=15)
+        
+        if response.status_code in (200, 201):
+            _log_mail(f"SUCCESS: Correo enviado correctamente vía Resend API a {to_email}")
+            return True
+        else:
+            _log_mail(f"ERROR Resend API [{response.status_code}]: {response.text}")
+            return False
+            
+    except Exception as e:
+        import traceback
+        _log_mail(f"ERROR GENERAL enviando correo por Resend API a {to_email}: {str(e)}\n{traceback.format_exc()}")
+        return False
+
+def _send_via_smtp(to_email, subject, body, attachment_path, sender_email):
+    # Fallback SMTP tradicional
     smtp_host = os.getenv('SMTP_HOST')
     smtp_port = os.getenv('SMTP_PORT', 465)
     smtp_user = os.getenv('SMTP_USER')
     smtp_pass = os.getenv('SMTP_PASS')
-    sender_email = os.getenv('MAIL_DEFAULT_SENDER', smtp_user)
 
     if not all([smtp_host, smtp_user, smtp_pass]):
-        _log_mail(f"ERROR: Configuración SMTP incompleta. Saltando envío a {to_email}")
+        _log_mail(f"ERROR: Configuración SMTP incompleta y sin API Key. Saltando envío a {to_email}")
         return False
 
     try:
@@ -166,7 +219,6 @@ def send_receipt_email(to_email, subject, body, attachment_path=None):
                 attach.add_header('Content-Disposition', 'attachment', filename=os.path.basename(attachment_path))
                 msg.attach(attach)
 
-        # Connect and send
         port = int(smtp_port)
         _log_mail(f"DEBUG: Intentando conexión a {smtp_host}:{port}...")
         
@@ -183,13 +235,13 @@ def send_receipt_email(to_email, subject, body, attachment_path=None):
         server.send_message(msg)
         server.quit()
         
-        _log_mail(f"SUCCESS: Correo enviado correctamente a {to_email}")
+        _log_mail(f"SUCCESS: Correo enviado correctamente a {to_email} (vía SMTP)")
         return True
     except smtplib.SMTPException as se:
         _log_mail(f"ERROR SMTP enviando correo a {to_email}: {str(se)}")
         return False
     except Exception as e:
         import traceback
-        error_msg = f"ERROR GENERAL enviando correo a {to_email}: {str(e)}\n{traceback.format_exc()}"
-        _log_mail(error_msg)
+        _log_mail(f"ERROR GENERAL enviando correo a {to_email} vía SMTP: {str(e)}\n{traceback.format_exc()}")
         return False
+
