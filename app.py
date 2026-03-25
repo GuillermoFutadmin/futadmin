@@ -1353,36 +1353,50 @@ def send_telegram_ticket_notification(pago):
         print(f"Telegram API Error: {e}")
 
 def _trigger_receipt_email(ticket_data, recipient_email, recipient_name="Administrador"):
-    """Helper para generar PDF y enviar correo de recibo de forma segura."""
+    """Helper para generar PDF y enviar correo de recibo de forma segura en un hilo separado."""
     if not recipient_email:
         return
-        
-    try:
-        # Intentar obtener el nombre de la liga del contexto si no está en ticket_data
-        if not ticket_data.get('liga_nombre'):
-            if 'user_name' in session:
-                ticket_data['liga_nombre'] = session.get('user_name')
-            else:
-                ticket_data['liga_nombre'] = "Liga FutAdmin"
-
-        pdf_path = f"/tmp/recibo_{ticket_data.get('folio', 'pago')}.pdf"
-        generate_receipt_pdf(ticket_data, pdf_path)
-        
-        is_futadmin = ticket_data.get('is_futadmin', False)
-        if is_futadmin:
-            subject = f"Comprobante de Pago - FutAdmin - {ticket_data.get('liga_nombre')}"
-            body = f"Hola {recipient_name},\n\nGracias por tu suscripción a FutAdmin. Adjuntamos tu comprobante oficial.\n\nSaludos,\nEquipo FutAdmin"
+    
+    # Extraer datos necesarios antes de entrar al hilo (para evitar problemas con proxies de Flask como session)
+    if not ticket_data.get('liga_nombre'):
+        if 'user_name' in session:
+            ticket_data['liga_nombre'] = session.get('user_name')
         else:
-            liga_n = ticket_data.get('liga_nombre')
-            subject = f"Recibo de Pago - {liga_n} - {ticket_data.get('equipo', 'Equipo')}"
-            body = f"Hola {recipient_name},\n\nAdjuntamos el recibo correspondiente a tu pago en {liga_n}.\n\nDetalles:\n- Torneo: {ticket_data.get('torneo')}\n- Tipo: {ticket_data.get('tipo')}\n- Monto: ${ticket_data.get('monto_abonado'):,.2f}\n\nGracias por tu participación.\n\nSaludos,\nAdministración de la Liga"
+            ticket_data['liga_nombre'] = "Liga FutAdmin"
+    
+    def internal_worker(data, email, name):
+        try:
+            from logic.receipts import generate_receipt_pdf, send_receipt_email
+            import os, tempfile
+            
+            # 1. Usar directorio temporal del sistema (funciona en Linux y Windows)
+            temp_dir = tempfile.gettempdir()
+            filename = f"recibo_{data.get('folio', 'pago')}.pdf"
+            pdf_path = os.path.join(temp_dir, filename)
+            
+            print(f"DEBUG: Generando recibo en {pdf_path} para {email}")
+            generate_receipt_pdf(data, pdf_path)
+            
+            is_futadmin = data.get('is_futadmin', False)
+            if is_futadmin:
+                subject = f"Comprobante de Pago - FutAdmin - {data.get('liga_nombre')}"
+                body = f"Hola {name},\n\nGracias por tu suscripción a FutAdmin. Adjuntamos tu comprobante oficial.\n\nSaludos,\nEquipo FutAdmin"
+            else:
+                liga_n = data.get('liga_nombre')
+                subject = f"Recibo de Pago - {liga_n} - {data.get('equipo', 'Equipo')}"
+                body = f"Hola {name},\n\nAdjuntamos el recibo correspondiente a tu pago en {liga_n}.\n\nDetalles:\n- Torneo: {data.get('torneo')}\n- Tipo: {data.get('tipo')}\n- Monto: ${data.get('monto_abonado', 0):,.2f}\n\nGracias por tu participación.\n\nSaludos,\nAdministración de la Liga"
 
-        send_receipt_email(recipient_email, subject, body, pdf_path)
-        
-        if os.path.exists(pdf_path):
-            os.remove(pdf_path)
-    except Exception as e:
-        print(f"Error triguereando email de recibo: {e}")
+            send_receipt_email(email, subject, body, pdf_path)
+            
+            if os.path.exists(pdf_path):
+                os.remove(pdf_path)
+                print(f"DEBUG: Recibo temporal eliminado: {pdf_path}")
+        except Exception as e:
+            print(f"Error asíncrono en envío de recibo: {e}")
+
+    # Iniciar hilo para no bloquear la respuesta al usuario
+    import threading
+    threading.Thread(target=internal_worker, args=(ticket_data, recipient_email, recipient_name), daemon=True).start()
 
 @app.route('/api/pagos/<int:id>', methods=['DELETE'])
 @csrf.exempt
