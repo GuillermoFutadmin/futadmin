@@ -51,8 +51,7 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    border-top: 1px solid var(--border);
-    background: rgba(0,0,0,0.1);
+    /* Removed border and background for a cleaner look */
 }
 
 .sidebar-logo-img {
@@ -60,7 +59,7 @@ body {
     max-width: 160px;
     height: auto;
     filter: drop-shadow(0 0 10px var(--primary-glow));
-    clip-path: circle(48%); /* Using 48% to leave a tiny bit of breathing room for the glow */
+    clip-path: circle(41%); /* Tightened to cut off outer bokeh noise */
     mix-blend-mode: screen;
     opacity: 0.9;
     transition: opacity 0.3s ease, transform 0.3s ease;
