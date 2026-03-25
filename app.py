@@ -14,6 +14,15 @@ from PIL import Image
 # Cargar variables de entorno desde .env
 load_dotenv()
 
+# Fallback para SMTP en Railway si no están configuradas en el dashboard (Sincronización solicitada por Ing)
+if not os.getenv('SMTP_HOST') and os.getenv('RAILWAY_ENVIRONMENT'):
+    print("AVISO: Usando configuración SMTP de respaldo (fallback) vinculada por código para producción.")
+    os.environ['SMTP_HOST'] = 'smtp.hostinger.com'
+    os.environ['SMTP_PORT'] = '465'
+    os.environ['SMTP_USER'] = 'gdiaz@futadmin.com.mx'
+    os.environ['SMTP_PASS'] = 'Gd012354R1.'
+    os.environ['MAIL_DEFAULT_SENDER'] = 'gdiaz@futadmin.com.mx'
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 app = Flask(__name__, static_folder=os.path.join(BASE_DIR, 'static'))
