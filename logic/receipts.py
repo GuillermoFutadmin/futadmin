@@ -126,6 +126,15 @@ def generate_receipt_pdf(data, filename):
     c.save()
     return filename
 
+def _log_mail(message):
+    try:
+        log_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "mail_debug.log")
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        with open(log_path, "a", encoding="utf-8") as f:
+            f.write(f"[{timestamp}] {message}\n")
+    except:
+        pass
+
 def send_receipt_email(to_email, subject, body, attachment_path=None):
     """
     Envía un correo electrónico con un archivo adjunto.
@@ -138,7 +147,7 @@ def send_receipt_email(to_email, subject, body, attachment_path=None):
     sender_email = os.getenv('MAIL_DEFAULT_SENDER', smtp_user)
 
     if not all([smtp_host, smtp_user, smtp_pass]):
-        print(f"ERROR: Configuración SMTP incompleta. Saltando envío a {to_email}")
+        _log_mail(f"ERROR: Configuración SMTP incompleta. Saltando envío a {to_email}")
         return False
 
     try:
@@ -158,17 +167,17 @@ def send_receipt_email(to_email, subject, body, attachment_path=None):
         # Connect and send
         port = int(smtp_port)
         if port == 465:
-            server = smtplib.SMTP_SSL(smtp_host, port)
+            server = smtplib.SMTP_SSL(smtp_host, port, timeout=10)
         else:
-            server = smtplib.SMTP(smtp_host, port)
+            server = smtplib.SMTP(smtp_host, port, timeout=10)
             server.starttls()
             
         server.login(smtp_user, smtp_pass)
         server.send_message(msg)
         server.quit()
         
-        print(f"SUCCESS: Correo enviado a {to_email}")
+        _log_mail(f"SUCCESS: Correo enviado a {to_email} (Port: {port})")
         return True
     except Exception as e:
-        print(f"ERROR enviando correo: {e}")
+        _log_mail(f"ERROR enviando correo a {to_email}: {str(e)}")
         return False

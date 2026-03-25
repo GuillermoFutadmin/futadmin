@@ -1464,6 +1464,22 @@ def resend_pago_receipt(id):
     except Exception as e:
         return jsonify({"error": f"Error técnico al generar el envío: {str(e)}"}), 500
 
+@app.route('/api/admin/mail_logs', methods=['GET'])
+def get_mail_logs():
+    if session.get('user_rol') != 'admin':
+        return "Acceso denegado", 403
+    
+    log_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "mail_debug.log")
+    if not os.path.exists(log_path):
+        return "No hay logs registrados.", 200
+    
+    try:
+        with open(log_path, "r", encoding="utf-8") as f:
+            lines = f.readlines()
+            return "<pre>" + "".join(lines[-50:]) + "</pre>"
+    except Exception as e:
+        return str(e), 500
+
 @app.route('/api/pagos/<int:id>', methods=['DELETE'])
 @csrf.exempt
 def handle_pago_delete(id):
