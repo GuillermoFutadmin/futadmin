@@ -143,7 +143,7 @@ def send_receipt_email(to_email, subject, body, attachment_path=None):
     Utiliza variables de entorno para la configuración SMTP.
     """
     smtp_host = os.getenv('SMTP_HOST')
-    smtp_port = os.getenv('SMTP_PORT', 465)
+    smtp_port = os.getenv('SMTP_PORT', 587)
     smtp_user = os.getenv('SMTP_USER')
     smtp_pass = os.getenv('SMTP_PASS')
     sender_email = os.getenv('MAIL_DEFAULT_SENDER', smtp_user)
