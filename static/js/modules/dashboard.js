@@ -199,26 +199,27 @@ export class DashboardModule {
                                     <span>${m.arbitro_nombre || 'Sin asignar'}</span>
                                 </div>
                                 
-                                <div class="live-events-scroll">
+                                <div class="live-events-list">
                                     ${eventosArr.map(e => {
+                                        const tipoLow = (e.tipo || '').toLowerCase();
                                         let icon = '⚽';
-                                        let classType = 'event-icon-goal';
-                                        if (e.tipo === 'Tarjeta Amarilla') { icon = '🟨'; classType = 'event-icon-yellow'; }
-                                        else if (e.tipo === 'Tarjeta Roja') { icon = '🟥'; classType = 'event-icon-red'; }
-                                        else {
-                                            // Asegurar balones blancos para goles
-                                            icon = '⚽';
-                                            classType = 'event-icon-goal-white';
+                                        let iconColor = '#fff';
+                                        if (tipoLow.includes('amarilla') || tipoLow.includes('yellow')) {
+                                            icon = '🟨'; iconColor = '#fbbf24';
+                                        } else if (tipoLow.includes('roja') || tipoLow.includes('red')) {
+                                            icon = '🟥'; iconColor = '#ef4444';
+                                        } else if (tipoLow.includes('azul') || tipoLow.includes('blue')) {
+                                            icon = '🟦'; iconColor = '#60a5fa';
                                         }
-                                        
                                         return `
-                                            <div class="event-chip-mini">
-                                                <span class="${classType}">${icon}</span>
-                                                <span>${e.minuto}' ${e.jugador_nombre || 'NN'}</span>
+                                            <div class="event-row-mini">
+                                                <span class="event-min-mini">${e.minuto}'</span>
+                                                <span>${icon}</span>
+                                                <span class="event-name-mini">${e.jugador_nombre || 'NN'}</span>
                                             </div>
                                         `;
                                     }).join('')}
-                                    ${eventosArr.length === 0 ? '<div style="font-size: 0.6rem; color: var(--text-muted); opacity: 0.5;">Sin eventos recientes</div>' : ''}
+                                    ${eventosArr.length === 0 ? '<div class="no-events-label">Sin eventos</div>' : ''}
                                 </div>
                             </div>
                         </div>
