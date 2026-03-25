@@ -1463,8 +1463,8 @@ def resend_pago_receipt(id):
         nombre_responsable = ins.equipo.responsable or 'Delegado'
 
         # Calcular acumulados para mostrar en el correo HTML
-        total_pagado = sum(p.monto for p in ins.pagos if p.estado == 'pagado') if ins.pagos else ticket_data.get('monto_abonado', 0)
-        monto_pactado = float(ins.monto_pactado) if ins.monto_pactado else 0
+        total_pagado = sum(p.monto for p in ins.pagos) if ins.pagos else ticket_data.get('monto_abonado', 0)
+        monto_pactado = float(ins.monto_pactado_inscripcion) if ins.monto_pactado_inscripcion else 0
         saldo_pendiente = max(0, monto_pactado - float(total_pagado))
 
         body = build_receipt_email_html(
