@@ -12,7 +12,7 @@ import base64
 import requests
 
 RESEND_API_URL = "https://api.resend.com/emails"
-FUTADMIN_LOGO_URL = "https://res.cloudinary.com/dzqgrgfnf/image/upload/v1742861131/logos_futadmin/futadmin_logo_circular.png"
+FUTADMIN_LOGO_URL = "https://futadmin.com.mx/static/img/logos/futadmin_circle.png"
 FUTADMIN_INSTAGRAM = "https://www.instagram.com/futadmin.tj/"
 FUTADMIN_WEBSITE = "https://futadmin.com.mx"
 
@@ -56,15 +56,15 @@ def build_receipt_email_html(nombre, liga_nombre, equipo, torneo, tipo, monto_ab
 <html lang="es">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="margin:0;padding:0;background:#f4f6f8;font-family:'Segoe UI',Arial,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f8;padding:30px 0;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f8;padding:15px 0;">
     <tr><td align="center">
       <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.08);">
         <!-- HEADER -->
         <tr>
-          <td style="background:linear-gradient(135deg,#1a1a2e 0%,#16213e 60%,#0f3460 100%);padding:32px 40px;text-align:center;">
-            <img src="{FUTADMIN_LOGO_URL}" alt="FutAdmin" width="80" height="80" style="border-radius:50%;border:3px solid #00d4aa;margin-bottom:12px;display:block;margin-left:auto;margin-right:auto;"><br>
-            <span style="color:#ffffff;font-size:22px;font-weight:700;letter-spacing:1px;">FutAdmin</span><br>
-            <span style="color:#00d4aa;font-size:13px;letter-spacing:2px;text-transform:uppercase;">Recibo Oficial de Pago</span>
+          <td style="background:linear-gradient(135deg,#1a1a2e 0%,#16213e 60%,#0f3460 100%);padding:20px 40px;text-align:center;">
+            <img src="{FUTADMIN_LOGO_URL}" alt="FutAdmin" width="70" height="70" style="border-radius:50%;border:2px solid #00d4aa;margin-bottom:8px;display:block;margin-left:auto;margin-right:auto;">
+            <span style="color:#ffffff;font-size:20px;font-weight:700;letter-spacing:1px;display:block;margin-top:4px;">FutAdmin</span>
+            <span style="color:#00d4aa;font-size:11px;letter-spacing:2px;text-transform:uppercase;display:block;margin-top:2px;">Recibo Oficial de Pago</span>
           </td>
         </tr>
         <!-- FOLIO BANNER -->
@@ -75,11 +75,10 @@ def build_receipt_email_html(nombre, liga_nombre, equipo, torneo, tipo, monto_ab
         </tr>
         <!-- GREETING -->
         <tr>
-          <td style="padding:30px 40px 10px;">
+          <td style="padding:20px 40px 10px;">
             <p style="margin:0;font-size:16px;color:#333;">Hola <strong>{nombre}</strong>,</p>
-            <p style="margin:12px 0 0;font-size:14px;color:#666;line-height:1.6;">
+            <p style="margin:8px 0 0;font-size:14px;color:#666;line-height:1.5;">
               Adjuntamos el recibo oficial correspondiente a tu pago en <strong>{liga_nombre}</strong>. 
-              Guarda este correo como comprobante de tu transacción.
             </p>
           </td>
         </tr>
@@ -148,120 +147,211 @@ def build_receipt_email_html(nombre, liga_nombre, equipo, torneo, tipo, monto_ab
 
 def generate_receipt_pdf(data, filename):
     """
-    Genera un PDF profesional basado en los datos del ticket.
-    'data' debe contener campos como folio, fecha, equipo, torneo, sede, monto_abonado, etc.
+    Genera un PDF profesional con diseño FutAdmin: header oscuro, logo, tablas y firma.
     """
-    c = canvas.Canvas(filename, pagesize=letter)
-    width, height = letter
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, HRFlowable, Image as RLImage
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
+    from reportlab.lib.units import inch, mm
+    from reportlab.lib import colors as rl_colors
 
-    # Ajustes iniciales
-    margin = 1 * inch
-    c.setFont("Helvetica-Bold", 16)
-    
-    # Determine if it's a FutAdmin receipt or a League receipt
+    # --- Colores de marca ---
+    DARK_BG   = rl_colors.HexColor('#1a1a2e')
+    TEAL      = rl_colors.HexColor('#00d4aa')
+    MID_BLUE  = rl_colors.HexColor('#0f3460')
+    LIGHT_GREY= rl_colors.HexColor('#f4f6f8')
+    DARK_TEXT = rl_colors.HexColor('#1a1a2e')
+    RED_COLOR = rl_colors.HexColor('#e74c3c')
+    GREEN_COLOR = rl_colors.HexColor('#27ae60')
+
+    doc = SimpleDocTemplate(filename, pagesize=letter,
+                            leftMargin=0.6*inch, rightMargin=0.6*inch,
+                            topMargin=0.4*inch, bottomMargin=0.5*inch)
+    story = []
+    styles = getSampleStyleSheet()
+
     is_futadmin = data.get('is_futadmin', False)
-    
-    # Header
-    if is_futadmin:
-        c.drawString(margin, height - margin, "COMPROBANTE DE PAGO - FUTADMIN")
+    liga_nombre = data.get('liga_nombre', 'Liga FutAdmin')
+    folio       = data.get('folio', 'N/A')
+    fecha       = data.get('fecha', datetime.now().strftime('%d/%m/%Y %H:%M'))
+
+    # --- LOGO ---
+    logo_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                             'static', 'img', 'logos', 'futadmin_circle.png')
+    logo_elem = None
+    if os.path.exists(logo_path):
+        logo_elem = RLImage(logo_path, width=70, height=70)
+
+    # --- HEADER TABLE (logo + título) ---
+    title_style = ParagraphStyle('HeaderTitle', fontName='Helvetica-Bold',
+                                 fontSize=18, textColor=rl_colors.white,
+                                 alignment=TA_LEFT, leading=22)
+    sub_style = ParagraphStyle('HeaderSub', fontName='Helvetica',
+                               fontSize=10, textColor=TEAL,
+                               alignment=TA_LEFT, leading=14)
+    title_text = Paragraph("FutAdmin", title_style)
+    sub_text   = Paragraph("RECIBO OFICIAL DE PAGO", sub_style)
+
+    if logo_elem:
+        header_data = [[logo_elem, [title_text, sub_text]]]
+        header_table = Table(header_data, colWidths=[80, None])
     else:
-        league_name = data.get('liga_nombre', 'RECIBO DE LIGA')
-        c.drawString(margin, height - margin, f"RECIBO OFICIAL - {league_name.upper()}")
+        header_data = [[[title_text, sub_text]]]
+        header_table = Table(header_data, colWidths=[None])
 
-    c.setFont("Helvetica", 10)
-    c.drawString(margin, height - margin - 20, f"Folio: {data.get('folio', 'N/A')}")
-    c.drawString(margin, height - margin - 35, f"Fecha: {data.get('fecha', datetime.now().strftime('%d/%m/%Y %H:%M'))}")
+    header_table.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,-1), DARK_BG),
+        ('VALIGN',     (0,0), (-1,-1), 'MIDDLE'),
+        ('LEFTPADDING',(0,0), (-1,-1), 14),
+        ('RIGHTPADDING',(0,0),(-1,-1), 14),
+        ('TOPPADDING', (0,0), (-1,-1), 12),
+        ('BOTTOMPADDING',(0,0),(-1,-1), 12),
+        ('ROWBACKGROUNDS',(0,0),(-1,-1),[DARK_BG]),
+    ]))
+    story.append(header_table)
 
-    # Horizontal Line
-    c.setStrokeColor(colors.black)
-    c.line(margin, height - margin - 45, width - margin, height - margin - 45)
+    # --- FOLIO BANNER ---
+    folio_style = ParagraphStyle('Folio', fontName='Helvetica-Bold',
+                                 fontSize=10, textColor=DARK_TEXT, alignment=TA_CENTER)
+    folio_table = Table([[Paragraph(f"Folio: {folio}   |   {fecha}", folio_style)]],
+                        colWidths=[None])
+    folio_table.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,-1), TEAL),
+        ('TOPPADDING', (0,0),(-1,-1), 8),
+        ('BOTTOMPADDING', (0,0),(-1,-1), 8),
+    ]))
+    story.append(folio_table)
+    story.append(Spacer(1, 14))
 
-    # Content
-    y_pos = height - margin - 70
-    c.setFont("Helvetica-Bold", 12)
-    
+    # --- SALUDO ---
+    equipo_nombre = data.get('equipo', '')
+    greeting_style = ParagraphStyle('Greeting', fontName='Helvetica', fontSize=11,
+                                    textColor=DARK_TEXT, alignment=TA_LEFT, leading=16)
+    story.append(Paragraph(
+        f"Este documento acredita el pago realizado por el equipo <b>{equipo_nombre}</b> "
+        f"en la liga <b>{liga_nombre}</b>. Consérvelo como comprobante oficial.",
+        greeting_style))
+    story.append(Spacer(1, 12))
+
+    # --- SECCIÓN: Detalles del Pago ---
+    sec_style = ParagraphStyle('SecTitle', fontName='Helvetica-Bold', fontSize=12,
+                               textColor=rl_colors.white, alignment=TA_LEFT)
+    sec_banner = Table([[Paragraph("  Detalles del Pago", sec_style)]], colWidths=[None])
+    sec_banner.setStyle(TableStyle([
+        ('BACKGROUND', (0,0),(-1,-1), MID_BLUE),
+        ('TOPPADDING',(0,0),(-1,-1),6), ('BOTTOMPADDING',(0,0),(-1,-1),6),
+    ]))
+    story.append(sec_banner)
+    story.append(Spacer(1, 4))
+
+    label_s = ParagraphStyle('Label', fontName='Helvetica-Bold', fontSize=10, textColor=DARK_TEXT)
+    value_s = ParagraphStyle('Value', fontName='Helvetica', fontSize=10, textColor=rl_colors.HexColor('#333333'))
+
+    detail_rows = []
     if is_futadmin:
-        c.drawString(margin, y_pos, "Detalles de Suscripción")
+        detail_rows = [
+            [Paragraph("Liga:", label_s), Paragraph(liga_nombre, value_s)],
+            [Paragraph("Concepto:", label_s), Paragraph(data.get('tipo','Suscripción'), value_s)],
+            [Paragraph("Mes Pagado:", label_s), Paragraph(str(data.get('mes_pagado','N/A')), value_s)],
+        ]
     else:
-        c.drawString(margin, y_pos, "Detalles del Pago")
-
-    c.setFont("Helvetica", 11)
-    y_pos -= 20
-    
-    lines = []
-    if is_futadmin:
-        lines.append(f"Liga: {data.get('liga_nombre', 'N/A')}")
-        lines.append(f"Concepto: {data.get('tipo', 'Suscripción Mensual')}")
-        lines.append(f"Mes Pagado: {data.get('mes_pagado', 'N/A')}")
-    else:
-        lines.append(f"Equipo: {data.get('equipo', 'N/A')}")
-        lines.append(f"Torneo: {data.get('torneo', 'N/A')}")
-        lines.append(f"Sede: {data.get('sede', 'Por definir')}")
-        lines.append(f"Concepto: {data.get('tipo', 'Abono')}")
-        
+        detail_rows = [
+            [Paragraph("Liga / Administrador:", label_s), Paragraph(liga_nombre, value_s)],
+            [Paragraph("Equipo:", label_s), Paragraph(data.get('equipo','N/A'), value_s)],
+            [Paragraph("Torneo:", label_s), Paragraph(data.get('torneo','N/A'), value_s)],
+            [Paragraph("Sede:", label_s), Paragraph(data.get('sede','Por definir'), value_s)],
+            [Paragraph("Concepto:", label_s), Paragraph(data.get('tipo','Abono'), value_s)],
+            [Paragraph("Método de Pago:", label_s), Paragraph(data.get('metodo','Efectivo'), value_s)],
+        ]
         if data.get('partido'):
             p = data['partido']
-            lines.append(f"Partido: {p.get('rivales', 'N/A')} (J{p.get('jornada', '?')})")
+            detail_rows.append([
+                Paragraph("Partido:", label_s),
+                Paragraph(f"{p.get('rivales','N/A')}  (Jornada {p.get('jornada','?')})", value_s)
+            ])
 
-    for line in lines:
-        c.drawString(margin + 20, y_pos, f"• {line}")
-        y_pos -= 15
+    detail_table = Table(detail_rows, colWidths=[160, None])
+    detail_table.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,-1), LIGHT_GREY),
+        ('ROWBACKGROUNDS', (0,0), (-1,-1), [rl_colors.white, LIGHT_GREY]),
+        ('GRID', (0,0), (-1,-1), 0.3, rl_colors.HexColor('#dddddd')),
+        ('TOPPADDING', (0,0), (-1,-1), 5),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 5),
+        ('LEFTPADDING', (0,0), (-1,-1), 8),
+        ('RIGHTPADDING', (0,0), (-1,-1), 8),
+    ]))
+    story.append(detail_table)
+    story.append(Spacer(1, 12))
 
-    # Financial Details
-    y_pos -= 10
-    c.setStrokeColor(colors.grey)
-    c.line(margin, y_pos, width - margin, y_pos)
-    y_pos -= 20
-    
-    c.setFont("Helvetica-Bold", 12)
-    c.drawString(margin, y_pos, "Resumen Financiero")
-    c.setFont("Helvetica", 11)
-    y_pos -= 20
-    
-    monto_pactado = data.get('monto_pactado', 0)
-    total_pagado = data.get('total_pagado', 0)
-    abonado = data.get('monto_abonado', 0)
-    saldo = data.get('saldo_pendiente', 0)
-    
-    c.drawString(margin + 20, y_pos, f"Monto de la Operación: ${abonado:,.2f} ({data.get('metodo', 'Efectivo')})")
-    y_pos -= 15
-    
+    # --- SECCIÓN: Resumen Financiero ---
+    sec_banner2 = Table([[Paragraph("  Resumen Financiero", sec_style)]], colWidths=[None])
+    sec_banner2.setStyle(TableStyle([
+        ('BACKGROUND', (0,0),(-1,-1), MID_BLUE),
+        ('TOPPADDING',(0,0),(-1,-1),6), ('BOTTOMPADDING',(0,0),(-1,-1),6),
+    ]))
+    story.append(sec_banner2)
+    story.append(Spacer(1, 4))
+
+    abonado      = float(data.get('monto_abonado', 0))
+    monto_pactado= float(data.get('monto_pactado', 0))
+    total_pagado = float(data.get('total_pagado', 0))
+    saldo        = float(data.get('saldo_pendiente', 0))
+    saldo_color  = RED_COLOR if saldo > 0 else GREEN_COLOR
+
+    saldo_style = ParagraphStyle('SaldoVal', fontName='Helvetica-Bold', fontSize=10, textColor=saldo_color)
+    green_style = ParagraphStyle('GreenVal', fontName='Helvetica-Bold', fontSize=10, textColor=GREEN_COLOR)
+
+    fin_rows = [
+        [Paragraph("💵  Monto Abonado (esta operación):", label_s), Paragraph(f"${abonado:,.2f}  ({data.get('metodo','Efectivo')})", green_style)],
+    ]
     if not is_futadmin:
-        c.drawString(margin + 20, y_pos, f"Monto Pactado Total: ${monto_pactado:,.2f}")
-        y_pos -= 15
-        c.drawString(margin + 20, y_pos, f"Acumulado Pagado: ${total_pagado:,.2f}")
-        y_pos -= 15
-        c.setFont("Helvetica-Bold", 11)
-        c.drawString(margin + 20, y_pos, f"Saldo Pendiente: ${saldo:,.2f}")
-        c.setFont("Helvetica", 11)
-        y_pos -= 30
+        fin_rows += [
+            [Paragraph("📋  Monto Pactado Total:", label_s), Paragraph(f"${monto_pactado:,.2f}", value_s)],
+            [Paragraph("✅  Total Acumulado Pagado:", label_s), Paragraph(f"${total_pagado:,.2f}", value_s)],
+            [Paragraph("🔴  Saldo Pendiente:", label_s), Paragraph(f"${saldo:,.2f}", saldo_style)],
+        ]
 
-    # Legal / Notes
+    fin_table = Table(fin_rows, colWidths=[240, None])
+    fin_table.setStyle(TableStyle([
+        ('ROWBACKGROUNDS', (0,0), (-1,-1), [rl_colors.white, LIGHT_GREY]),
+        ('GRID', (0,0), (-1,-1), 0.3, rl_colors.HexColor('#dddddd')),
+        ('TOPPADDING', (0,0), (-1,-1), 5),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 5),
+        ('LEFTPADDING', (0,0), (-1,-1), 8),
+        ('RIGHTPADDING', (0,0), (-1,-1), 8),
+    ]))
+    story.append(fin_table)
+    story.append(Spacer(1, 12))
+
+    # --- SECCIÓN: Reglamento / Notas ---
     if not is_futadmin:
-        c.setFont("Helvetica-Bold", 10)
-        c.drawString(margin, y_pos, "NOTAS Y REGLAMENTO:")
-        c.setFont("Helvetica", 8)
-        y_pos -= 12
-        
         text = data.get('clausulas', '') or data.get('reglamento', '')
-        # Simple text wrapping
-        max_chars = 90
-        for part in text.split('\n'):
-            while len(part) > max_chars:
-                c.drawString(margin + 10, y_pos, part[:max_chars])
-                part = part[max_chars:]
-                y_pos -= 10
-            c.drawString(margin + 10, y_pos, part)
-            y_pos -= 10
-            if y_pos < margin: break
+        if text and text.strip():
+            sec_banner3 = Table([[Paragraph("  Reglamento y Notas", sec_style)]], colWidths=[None])
+            sec_banner3.setStyle(TableStyle([
+                ('BACKGROUND', (0,0),(-1,-1), rl_colors.HexColor('#555555')),
+                ('TOPPADDING',(0,0),(-1,-1),6), ('BOTTOMPADDING',(0,0),(-1,-1),6),
+            ]))
+            story.append(sec_banner3)
+            story.append(Spacer(1, 4))
+            reg_style = ParagraphStyle('Reg', fontName='Helvetica', fontSize=8,
+                                       textColor=rl_colors.HexColor('#444444'), leading=11)
+            story.append(Paragraph(text.replace('\n', '<br/>'), reg_style))
+            story.append(Spacer(1, 10))
 
-    # Footer
-    c.setFont("Helvetica-Oblique", 8)
-    c.drawCentredString(width/2, margin/2, "Este es un comprobante digital generado automáticamente por FutAdmin.")
-    c.drawCentredString(width/2, margin/2 - 10, "FutAdmin - Control de Ingresos y Gestión Deportiva")
+    # --- FOOTER / FIRMA ---
+    story.append(HRFlowable(width="100%", thickness=1, color=rl_colors.HexColor('#cccccc')))
+    story.append(Spacer(1, 6))
+    footer_style = ParagraphStyle('Footer', fontName='Helvetica-Oblique', fontSize=8,
+                                  textColor=rl_colors.HexColor('#888888'), alignment=TA_CENTER)
+    story.append(Paragraph(
+        "Este es un comprobante digital generado automáticamente por <b>FutAdmin • futadmin.com.mx</b>.<br/>"
+        "Plataforma de Gestión Deportiva — @futadmin.tj",
+        footer_style))
 
-    c.save()
+    doc.build(story)
     return filename
+
 
 def _log_mail(message):
     try:

@@ -1430,13 +1430,23 @@ def resend_pago_receipt(id):
                 "fecha": p.fecha.strftime('%d/%m/%Y') if p.fecha else "S/F"
             }
 
+    # Calcular totales financieros de la inscripción
+    _total_pagado = sum(p.monto for p in ins.pagos) if ins.pagos else 0
+    _monto_pactado = float(ins.monto_pactado_inscripcion or 0)
+    _saldo_pendiente = max(0, _monto_pactado - _total_pagado)
+
     ticket_data = {
         "pago_id": pago.id,
         "folio": f"RESEND-{pago.id}-{datetime.now().strftime('%y%m%d')}",
         "fecha": pago.fecha.strftime('%d/%m/%Y %H:%M'),
         "equipo": ins.equipo.nombre,
         "torneo": torneo.nombre,
+        "sede": torneo.cancha or "Por definir",
+        "liga_nombre": session.get('user_name', 'Liga FutAdmin'),
         "monto_abonado": float(pago.monto),
+        "monto_pactado": _monto_pactado,
+        "total_pagado": _total_pagado,
+        "saldo_pendiente": _saldo_pendiente,
         "tipo": pago.tipo,
         "metodo": pago.metodo or "Efectivo",
         "partido": partido_info,
