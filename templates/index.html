@@ -115,7 +115,7 @@
                 <div class="nav-section">
                     <p class="section-title">CONFIGURACIÓN</p>
                     <ul>
-                        <li class="nav-item has-submenu" onclick="ui.toggleSubmenu(this); ui.switchView('ajustes', '{% if user_rol.lower() == 'admin' %}users{% else %}linked{% endif %}', this)">
+                        <li class="nav-item has-submenu" onclick="ui.toggleSubmenu(this); ui.switchView('ajustes', '{% if user_rol.lower() == "admin" %}users{% else %}linked{% endif %}', this)">
                             <a href="javascript:void(0)">
                                 <span>⚙️ Ajustes del Sistema</span>
                                 <i class="arrow">▼</i>
@@ -136,6 +136,10 @@
                 </div>
                 {% endif %}
             </nav>
+
+            <div class="sidebar-footer">
+                <img src="/static/img/sidebar-logo.png?v=2" class="sidebar-logo-img" alt="FutAdmin Logo">
+            </div>
         </aside>
 
         <!-- Contenido Principal -->

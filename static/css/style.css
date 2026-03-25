@@ -45,6 +45,30 @@ body {
     scrollbar-color: rgba(255,255,255,0.1) transparent;
 }
 
+.sidebar-footer {
+    margin-top: auto;
+    padding: 1.5rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-top: 1px solid var(--border);
+    background: rgba(0,0,0,0.1);
+}
+
+.sidebar-logo-img {
+    width: 100%;
+    max-width: 160px;
+    height: auto;
+    filter: drop-shadow(0 0 10px var(--primary-glow));
+    opacity: 0.9;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.sidebar-logo-img:hover {
+    opacity: 1;
+    transform: scale(1.05);
+}
+
 .sidebar::-webkit-scrollbar {
     width: 4px;
 }
