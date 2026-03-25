@@ -170,6 +170,7 @@ export class DashboardModule {
                                 <div class="live-indicator-tag">
                                     <span class="dot-pulse"></span>
                                     <span>EN VIVO</span>
+                                    ${m.jornada ? `<span style="margin-left: 8px; border-left: 1px solid rgba(255,255,255,0.2); padding-left: 8px; opacity: 0.8;">Jornada ${m.jornada}</span>` : ''}
                                 </div>
                                 ${minute ? `<div class="live-minute-badge">${minute}</div>` : ''}
                             </div>
@@ -203,7 +204,12 @@ export class DashboardModule {
                                         let icon = '⚽';
                                         let classType = 'event-icon-goal';
                                         if (e.tipo === 'Tarjeta Amarilla') { icon = '🟨'; classType = 'event-icon-yellow'; }
-                                        if (e.tipo === 'Tarjeta Roja') { icon = '🟥'; classType = 'event-icon-red'; }
+                                        else if (e.tipo === 'Tarjeta Roja') { icon = '🟥'; classType = 'event-icon-red'; }
+                                        else {
+                                            // Asegurar balones blancos para goles
+                                            icon = '⚽';
+                                            classType = 'event-icon-goal-white';
+                                        }
                                         
                                         return `
                                             <div class="event-chip-mini">

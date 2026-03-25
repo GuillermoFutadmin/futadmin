@@ -2074,6 +2074,7 @@ textarea.full-textarea:focus {
 }
 
 .event-icon-goal { color: var(--primary); }
+.event-icon-goal-white { color: #ffffff; filter: drop-shadow(0 0 2px rgba(255,255,255,0.5)); }
 .event-icon-yellow { color: #ffeb3b; }
 .event-icon-red { color: #f44336; }
 
