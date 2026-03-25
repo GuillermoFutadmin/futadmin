@@ -543,6 +543,12 @@ export class FinanceModule {
 
     async handlePagoSubmit(e) {
         e.preventDefault();
+        
+        const submitBtn = e.target.querySelector('button[type="submit"]') || document.querySelector('#modal-pago button[type="submit"]');
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Procesando...';
+        }
 
         const partidoSelect = document.getElementById('dash-pago-partido');
         const partidoVinculadoId = document.getElementById('dash-pago-partido-container').style.display !== 'none' && partidoSelect.value
@@ -591,10 +597,18 @@ export class FinanceModule {
             } else {
                 const errData = await response.json();
                 alert('Error al procesar la donación: ' + (errData.error || 'Desconocido'));
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = 'Generar Ticket y Guardar';
+                }
             }
         } catch (error) { 
             console.error('Payment Error:', error);
             alert('Error de conexión'); 
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = 'Generar Ticket y Guardar';
+            }
         }
     }
 
