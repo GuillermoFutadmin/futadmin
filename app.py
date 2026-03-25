@@ -80,6 +80,7 @@ def diag_paths():
 
 from models import db, bcrypt, Torneo, Equipo, Jugador, Inscripcion, Pago, GrupoEntrenamiento, AlumnoEntrenamiento, Partido, EventoPartido, AsistenciaPartido, Arbitro, Cancha, Usuario, apply_liga_filter, get_liga_id, check_torneos_limit, get_role_limits, Liga, PagoCombo, Configuracion, LigaExpansion
 from utils import paginate_query, handle_image_upload
+from logic.receipts import generate_receipt_pdf, send_receipt_email
 from routes.entrenamientos import entrenamientos_bp
 from routes.canchas import canchas_bp
 from routes.pagos_cancha import pagos_cancha_bp
@@ -479,6 +480,9 @@ def handle_equipos():
             "clausulas": torneo.clausulas or "",
             "fecha_inicio_torneo": torneo.fecha_inicio.strftime('%d/%m/%Y') if torneo.fecha_inicio else "Pendiente"
         }
+
+        # Trigger Email Receipt
+        _trigger_receipt_email(ticket_data, nuevo.email, nuevo.responsable or "Delegado")
 
         return jsonify({
             "id": nuevo.id, 
@@ -966,6 +970,10 @@ def handle_inscripciones():
             "clausulas": (torneo.clausulas if torneo and torneo.clausulas else "") + ("\n\n" + reglas_cancha if reglas_cancha else "")
         }
         
+        # Trigger Email Receipt
+        if equipo and equipo.email:
+             _trigger_receipt_email(ticket_data, equipo.email, equipo.responsable or "Delegado")
+
         db.session.commit()
         return jsonify({
             "id": nueva.id, 
@@ -1269,7 +1277,7 @@ def handle_pagos():
                     "fecha": p.fecha.strftime('%d/%m/%Y') if p.fecha else "S/F"
                 }
 
-        return jsonify({
+        result = {
             "success": True,
             "pago_id": nuevo_pago.id,
             "folio": folio_pago,
@@ -1288,7 +1296,13 @@ def handle_pagos():
             "reglamento": torneo.reglamento or "",
             "clausulas": (torneo.clausulas if torneo and torneo.clausulas else "") + ("\n\n" + reglas_cancha if reglas_cancha else ""),
             "fecha_inicio_torneo": torneo.fecha_inicio.strftime('%d/%m/%Y') if torneo.fecha_inicio else "Pendiente"
-        }), 201
+        }
+
+        # Trigger Email Receipt
+        if ins.equipo and ins.equipo.email:
+            _trigger_receipt_email(result, ins.equipo.email, ins.equipo.responsable or "Delegado")
+
+        return jsonify(result), 201
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": str(e)}), 500
@@ -1328,6 +1342,38 @@ def send_telegram_ticket_notification(pago):
         requests.post(url, json=payload, timeout=5)
     except Exception as e:
         print(f"Telegram API Error: {e}")
+
+def _trigger_receipt_email(ticket_data, recipient_email, recipient_name="Administrador"):
+    """Helper para generar PDF y enviar correo de recibo de forma segura."""
+    if not recipient_email:
+        return
+        
+    try:
+        # Intentar obtener el nombre de la liga del contexto si no está en ticket_data
+        if not ticket_data.get('liga_nombre'):
+            if 'user_name' in session:
+                ticket_data['liga_nombre'] = session.get('user_name')
+            else:
+                ticket_data['liga_nombre'] = "Liga FutAdmin"
+
+        pdf_path = f"/tmp/recibo_{ticket_data.get('folio', 'pago')}.pdf"
+        generate_receipt_pdf(ticket_data, pdf_path)
+        
+        is_futadmin = ticket_data.get('is_futadmin', False)
+        if is_futadmin:
+            subject = f"Comprobante de Pago - FutAdmin - {ticket_data.get('liga_nombre')}"
+            body = f"Hola {recipient_name},\n\nGracias por tu suscripción a FutAdmin. Adjuntamos tu comprobante oficial.\n\nSaludos,\nEquipo FutAdmin"
+        else:
+            liga_n = ticket_data.get('liga_nombre')
+            subject = f"Recibo de Pago - {liga_n} - {ticket_data.get('equipo', 'Equipo')}"
+            body = f"Hola {recipient_name},\n\nAdjuntamos el recibo correspondiente a tu pago en {liga_n}.\n\nDetalles:\n- Torneo: {ticket_data.get('torneo')}\n- Tipo: {ticket_data.get('tipo')}\n- Monto: ${ticket_data.get('monto_abonado'):,.2f}\n\nGracias por tu participación.\n\nSaludos,\nAdministración de la Liga"
+
+        send_receipt_email(recipient_email, subject, body, pdf_path)
+        
+        if os.path.exists(pdf_path):
+            os.remove(pdf_path)
+    except Exception as e:
+        print(f"Error triguereando email de recibo: {e}")
 
 @app.route('/api/pagos/<int:id>', methods=['DELETE'])
 @csrf.exempt
@@ -3292,6 +3338,27 @@ def handle_combo_pagos():
             )
             db.session.add(nuevo_pago)
             db.session.commit()
+            
+            # Trigger Email Receipt (FutAdmin to League Owner)
+            try:
+                liga = Liga.query.get(nuevo_pago.liga_id)
+                if liga:
+                    owner = Usuario.query.filter_by(liga_id=liga.id, rol='dueño_liga').first()
+                    if owner and owner.email:
+                        ticket_data = {
+                            "is_futadmin": True,
+                            "folio": f"COMB-PAY-{nuevo_pago.id}-{datetime.now().strftime('%y%m%d')}",
+                            "fecha": datetime.now().strftime('%d/%m/%Y %H:%M'),
+                            "liga_nombre": liga.nombre,
+                            "monto_abonado": float(nuevo_pago.monto),
+                            "tipo": f"Renovación de Suscripción",
+                            "metodo": nuevo_pago.metodo or "Transferencia",
+                            "mes_pagado": nuevo_pago.mes_pagado
+                        }
+                        _trigger_receipt_email(ticket_data, owner.email, owner.nombre)
+            except Exception as e_hook:
+                print(f"Error in hook de correo (combo renewal): {e_hook}")
+
             return jsonify(nuevo_pago.to_dict()), 201
         except Exception as e:
             db.session.rollback()

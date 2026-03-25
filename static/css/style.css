@@ -2165,3 +2165,9 @@ textarea.full-textarea:focus {
     50% { border-color: rgba(255, 68, 68, 0.5); }
     100% { border-color: rgba(255, 68, 68, 0.2); }
 }
+
+@keyframes pulse-green {
+    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 255, 136, 0.7); }
+    70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(0, 255, 136, 0); }
+    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 255, 136, 0); }
+}

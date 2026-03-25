@@ -628,6 +628,13 @@ export class FinanceModule {
 
         content.innerHTML = `
             <div style="text-align: center; font-family: 'Inter', sans-serif; color: #fff; padding: 10px;">
+                <div style="display: flex; justify-content: center; margin-bottom: 10px;">
+                    <div style="background: rgba(0, 255, 136, 0.1); border: 1px solid rgba(0, 255, 136, 0.2); border-radius: 20px; padding: 5px 15px; display: inline-flex; align-items: center; gap: 8px; animation: pulse-green 2s infinite;">
+                        <span style="font-size: 1rem;">📧</span>
+                        <span style="font-size: 0.7rem; color: #00ff88; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">Recibo enviado por correo</span>
+                    </div>
+                </div>
+
                 <div style="display: inline-block; background: ${color}20; color: ${color}; padding: 15px; border-radius: 50%; margin-bottom: 15px; font-size: 2rem; border: 1px solid ${color}40;">
                     ${icon}
                 </div>

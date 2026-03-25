@@ -3,6 +3,7 @@ from flask import Blueprint, jsonify, request, session, redirect, url_for, rende
 
 from models import db, Usuario, Liga, Cancha, Configuracion, bcrypt
 from datetime import datetime
+from logic.receipts import generate_receipt_pdf, send_receipt_email
 
 users_bp = Blueprint('users', __name__)
 
@@ -439,6 +440,35 @@ def handle_combo_creation():
             u_sub = Usuario.query.filter_by(liga_id=nueva_liga.id, rol=sub_rol, nombre=sub_nombre).first()
             if u_sub:
                 cuentas_ticket.append({"email": u_sub.email, "rol": sub_rol})
+
+        # --- ENVIAR RECIBO POR CORREO ---
+        try:
+            # Preparar datos para el PDF
+            from datetime import datetime
+            ticket_data = {
+                "is_futadmin": True,
+                "folio": f"COMB-{nueva_liga.id}-{datetime.now().strftime('%y%m%d')}",
+                "fecha": datetime.now().strftime('%d/%m/%Y %H:%M'),
+                "liga_nombre": nueva_liga.nombre,
+                "monto_abonado": float(monto_pactado),
+                "tipo": f"Suscripción - Plan {rol_owner.replace('_', ' ').title()}",
+                "metodo": "Transferencia",
+                "mes_pagado": mes_actual
+            }
+            
+            pdf_path = f"/tmp/recibo_combo_{nueva_liga.id}.pdf"
+            generate_receipt_pdf(ticket_data, pdf_path)
+            
+            subject = f"Confirmación de Pago - FutAdmin - {nueva_liga.nombre}"
+            body = f"Hola {data.get('owner_nombre', 'Administrador')},\n\nGracias por confiar en FutAdmin. Adjuntamos el comprobante de pago de tu suscripción para la liga {nueva_liga.nombre}.\n\nDetalles:\n- Mes: {mes_actual}\n- Plan: {rol_owner}\n\nEste pago activa tus servicios y el de tus subcuentas asociadas.\n\nSaludos,\nEquipo FutAdmin"
+            
+            send_receipt_email(data['owner_email'], subject, body, pdf_path)
+            
+            # Limpiar archivo temporal
+            if os.path.exists(pdf_path):
+                os.remove(pdf_path)
+        except Exception as e:
+            print(f"Error en hook de correo (combo): {e}")
 
         return jsonify({
             'success': True, 
