@@ -12,6 +12,139 @@ import base64
 import requests
 
 RESEND_API_URL = "https://api.resend.com/emails"
+FUTADMIN_LOGO_URL = "https://res.cloudinary.com/dzqgrgfnf/image/upload/v1742861131/logos_futadmin/futadmin_logo_circular.png"
+FUTADMIN_INSTAGRAM = "https://www.instagram.com/futadmin.tj/"
+FUTADMIN_WEBSITE = "https://futadmin.com.mx"
+
+
+def build_receipt_email_html(nombre, liga_nombre, equipo, torneo, tipo, monto_abonado,
+                              monto_pactado=0, total_pagado=0, saldo_pendiente=0,
+                              metodo="Efectivo", folio="N/A", fecha=None, partido=None, is_futadmin=False):
+    """Genera un cuerpo HTML profesional para el correo de recibo de pago con firma FutAdmin."""
+    fecha_str = fecha or datetime.now().strftime('%d/%m/%Y %H:%M')
+    saldo_color = "#e74c3c" if saldo_pendiente > 0 else "#27ae60"
+
+    partido_row = ""
+    if partido:
+        partido_row = f"""
+              <tr>
+                <td style="padding:8px 12px;color:#555;border-bottom:1px solid #f0f0f0;">⚽ Partido</td>
+                <td style="padding:8px 12px;font-weight:600;border-bottom:1px solid #f0f0f0;">{partido.get('rivales','N/A')} (J{partido.get('jornada','?')})</td>
+              </tr>"""
+
+    financial_rows = f"""
+              <tr>
+                <td style="padding:8px 12px;color:#555;border-bottom:1px solid #f0f0f0;">💵 Monto Abonado</td>
+                <td style="padding:8px 12px;font-weight:700;color:#27ae60;border-bottom:1px solid #f0f0f0;">${monto_abonado:,.2f} ({metodo})</td>
+              </tr>"""
+    if not is_futadmin:
+        financial_rows += f"""
+              <tr>
+                <td style="padding:8px 12px;color:#555;border-bottom:1px solid #f0f0f0;background:#fafafa;">📋 Monto Pactado</td>
+                <td style="padding:8px 12px;font-weight:600;border-bottom:1px solid #f0f0f0;background:#fafafa;">${monto_pactado:,.2f}</td>
+              </tr>
+              <tr>
+                <td style="padding:8px 12px;color:#555;border-bottom:1px solid #f0f0f0;">✅ Total Pagado</td>
+                <td style="padding:8px 12px;font-weight:600;border-bottom:1px solid #f0f0f0;">${total_pagado:,.2f}</td>
+              </tr>
+              <tr>
+                <td style="padding:8px 12px;color:#555;">🔴 Saldo Pendiente</td>
+                <td style="padding:8px 12px;font-weight:700;color:{saldo_color};">${saldo_pendiente:,.2f}</td>
+              </tr>"""
+
+    return f"""<!DOCTYPE html>
+<html lang="es">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f4f6f8;font-family:'Segoe UI',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f8;padding:30px 0;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.08);">
+        <!-- HEADER -->
+        <tr>
+          <td style="background:linear-gradient(135deg,#1a1a2e 0%,#16213e 60%,#0f3460 100%);padding:32px 40px;text-align:center;">
+            <img src="{FUTADMIN_LOGO_URL}" alt="FutAdmin" width="80" height="80" style="border-radius:50%;border:3px solid #00d4aa;margin-bottom:12px;display:block;margin-left:auto;margin-right:auto;"><br>
+            <span style="color:#ffffff;font-size:22px;font-weight:700;letter-spacing:1px;">FutAdmin</span><br>
+            <span style="color:#00d4aa;font-size:13px;letter-spacing:2px;text-transform:uppercase;">Recibo Oficial de Pago</span>
+          </td>
+        </tr>
+        <!-- FOLIO BANNER -->
+        <tr>
+          <td style="background:#00d4aa;padding:10px 40px;text-align:center;">
+            <span style="color:#1a1a2e;font-size:13px;font-weight:700;">Folio: {folio} &nbsp;|&nbsp; {fecha_str}</span>
+          </td>
+        </tr>
+        <!-- GREETING -->
+        <tr>
+          <td style="padding:30px 40px 10px;">
+            <p style="margin:0;font-size:16px;color:#333;">Hola <strong>{nombre}</strong>,</p>
+            <p style="margin:12px 0 0;font-size:14px;color:#666;line-height:1.6;">
+              Adjuntamos el recibo oficial correspondiente a tu pago en <strong>{liga_nombre}</strong>. 
+              Guarda este correo como comprobante de tu transacción.
+            </p>
+          </td>
+        </tr>
+        <!-- PAYMENT DETAILS -->
+        <tr>
+          <td style="padding:20px 40px;">
+            <p style="margin:0 0 12px;font-size:15px;font-weight:700;color:#1a1a2e;border-left:4px solid #00d4aa;padding-left:10px;">Detalles del Pago</p>
+            <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e8e8e8;border-radius:8px;overflow:hidden;font-size:14px;">
+              <tr>
+                <td style="padding:8px 12px;color:#555;border-bottom:1px solid #f0f0f0;background:#fafafa;width:45%;">🏆 Liga</td>
+                <td style="padding:8px 12px;font-weight:600;border-bottom:1px solid #f0f0f0;background:#fafafa;">{liga_nombre}</td>
+              </tr>
+              <tr>
+                <td style="padding:8px 12px;color:#555;border-bottom:1px solid #f0f0f0;">👕 Equipo</td>
+                <td style="padding:8px 12px;font-weight:600;border-bottom:1px solid #f0f0f0;">{equipo}</td>
+              </tr>
+              <tr>
+                <td style="padding:8px 12px;color:#555;border-bottom:1px solid #f0f0f0;background:#fafafa;">🗂️ Torneo</td>
+                <td style="padding:8px 12px;font-weight:600;border-bottom:1px solid #f0f0f0;background:#fafafa;">{torneo}</td>
+              </tr>
+              <tr>
+                <td style="padding:8px 12px;color:#555;border-bottom:1px solid #f0f0f0;">📌 Concepto</td>
+                <td style="padding:8px 12px;font-weight:600;border-bottom:1px solid #f0f0f0;">{tipo}</td>
+              </tr>
+              {partido_row}
+            </table>
+          </td>
+        </tr>
+        <!-- FINANCIAL SUMMARY -->
+        <tr>
+          <td style="padding:0 40px 20px;">
+            <p style="margin:0 0 12px;font-size:15px;font-weight:700;color:#1a1a2e;border-left:4px solid #0f3460;padding-left:10px;">Resumen Financiero</p>
+            <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e8e8e8;border-radius:8px;overflow:hidden;font-size:14px;">
+              {financial_rows}
+            </table>
+          </td>
+        </tr>
+        <!-- PDF NOTE -->
+        <tr>
+          <td style="padding:0 40px 24px;">
+            <div style="background:#fff8e1;border:1px solid #ffe082;border-radius:8px;padding:14px 18px;font-size:13px;color:#795548;">
+              📎 <strong>PDF adjunto:</strong> El recibo oficial en PDF está adjunto. Descárgalo como comprobante físico.
+            </div>
+          </td>
+        </tr>
+        <!-- FOOTER / FIRMA -->
+        <tr>
+          <td style="background:#1a1a2e;padding:28px 40px;text-align:center;">
+            <img src="{FUTADMIN_LOGO_URL}" alt="FutAdmin" width="52" height="52" style="border-radius:50%;border:2px solid #00d4aa;display:block;margin:0 auto 10px auto;">
+            <p style="margin:0;color:#00d4aa;font-size:16px;font-weight:700;">FutAdmin</p>
+            <p style="margin:4px 0 0;color:#aaa;font-size:12px;">Plataforma de Gestión Deportiva</p>
+            <p style="margin:10px 0 0;">
+              <a href="{FUTADMIN_WEBSITE}" style="color:#00d4aa;font-size:12px;text-decoration:none;">🌐 futadmin.com.mx</a>
+              &nbsp;&nbsp;|&nbsp;&nbsp;
+              <a href="{FUTADMIN_INSTAGRAM}" style="color:#e1306c;font-size:12px;text-decoration:none;">📸 @futadmin.tj</a>
+            </p>
+            <hr style="border:none;border-top:1px solid #333;margin:16px 0;">
+            <p style="margin:0;color:#555;font-size:11px;">Este es un comprobante digital generado automáticamente. No responder a este correo.</p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>"""
 
 def generate_receipt_pdf(data, filename):
     """
