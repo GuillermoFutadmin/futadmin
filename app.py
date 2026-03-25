@@ -1423,7 +1423,7 @@ def resend_pago_receipt(id):
 
     ticket_data = {
         "pago_id": pago.id,
-        "folio": f"RESEND-{pago.id}",
+        "folio": f"RESEND-{pago.id}-{datetime.now().strftime('%y%m%d')}",
         "fecha": pago.fecha.strftime('%d/%m/%Y %H:%M'),
         "equipo": ins.equipo.nombre,
         "torneo": torneo.nombre,
@@ -1435,14 +1435,34 @@ def resend_pago_receipt(id):
         "reglamento": torneo.reglamento or ""
     }
     
-    # Usar el email que tiene actualmente el equipo en la BD
     destinatario = ins.equipo.email
     if not destinatario:
         return jsonify({"error": "El equipo no tiene un correo registrado."}), 400
         
-    _trigger_receipt_email(ticket_data, destinatario, ins.equipo.responsable or "Delegado")
-    
-    return jsonify({"success": True, "message": f"Recibo enviado a {destinatario}"})
+    # Llamada Síncrona para depuración directa
+    try:
+        from logic.receipts import generate_receipt_pdf, send_receipt_email
+        import os, tempfile
+        
+        temp_dir = tempfile.gettempdir()
+        pdf_path = os.path.join(temp_dir, f"resend_{pago.id}.pdf")
+        
+        generate_receipt_pdf(ticket_data, pdf_path)
+        
+        subject = f"Re-envío: Recibo de Pago - {ins.equipo.nombre}"
+        body = f"Hola {ins.equipo.responsable or 'Delegado'},\n\nRe-enviamos el recibo correspondiente a tu pago solicitado.\n\nSaludos,\nAdministración"
+
+        success = send_receipt_email(destinatario, subject, body, pdf_path)
+        
+        if os.path.exists(pdf_path):
+            os.remove(pdf_path)
+            
+        if success:
+            return jsonify({"success": True, "message": f"¡Recibo re-enviado con éxito a {destinatario}!"})
+        else:
+            return jsonify({"error": "El servidor SMTP rechazó el envío. Verifique su bandeja de salida o carpetas de spam."}), 500
+    except Exception as e:
+        return jsonify({"error": f"Error técnico al generar el envío: {str(e)}"}), 500
 
 @app.route('/api/pagos/<int:id>', methods=['DELETE'])
 @csrf.exempt
