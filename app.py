@@ -15,7 +15,7 @@ from PIL import Image
 load_dotenv()
 
 # [REMOVED] Fallback SMTP credentials for security. Now exclusively using environment variables / API keys.
-    os.environ['MAIL_DEFAULT_SENDER'] = 'gdiaz@futadmin.com.mx'
+os.environ['MAIL_DEFAULT_SENDER'] = 'gdiaz@futadmin.com.mx'
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
