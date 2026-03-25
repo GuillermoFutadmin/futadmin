@@ -442,6 +442,7 @@ def handle_combo_creation():
                 cuentas_ticket.append({"email": u_sub.email, "rol": sub_rol})
 
         # --- ENVIAR RECIBO POR CORREO ---
+        try:
             from logic.receipts import generate_receipt_pdf, send_receipt_email, build_receipt_email_html
             import os
             
