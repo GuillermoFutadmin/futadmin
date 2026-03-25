@@ -1110,17 +1110,19 @@
         }
 
         async function resumeMatchFromMenu(matchId) {
-            tg.HapticFeedback.impactOccurred('medium');
+            if (tg.isVersionAtLeast('6.1')) tg.HapticFeedback.impactOccurred('medium');
             try {
                 // Primero obtenemos el objeto completo del partido
                 const res = await fetch(`/api/telegram/match/${matchId}`);
                 if (!res.ok) throw new Error("No se pudo cargar el partido");
                 const match = await res.json();
                 
-                activeMatch = match;
                 selectedTorneoId = match.torneo_id;
                 
-                showMatchView();
+                // openMatch() carga matchPlayers con estado de asistencia (presente)
+                // Es crítico llamarlo ANTES de mostrar la vista para que los jugadores
+                // estén disponibles al registrar goles o tarjetas
+                await openMatch(match);
             } catch (e) {
                 alert("Error al retomar el partido: " + e.message);
             }
