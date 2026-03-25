@@ -442,7 +442,9 @@ def handle_combo_creation():
                 cuentas_ticket.append({"email": u_sub.email, "rol": sub_rol})
 
         # --- ENVIAR RECIBO POR CORREO ---
-        try:
+            from logic.receipts import generate_receipt_pdf, send_receipt_email, build_receipt_email_html
+            import os
+            
             # Preparar datos para el PDF
             from datetime import datetime
             ticket_data = {
@@ -456,11 +458,26 @@ def handle_combo_creation():
                 "mes_pagado": mes_actual
             }
             
-            pdf_path = f"/tmp/recibo_combo_{nueva_liga.id}.pdf"
+            import tempfile
+            temp_dir = tempfile.gettempdir()
+            pdf_path = os.path.join(temp_dir, f"recibo_combo_{nueva_liga.id}.pdf")
             generate_receipt_pdf(ticket_data, pdf_path)
             
             subject = f"Confirmación de Pago - FutAdmin - {nueva_liga.nombre}"
-            body = f"Hola {data.get('owner_nombre', 'Administrador')},\n\nGracias por confiar en FutAdmin. Adjuntamos el comprobante de pago de tu suscripción para la liga {nueva_liga.nombre}.\n\nDetalles:\n- Mes: {mes_actual}\n- Plan: {rol_owner}\n\nEste pago activa tus servicios y el de tus subcuentas asociadas.\n\nSaludos,\nEquipo FutAdmin"
+            nombre_u = data.get('owner_nombre', 'Administrador')
+            
+            body = build_receipt_email_html(
+                nombre=nombre_u,
+                liga_nombre=nueva_liga.nombre,
+                equipo="Suscripción FutAdmin",
+                torneo=f"Plan {rol_owner}",
+                tipo=ticket_data['tipo'],
+                monto_abonado=float(monto_pactado),
+                metodo="Transferencia",
+                folio=ticket_data['folio'],
+                fecha=ticket_data['fecha'],
+                is_futadmin=True
+            )
             
             send_receipt_email(data['owner_email'], subject, body, pdf_path)
             

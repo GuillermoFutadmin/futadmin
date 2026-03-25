@@ -61,10 +61,10 @@ def build_receipt_email_html(nombre, liga_nombre, equipo, torneo, tipo, monto_ab
       <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.08);">
         <!-- HEADER -->
         <tr>
-          <td style="background:linear-gradient(135deg,#1a1a2e 0%,#16213e 60%,#0f3460 100%);padding:20px 40px;text-align:center;">
-            <img src="{FUTADMIN_LOGO_URL}" alt="FutAdmin" width="70" height="70" style="border-radius:50%;border:2px solid #00d4aa;margin-bottom:8px;display:block;margin-left:auto;margin-right:auto;">
-            <span style="color:#ffffff;font-size:20px;font-weight:700;letter-spacing:1px;display:block;margin-top:4px;">FutAdmin</span>
-            <span style="color:#00d4aa;font-size:11px;letter-spacing:2px;text-transform:uppercase;display:block;margin-top:2px;">Recibo Oficial de Pago</span>
+          <td style="background-color:#1a1a2e;background:linear-gradient(135deg,#1a1a2e 0%,#16213e 60%,#0f3460 100%);padding:15px 40px;text-align:center;">
+            <img src="{FUTADMIN_LOGO_URL}" alt="FutAdmin" width="60" height="60" style="border-radius:50%;border:2px solid #00d4aa;margin-bottom:6px;display:block;margin-left:auto;margin-right:auto;">
+            <span style="color:#ffffff;font-size:18px;font-weight:700;letter-spacing:1px;display:block;margin-top:2px;">FutAdmin</span>
+            <span style="color:#ffffff;font-size:11px;letter-spacing:2px;text-transform:uppercase;display:block;margin-top:2px;opacity:0.9;">Recibo Oficial de Pago</span>
           </td>
         </tr>
         <!-- FOLIO BANNER -->
@@ -75,21 +75,21 @@ def build_receipt_email_html(nombre, liga_nombre, equipo, torneo, tipo, monto_ab
         </tr>
         <!-- GREETING -->
         <tr>
-          <td style="padding:20px 40px 10px;">
-            <p style="margin:0;font-size:16px;color:#333;">Hola <strong>{nombre}</strong>,</p>
-            <p style="margin:8px 0 0;font-size:14px;color:#666;line-height:1.5;">
-              Adjuntamos el recibo oficial correspondiente a tu pago en <strong>{liga_nombre}</strong>. 
+          <td style="padding:15px 40px 10px;">
+            <p style="margin:0;font-size:15px;color:#333;">Hola <strong>{nombre}</strong>,</p>
+            <p style="margin:5px 0 0;font-size:14px;color:#666;line-height:1.4;">
+              Adjuntamos el recibo oficial de tu pago en <strong>{liga_nombre}</strong>. 
             </p>
           </td>
         </tr>
         <!-- PAYMENT DETAILS -->
         <tr>
-          <td style="padding:20px 40px;">
-            <p style="margin:0 0 12px;font-size:15px;font-weight:700;color:#1a1a2e;border-left:4px solid #00d4aa;padding-left:10px;">Detalles del Pago</p>
-            <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e8e8e8;border-radius:8px;overflow:hidden;font-size:14px;">
+          <td style="padding:10px 40px;">
+            <p style="margin:0 0 8px;font-size:14px;font-weight:700;color:#1a1a2e;border-left:4px solid #00d4aa;padding-left:10px;">Detalles del Pago</p>
+            <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e8e8e8;border-radius:8px;overflow:hidden;font-size:13px;">
               <tr>
-                <td style="padding:8px 12px;color:#555;border-bottom:1px solid #f0f0f0;background:#fafafa;width:45%;">🏆 Liga</td>
-                <td style="padding:8px 12px;font-weight:600;border-bottom:1px solid #f0f0f0;background:#fafafa;">{liga_nombre}</td>
+                <td style="padding:6px 12px;color:#555;border-bottom:1px solid #f0f0f0;background:#fafafa;width:45%;">🏆 Liga</td>
+                <td style="padding:6px 12px;font-weight:600;border-bottom:1px solid #f0f0f0;background:#fafafa;">{liga_nombre}</td>
               </tr>
               <tr>
                 <td style="padding:8px 12px;color:#555;border-bottom:1px solid #f0f0f0;">👕 Equipo</td>
@@ -109,9 +109,9 @@ def build_receipt_email_html(nombre, liga_nombre, equipo, torneo, tipo, monto_ab
         </tr>
         <!-- FINANCIAL SUMMARY -->
         <tr>
-          <td style="padding:0 40px 20px;">
-            <p style="margin:0 0 12px;font-size:15px;font-weight:700;color:#1a1a2e;border-left:4px solid #0f3460;padding-left:10px;">Resumen Financiero</p>
-            <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e8e8e8;border-radius:8px;overflow:hidden;font-size:14px;">
+          <td style="padding:0 40px 15px;">
+            <p style="margin:0 0 8px;font-size:14px;font-weight:700;color:#1a1a2e;border-left:4px solid #0f3460;padding-left:10px;">Resumen Financiero</p>
+            <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e8e8e8;border-radius:8px;overflow:hidden;font-size:13px;">
               {financial_rows}
             </table>
           </td>
@@ -221,7 +221,7 @@ def generate_receipt_pdf(data, filename):
         ('BOTTOMPADDING', (0,0),(-1,-1), 8),
     ]))
     story.append(folio_table)
-    story.append(Spacer(1, 14))
+    story.append(Spacer(1, 8))
 
     # --- SALUDO ---
     equipo_nombre = data.get('equipo', '')
@@ -231,7 +231,7 @@ def generate_receipt_pdf(data, filename):
         f"Este documento acredita el pago realizado por el equipo <b>{equipo_nombre}</b> "
         f"en la liga <b>{liga_nombre}</b>. Consérvelo como comprobante oficial.",
         greeting_style))
-    story.append(Spacer(1, 12))
+    story.append(Spacer(1, 8))
 
     # --- SECCIÓN: Detalles del Pago ---
     sec_style = ParagraphStyle('SecTitle', fontName='Helvetica-Bold', fontSize=12,
