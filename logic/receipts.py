@@ -388,13 +388,14 @@ def generate_receipt_pdf(data, filename):
             story.append(sec_banner3)
             story.append(Spacer(1, 4))
             
+            reg_style = ParagraphStyle('Reg', fontName='Helvetica', fontSize=8,
+                                       textColor=rl_colors.HexColor('#444444'), leading=11)
+
             premios = data.get('premios', '')
             if premios:
                 story.append(Paragraph(f"<b>PREMIOS:</b> {premios}", reg_style))
                 story.append(Spacer(1, 6))
 
-            reg_style = ParagraphStyle('Reg', fontName='Helvetica', fontSize=8,
-                                       textColor=rl_colors.HexColor('#444444'), leading=11)
             story.append(Paragraph(text.replace('\n', '<br/>'), reg_style))
             story.append(Spacer(1, 10))
 
