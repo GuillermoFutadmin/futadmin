@@ -1010,7 +1010,7 @@
         function showView(id) {
             console.log("==> showView(", id, ")");
             // checkin-view es position:fixed, se maneja por separado como overlay
-            const views = ['login-view', 'menu-view', 'tournament-view', 'list-view', 'match-view', 'halftime-view', 'registration-view', 'payments-view', 'ids-lookup-view', 'drilldown-view', 'submenu-view', 'payment-form-view', 'ticket-view', 'arbitraje-sync-view', 'match-explorer-view'];
+            const views = ['login-view', 'menu-view', 'tournament-view', 'list-view', 'match-view', 'halftime-view', 'registration-view', 'payments-view', 'ids-lookup-view', 'drilldown-view', 'submenu-view', 'payment-form-view', 'ticket-view', 'arbitraje-sync-view', 'match-explorer-view', 'inscripcion-sync-view'];
             views.forEach(v => {
                 const el = document.getElementById(v);
                 if (el) {
@@ -2543,6 +2543,9 @@
             if (type === 'Arbitraje') {
                 showView('arbitraje-sync-view');
                 loadTWAArbitrajesFilter();
+            } else if (type === 'Inscripción') {
+                showView('inscripcion-sync-view');
+                loadTWAInscripcionesFilter();
             } else {
                 drillPurpose = 'payments';
                 startDrilldown('sede');
@@ -2647,6 +2650,94 @@
 
         function filterTWAArbitrajes() {
             renderTWAArbitrajes();
+        }
+
+        async function loadTWAInscripcionesFilter() {
+            try {
+                const res = await fetch(`/api/telegram/tours?liga_id=${currentUser.liga_id || ''}&rol=${currentUser.rol}&_v=${Date.now()}`);
+                const torneos = await res.json();
+                const sel = document.getElementById('twa-inscripcion-torneo');
+                sel.innerHTML = '<option value="" style="color:#000; background:#fff;">Selecciona un torneo...</option>' + 
+                    torneos.map(t => `<option value="${t.id}" style="color:#000; background:#fff;">${t.nombre}</option>`).join('');
+                document.getElementById('twa-inscripciones-container').innerHTML = '<div style="text-align:center; padding:20px; color:var(--muted);">Selecciona un torneo para ver los equipos.</div>';
+                twaInscripcionesData = [];
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        let twaInscripcionesData = [];
+        async function loadTWAInscripcionesData() {
+            const tId = document.getElementById('twa-inscripcion-torneo').value;
+            const container = document.getElementById('twa-inscripciones-container');
+            if (!tId) {
+                container.innerHTML = '<div style="text-align:center; padding:20px; color:var(--muted);">Selecciona un torneo para ver los equipos.</div>';
+                twaInscripcionesData = [];
+                return;
+            }
+            container.innerHTML = '<div style="text-align:center; padding:20px; color:var(--primary);">Cargando equipos...</div>';
+            try {
+                const res = await fetch(`/api/inscripciones?torneo_id=${tId}&per_page=1000`);
+                let data = await res.json();
+                twaInscripcionesData = data.items || data || [];
+                renderTWAInscripciones();
+            } catch (e) {
+                console.error(e);
+                container.innerHTML = '<div style="text-align:center; padding:20px; color:var(--error);">Error al cargar.</div>';
+            }
+        }
+
+        function filterTWAInscripciones() {
+            renderTWAInscripciones();
+        }
+
+        function renderTWAInscripciones() {
+            const container = document.getElementById('twa-inscripciones-container');
+            const q = document.getElementById('twa-inscripcion-search').value.toLowerCase();
+            
+            const filtered = twaInscripcionesData.filter(ins => {
+                const eq = ins.equipo_nombre || (ins.equipo && ins.equipo.nombre) || "EQUIPO";
+                return eq.toLowerCase().includes(q);
+            });
+
+            if (filtered.length === 0) {
+                container.innerHTML = '<div style="text-align:center; padding:20px; color:var(--muted);">No se encontraron equipos.</div>';
+                return;
+            }
+
+            container.innerHTML = filtered.map(ins => {
+                const eqName = ins.equipo_nombre || (ins.equipo && ins.equipo.nombre) || "EQUIPO";
+                return `
+                    <div class="card" style="padding:15px; display:flex; justify-content:space-between; align-items:center; border-left:4px solid #6366f1;">
+                        <div style="flex:1;">
+                            <div style="font-weight:700; font-size:1rem;">${eqName.toUpperCase()}</div>
+                            <div style="font-size:0.7rem; color:var(--muted); margin-top:2px;">INSCRIPCIÓN PACTADA: $${parseFloat(ins.monto_pactado_inscripcion || 0).toFixed(2)}</div>
+                            <div style="font-size:0.7rem; color:var(--secondary); font-weight:800; margin-top:2px;">SALDO: $${parseFloat(ins.saldo_pendiente || 0).toFixed(2)}</div>
+                        </div>
+                        <button class="btn btn-primary" onclick="openPaymentForm(${ins.equipo_id || (ins.equipo && ins.equipo.id)}, 'Inscripción')" style="width:auto; padding:8px 15px; font-size:0.8rem; background:#6366f1;">PAGAR</button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function startPaymentFromSync(type, equipo) {
+            currentPaymentType = type;
+            currentPaymentTeamId = equipo.id;
+            
+            showView('payment-form-view');
+            document.getElementById('pay-title').innerText = `PAGAR ${type.toUpperCase()}`;
+            document.getElementById('pay-team-name').innerText = equipo.nombre.toUpperCase();
+            document.getElementById('pay-amount').value = '';
+            document.getElementById('pay-photo-url').value = '';
+            
+            const matchRow = document.getElementById('pay-match-row');
+            if (type === 'Arbitraje') {
+                matchRow.style.display = 'block';
+                loadPaymentContext(equipo.id, type);
+            } else {
+                matchRow.style.display = 'none';
+                document.getElementById('pay-match-id').value = '';
+            }
         }
 
         function renderTWAArbitrajes() {
@@ -3116,6 +3207,10 @@
                 backBtn.setAttribute('onclick', "showView('arbitraje-sync-view')");
                 if (formCard) formCard.style.borderTopColor = 'var(--warning)';
                 document.getElementById('pay-type-label').style.color = 'var(--warning)';
+            } else if (type === 'Inscripción') {
+                backBtn.setAttribute('onclick', "showView('inscripcion-sync-view')");
+                if (formCard) formCard.style.borderTopColor = 'var(--secondary)';
+                document.getElementById('pay-type-label').style.color = 'var(--primary)';
             } else {
                 backBtn.setAttribute('onclick', "showView('drilldown-view')");
                 if (formCard) formCard.style.borderTopColor = 'var(--secondary)';
@@ -3779,6 +3874,27 @@
         </div>
 
         <div id="twa-arbitrajes-container" style="display: flex; flex-direction: column; gap: 15px;">
+            <div style="text-align:center; padding:20px; color:var(--muted);">Selecciona un torneo para ver los equipos.</div>
+        </div>
+    </div>
+
+    <div id="inscripcion-sync-view" class="view" style="display: none; padding: 16px;">
+        <div class="header">
+            <button class="btn btn-outline" onclick="showSubmenu('payments')" style="width: auto; padding: 6px 12px;">← VOLVER</button>
+            <h3>PAGO INSCRIPCIÓN</h3>
+        </div>
+        
+        <div class="card" style="padding: 15px; margin-bottom: 20px;">
+            <div style="font-size:0.7rem; color:var(--muted); font-weight:800; margin-bottom:5px;">TORNEO</div>
+            <select id="twa-inscripcion-torneo" class="btn btn-outline" style="width:100%; text-align:left; font-size:1rem; border-color:rgba(255,255,255,0.2); margin-bottom: 15px;" onchange="loadTWAInscripcionesData()">
+                <option value="">Cargando torneos...</option>
+            </select>
+            
+            <div style="font-size:0.7rem; color:var(--muted); font-weight:800; margin-bottom:5px;">BUSCAR EQUIPO</div>
+            <input type="text" id="twa-inscripcion-search" placeholder="Ingresa nombre de equipo..." class="btn btn-outline" style="text-align:left; font-size:1rem; border-color:rgba(255,255,255,0.2);" oninput="filterTWAInscripciones()">
+        </div>
+
+        <div id="twa-inscripciones-container" style="display: flex; flex-direction: column; gap: 15px;">
             <div style="text-align:center; padding:20px; color:var(--muted);">Selecciona un torneo para ver los equipos.</div>
         </div>
     </div>

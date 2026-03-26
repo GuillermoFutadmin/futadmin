@@ -741,10 +741,15 @@ def _trigger_telegram_receipt_email(pago, equipo, inscripcion, torneo):
             "total_pagado": float(pagado_ins) if pago.tipo == 'Inscripcion' else float(pagado_arb),
             "saldo_pendiente": float(monto_pactado - pagado_ins) if pago.tipo == 'Inscripcion' else 0.0,
             "partido": partido_info,
+            "tipo_torneo": torneo.tipo or torneo.formato or "Liga" if torneo else "Liga",
+            "horarios": f"{torneo.dias_juego or ''} {torneo.horario_juego or ''}".strip() or "Por definir" if torneo else "Por definir",
+            "formato": torneo.formato or "Torneo" if torneo else "Torneo",
+            "fecha_inicio_torneo": torneo.fecha_inicio.strftime('%d/%m/%Y') if torneo and getattr(torneo, 'fecha_inicio', None) else "Pendiente",
+            "organiza": torneo.liga.nombre if torneo and getattr(torneo, 'liga', None) else "FutAdmin",
+            "contacto": torneo.liga.contacto if torneo and getattr(torneo, 'liga', None) else "No disponible",
             "premios": torneo.premios if torneo and getattr(torneo, 'premios', None) else "",
             "reglamento": torneo.reglamento if torneo and getattr(torneo, 'reglamento', None) else "",
-            "clausulas": (torneo.clausulas if torneo and getattr(torneo, 'clausulas', None) else "") + ("\n\n" + reglas_cancha if reglas_cancha else ""),
-            "fecha_inicio_torneo": torneo.fecha_inicio.strftime('%d/%m/%Y') if torneo and getattr(torneo, 'fecha_inicio', None) else "Pendiente"
+            "clausulas": (torneo.clausulas if torneo and getattr(torneo, 'clausulas', None) else "") + ("\n\n" + reglas_cancha if reglas_cancha else "")
         }
         
         from logic.receipts import trigger_receipt_email_async
