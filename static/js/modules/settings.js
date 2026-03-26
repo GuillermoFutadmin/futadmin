@@ -520,7 +520,14 @@ export class SettingsModule {
     }
 
     async updateLigaExtras(ligaId, field, delta) {
-        if (!confirm(`¿Deseas modificar los espacios extra para esta organización?\nRecuerda que esto afecta la capacidad permitida.`)) return;
+        const isSede = field === 'extra_canchas';
+        const confirmMsg = isSede && delta > 0
+            ? `¿Deseas agregar 1 Sede Extra ($290)?\n✅ Incluye automáticamente 5 Ligas adicionales (combo base).`
+            : isSede && delta < 0
+            ? `¿Deseas quitar 1 Sede Extra?\n⚠️ Esto también quitará 5 Ligas del paquete.`
+            : `¿Deseas modificar los espacios extra para esta organización?\nRecuerda que esto afecta la capacidad permitida.`;
+
+        if (!confirm(confirmMsg)) return;
         
         const liga = this.ligas.find(l => l.id == ligaId);
         if (!liga) return;
@@ -539,11 +546,17 @@ export class SettingsModule {
             });
             
             if (res.success) {
-                Core.showNotification(`Expansión de ${field.replace('_', ' ')} exitosa`);
+                const notif = isSede && delta > 0
+                    ? `✅ Sede extra añadida (+5 Ligas incluidas en el paquete)`
+                    : isSede && delta < 0
+                    ? `Sede extra removida (-5 Ligas del paquete)`
+                    : `Expansión de ${field.replace('_', ' ')} exitosa`;
+                Core.showNotification(notif);
                 
-                // Calcular costo para el ticket
-                const cost = field === 'extra_canchas' ? 290 : 85;
-                this.printExpansionTicket(res.liga || liga, field, delta, cost);
+                // Calcular costo para el ticket (solo si es expansión de sede)
+                if (isSede && delta > 0) {
+                    this.printExpansionTicket(res.liga || liga, field, delta, 290);
+                }
                 
                 await this.ui.loadInitialStats(); // Actualizar límites globales
                 await this.loadLigas();       // Actualizar datos de ligas
@@ -557,6 +570,7 @@ export class SettingsModule {
             alert('Error técnico al actualizar extras');
         }
     }
+
 
     async loadComboPayments() {
         try {

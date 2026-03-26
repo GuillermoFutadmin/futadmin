@@ -3538,10 +3538,27 @@ def update_liga_extras(id):
     
     if 'extra_canchas' in data:
         new_val = max(0, int(data['extra_canchas']))
-        if new_val > (liga.extra_canchas or 0):
-            diff = new_val - (liga.extra_canchas or 0)
+        old_val = liga.extra_canchas or 0
+        if new_val > old_val:
+            diff = new_val - old_val
+            # 1 sede extra = $290 (incluye 5 ligas por ser el combo base)
             exp = LigaExpansion(liga_id=liga.id, tipo='extra_canchas', cantidad=diff, monto_adicional=diff * 290)
             db.session.add(exp)
+            # Auto-agregar 5 ligas por cada sede extra (combo incluido, sin costo adicional)
+            ligas_bonus = diff * 5
+            liga.extra_torneos = (liga.extra_torneos or 0) + ligas_bonus
+            exp_torneos = LigaExpansion(
+                liga_id=liga.id,
+                tipo='extra_torneos',
+                cantidad=ligas_bonus,
+                monto_adicional=0  # Incluido en el paquete de sede
+            )
+            db.session.add(exp_torneos)
+        elif new_val < old_val:
+            # Al quitar una sede, también quitar 5 ligas bonus
+            diff = old_val - new_val
+            ligas_bonus = diff * 5
+            liga.extra_torneos = max(0, (liga.extra_torneos or 0) - ligas_bonus)
         liga.extra_canchas = new_val
         
     if 'extra_torneos' in data:
@@ -3558,6 +3575,7 @@ def update_liga_extras(id):
         "liga": liga.to_dict(),
         "monto_total_mensual": liga.monto_total_mensual
     })
+
 
 @app.route('/api/combo-pagos', methods=['GET', 'POST'])
 @csrf.exempt
