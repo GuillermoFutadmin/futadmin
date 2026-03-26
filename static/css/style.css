@@ -1645,6 +1645,15 @@ textarea.full-textarea:focus {
         align-self: flex-start;
         margin-bottom: 5px;
     }
+
+    .live-match-card-mini {
+        min-width: 260px !important;
+        max-width: 100% !important;
+        width: 100%;
+    }
+    .live-scroll-wrapper {
+        padding: 10px 0 20px 0;
+    }
 }
 
 /* RediseÃƒÆ’Ã‚Â±o Dashboard de ResÃƒÆ’Ã‚Âºmenes */
