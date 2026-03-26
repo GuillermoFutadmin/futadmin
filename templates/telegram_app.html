@@ -1151,7 +1151,7 @@
             showView('login-view');
             document.getElementById('login-form').style.display = 'block';
             document.getElementById('auth-status').style.display = 'none';
-            tg.HapticFeedback.notificationOccurred('warning');
+            if (tg.isVersionAtLeast('6.1')) tg.HapticFeedback.notificationOccurred('warning');
         }
 
         async function attemptLogin() {
@@ -1367,7 +1367,7 @@
                     body: JSON.stringify({ telegram_id })
                 });
                 if (res.ok) {
-                    tg.HapticFeedback.notificationOccurred('success');
+                    if (tg.isVersionAtLeast('6.1')) tg.HapticFeedback.notificationOccurred('success');
                     loadMatches();
                 }
             } catch (e) { alert("Error al adoptar partido"); }
@@ -1427,7 +1427,7 @@
 
                 body.innerHTML = html;
                 modal.classList.add('active');
-                tg.HapticFeedback.impactOccurred('light');
+                if (tg.isVersionAtLeast('6.1')) tg.HapticFeedback.impactOccurred('light');
             } catch (e) {
                 alert("Error al cargar detalles del partido.");
             }
@@ -1520,7 +1520,7 @@
             // Pause/resume not tracked server-side in this flow; visually toggle
             isTimerPaused = !isTimerPaused;
             updatePauseButtonUI();
-            tg.HapticFeedback.impactOccurred('medium');
+            if (tg.isVersionAtLeast('6.1')) tg.HapticFeedback.impactOccurred('medium');
         }
 
         function updatePauseButtonUI() {
@@ -1656,7 +1656,7 @@
                     logEvent(type, null, currentMinute);
                     
                     if (tg.isVersionAtLeast('6.1')) {
-                        tg.HapticFeedback.notificationOccurred('success');
+                        if (tg.isVersionAtLeast('6.1')) tg.HapticFeedback.notificationOccurred('success');
                     }
                 } else {
                     console.error(`[DEBUG] gameAction failed: result is null`);
@@ -1707,7 +1707,7 @@
                 document.getElementById('penalties-modal').classList.remove('active');
                 updateControlsVisibility();
                 logEvent('Fin (Penales)', null, data.minuto);
-                tg.HapticFeedback.notificationOccurred('success');
+                if (tg.isVersionAtLeast('6.1')) tg.HapticFeedback.notificationOccurred('success');
             }
         }
 
@@ -1823,7 +1823,7 @@
                 });
                 const data = await res.json();
                 if (data.success) {
-                    tg.HapticFeedback.notificationOccurred('success');
+                    if (tg.isVersionAtLeast('6.1')) tg.HapticFeedback.notificationOccurred('success');
                     
                     // Actualizar estado de pago localmente para mostrar "PAGADO" de inmediato
                     if (!activeMatch.pagos) activeMatch.pagos = {};
@@ -1871,7 +1871,7 @@
         }
 
         function goBackFromTicket() {
-            tg.HapticFeedback.impactOccurred('light');
+            if (tg.isVersionAtLeast('6.1')) tg.HapticFeedback.impactOccurred('light');
             if (activeMatch) {
                 showMatchView();
             } else {
@@ -1983,7 +1983,7 @@
             const result = await sendEvent(data);
             if (result) {
                 closeNoteModal();
-                tg.HapticFeedback.notificationOccurred('success');
+                if (tg.isVersionAtLeast('6.1')) tg.HapticFeedback.notificationOccurred('success');
 
                 // Sync score from server response
                 if (result.match) {
@@ -2090,7 +2090,7 @@
                     el.style.background = isPresent ? 'rgba(34, 197, 94, 0.1)' : 'rgba(255, 255, 255, 0.03)';
                 } else {
                     if (tg.isVersionAtLeast('6.1')) {
-                        tg.HapticFeedback.impactOccurred('light');
+                        if (tg.isVersionAtLeast('6.1')) tg.HapticFeedback.impactOccurred('light');
                     }
                     
                     // Actualizar estado en memoria
@@ -2251,7 +2251,7 @@
                 if (data.success) {
                     lastUploadedPhotoUrl = data.url;
                     preview.innerHTML = `<img src="${data.url}" style="width:100%; height:100%; object-fit:cover;">`;
-                    tg.HapticFeedback.notificationOccurred('success');
+                    if (tg.isVersionAtLeast('6.1')) tg.HapticFeedback.notificationOccurred('success');
                     checkMinorStatus('reg');
                 } else {
                     alert("Error al subir foto: " + (data.error || "Error desconocido"));
@@ -2427,7 +2427,7 @@
                 });
                 if (res.ok) {
                     alert('Jugador registrado con éxito');
-                    tg.HapticFeedback.notificationOccurred('success');
+                    if (tg.isVersionAtLeast('6.1')) tg.HapticFeedback.notificationOccurred('success');
 
                     // LIMPIAR FORMULARIO PARA SIGUIENTE REGISTRO
                     document.getElementById('reg-player-name').value = '';
@@ -2718,10 +2718,10 @@
                 const team = await res.json();
                 rosterMode = true;
                 openRoster(team.id);
-                tg.HapticFeedback.notificationOccurred('success');
+                if (tg.isVersionAtLeast('6.1')) tg.HapticFeedback.notificationOccurred('success');
             } catch (e) { 
                 alert("UID no encontrado o no pertenece a tu liga: " + e.message); 
-                tg.HapticFeedback.notificationOccurred('error');
+                if (tg.isVersionAtLeast('6.1')) tg.HapticFeedback.notificationOccurred('error');
             }
         }
         async function showRosterEdit() {
@@ -3386,7 +3386,7 @@
                 if (data.success) {
                     document.getElementById('edit-player-photo-url').value = data.url;
                     preview.innerHTML = `<img src="${data.url}" style="width:100%; height:100%; object-fit:cover;">`;
-                    tg.HapticFeedback.notificationOccurred('success');
+                    if (tg.isVersionAtLeast('6.1')) tg.HapticFeedback.notificationOccurred('success');
                     checkMinorStatus('edit');
                 } else {
                     alert("Error al subir foto: " + data.error);
@@ -3442,7 +3442,7 @@
                     body: JSON.stringify(data)
                 });
                 if (res.ok) {
-                    tg.HapticFeedback.notificationOccurred('success');
+                    if (tg.isVersionAtLeast('6.1')) tg.HapticFeedback.notificationOccurred('success');
                     closePlayerEdit();
                     openRoster(selectedEquipoIdForReg);
                 } else {
