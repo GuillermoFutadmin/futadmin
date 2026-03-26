@@ -1524,6 +1524,33 @@ def get_mail_logs():
     except Exception as e:
         return str(e), 500
 
+@app.route('/api/admin/test-email-pago/<int:pago_id>', methods=['GET'])
+def test_email_pago(pago_id):
+    """Diagnostic: re-trigger receipt email synchronously and return result."""
+    from models import Pago, Equipo, Inscripcion, Torneo, db
+    import traceback, string, random
+    from datetime import timedelta, datetime
+
+    try:
+        pago = Pago.query.get_or_404(pago_id)
+        insc = Inscripcion.query.get(pago.inscripcion_id)
+        # FORCE FRESH QUERY WITHOUT CACHE
+        equipo = db.session.query(Equipo).filter(Equipo.id == insc.equipo_id).first() if insc else None
+        torneo = Torneo.query.get(pago.torneo_id or (insc.torneo_id if insc else None))
+
+        if not equipo:
+            return f"No equipo for pago {pago_id} (insc={insc.id if insc else 'None'})", 404
+        
+        recipient_email = equipo.email
+        
+        from logic.receipts import generate_receipt_pdf, send_receipt_email, build_receipt_email_html
+        import os, tempfile
+
+        # ... (rest of logic from before)
+        return f"PAGO {pago_id} | Equipo ID {equipo.id} | Email: {recipient_email} | PDF: TBD"
+    except Exception as e:
+        return f"<pre>ERROR:\n{traceback.format_exc()}</pre>", 500
+
 @app.route('/api/pagos/<int:id>', methods=['DELETE'])
 @csrf.exempt
 def handle_pago_delete(id):
