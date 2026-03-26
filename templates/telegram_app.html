@@ -193,6 +193,17 @@
             }
         }
 
+        select {
+            background-color: #1e293b !important;
+            color: white !important;
+            appearance: none;
+            -webkit-appearance: none;
+        }
+        option {
+            background-color: #1e293b !important;
+            color: white !important;
+        }
+
         /* --- ESTILOS CÁMARA NATIVA (FASE 11) --- */
         #camera-modal {
             position: fixed;
@@ -2631,13 +2642,12 @@
 
         async function loadTWAArbitrajesData() {
             const tId = document.getElementById('twa-arbitraje-torneo').value;
-            const container = document.getElementById('twa-arbitrajes-container');
             if (!tId) {
-                container.innerHTML = '<div style="text-align:center; padding:20px; color:var(--muted);">Selecciona un torneo para ver los equipos.</div>';
+                document.getElementById('twa-arbitrajes-container').innerHTML = '<div style="text-align:center; padding:20px; color:var(--muted);">Selecciona un torneo para ver los equipos.</div>';
                 twaArbitrajesData = [];
                 return;
             }
-            container.innerHTML = '<div style="text-align:center; padding:20px; color:var(--primary);">Cargando datos de arbitraje...</div>';
+            document.getElementById('twa-arbitrajes-container').innerHTML = '<div style="text-align:center; padding:20px; color:var(--primary);">Cargando datos de arbitraje...</div>';
             try {
                 const res = await fetch(`/api/inscripciones?torneo_id=${tId}&per_page=1000`);
                 let data = await res.json();
@@ -2645,7 +2655,7 @@
                 renderTWAArbitrajes();
             } catch (e) {
                 console.error(e);
-                container.innerHTML = '<div style="text-align:center; padding:20px; color:var(--error);">Error al cargar datos.</div>';
+                document.getElementById('twa-arbitrajes-container').innerHTML = '<div style="text-align:center; padding:20px; color:var(--error);">Error al cargar datos.</div>';
             }
         }
 
@@ -2670,13 +2680,12 @@
         let twaInscripcionesData = [];
         async function loadTWAInscripcionesData() {
             const tId = document.getElementById('twa-inscripcion-torneo').value;
-            const container = document.getElementById('twa-inscripciones-container');
             if (!tId) {
-                container.innerHTML = '<div style="text-align:center; padding:20px; color:var(--muted);">Selecciona un torneo para ver los equipos.</div>';
+                document.getElementById('twa-inscripciones-container').innerHTML = '<div style="text-align:center; padding:20px; color:var(--muted);">Selecciona un torneo para ver los equipos.</div>';
                 twaInscripcionesData = [];
                 return;
             }
-            container.innerHTML = '<div style="text-align:center; padding:20px; color:var(--primary);">Cargando equipos...</div>';
+            document.getElementById('twa-inscripciones-container').innerHTML = '<div style="text-align:center; padding:20px; color:var(--primary);">Cargando equipos...</div>';
             try {
                 const res = await fetch(`/api/inscripciones?torneo_id=${tId}&per_page=1000`);
                 let data = await res.json();
@@ -2684,7 +2693,7 @@
                 renderTWAInscripciones();
             } catch (e) {
                 console.error(e);
-                container.innerHTML = '<div style="text-align:center; padding:20px; color:var(--error);">Error al cargar.</div>';
+                document.getElementById('twa-inscripciones-container').innerHTML = '<div style="text-align:center; padding:20px; color:var(--error);">Error al cargar.</div>';
             }
         }
 
@@ -2693,10 +2702,10 @@
         }
 
         function renderTWAInscripciones() {
-            const container = document.getElementById('twa-inscripciones-container');
-            if (!container) return;
             const q = document.getElementById('twa-inscripcion-search').value.toLowerCase().trim();
             const statusFilter = document.getElementById('twa-inscripcion-status-filter').value;
+            const container = document.getElementById('twa-inscripciones-container');
+            if (!container) return;
             
             const filtered = twaInscripcionesData.filter(ins => {
                 const eqName = ins.equipo_nombre || (ins.equipo && ins.equipo.nombre) || "EQUIPO";
@@ -2781,9 +2790,10 @@
         }
 
         function renderTWAArbitrajes() {
-            const container = document.getElementById('twa-arbitrajes-container');
             const q = document.getElementById('twa-arbitraje-search').value.toLowerCase().trim();
             const statusFilter = document.getElementById('twa-arbitraje-status-filter').value;
+            const container = document.getElementById('twa-arbitrajes-container');
+            if (!container) return;
             
             let filtered = twaArbitrajesData.filter(ins => {
                 const nameMatch = (ins.equipo_nombre || '').toLowerCase().includes(q);
