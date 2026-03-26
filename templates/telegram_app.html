@@ -2693,12 +2693,19 @@
         }
 
         function renderTWAInscripciones() {
-            const container = document.getElementById('twa-inscripciones-container');
-            const q = document.getElementById('twa-inscripcion-search').value.toLowerCase();
+            const q = document.getElementById('twa-inscripcion-search').value.toLowerCase().trim();
+            const statusFilter = document.getElementById('twa-inscripcion-status-filter').value;
             
             const filtered = twaInscripcionesData.filter(ins => {
-                const eq = ins.equipo_nombre || (ins.equipo && ins.equipo.nombre) || "EQUIPO";
-                return eq.toLowerCase().includes(q);
+                const eqName = ins.equipo_nombre || (ins.equipo && ins.equipo.nombre) || "EQUIPO";
+                const matchName = eqName.toLowerCase().includes(q);
+                
+                const saldo = parseFloat(ins.saldo_inscripcion || 0);
+                let matchStatus = true;
+                if (statusFilter === 'pending') matchStatus = saldo > 0;
+                else if (statusFilter === 'paid') matchStatus = saldo <= 0;
+                
+                return matchName && matchStatus;
             });
 
             if (filtered.length === 0) {
@@ -2712,8 +2719,8 @@
                     <div class="card" style="padding:15px; display:flex; justify-content:space-between; align-items:center; border-left:4px solid #6366f1;">
                         <div style="flex:1;">
                             <div style="font-weight:700; font-size:1rem;">${eqName.toUpperCase()}</div>
-                            <div style="font-size:0.7rem; color:var(--muted); margin-top:2px;">INSCRIPCIÓN PACTADA: $${parseFloat(ins.monto_pactado_inscripcion || 0).toFixed(2)}</div>
-                            <div style="font-size:0.7rem; color:var(--secondary); font-weight:800; margin-top:2px;">SALDO: $${parseFloat(ins.saldo_pendiente || 0).toFixed(2)}</div>
+                            <div style="font-size:0.7rem; color:var(--muted); margin-top:2px;">INSCRIPCIÓN PACTADA: $${parseFloat(ins.monto_pactado || 0).toFixed(2)}</div>
+                            <div style="font-size:0.7rem; color:var(--secondary); font-weight:800; margin-top:2px;">SALDO: $${parseFloat(ins.saldo_inscripcion || 0).toFixed(2)}</div>
                         </div>
                         <button class="btn btn-primary" onclick="openPaymentForm(${ins.equipo_id || (ins.equipo && ins.equipo.id)}, 'Inscripción')" style="width:auto; padding:8px 15px; font-size:0.8rem; background:#6366f1;">PAGAR</button>
                     </div>
@@ -2744,14 +2751,21 @@
         function renderTWAArbitrajes() {
             const container = document.getElementById('twa-arbitrajes-container');
             const q = document.getElementById('twa-arbitraje-search').value.toLowerCase().trim();
+            const statusFilter = document.getElementById('twa-arbitraje-status-filter').value;
             
-            let filtered = twaArbitrajesData;
-            if (q) {
-                filtered = filtered.filter(ins => {
-                    const name = (ins.equipo_nombre || '').toLowerCase();
-                    return name.includes(q);
-                });
-            }
+            let filtered = twaArbitrajesData.filter(ins => {
+                const nameMatch = (ins.equipo_nombre || '').toLowerCase().includes(q);
+                
+                const esperado = Number(ins.esperado_arbitraje || 0);
+                const pagado = Number(ins.pagado_arbitraje || 0);
+                const saldo = Number(ins.saldo_arbitraje ?? (esperado - pagado));
+                
+                let statusMatch = true;
+                if (statusFilter === 'pending') statusMatch = saldo > 0;
+                else if (statusFilter === 'paid') statusMatch = saldo <= 0;
+                
+                return nameMatch && statusMatch;
+            });
 
             if (filtered.length === 0) {
                 container.innerHTML = '<div style="text-align:center; padding:20px; color:var(--muted);">No se encontraron equipos.</div>';
@@ -3871,7 +3885,14 @@
             </select>
             
             <div style="font-size:0.7rem; color:var(--muted); font-weight:800; margin-bottom:5px;">BUSCAR EQUIPO / SEDE</div>
-            <input type="text" id="twa-arbitraje-search" placeholder="Ingresa nombre de equipo..." class="btn btn-outline" style="text-align:left; font-size:1rem; border-color:rgba(255,255,255,0.2);" oninput="filterTWAArbitrajes()">
+            <div style="display:flex; gap:10px; margin-bottom:15px;">
+                <select id="twa-arbitraje-status-filter" class="btn btn-outline" style="flex:1; text-align:left; font-size:0.9rem; border-color:rgba(255,255,255,0.2);" onchange="filterTWAArbitrajes()">
+                    <option value="all">TODOS</option>
+                    <option value="pending">PENDIENTES</option>
+                    <option value="paid">PAGADOS</option>
+                </select>
+                <input type="text" id="twa-arbitraje-search" placeholder="Buscar..." class="btn btn-outline" style="flex:2; text-align:left; font-size:0.9rem; border-color:rgba(255,255,255,0.2);" oninput="filterTWAArbitrajes()">
+            </div>
         </div>
 
         <div id="twa-arbitrajes-container" style="display: flex; flex-direction: column; gap: 15px;">
@@ -3892,7 +3913,14 @@
             </select>
             
             <div style="font-size:0.7rem; color:var(--muted); font-weight:800; margin-bottom:5px;">BUSCAR EQUIPO</div>
-            <input type="text" id="twa-inscripcion-search" placeholder="Ingresa nombre de equipo..." class="btn btn-outline" style="text-align:left; font-size:1rem; border-color:rgba(255,255,255,0.2);" oninput="filterTWAInscripciones()">
+            <div style="display:flex; gap:10px; margin-bottom:15px;">
+                <select id="twa-inscripcion-status-filter" class="btn btn-outline" style="flex:1; text-align:left; font-size:0.9rem; border-color:rgba(255,255,255,0.2);" onchange="filterTWAInscripciones()">
+                    <option value="all">TODOS</option>
+                    <option value="pending">PENDIENTES</option>
+                    <option value="paid">PAGADOS</option>
+                </select>
+                <input type="text" id="twa-inscripcion-search" placeholder="Buscar..." class="btn btn-outline" style="flex:2; text-align:left; font-size:0.9rem; border-color:rgba(255,255,255,0.2);" oninput="filterTWAInscripciones()">
+            </div>
         </div>
 
         <div id="twa-inscripciones-container" style="display: flex; flex-direction: column; gap: 15px;">
