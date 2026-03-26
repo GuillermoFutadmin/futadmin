@@ -745,9 +745,10 @@ export class SettingsModule {
             // Datos de membresía
             const membership = [
                 ["Organización:", liga.nombre, "Plan Actual:", liga.paquete.toUpperCase()],
-                ["Vencimiento:", liga.vencimiento || 'Pendiente', "Registrado el:", liga.fecha_registro || 'N/A'],
-                ["Meses Pagados:", `${liga.stats?.total_meses_pagados || 0} Mes(es)`, "Costo Mensual:", `$${(liga.monto_total_mensual || 0).toFixed(2)} MXN`]
+                ["Meses Pagados:", `${liga.stats?.total_meses_pagados || 0} Mes(es)`, "Costo Mensual:", `$${(liga.monto_total_mensual || 0).toFixed(2)} MXN`],
+                ["Próximo Pago:", liga.vencimiento || 'Vigente', "Monto a Pagar:", `$${(liga.monto_total_mensual || 0).toFixed(2)} MXN`]
             ];
+
 
             membership.forEach(row => {
                 doc.setFont('helvetica', 'bold'); doc.text(row[0], col1, currentY);
@@ -896,15 +897,34 @@ export class SettingsModule {
             }
 
 
-            // Footer Legal (Términos cortos)
-            doc.setFontSize(8);
+            // --- SECCIÓN 6: TÉRMINOS Y CONDICIONES (UNIFICADO) ---
+            if (currentY > 210) { doc.addPage(); currentY = 25; }
             doc.setTextColor(...secondaryTextColor);
-            const legalSummary = "FutAdmin es un sistema de gestión deportiva. Los datos y fotos son responsabilidad de la organización. Sin reembolsos.";
-            doc.text(legalSummary, 105, 280, { align: "center" });
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "bold");
+            doc.text("TÉRMINOS, CONDICIONES Y RESPONSABILIDADES:", 20, currentY + 5);
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(8.5);
+            currentY += 10;
+
+            const legalText = [
+                "• FutAdmin es un sistema de gestión y control administrativo, no interviene en la logística física de los eventos.",
+                "• RESPONSABILIDAD DE DATOS: El Administrador es el único responsable legal por el uso de imágenes y datos de menores.",
+                "• POLÍTICA DE CANCELACIÓN: El servicio puede darse de baja notificando a soporte. Pagos realizados no son reembolsables.",
+                "• DETERMINACIÓN DE COBROS: El costo mensual se calcula base Sedes ($290) y Ligas ($85) activas en el sistema."
+            ];
             
+            legalText.forEach((line) => {
+                doc.text(line, 20, currentY);
+                currentY += 5;
+            });
+
+            currentY = 288;
             doc.setTextColor(0, 150, 80);
             doc.setFont("helvetica", "bold");
-            doc.text("WWW.FUTADMIN.COM.MX", 105, 288, { align: "center" });
+            doc.setFontSize(8);
+            doc.text("WWW.FUTADMIN.COM.MX", 105, currentY, { align: "center" });
+
 
             doc.save(`Estado_Cuenta_FutAdmin_${liga.nombre.replace(/\s+/g, '_')}.pdf`);
             Core.showNotification('Estado de cuenta generado correctamente');
