@@ -57,7 +57,7 @@ if os.getenv('RAILWAY_ENVIRONMENT'):
 
 @app.route('/ping')
 def ping():
-    return "pong - v2.3-pdf-fix", 200
+    return "pong - v2.4-payment-fix", 200
 
 @app.route('/api/test/receipt')
 def test_receipt_sync():
@@ -3673,21 +3673,40 @@ def handle_combo_pagos():
             try:
                 liga = Liga.query.get(nuevo_pago.liga_id)
                 if liga:
-                    owner = Usuario.query.filter_by(liga_id=liga.id, rol='dueño_liga').first()
-                    if owner and owner.email:
+                    owner_roles = ['dueño_liga', 'super_arbitro', 'equipo']
+                    owner = Usuario.query.filter(Usuario.liga_id==liga.id, Usuario.rol.in_(owner_roles)).first()
+                    contact_email = owner.email if owner and owner.email else liga.contacto
+                    contact_name = owner.nombre if owner else liga.nombre
+
+                    if contact_email:
+                        liga_info = liga.to_dict()
                         ticket_data = {
                             "is_futadmin": True,
+                            "id_cliente": liga.id,
                             "folio": f"COMB-PAY-{nuevo_pago.id}-{(datetime.utcnow() - timedelta(hours=6)).strftime('%y%m%d')}",
                             "fecha": (datetime.utcnow() - timedelta(hours=6)).strftime('%d/%m/%Y %H:%M'),
+                            "fecha_registro": liga_info.get('fecha_registro'),
                             "liga_nombre": liga.nombre,
                             "monto_abonado": float(nuevo_pago.monto),
-                            "tipo": f"Renovación de Suscripción",
+                            "monto_mensual": float(liga.monto_mensual or 0),
+                            "monto_total_mensual": float(liga.monto_total_mensual or 0),
+                            "tipo": f"Aportación - Suscripción",
+                            "paquete": "Renovación",
                             "metodo": nuevo_pago.metodo or "Transferencia",
-                            "mes_pagado": nuevo_pago.mes_pagado
+                            "mes_pagado": nuevo_pago.mes_pagado,
+                            "contacto": liga.contacto,
+                            "vencimiento": liga_info.get('vencimiento'),
+                            "stats": liga_info.get('stats', {}),
+                            "detalles": liga_info.get('detalles', {}),
+                            "expansiones": liga_info.get('expansiones', []),
+                            "pagos_historial": liga_info.get('aportaciones', [])
                         }
+                        # Incluir el pago actual en el historial si no viene en liga_info (por la latencia de la BD)
+                        if not any(p.get('id') == nuevo_pago.id for p in ticket_data['pagos_historial']):
+                            ticket_data['pagos_historial'].insert(0, nuevo_pago.to_dict())
+
                         from logic.receipts import trigger_receipt_email_async
-                        ticket_data['liga_nombre'] = session.get('user_name', 'Liga FutAdmin')
-                        trigger_receipt_email_async(ticket_data, owner.email, owner.nombre)
+                        trigger_receipt_email_async(ticket_data, contact_email, contact_name)
             except Exception as e_hook:
                 print(f"Error in hook de correo (combo renewal): {e_hook}")
 

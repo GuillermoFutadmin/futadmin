@@ -1649,7 +1649,7 @@ export class SettingsModule {
                     <td style="text-align: right;">
                         <div style="display: flex; gap: 6px; justify-content: flex-end;">
                             ${window.USER_ROL !== 'resultados' && window.USER_ROL !== 'arbitro' ? `
-                            <button onclick="ui.settings.showComboPaymentModal('${l.id}')" class="btn-icon" title="Registrar Aportación / Contribución" style="background: rgba(0,255,136,0.1); color: #00ff88; border: 1px solid rgba(0,255,136,0.2); width: 30px; height: 30px; border-radius: 8px; cursor: pointer;">✚</button>
+                            <button onclick="ui.settings.showComboPaymentModal('${l.id}')" class="btn-icon" title="Registrar Aportación / Contribución" style="background: rgba(0,255,136,0.1); color: #00ff88; border: 1px solid rgba(0,255,136,0.2); padding: 4px 10px; border-radius: 8px; cursor: pointer; font-size: 0.8rem; font-weight: bold; display: flex; align-items: center; justify-content: center; height: 30px; gap: 4px;">💳 Abonar</button>
                             ` : ''}
                             <button onclick="ui.settings.downloadComboPDF('${l.id}')" class="btn-icon" title="Descargar Historial PDF" style="background: rgba(255,255,255,0.05); color: var(--text); border: 1px solid var(--border); width: 30px; height: 30px; border-radius: 8px; cursor: pointer;">📄</button>
                             ${window.USER_ROL !== 'resultados' && window.USER_ROL !== 'arbitro' ? `
