@@ -1848,18 +1848,26 @@ def get_partidos():
     # Filtro de solo pendientes de arbitraje
     solo_pendientes = request.args.get('solo_pendientes', '0') == '1'
     if solo_pendientes and equipo_id:
-        # Excluir partidos que ya tengan un pago de Arbitraje registrado para esta inscripción
-        # Buscamos la inscripción del equipo en este torneo (o liga si aplica)
-        # Nota: handle_pago asocia pagos via inscripcion_id
-        from models import Inscripcion, Pago
-        pago_exists = db.session.query(Pago.partido_id).filter(
+        # Excluir partidos que ya estén completamente pagados (suma de pagos >= costo_arbitraje)
+        from models import Inscripcion, Pago, Torneo
+        from sqlalchemy import func
+        
+        paid_matches_subq = db.session.query(
+            Pago.partido_id
+        ).join(
+            Inscripcion, Pago.inscripcion_id == Inscripcion.id
+        ).join(
+            Torneo, Inscripcion.torneo_id == Torneo.id
+        ).filter(
             Pago.tipo == 'Arbitraje',
             Pago.partido_id.isnot(None),
-            Pago.inscripcion_id.in_(
-                db.session.query(Inscripcion.id).filter(Inscripcion.equipo_id == equipo_id)
-            )
+            Inscripcion.equipo_id == equipo_id
+        ).group_by(
+            Pago.partido_id, Torneo.costo_arbitraje
+        ).having(
+            func.sum(Pago.monto) >= func.coalesce(Torneo.costo_arbitraje, 0)
         )
-        query = query.filter(~Partido.id.in_(pago_exists))
+        query = query.filter(~Partido.id.in_(paid_matches_subq))
 
     query = query.order_by(Partido.fecha.desc(), Partido.hora.desc(), Partido.id.desc())
     return paginate_query(query)
