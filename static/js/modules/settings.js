@@ -821,7 +821,23 @@ export class SettingsModule {
             doc.setTextColor(...textColor);
             
             const expansions = liga.expansiones || [];
+            
+            // --- FILA INICIAL: COMBO BASE ---
+            doc.setFont('helvetica', 'bold');
+            doc.text(liga.fecha_registro || '', 25, expY);
+            doc.text('Combo Base (Inscripción)', 60, expY);
+            doc.text(`1 Sede / ${limitBaseTorneos} Ligas`, 120, expY);
+            doc.text(`$${(liga.monto_mensual || 0).toFixed(2)}`, 145, expY);
+            doc.setTextColor(0, 150, 0);
+            doc.text('ACTIVO', 175, expY);
+            doc.setTextColor(...textColor);
+            doc.setFont('helvetica', 'normal');
+            doc.setDrawColor(200, 200, 200);
+            doc.line(20, expY + 2, 190, expY + 2);
+            expY += 10;
+
             if (expansions.length === 0) {
+
                 doc.setFont('helvetica', 'italic');
                 doc.text('No hay cambios registrados desde la inscripción inicial.', 25, expY);
                 expY += 10;
