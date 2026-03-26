@@ -55,6 +55,10 @@ app.config['UPLOAD_FOLDER'] = os.path.join(BASE_DIR, 'static', 'uploads')
 if os.getenv('RAILWAY_ENVIRONMENT'):
     app.config['UPLOAD_FOLDER'] = "/app/static/uploads"
 
+@app.route('/ping')
+def ping():
+    return "pong", 200
+
 # Inicializar Talisman para headers de seguridad y SSL (si SSL_REQUIRED=True)
 talisman = Talisman(app, 
     force_https=os.getenv('SSL_REQUIRED', 'False') == 'True',

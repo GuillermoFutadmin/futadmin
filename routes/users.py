@@ -444,7 +444,7 @@ def handle_combo_creation():
         # --- ENVIAR RECIBO POR CORREO (Async) ---
         try:
             from logic.receipts import trigger_receipt_email_async
-            from datetime import datetime
+            from datetime import datetime, timedelta
             
             # Preparar datos seguros para el hilo (sin objetos db)
             ticket_data = {
