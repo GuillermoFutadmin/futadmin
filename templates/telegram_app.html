@@ -2693,6 +2693,8 @@
         }
 
         function renderTWAInscripciones() {
+            const container = document.getElementById('twa-inscripciones-container');
+            if (!container) return;
             const q = document.getElementById('twa-inscripcion-search').value.toLowerCase().trim();
             const statusFilter = document.getElementById('twa-inscripcion-status-filter').value;
             
