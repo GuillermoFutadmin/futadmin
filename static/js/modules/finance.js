@@ -241,7 +241,7 @@ export class FinanceModule {
         }
         if (page === 1) container.innerHTML = '<p>Cargando inscripciones...</p>';
         try {
-            const response = await Core.fetchAPI(`/api/inscripciones?torneo_id=${torneoId}&page=${page}`);
+            const response = await Core.fetchAPI(`/api/inscripciones?torneo_id=${torneoId}&per_page=1000`);
             this.allInscripciones = response.items || response;
             this.pagination = response.pagination || null;
             this.renderInscripcionesTable();
@@ -376,22 +376,7 @@ export class FinanceModule {
             </div>
         `;
 
-        // Agregar Controles de Paginación
-        if (this.pagination && this.pagination.total_pages > 1) {
-            html += `
-                <div class="pagination-controls" style="grid-column: 1 / -1; width: 100%;">
-                    <button class="btn-pagination" ${!this.pagination.has_prev ? 'disabled' : ''}
-                            onclick="ui.finance.loadInscripciones(${this.pagination.page - 1})">
-                        &laquo; Anterior
-                    </button>
-                    <span class="pagination-info">Página ${this.pagination.page} de ${this.pagination.total_pages}</span>
-                    <button class="btn-pagination" ${!this.pagination.has_next ? 'disabled' : ''}
-                            onclick="ui.finance.loadInscripciones(${this.pagination.page + 1})">
-                        Siguiente &raquo;
-                    </button>
-                </div>
-            `;
-        }
+        // Paginación removida por solicitud del usuario (Ing) para usar filtro interactivo directo
 
         container.innerHTML = html;
     }
