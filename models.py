@@ -46,74 +46,79 @@ class Liga(db.Model):
     def to_dict(self):
         try:
             # Estadísticas de registros desde el inicio
-            users_count = Usuario.query.filter_by(liga_id=self.id).count()
-            canchas_count = Cancha.query.filter_by(liga_id=self.id).count()
-            torneos_count = Torneo.query.filter_by(liga_id=self.id).count()
-            # Verificar si tiene pagos y obtener el último
-            last_payment = PagoCombo.query.filter_by(liga_id=self.id).order_by(PagoCombo.fecha.desc()).first()
-            has_payments = last_payment is not None
+            try:
+                users_count = Usuario.query.filter_by(liga_id=self.id).count()
+                canchas_count = Cancha.query.filter_by(liga_id=self.id).count()
+                torneos_count = Torneo.query.filter_by(liga_id=self.id).count()
+                # Verificar si tiene pagos y obtener el último
+                last_payment = PagoCombo.query.filter_by(liga_id=self.id).order_by(PagoCombo.fecha.desc()).first()
+                has_payments = last_payment is not None
+                
+                # Totales para el resumen
+                from sqlalchemy import func
+                total_acumulado_meses = db.session.query(func.sum(PagoCombo.cantidad_meses)).filter_by(liga_id=self.id).scalar() or 0
+                
+                # Detalles de entidades
+                canchas = Cancha.query.filter_by(liga_id=self.id).all()
+                torneos = Torneo.query.filter_by(liga_id=self.id).all()
+                teams_count = Equipo.query.filter_by(liga_id=self.id).count()
+                players_count = Jugador.query.filter_by(liga_id=self.id).count()
+            except Exception as e:
+                print(f"Error calculando stats para liga {self.id}: {e}")
+                users_count = canchas_count = torneos_count = teams_count = players_count = 0
+                total_acumulado_meses = 0
+                last_payment = None
+                has_payments = False
+                canchas = []
+                torneos = []
             
-            # Totales para el resumen
-            from sqlalchemy import func
-            total_acumulado_meses = db.session.query(func.sum(PagoCombo.cantidad_meses)).filter_by(liga_id=self.id).scalar() or 0
+            # Determinar paquete basado en el dueño
+            owner = Usuario.query.filter_by(liga_id=self.id).filter(Usuario.rol.in_(['dueño_liga', 'super_arbitro', 'equipo'])).first()
+            paquete = owner.rol if owner else self.tipo_cliente
             
-            # Detalles de entidades
-            canchas = Cancha.query.filter_by(liga_id=self.id).all()
-            torneos = Torneo.query.filter_by(liga_id=self.id).all()
-            teams_count = Equipo.query.filter_by(liga_id=self.id).count()
-            players_count = Jugador.query.filter_by(liga_id=self.id).count()
+            # Historial de expansiones
+            expansiones = LigaExpansion.query.filter_by(liga_id=self.id).order_by(LigaExpansion.fecha.desc()).all()
+            
+            return {
+                "id": self.id,
+                "nombre": self.nombre,
+                "tipo_cliente": self.tipo_cliente,
+                "subdominio": self.subdominio,
+                "contacto": self.contacto,
+                "owner_email": owner.email if owner else None,
+                "activa": self.activa,
+                "color": self.color,
+                "monto_mensual": float(self.monto_mensual or 0),
+                "extra_canchas": self.extra_canchas,
+                "extra_torneos": self.extra_torneos,
+                "monto_total_mensual": self.monto_total_mensual,
+                "fecha_registro": self.fecha_registro.strftime('%Y-%m-%d') if self.fecha_registro else None,
+                "paquete": paquete,
+                "has_payments": has_payments,
+                "stats": {
+                    "usuarios": users_count,
+                    "canchas": canchas_count,
+                    "torneos": torneos_count,
+                    "equipos": teams_count,
+                    "jugadores": players_count,
+                    "total_meses_pagados": int(total_acumulado_meses)
+                },
+                "detalles": {
+                    "canchas": [c.nombre for c in canchas],
+                    "torneos": [t.nombre for t in torneos]
+                },
+                "ultimo_pago": {
+                    "mes": last_payment.mes_pagado if last_payment else "Sin Pagos",
+                    "monto": last_payment.monto if last_payment else 0,
+                    "fecha": last_payment.fecha.strftime('%Y-%m-%d') if last_payment and last_payment.fecha else None
+                } if has_payments else None,
+                "vencimiento": self.vencimiento_actual,
+                "expansiones": [e.to_dict() for e in expansiones]
+            }
         except Exception as e:
-            print(f"Error calculando stats para liga {self.id}: {e}")
-            users_count = canchas_count = torneos_count = teams_count = players_count = 0
-            total_acumulado_meses = 0
-            last_payment = None
-            has_payments = False
-            canchas = []
-            torneos = []
-        
-        # Determinar paquete basado en el dueño
-        owner = Usuario.query.filter_by(liga_id=self.id).filter(Usuario.rol.in_(['dueño_liga', 'super_arbitro', 'equipo'])).first()
-        paquete = owner.rol if owner else self.tipo_cliente
-        
-        # Historial de expansiones
-        expansiones = LigaExpansion.query.filter_by(liga_id=self.id).order_by(LigaExpansion.fecha.desc()).all()
-        
-        return {
-            "id": self.id,
-            "nombre": self.nombre,
-            "tipo_cliente": self.tipo_cliente,
-            "subdominio": self.subdominio,
-            "contacto": self.contacto,
-            "owner_email": owner.email if owner else None,
-            "activa": self.activa,
-            "color": self.color,
-            "monto_mensual": self.monto_mensual,
-            "extra_canchas": self.extra_canchas,
-            "extra_torneos": self.extra_torneos,
-            "monto_total_mensual": self.monto_total_mensual,
-            "fecha_registro": self.fecha_registro.strftime('%Y-%m-%d') if self.fecha_registro else None,
-            "paquete": paquete,
-            "has_payments": has_payments,
-            "stats": {
-                "usuarios": users_count,
-                "canchas": canchas_count,
-                "torneos": torneos_count,
-                "equipos": teams_count,
-                "jugadores": players_count,
-                "total_meses_pagados": int(total_acumulado_meses)
-            },
-            "detalles": {
-                "canchas": [c.nombre for c in canchas],
-                "torneos": [t.nombre for t in torneos]
-            },
-            "ultimo_pago": {
-                "mes": last_payment.mes_pagado if last_payment else "Sin Pagos",
-                "monto": last_payment.monto if last_payment else 0,
-                "fecha": last_payment.fecha.strftime('%Y-%m-%d') if last_payment else None
-            } if has_payments else None,
-            "vencimiento": self.vencimiento_actual,
-            "expansiones": [e.to_dict() for e in expansiones]
-        }
+            import traceback
+            print(f"CRITICAL ERROR in Liga.to_dict for ID {self.id}: {str(e)}\n{traceback.format_exc()}")
+            return {"id": self.id, "error": "Internal to_dict error", "traceback": str(e)}
 
     @property
     def vencimiento_actual(self):
