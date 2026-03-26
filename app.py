@@ -129,8 +129,8 @@ def diag_db_v3():
         except Exception as e:
             res['expansiones_err'] = str(e)
             
-        # Intentar db.create_all() por si acaso
-        db.create_all()
+        # Detalles de IDs
+        res['liga_ids'] = [L.id for L in Liga.query.all()]
         res['create_all_done'] = True
     except Exception as e:
         res['critical_err'] = str(e)
