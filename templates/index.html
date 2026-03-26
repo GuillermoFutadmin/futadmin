@@ -138,6 +138,10 @@
             </nav>
 
             <div class="sidebar-footer">
+                <div class="sidebar-logout-mobile">
+                    <span class="sidebar-logout-user">{{ user_name or 'Usuario' }}</span>
+                    <a href="/logout" class="sidebar-logout-btn">🚪 Cerrar Sesión</a>
+                </div>
                 <img src="/static/img/logos/futadmin_circle.png" class="sidebar-logo-img" alt="FutAdmin Logo">
             </div>
         </aside>

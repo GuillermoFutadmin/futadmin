@@ -642,6 +642,11 @@ body {
     border-bottom-color: var(--primary);
 }
 
+/* Sidebar logout button (mobile only) */
+.sidebar-logout-mobile {
+    display: none; /* hidden on desktop */
+}
+
 .modal-tab-content {
     opacity: 0; visibility: hidden;
     animation: fadeIn 0.3s ease;
@@ -1413,8 +1418,41 @@ textarea.full-textarea:focus {
 
     .sidebar-footer {
         display: flex !important;
-        justify-content: center;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
         padding: 16px 12px;
+    }
+
+    .sidebar-logout-mobile {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        width: 100%;
+    }
+
+    .sidebar-logout-user {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        font-weight: 600;
+    }
+
+    .sidebar-logout-btn {
+        display: inline-block;
+        color: #ef4444;
+        font-size: 0.8rem;
+        font-weight: 700;
+        text-decoration: none;
+        border: 1px solid rgba(239,68,68,0.3);
+        padding: 5px 16px;
+        border-radius: 8px;
+        transition: all 0.2s;
+        background: rgba(239,68,68,0.05);
+    }
+
+    .sidebar-logout-btn:active {
+        background: rgba(239,68,68,0.15);
     }
 
     .sidebar-logo-img {
