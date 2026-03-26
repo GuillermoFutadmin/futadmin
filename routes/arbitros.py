@@ -671,7 +671,20 @@ def get_telegram_match(id):
     return jsonify(data)
 
 def _trigger_telegram_receipt_email(pago, equipo, inscripcion, torneo):
-    if not equipo or not equipo.email:
+    if not equipo:
+        with open("mail_debug.log", "a") as f:
+            f.write(f"[SKIP] No equipo object for pago {getattr(pago, 'id', '?')}\n")
+        return
+
+    # Resolve best available email: team -> liga contact -> skip
+    recipient_email = getattr(equipo, 'email', None) or None
+    if not recipient_email and torneo:
+        liga = getattr(torneo, 'liga', None)
+        if liga:
+            recipient_email = getattr(liga, 'email', None) or getattr(liga, 'contacto_email', None)
+    if not recipient_email:
+        with open("mail_debug.log", "a") as f:
+            f.write(f"[SKIP] No email found for equipo '{equipo.nombre}' pago {getattr(pago, 'id', '?')} — assign an email to the team or league.\n")
         return
         
     try:
@@ -738,13 +751,14 @@ def _trigger_telegram_receipt_email(pago, equipo, inscripcion, torneo):
         }
         
         from logic.receipts import trigger_receipt_email_async
-        trigger_receipt_email_async(result, equipo.email, getattr(equipo, 'responsable', "Delegado"))
+        trigger_receipt_email_async(result, recipient_email, getattr(equipo, 'responsable', "Delegado"))
         with open("mail_debug.log", "a") as f:
-            f.write(f"TRIGGERED TELEGRAM RECEIPT for pago {pago.id} to {equipo.email}\n")
+            f.write(f"[OK] TRIGGERED TELEGRAM RECEIPT for pago {pago.id} to {recipient_email} (equipo: {equipo.nombre})\n")
     except Exception as e:
         import traceback
         with open("mail_debug.log", "a") as f:
-            f.write(f"FATAL ERROR IN _trigger_telegram_receipt_email for pago {getattr(pago, 'id', 'unknown')}: {str(e)}\n{traceback.format_exc()}\n")
+            f.write(f"[ERROR] _trigger_telegram_receipt_email pago {getattr(pago, 'id', 'unknown')}: {str(e)}\n{traceback.format_exc()}\n")
+
 @arbitros_bp.route('/api/telegram/match/<int:id>/payment', methods=['POST'])
 def telegram_match_payment(id):
     data = request.json
