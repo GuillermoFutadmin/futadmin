@@ -993,7 +993,7 @@
         function showView(id) {
             console.log("==> showView(", id, ")");
             // checkin-view es position:fixed, se maneja por separado como overlay
-            const views = ['login-view', 'menu-view', 'tournament-view', 'list-view', 'match-view', 'halftime-view', 'registration-view', 'payments-view', 'ids-lookup-view', 'drilldown-view', 'submenu-view', 'payment-form-view', 'ticket-view', 'arbitraje-sync-view'];
+            const views = ['login-view', 'menu-view', 'tournament-view', 'list-view', 'match-view', 'halftime-view', 'registration-view', 'payments-view', 'ids-lookup-view', 'drilldown-view', 'submenu-view', 'payment-form-view', 'ticket-view', 'arbitraje-sync-view', 'match-explorer-view'];
             views.forEach(v => {
                 const el = document.getElementById(v);
                 if (el) {
@@ -2513,7 +2513,12 @@
             matchDateFilter = ''; // Reset date filter when changing category
             matchSearchQ = '';
             drillPurpose = 'matches';
-            startDrilldown('sede');
+            
+            if (status === 'Scheduled') {
+                showMatchExplorer();
+            } else {
+                startDrilldown('sede');
+            }
         }
 
         function setPaymentType(type) {
@@ -2539,6 +2544,66 @@
             } catch (e) {
                 console.error(e);
             }
+        }
+
+        // --- MATCH EXPLORER SYSTEM ---
+        async function showMatchExplorer() {
+            showView('match-explorer-view');
+            loadMatchExplorerTournaments();
+        }
+
+        async function loadMatchExplorerTournaments() {
+            const sel = document.getElementById('match-explorer-torneo');
+            sel.innerHTML = '<option value="" style="color:#000; background:#fff;">Cargando torneos...</option>';
+            try {
+                const res = await fetch(`/api/telegram/tours?liga_id=${currentUser.liga_id || ''}&rol=${currentUser.rol}&_v=${Date.now()}`);
+                const torneos = await res.json();
+                sel.innerHTML = '<option value="" style="color:#000; background:#fff;">Selecciona un torneo...</option>' + 
+                    torneos.map(t => `<option value="${t.id}" style="color:#000; background:#fff;">${t.nombre}</option>`).join('');
+                document.getElementById('match-explorer-container').innerHTML = '<div style="text-align:center; padding:20px; color:var(--muted);">Selecciona un torneo para ver los partidos.</div>';
+                matchExplorerData = [];
+            } catch (e) {
+                console.error(e);
+                sel.innerHTML = '<option value="" style="color:#000; background:#fff;">Error al cargar torneos</option>';
+            }
+        }
+
+        let matchExplorerData = [];
+        async function loadMatchExplorerData() {
+            const tId = document.getElementById('match-explorer-torneo').value;
+            const container = document.getElementById('match-explorer-container');
+            if (!tId) {
+                container.innerHTML = '<div style="text-align:center; padding:20px; color:var(--muted);">Selecciona un torneo para ver los partidos.</div>';
+                return;
+            }
+            container.innerHTML = '<div class="loading">Cargando partidos...</div>';
+            try {
+                const res = await fetch(`/api/telegram/matches?torneo_id=${tId}&rol=${currentUser.rol}&estado=${matchStatusFilter}&search_q=&date_filter=`);
+                const matches = await res.json();
+                matchExplorerData = matches;
+                renderMatchExplorerResults(matches);
+            } catch (e) {
+                console.error(e);
+                container.innerHTML = '<div style="text-align:center; padding:20px; color:var(--error);">Error al cargar partidos.</div>';
+            }
+        }
+
+        function filterMatchExplorer() {
+            const q = document.getElementById('match-explorer-search').value.toLowerCase();
+            const filtered = (matchExplorerData || []).filter(m => 
+                (m.equipo_local || '').toLowerCase().includes(q) || 
+                (m.equipo_visitante || '').toLowerCase().includes(q)
+            );
+            renderMatchExplorerResults(filtered);
+        }
+
+        function renderMatchExplorerResults(matches) {
+            const container = document.getElementById('match-explorer-container');
+            if (matches.length === 0) {
+                container.innerHTML = '<div style="text-align:center; padding:20px; color:var(--muted);">No se encontraron partidos.</div>';
+                return;
+            }
+            renderMatchesInDrilldown(matches, container);
         }
 
         let twaArbitrajesData = [];
@@ -3698,6 +3763,27 @@
 
         <div id="twa-arbitrajes-container" style="display: flex; flex-direction: column; gap: 15px;">
             <div style="text-align:center; padding:20px; color:var(--muted);">Selecciona un torneo para ver los equipos.</div>
+        </div>
+    </div>
+
+    <div id="match-explorer-view" class="view" style="display: none; padding: 16px;">
+        <div class="header">
+            <button class="btn btn-outline" onclick="showSubmenu('matches')" style="width: auto; padding: 6px 12px;">← VOLVER</button>
+            <h3>GESTIÓN DE PARTIDOS</h3>
+        </div>
+
+        <div class="card" style="padding: 15px; margin-bottom: 20px;">
+            <div style="font-size:0.7rem; color:var(--muted); font-weight:800; margin-bottom:5px;">FILTRAR POR TORNEO</div>
+            <select id="match-explorer-torneo" class="btn btn-outline" style="width:100%; text-align:left; font-size:1rem; border-color:rgba(255,255,255,0.2); margin-bottom: 15px;" onchange="loadMatchExplorerData()">
+                <option value="">Cargando torneos...</option>
+            </select>
+            
+            <div style="font-size:0.7rem; color:var(--muted); font-weight:800; margin-bottom:5px;">BUSCAR PARTIDO</div>
+            <input type="text" id="match-explorer-search" placeholder="Nombre de equipo..." class="btn btn-outline" style="text-align:left; font-size:1rem; border-color:rgba(255,255,255,0.2);" oninput="filterMatchExplorer()">
+        </div>
+
+        <div id="match-explorer-container" style="display: flex; flex-direction: column; gap: 15px;">
+            <div style="text-align:center; padding:20px; color:var(--muted);">Selecciona un torneo para ver los partidos.</div>
         </div>
     </div>
 
