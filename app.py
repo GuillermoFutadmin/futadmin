@@ -57,7 +57,7 @@ if os.getenv('RAILWAY_ENVIRONMENT'):
 
 @app.route('/ping')
 def ping():
-    return "pong - v9 (cache_busted)", 200
+    return "pong - v11 (logging_instrumented)", 200
 
 @app.route('/api/test/receipt')
 def test_receipt_sync():
@@ -1390,6 +1390,8 @@ def send_telegram_ticket_notification(pago):
 @app.route('/api/pagos/<int:id>/resend_receipt', methods=['POST'])
 @csrf.exempt
 def resend_pago_receipt(id):
+    with open("mail_debug.log", "a") as f:
+        f.write(f"ENTRY: resend_pago_receipt for ID {id} at {datetime.now()}\n")
     pago = Pago.query.get_or_404(id)
     ins = pago.inscripcion
     if not ins:
