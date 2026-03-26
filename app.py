@@ -57,7 +57,7 @@ if os.getenv('RAILWAY_ENVIRONMENT'):
 
 @app.route('/ping')
 def ping():
-    return "pong - v5 (logs_open)", 200
+    return "pong - v6 (unblocked)", 200
 
 # Inicializar Talisman para headers de seguridad y SSL (si SSL_REQUIRED=True)
 talisman = Talisman(app, 
@@ -141,7 +141,7 @@ LAST_STATS_ERROR = "No errors yet"
 @app.before_request
 def check_login():
     # Rutas que no requieren login
-    public_routes = ['users.login_view', 'users.login', 'users.privacy_view', 'static', 'healthcheck', 'debug_stats', 'diag_db']
+    public_routes = ['users.login_view', 'users.login', 'users.privacy_view', 'static', 'healthcheck', 'debug_stats', 'diag_db', 'ping', 'get_mail_logs']
     if request.endpoint in public_routes or not request.endpoint:
         return
     
