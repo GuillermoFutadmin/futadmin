@@ -522,7 +522,7 @@ def handle_equipos():
             "pago_id": pago_id or nueva_ins.id,
             "pago_id": nuevo.inscripcion.pagos[0].id if nuevo.inscripcion and nuevo.inscripcion.pagos else None,
             "folio": folio,
-            "fecha": datetime.utcnow().strftime('%d/%m/%Y %H:%M'),
+            "fecha": (datetime.utcnow() - timedelta(hours=6)).strftime('%d/%m/%Y %H:%M'),
             "equipo": nuevo.nombre,
             "torneo": torneo.nombre,
             "sede": sede_nombre_eq,
@@ -1016,7 +1016,7 @@ def handle_inscripciones():
             "pago_id": nueva.id,
             "pago_id": nueva.id,
             "folio": folio_ins,
-            "fecha": datetime.utcnow().strftime('%d/%m/%Y %H:%M'),
+            "fecha": (datetime.utcnow() - timedelta(hours=6)).strftime('%d/%m/%Y %H:%M'),
             "equipo": equipo.nombre if equipo else "Equipo",
             "torneo": torneo.nombre if torneo else "Torneo",
             "sede": sede_nombre.strip() if sede_nombre else "Por definir",
@@ -1340,9 +1340,11 @@ def handle_pagos():
                     "fecha": p.fecha.strftime('%d/%m/%Y') if p.fecha else "S/F"
                 }
 
+        from datetime import timedelta
+        _fecha_local = nuevo_pago.fecha - timedelta(hours=6)
+        
         result = {
             "success": True,
-            "pago_id": nuevo_pago.id,
             "pago_id": nuevo_pago.id,
             "folio": folio_pago,
             "equipo": ins.equipo.nombre,
@@ -1351,7 +1353,7 @@ def handle_pagos():
             "liga_nombre": torneo.liga.nombre if torneo and torneo.liga else "FutAdmin",
             "monto_abonado": float(nuevo_pago.monto),
             "tipo": nuevo_pago.tipo,
-            "fecha": nuevo_pago.fecha.strftime('%d/%m/%Y %H:%M'),
+            "fecha": _fecha_local.strftime('%d/%m/%Y %H:%M'),
             "metodo": nuevo_pago.metodo,
             "monto_pactado": float(ins.monto_pactado_inscripcion),
             "total_pagado": float(pagado_ins) if nuevo_pago.tipo == 'Inscripcion' else float(pagado_arb),
@@ -1425,60 +1427,83 @@ def resend_pago_receipt(id):
     if not torneo:
         return jsonify({"error": "Torneo no encontrado."}), 404
 
-    # Re-generar los datos del ticket para el recibo
-    partido_info = None
-    if pago.partido_id:
-        p = Partido.query.get(pago.partido_id)
-        if p:
-            partido_info = {
-                "rivales": f"{p.equipo_local.nombre} vs {p.equipo_visitante.nombre}",
-                "jornada": p.jornada,
-                "fecha": p.fecha.strftime('%d/%m/%Y') if p.fecha else "S/F"
-            }
+    try:
+        # Re-generar los datos del ticket para el recibo
+        partido_info = None
+        if pago.partido_id:
+            p = Partido.query.get(pago.partido_id)
+            if p:
+                partido_info = {
+                    "rivales": f"{p.equipo_local.nombre} vs {p.equipo_visitante.nombre}",
+                    "jornada": p.jornada,
+                    "fecha": p.fecha.strftime('%d/%m/%Y') if p.fecha else "S/F"
+                }
 
-    # Calcular totales financieros de la inscripción
-    _total_pagado = sum(p.monto for p in ins.pagos) if ins.pagos else 0
-    _monto_pactado = float(ins.monto_pactado_inscripcion or 0)
-    _saldo_pendiente = max(0, _monto_pactado - _total_pagado)
+        # Calcular totales financieros de la inscripción
+        _total_pagado = sum(p.monto for p in ins.pagos) if ins.pagos else 0
+        _monto_pactado = float(ins.monto_pactado_inscripcion or 0)
+        _saldo_pendiente = max(0, _monto_pactado - _total_pagado)
 
-    from datetime import timedelta
-    _fecha_local = pago.fecha - timedelta(hours=7)
-    _liga_obj = pago.liga or ins.liga
-    _liga_n = _liga_obj.nombre if _liga_obj else session.get('user_name', 'Liga FutAdmin')
-
-    ticket_data = {
-        "pago_id": pago.id,
-        "folio": f"FUT-{pago.id:04d}-{_fecha_local.strftime('%y%m%d')}",
-        "equipo": ins.equipo.nombre,
-        "torneo": torneo.nombre,
-        "sede": torneo.cancha or "Por definir",
-        "liga_nombre": _liga_n,
-        "monto_abonado": float(pago.monto),
-        "monto_pactado": _monto_pactado,
-        "total_pagado": _total_pagado,
-        "saldo_pendiente": _saldo_pendiente,
-        "tipo": pago.tipo,
-        "metodo": pago.metodo or "Efectivo",
-        "partido": partido_info,
-        "premios": torneo.premios or "",
-        "reglamento": torneo.reglamento or ""
-    }
-    
-    _destinatario = ins.equipo.email
-    if not _destinatario:
-        return jsonify({"error": "El equipo no tiene un correo registrado."}), 400
+        from datetime import datetime, timedelta
         
-    _nombre_resp = ins.equipo.responsable or 'Delegado'
-    ticket_data['fecha'] = _fecha_local.strftime('%d/%m/%Y %H:%M')
-    
-    # Usar el worker asíncrono unificado
-    from logic.receipts import trigger_receipt_email_async
-    trigger_receipt_email_async(ticket_data, _destinatario, _nombre_resp)
-    
-    return jsonify({
-        "success": True, 
-        "message": f"Solicitud de re-envío procesada. El recibo llegará a {_destinatario} en breve."
-    })
+        # Manejo robusto de la fecha (Offset de 6 horas para México Central)
+        try:
+            if pago.fecha:
+                _fecha_local = pago.fecha - timedelta(hours=6)
+            else:
+                _fecha_local = datetime.utcnow() - timedelta(hours=6)
+                with open("mail_debug.log", "a") as f:
+                    f.write(f"WARNING: Pago ID {id} sin fecha definida. Usando fallback.\n")
+        except Exception as de:
+            _fecha_local = datetime.now() - timedelta(hours=6)
+            with open("mail_debug.log", "a") as f:
+                f.write(f"ERROR: Fallo en cálculo de fecha para Pago {id}: {str(de)}\n")
+
+        _liga_obj = pago.liga or ins.liga
+        _liga_n = _liga_obj.nombre if _liga_obj else session.get('user_name', 'Liga FutAdmin')
+
+        ticket_data = {
+            "pago_id": pago.id,
+            "folio": f"FUT-{pago.id:04d}-{_fecha_local.strftime('%y%m%d')}",
+            "equipo": ins.equipo.nombre,
+            "torneo": torneo.nombre,
+            "sede": torneo.cancha or "Por definir",
+            "liga_nombre": _liga_n,
+            "monto_abonado": float(pago.monto),
+            "monto_pactado": _monto_pactado,
+            "total_pagado": _total_pagado,
+            "saldo_pendiente": _saldo_pendiente,
+            "tipo": pago.tipo,
+            "metodo": pago.metodo or "Efectivo",
+            "partido": partido_info,
+            "premios": torneo.premios or "",
+            "reglamento": torneo.reglamento or ""
+        }
+        
+        _destinatario = ins.equipo.email
+        if not _destinatario:
+            return jsonify({"error": "El equipo no tiene un correo registrado."}), 400
+            
+        _nombre_resp = ins.equipo.responsable or 'Delegado'
+        ticket_data['fecha'] = _fecha_local.strftime('%d/%m/%Y %H:%M')
+        
+        # Usar el worker asíncrono unificado
+        from logic.receipts import trigger_receipt_email_async
+        trigger_receipt_email_async(ticket_data, _destinatario, _nombre_resp)
+        
+        with open("mail_debug.log", "a") as f:
+            f.write(f"SUCCESS: Triggered re-send for ID {id} to {_destinatario} at {datetime.now()}\n")
+
+        return jsonify({
+            "success": True, 
+            "message": f"Solicitud de re-envío procesada. El recibo llegará a {_destinatario} en breve."
+        })
+    except Exception as e:
+        import traceback
+        error_msg = traceback.format_exc()
+        with open("mail_debug.log", "a") as f:
+            f.write(f"CRITICAL ERROR in resend_pago_receipt for ID {id}: {str(e)}\n{error_msg}\n")
+        return jsonify({"error": f"Error interno al procesar el re-envío: {str(e)}"}), 500
 
 @app.route('/api/admin/mail_logs', methods=['GET'])
 def get_mail_logs():
@@ -3469,8 +3494,8 @@ def handle_combo_pagos():
                     if owner and owner.email:
                         ticket_data = {
                             "is_futadmin": True,
-                            "folio": f"COMB-PAY-{nuevo_pago.id}-{datetime.now().strftime('%y%m%d')}",
-                            "fecha": datetime.now().strftime('%d/%m/%Y %H:%M'),
+                            "folio": f"COMB-PAY-{nuevo_pago.id}-{(datetime.utcnow() - timedelta(hours=6)).strftime('%y%m%d')}",
+                            "fecha": (datetime.utcnow() - timedelta(hours=6)).strftime('%d/%m/%Y %H:%M'),
                             "liga_nombre": liga.nombre,
                             "monto_abonado": float(nuevo_pago.monto),
                             "tipo": f"Renovación de Suscripción",

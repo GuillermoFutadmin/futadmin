@@ -484,8 +484,10 @@ def trigger_receipt_email_async(ticket_data, recipient_email, recipient_name="Ad
             from datetime import timedelta, datetime
             
             # 1. Asegurar fecha local si no viene (Tijuana -7)
+            # Generar fecha local para el recibo (Offset de 6 horas para México)
             if not data.get('fecha'):
-                data['fecha'] = (datetime.now() - timedelta(hours=7)).strftime('%d/%m/%Y %H:%M')
+                from datetime import datetime, timedelta
+                data['fecha'] = (datetime.utcnow() - timedelta(hours=6)).strftime('%d/%m/%Y %H:%M')
 
             # 2. Directorio temporal
             temp_dir = tempfile.gettempdir()

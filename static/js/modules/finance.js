@@ -861,16 +861,27 @@ ${data.reglamento ? `<strong>REGLAMENTO:</strong>\n${data.reglamento}\n\n` : ''}
     }
 
     async resendReceipt(id) {
+        if (!id) {
+            Core.showNotification('No se encontró un ID de pago válido para reenviar.', 'error');
+            return;
+        }
+        
         try {
             const res = await fetch(`/api/pagos/${id}/resend_receipt`, { method: 'POST' });
-            const data = await res.json();
             if (res.ok) {
-                alert(data.message || 'Recibo re-enviado correctamente.');
+                const data = await res.json();
+                Core.showNotification(data.message || 'Solicitud de re-envío enviada', 'success');
             } else {
-                alert('Error al re-enviar: ' + (data.error || 'Desconocido'));
+                let errorMsg = 'Error al procesar el re-envío';
+                try {
+                    const error = await res.json();
+                    errorMsg = error.error || errorMsg;
+                } catch(e) {}
+                Core.showNotification(`${errorMsg} (Status: ${res.status})`, 'error');
             }
-        } catch (e) {
-            alert('Error de conexión al re-enviar recibo.');
+        } catch (error) {
+            console.error(error);
+            Core.showNotification('Error de conexión al intentar reenviar', 'error');
         }
     }
 

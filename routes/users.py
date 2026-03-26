@@ -450,7 +450,7 @@ def handle_combo_creation():
             ticket_data = {
                 "is_futadmin": True,
                 "folio": f"COMB-{nueva_liga.id}-{datetime.now().strftime('%y%m%d')}",
-                "fecha": (datetime.now() - timedelta(hours=7)).strftime('%d/%m/%Y %H:%M'),
+                "fecha": (datetime.utcnow() - timedelta(hours=6)).strftime('%d/%m/%Y %H:%M'),
                 "liga_nombre": nueva_liga.nombre,
                 "monto_abonado": float(monto_pactado),
                 "tipo": f"Suscripción - Plan {rol_owner.replace('_', ' ').title()}",
