@@ -59,11 +59,15 @@
             margin-bottom: 2rem;
         }
 
-        .logo-icon {
-            font-size: 3rem;
-            margin-bottom: 0.5rem;
+        .logo-img {
+            width: 120px;
+            height: 120px;
+            margin-bottom: 1rem;
             display: inline-block;
-            filter: drop-shadow(0 0 10px var(--primary-glow));
+            border-radius: 50%;
+            object-fit: cover;
+            box-shadow: 0 0 25px var(--primary-glow);
+            border: 2px solid rgba(255,255,255,0.05);
         }
 
         h1 {
@@ -157,7 +161,7 @@
 <body>
     <div class="login-container">
         <div class="logo-section">
-            <span class="logo-icon">⚽</span>
+            <img src="/static/img/logos/futadmin_circle.png" class="logo-img" alt="FutAdmin Logo">
             <h1>FutAdmin PRO</h1>
             <p class="welcome-text">Inicia sesión en tu liga</p>
         </div>
