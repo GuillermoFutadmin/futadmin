@@ -913,34 +913,54 @@ export class SettingsModule {
             }
 
 
-            // --- SECCIÓN 6: TÉRMINOS Y CONDICIONES (UNIFICADO) ---
-            if (currentY > 210) { doc.addPage(); currentY = 25; }
+            // --- SECCIÓN 6: TÉRMINOS, CONDICIONES Y MARCO LEGAL (UNIFICADO Y EXPANDIDO) ---
+            if (currentY > 180) { doc.addPage(); currentY = 25; }
             doc.setTextColor(...secondaryTextColor);
-            doc.setFontSize(10);
+            doc.setFontSize(11);
             doc.setFont("helvetica", "bold");
-            doc.text("TÉRMINOS, CONDICIONES Y RESPONSABILIDADES:", 20, currentY + 5);
-            doc.setFont("helvetica", "normal");
-            doc.setFontSize(8.5);
-            currentY += 10;
+            doc.text("TÉRMINOS, CONDICIONES Y RESPONSABILIDADES LEGALES:", 20, currentY + 5);
+            doc.line(20, currentY + 8, 190, currentY + 8);
+            currentY += 15;
 
-            const legalText = [
-                "• FutAdmin es un sistema de gestión y control administrativo, no interviene en la logística física de los eventos.",
-                "• RESPONSABILIDAD DE DATOS: El Administrador es el único responsable legal por el uso de imágenes y datos de menores.",
-                "• POLÍTICA DE CANCELACIÓN: El servicio puede darse de baja notificando a soporte. Pagos realizados no son reembolsables.",
-                "• DETERMINACIÓN DE COBROS: El costo mensual se calcula base Sedes ($290) y Ligas ($85) activas en el sistema."
+            const legalPoints = [
+                {
+                    title: "1. NATURALEZA DEL SERVICIO Y LIMITACIÓN DE RESPONSABILIDAD (CÓDIGO DE COMERCIO Y LFPC):",
+                    text: "Conforme a lo dispuesto en el Código de Comercio y la Ley Federal de Protección al Consumidor, FutAdmin se constituye exclusivamente como un proveedor de Software como Servicio (SaaS). Su función primordial es proveer herramientas tecnológicas avanzadas para el control de ingresos, gestión de roles y automatización de estadísticas deportivas. La plataforma NO interviene, organiza, ni supervisa la logística física de los torneos, partidos, traslados o la integridad física de los participantes en campo. El Administrador de la Liga reconoce que es el único responsable de la ejecución técnica y operativa de sus eventos deportivos. FutAdmin no se hace responsable por daños directos o indirectos derivados de cancelaciones, lesiones físicas o disputas legales entre terceros asociados a la organización. La relación jurídica entre FutAdmin y la Organización se limita estrictamente a la licencia temporal de uso del software. Cualquier falla técnica será atendida bajo los niveles de servicio estipulados, pero no generará bajo ninguna circunstancia derecho a indemnizaciones por lucro cesante o pérdida de oportunidades de negocio. El uso de la plataforma por parte del Administrador implica la aceptación total de que FutAdmin es un facilitador administrativo y no un garante de la seguridad o el éxito comercial de la liga. El Administrador debe asegurar proactivamente que todo su personal y usuarios finales sigan estrictamente las normativas locales vigentes de protección civil y reglamentos deportivos municipales."
+                },
+                {
+                    title: "2. PROTECCIÓN DE DATOS PERSONALES Y DERECHOS ARCO (LFPDPPP):",
+                    text: "El tratamiento de la información personal dentro del sistema se rige por la Ley Federal de Protección de Datos Personales en Posesión de los Particulares (LFPDPPP), específicamente cumpliendo con sus artículos 8, 12, 16 y 17. En esta relación contractual, la Organización (Liga) actúa como el 'Responsable' absoluto del tratamiento de los datos de sus jugadores, equipos y personal, mientras que FutAdmin actúa únicamente como el 'Encargado' del almacenamiento técnico. Es obligación irrenunciable y exclusiva de la Organización contar con su propio Aviso de Privacidad vigente y obtener el consentimiento informado y expreso de sus usuarios para la captura de nombres, teléfonos, correos y datos biométricos. FutAdmin implementa medidas de seguridad técnicas y administrativas de alta calidad para proteger la base de datos contra accesos no autorizados, conforme a los estándares marcados por el Reglamento de la LFPDPPP. Los derechos ARCO (Acceso, Rectificación, Cancelación y Oposición) deben ser garantizados y gestionados primordialmente por el Administrador de la Liga ante sus inscritos. FutAdmin no comercializa, transfiere ni utiliza los datos de los jugadores para fines publicitarios o distintos a la operación técnica necesaria del sistema. En caso de una vulneración de seguridad imputable a la negligencia del Administrador (como el intercambio de contraseñas o descuido en los accesos), FutAdmin queda exento de toda responsabilidad legal, civil o pecuniaria por el mal uso de dicha información."
+                },
+                {
+                    title: "3. TUTELA DE DERECHOS DE MENORES Y DERECHO A LA INTIMIDAD (LGDNNA):",
+                    text: "En estricto cumplimiento con la Ley General de los Derechos de Niñas, Niños y Adolescentes (LGDNNA), particularmente lo ordenado en los artículos 76, 77 y 78, se prohíbe terminantemente la difusión, publicación o manejo de imágenes y datos personales de menores de edad que permitan su plena identificación sin el consentimiento parental expreso, por escrito y verificable. El Administrador de la Liga es el único responsable legal ante las autoridades de verificar que cada fotografía de menor de edad subida al sistema cuente con la autorización firmada por los padres o tutores legales, autorizando específicamente el uso en listas de asistencia, credenciales digitales o perfiles de liguilla públicos. El principio del 'Interés Superior de la Niñez' debe prevalecer sobre cualquier necesidad administrativa o deportiva de la liga. FutAdmin provee las herramientas técnicas para permitir al administrador restringir la visibilidad de estos datos, pero la decisión final de publicar perfiles públicos de menores recae exclusivamente en la voluntad y gestión de la Organización. Cualquier violación a este derecho fundamental a la intimidad, o la exposición de menores a situaciones de riesgo por un manejo inadecuado de la plataforma, será responsabilidad penal y administrativa directa del Administrador de la Liga, deslindando a FutAdmin de cualquier proceso judicial o sanción derivada del incumplimiento de las normativas de la LGDNNA de Protección a la Niñez."
+                },
+                {
+                    title: "4. PROPIEDAD INTELECTUAL Y CONDICIONES DE COBRO (LFDA):",
+                    text: "El software FutAdmin, así como su código fuente, interfaces gráficas, algoritmos y logotipos asociados están protegidos por la Ley Federal del Derecho de Autor (artículos 101 y subsiguientes) y la Ley Federal de Protección a la Propiedad Industrial. Se otorga a la Organización una licencia de uso personal, intransferible y temporal mientras el pago se mantenga al corriente. Queda estrictamente prohibida la ingeniería inversa, copia no autorizada o distribución de cualquier módulo del software sin la autorización expresa y por escrito de FutAdmin. Respecto a los costos de operación, conforme al Código Civil Federal y el Código de Comercio, los montos se determinan por la capacidad técnica activa contratada (Sedes y Ligas extras habilitadas). La falta de pago oportuno generará la suspensión automática del acceso al sistema tras concluir el periodo de gracia establecido. Las cancelaciones de paquetes o reducciones de plan deben solicitarse con al menos 5 días hábiles de anticipación para ser procesadas antes del siguiente cierre. Los periodos de tiempo ya pagados o activaciones de capacidad técnica realizadas ('Combos') NO son reembolsables, ya que el servicio tecnológico se considera devengado al momento de habilitar el recurso en el servidor. La Organización acepta que los costos pueden ser actualizados periódicamente conforme a la inflación o mejoras estructurales críticas, notificando siempre con antelación a través del panel administrativo oficial."
+                }
             ];
-            
-            legalText.forEach((line) => {
-                doc.text(line, 20, currentY);
-                currentY += 5;
+
+            doc.setFontSize(8.5);
+            legalPoints.forEach((point) => {
+                doc.setFont("helvetica", "bold");
+                const splitTitle = doc.splitTextToSize(point.title, 170);
+                if (currentY + (splitTitle.length * 5) > 280) { doc.addPage(); currentY = 25; }
+                doc.text(splitTitle, 20, currentY);
+                currentY += (splitTitle.length * 4.5);
+
+                doc.setFont("helvetica", "normal");
+                const splitText = doc.splitTextToSize(point.text, 170);
+                if (currentY + (splitText.length * 5) > 280) { doc.addPage(); currentY = 25; }
+                doc.text(splitText, 20, currentY);
+                currentY += (splitText.length * 4.5) + 5;
             });
 
             currentY = 288;
             doc.setTextColor(0, 150, 80);
             doc.setFont("helvetica", "bold");
             doc.setFontSize(8);
-            doc.text("WWW.FUTADMIN.COM.MX", 105, currentY, { align: "center" });
-
+            doc.text("DOCUMENTOOFICIAL - WWW.FUTADMIN.COM.MX", 105, currentY, { align: "center" });
 
             doc.save(`Estado_Cuenta_FutAdmin_${liga.nombre.replace(/\s+/g, '_')}.pdf`);
             Core.showNotification('Estado de cuenta generado correctamente');
@@ -949,6 +969,7 @@ export class SettingsModule {
             Core.showNotification('Error al generar el PDF', 'error');
         }
     }
+
 
     async handleComboPaymentSubmit(e) {
         e.preventDefault();
