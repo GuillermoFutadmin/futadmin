@@ -1414,13 +1414,12 @@ textarea.full-textarea:focus {
     .sidebar-footer {
         display: flex !important;
         justify-content: center;
-        padding: 12px;
-        border-top: 1px solid rgba(255,255,255,0.05);
+        padding: 16px 12px;
     }
 
     .sidebar-logo-img {
-        width: 48px;
-        height: 48px;
+        width: 70px;
+        height: 70px;
         border-radius: 50%;
     }
 
