@@ -1412,7 +1412,16 @@ textarea.full-textarea:focus {
     }
 
     .sidebar-footer {
-        display: none !important; /* Ocultamos el gran logo para ahorrar pantalla en móvil */
+        display: flex !important;
+        justify-content: center;
+        padding: 12px;
+        border-top: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .sidebar-logo-img {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
     }
 
     .logo-container {
