@@ -672,20 +672,13 @@ def get_telegram_match(id):
 
 def _trigger_telegram_receipt_email(pago, equipo, inscripcion, torneo):
     if not equipo:
-        with open("mail_debug.log", "a") as f:
-            f.write(f"[SKIP] No equipo object for pago {getattr(pago, 'id', '?')}\n")
-        return
+        return False
 
-    # Resolve best available email: team -> liga contact -> skip
     recipient_email = getattr(equipo, 'email', None) or None
-    if not recipient_email and torneo:
-        liga = getattr(torneo, 'liga', None)
-        if liga:
-            recipient_email = getattr(liga, 'email', None) or getattr(liga, 'contacto_email', None)
     if not recipient_email:
         with open("mail_debug.log", "a") as f:
-            f.write(f"[SKIP] No email found for equipo '{equipo.nombre}' pago {getattr(pago, 'id', '?')} — assign an email to the team or league.\n")
-        return
+            f.write(f"[SKIP] Equipo '{equipo.nombre}' sin correo en pago {getattr(pago, 'id', '?')}\n")
+        return False  # Sin correo registrado
         
     try:
         from extensions import db
@@ -754,10 +747,12 @@ def _trigger_telegram_receipt_email(pago, equipo, inscripcion, torneo):
         trigger_receipt_email_async(result, recipient_email, getattr(equipo, 'responsable', "Delegado"))
         with open("mail_debug.log", "a") as f:
             f.write(f"[OK] TRIGGERED TELEGRAM RECEIPT for pago {pago.id} to {recipient_email} (equipo: {equipo.nombre})\n")
+        return True
     except Exception as e:
         import traceback
         with open("mail_debug.log", "a") as f:
             f.write(f"[ERROR] _trigger_telegram_receipt_email pago {getattr(pago, 'id', 'unknown')}: {str(e)}\n{traceback.format_exc()}\n")
+        return False
 
 @arbitros_bp.route('/api/telegram/match/<int:id>/payment', methods=['POST'])
 def telegram_match_payment(id):
@@ -1086,8 +1081,8 @@ def telegram_register_payment():
             ev = Equipo.query.get(p.equipo_visitante_id)
             partido_label = f"{el.nombre if el else '?'} vs {ev.nombre if ev else '?'}"
 
-    # Trigger email notification
-    _trigger_telegram_receipt_email(nuevo_pago, equipo, insc, equipo.torneo)
+    # Trigger email notification and flag result
+    email_enviado = _trigger_telegram_receipt_email(nuevo_pago, equipo, insc, equipo.torneo)
 
     return jsonify({
         "success": True, 
@@ -1097,7 +1092,8 @@ def telegram_register_payment():
         "monto": nuevo_pago.monto,
         "tipo": tipo,
         "partido_info": partido_label,
-        "fecha": nuevo_pago.fecha.strftime('%d/%m/%Y %H:%M')
+        "fecha": nuevo_pago.fecha.strftime('%d/%m/%Y %H:%M'),
+        "email_enviado": bool(email_enviado)
     })
 
 @arbitros_bp.route('/api/telegram/payments', methods=['GET'])
