@@ -3628,8 +3628,9 @@ def update_liga_extras(id):
                 if liga.contacto and liga.contacto != owner.email:
                     trigger_receipt_email_async(ticket_data, liga.contacto, owner.nombre)
         except Exception as e:
-            print(f"Error enviando notificación de upgrade: {e}")
-
+            import traceback
+            print(f"Error en notificación de upgrade: {e}\n{traceback.format_exc()}")
+            
     return jsonify({
         "success": True, 
         "liga": liga.to_dict(),

@@ -257,6 +257,7 @@ def handle_liga_single(liga_id):
         except Exception as e:
             db.session.rollback()
             return jsonify({'error': str(e)}), 400
+            
     if request.method == 'PUT':
         data = request.json
         nueva_activa = data.get('activa')
@@ -319,7 +320,16 @@ def handle_liga_single(liga_id):
             return jsonify(liga.to_dict())
         except Exception as e:
             db.session.rollback()
-            return jsonify({'error': str(e)}), 400
+            import traceback
+            from datetime import datetime
+            error_msg = f"Error en handle_liga_single: {str(e)}\n{traceback.format_exc()}"
+            print(error_msg)
+            try:
+                with open('error_debug.log', 'a', encoding='utf-8') as f:
+                    f.write(f"[{datetime.now()}] {error_msg}\n")
+            except:
+                pass
+            return jsonify({'error': str(e), 'traceback': traceback.format_exc()}), 500
 @users_bp.route('/api/combos', methods=['POST'])
 def handle_combo_creation():
     data = request.json
