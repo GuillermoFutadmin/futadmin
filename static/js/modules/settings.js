@@ -795,11 +795,12 @@ export class SettingsModule {
             doc.text(`${liga.stats?.jugadores || 0} Jugadores Registrados`, 125, currentY + 10);
             currentY += 28;
 
-            // --- SECCIÓN 4: HISTORIAL DE CAMBIOS EN EL PLAN (PROFESIONAL) ---
+            // --- SECCIÓN 4: HISTÓRICO DE INCREMENTOS DE COMBOS ---
             doc.setFontSize(14);
             doc.setFont('helvetica', 'bold');
-            doc.text('HISTORIAL DE CAMBIOS EN EL PLAN', 20, currentY);
+            doc.text('HISTÓRICO DE INCREMENTOS DE COMBOS', 20, currentY);
             doc.line(20, currentY + 3, 190, currentY + 3);
+
             currentY += 10;
 
             // Cabecera de Tabla Expansiones
@@ -1556,12 +1557,18 @@ export class SettingsModule {
                         <div style="font-size: 0.65rem; color: var(--text-muted); margin-top: 4px; line-height: 1.2;">
                             <div>Base: $${(l.monto_mensual || 0).toFixed(2)}</div>
                             ${(l.expansiones || []).map(e => `
-                                <div style="color: #eab308;">
-                                    + ${e.cantidad} ${e.tipo === 'extra_canchas' ? 'Sede' : 'Liga'} 
-                                    ($${e.monto_adicional.toFixed(2)}) 
-                                    <span style="opacity:0.6; font-size: 0.6rem;">• ${e.fecha.split(' ')[0]}</span>
+                                <div style="color: ${e.cantidad < 0 ? '#ef4444' : '#eab308'}; display: flex; align-items: center; justify-content: space-between;">
+                                    <span>
+                                        ${e.cantidad > 0 ? '+' : ''}${e.cantidad} ${e.tipo === 'extra_canchas' ? 'Sede' : 'Liga'} 
+                                        ($${e.monto_adicional.toFixed(2)})
+                                    </span>
+                                    ${window.USER_ROL === 'admin' ? `
+                                        <button onclick="ui.settings.deleteExpansion(${e.id})" style="background:none; border:none; color:#ef4444; font-size:0.75rem; cursor:pointer; padding:0 4px;" title="Eliminar este registro del historial">🗑️</button>
+                                    ` : ''}
                                 </div>
+                                <div style="opacity:0.6; font-size: 0.6rem; margin-bottom: 2px;">• ${e.fecha.split(' ')[0]}</div>
                             `).join('')}
+
                         </div>
                     </td>
                     <td>
@@ -1980,4 +1987,24 @@ export class SettingsModule {
             Core.showNotification('Error al crear PDF: ' + error.message, 'error');
         }
     }
+
+
+    async deleteExpansion(id) {
+        if (!confirm('¿Seguro que deseas eliminar este registro del historial? Esta acción NO afecta la capacidad actual (Sedes/Ligas), solo limpia el reporte histórico.')) return;
+
+        try {
+            const response = await fetch(`/api/ligas/expansiones/${id}`, { method: 'DELETE' });
+            const data = await response.json();
+            if (data.success) {
+                Core.showNotification('Registro eliminado del historial');
+                await this.init(); // Recargar datos completo para asegurar consistencia
+            } else {
+                Core.showNotification(data.error || 'Error al eliminar', 'error');
+            }
+        } catch (error) {
+            console.error('Error deleting expansion:', error);
+            Core.showNotification('Error de conexión', 'error');
+        }
+    }
 }
+

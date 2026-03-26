@@ -27,13 +27,20 @@ class Liga(db.Model):
 
     @property
     def monto_total_mensual(self):
-        # Calcular desde el historial real de expansiones para respetar precios pactados
-        # (incluye ligas bonus a $0 cuando vienen de paquete sede)
-        from sqlalchemy import func
-        total_extras = db.session.query(
-            func.coalesce(func.sum(LigaExpansion.monto_adicional), 0.0)
-        ).filter(LigaExpansion.liga_id == self.id).scalar() or 0.0
-        return (self.monto_mensual or 0.0) + float(total_extras)
+        # Fórmula Determinista: Base + (ExtraSedes * 290) + (ExtraLigas excedentes * 85)
+        # Cada Sede Extra ($290) incluye 5 ligas adicionales (Combo Base).
+        extra_c = self.extra_canchas or 0
+        extra_t = self.extra_torneos or 0
+        
+        # Cobro por sedes extras
+        costo_sedes = extra_c * 290.0
+        
+        # Ligas que exceden el paquete (5 por cada sede extra)
+        ligas_excedentes = max(0, extra_t - (extra_c * 5))
+        costo_ligas = ligas_excedentes * 85.0
+        
+        return float((self.monto_mensual or 0.0) + costo_sedes + costo_ligas)
+
 
 
     def to_dict(self):
