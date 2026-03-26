@@ -520,7 +520,6 @@ def handle_equipos():
         # Generar datos del ticket virtual COMPLETO
         ticket_data = {
             "pago_id": pago_id or nueva_ins.id,
-            "pago_id": nuevo.inscripcion.pagos[0].id if nuevo.inscripcion and nuevo.inscripcion.pagos else None,
             "folio": folio,
             "fecha": (datetime.utcnow() - timedelta(hours=6)).strftime('%d/%m/%Y %H:%M'),
             "equipo": nuevo.nombre,
@@ -533,10 +532,15 @@ def handle_equipos():
             "monto_pactado": monto_pactado,
             "total_pagado": abono_inicial,
             "saldo_pendiente": monto_pactado - abono_inicial,
+            "tipo_torneo": torneo.tipo or torneo.formato or "Liga",
+            "horarios": f"{torneo.dias_juego or ''} {torneo.horario_juego or ''}".strip() or "Por definir",
+            "formato": torneo.formato or "Torneo",
+            "fecha_inicio_torneo": torneo.fecha_inicio.strftime('%d/%m/%Y') if torneo.fecha_inicio else "Pendiente",
+            "organiza": torneo.liga.nombre if torneo.liga else "FutAdmin",
+            "contacto": torneo.liga.contacto or "No disponible",
             "premios": torneo.premios or "",
             "reglamento": torneo.reglamento or "",
-            "clausulas": torneo.clausulas or "",
-            "fecha_inicio_torneo": torneo.fecha_inicio.strftime('%d/%m/%Y') if torneo.fecha_inicio else "Pendiente"
+            "clausulas": torneo.clausulas or ""
         }
 
         # Trigger Email Receipt
@@ -1014,7 +1018,6 @@ def handle_inscripciones():
 
         ticket_data = {
             "pago_id": nueva.id,
-            "pago_id": nueva.id,
             "folio": folio_ins,
             "fecha": (datetime.utcnow() - timedelta(hours=6)).strftime('%d/%m/%Y %H:%M'),
             "equipo": equipo.nombre if equipo else "Equipo",
@@ -1027,6 +1030,12 @@ def handle_inscripciones():
             "monto_pactado": float(nueva.monto_pactado_inscripcion),
             "total_pagado": float(pagado_ins),
             "saldo_pendiente": float(nueva.monto_pactado_inscripcion - pagado_ins),
+            "tipo_torneo": torneo.tipo or torneo.formato or "Liga" if torneo else "Liga",
+            "horarios": f"{torneo.dias_juego or ''} {torneo.horario_juego or ''}".strip() or "Por definir" if torneo else "Por definir",
+            "formato": torneo.formato or "Torneo" if torneo else "Torneo",
+            "fecha_inicio_torneo": torneo.fecha_inicio.strftime('%d/%m/%Y') if torneo and torneo.fecha_inicio else "Pendiente",
+            "organiza": torneo.liga.nombre if torneo and torneo.liga else "FutAdmin",
+            "contacto": torneo.liga.contacto if torneo and torneo.liga else "No disponible",
             "premios": torneo.premios if torneo else "",
             "reglamento": torneo.reglamento if torneo else "",
             "clausulas": (torneo.clausulas if torneo and torneo.clausulas else "") + ("\n\n" + reglas_cancha if reglas_cancha else "")
@@ -1359,10 +1368,15 @@ def handle_pagos():
             "total_pagado": float(pagado_ins) if nuevo_pago.tipo == 'Inscripcion' else float(pagado_arb),
             "saldo_pendiente": float(ins.monto_pactado_inscripcion - pagado_ins) if nuevo_pago.tipo == 'Inscripcion' else 0,
             "partido": partido_info,
+            "tipo_torneo": torneo.tipo or torneo.formato or "Liga",
+            "horarios": f"{torneo.dias_juego or ''} {torneo.horario_juego or ''}".strip() or "Por definir",
+            "formato": torneo.formato or "Torneo",
+            "fecha_inicio_torneo": torneo.fecha_inicio.strftime('%d/%m/%Y') if torneo.fecha_inicio else "Pendiente",
+            "organiza": torneo.liga.nombre if torneo.liga else "FutAdmin",
+            "contacto": torneo.liga.contacto or "No disponible",
             "premios": torneo.premios or "",
             "reglamento": torneo.reglamento or "",
-            "clausulas": (torneo.clausulas if torneo and torneo.clausulas else "") + ("\n\n" + reglas_cancha if reglas_cancha else ""),
-            "fecha_inicio_torneo": torneo.fecha_inicio.strftime('%d/%m/%Y') if torneo.fecha_inicio else "Pendiente"
+            "clausulas": (torneo.clausulas if torneo and torneo.clausulas else "") + ("\n\n" + reglas_cancha if reglas_cancha else "")
         }
 
         if ins.equipo and ins.equipo.email:

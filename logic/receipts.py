@@ -20,7 +20,8 @@ FUTADMIN_WEBSITE = "https://futadmin.com.mx"
 
 def build_receipt_email_html(nombre, liga_nombre, equipo, torneo, tipo, monto_abonado,
                               monto_pactado=0, total_pagado=0, saldo_pendiente=0,
-                              metodo="Efectivo", folio="N/A", fecha=None, partido=None, is_futadmin=False):
+                              metodo="Efectivo", folio="N/A", fecha=None, partido=None, is_futadmin=False,
+                              tournament_details=None):
     """Genera un cuerpo HTML profesional para el correo de recibo de pago con firma FutAdmin."""
     fecha_str = fecha or datetime.now().strftime('%d/%m/%Y %H:%M')
     saldo_color = "#e74c3c" if saldo_pendiente > 0 else "#27ae60"
@@ -53,6 +54,44 @@ def build_receipt_email_html(nombre, liga_nombre, equipo, torneo, tipo, monto_ab
                 <td style="padding:8px 12px;font-weight:700;color:{saldo_color};">${saldo_pendiente:,.2f}</td>
               </tr>"""
 
+    # --- Seccion de Detalles del Torneo (Nueva) ---
+    tournament_html = ""
+    if tournament_details and not is_futadmin:
+        t = tournament_details
+        tournament_html = f"""
+        <!-- TOURNAMENT DETAILS SECTION -->
+        <tr>
+          <td style="padding:15px 40px 10px;">
+            <p style="margin:0 0 8px;font-size:14px;font-weight:700;color:#1a1a2e;border-left:4px solid #f1c40f;padding-left:10px;">Información del Torneo / Reglamento</p>
+            <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e8e8e8;border-radius:8px;overflow:hidden;font-size:12px;background:#fffef0;">
+              <tr>
+                <td style="padding:6px 12px;color:#555;border-bottom:1px solid #f0f0f0;width:40%;">📅 Inicio de Torneo</td>
+                <td style="padding:6px 12px;font-weight:600;border-bottom:1px solid #f0f0f0;color:#d35400;">{t.get('fecha_inicio', 'Pendiente')}</td>
+              </tr>
+              <tr>
+                <td style="padding:6px 12px;color:#555;border-bottom:1px solid #f0f0f0;">🕒 Horarios / Días</td>
+                <td style="padding:6px 12px;font-weight:600;border-bottom:1px solid #f0f0f0;">{t.get('horarios', 'S/H')}</td>
+              </tr>
+              <tr>
+                <td style="padding:6px 12px;color:#555;border-bottom:1px solid #f0f0f0;">🏆 Premios</td>
+                <td style="padding:6px 12px;font-weight:600;border-bottom:1px solid #f0f0f0;color:#c0392b;">{t.get('premios', 'Ver reglamento')}</td>
+              </tr>
+              <tr>
+                <td style="padding:6px 12px;color:#555;border-bottom:1px solid #f0f0f0;">🏢 Organiza</td>
+                <td style="padding:6px 12px;font-weight:600;border-bottom:1px solid #f0f0f0;">{t.get('organiza', 'FutAdmin')}</td>
+              </tr>
+              <tr>
+                <td style="padding:6px 12px;color:#555;">📞 Contacto</td>
+                <td style="padding:6px 12px;font-weight:600;">{t.get('contacto', 'No disponible')}</td>
+              </tr>
+            </table>
+            <div style="margin-top:10px;padding:12px;background:#f9f9f9;border:1px solid #eee;border-radius:8px;font-size:11px;color:#666;line-height:1.5;max-height:150px;overflow-y:auto;">
+                <strong>REGLAS Y CLÁUSULAS:</strong><br>
+                {(t.get('reglamento','') + '\n' + t.get('clausulas','')).strip() or 'Consultar con el organizador.'}
+            </div>
+          </td>
+        </tr>"""
+
     return f"""<!DOCTYPE html>
 <html lang="es">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
@@ -83,6 +122,9 @@ def build_receipt_email_html(nombre, liga_nombre, equipo, torneo, tipo, monto_ab
             </p>
           </td>
         </tr>
+
+        {tournament_html}
+
         <!-- PAYMENT DETAILS -->
         <tr>
           <td style="padding:10px 40px;">
@@ -121,7 +163,7 @@ def build_receipt_email_html(nombre, liga_nombre, equipo, torneo, tipo, monto_ab
         <tr>
           <td style="padding:0 40px 24px;">
             <div style="background:#fff8e1;border:1px solid #ffe082;border-radius:8px;padding:14px 18px;font-size:13px;color:#795548;">
-              📎 <strong>PDF adjunto:</strong> El recibo oficial en PDF está adjunto. Descárgalo como comprobante físico.
+              📎 <strong>PDF adjunto:</strong> El recibo oficial en PDF está adjunto con el reglamento completo del torneo.
             </div>
           </td>
         </tr>
@@ -266,7 +308,11 @@ def generate_receipt_pdf(data, filename):
             [Paragraph("Liga / Administrador:", label_s), Paragraph(liga_nombre, value_s)],
             [Paragraph("Equipo:", label_s), Paragraph(data.get('equipo','N/A'), value_s)],
             [Paragraph("Torneo:", label_s), Paragraph(data.get('torneo','N/A'), value_s)],
+            [Paragraph("Inicio Torneo:", label_s), Paragraph(data.get('fecha_inicio_torneo','Pendiente'), value_s)],
+            [Paragraph("Horarios / Días:", label_s), Paragraph(data.get('horarios','N/A'), value_s)],
             [Paragraph("Sede:", label_s), Paragraph(data.get('sede','Por definir'), value_s)],
+            [Paragraph("Tipo / Formato:", label_s), Paragraph(f"{data.get('tipo_torneo','Liga')} / {data.get('formato','Torneo')}", value_s)],
+            [Paragraph("Organiza / Contacto:", label_s), Paragraph(f"{data.get('organiza','FutAdmin')} - {data.get('contacto','')}", value_s)],
             [Paragraph("Concepto:", label_s), Paragraph(data.get('tipo','Abono'), value_s)],
             [Paragraph("Método de Pago:", label_s), Paragraph(data.get('metodo','Efectivo'), value_s)],
         ]
@@ -334,13 +380,19 @@ def generate_receipt_pdf(data, filename):
     if not is_futadmin:
         text = data.get('clausulas', '') or data.get('reglamento', '')
         if text and text.strip():
-            sec_banner3 = Table([[Paragraph("  Reglamento y Notas", sec_style)]], colWidths=[None])
+            sec_banner3 = Table([[Paragraph("  Reglamento, Premios y Notas", sec_style)]], colWidths=[None])
             sec_banner3.setStyle(TableStyle([
                 ('BACKGROUND', (0,0),(-1,-1), rl_colors.HexColor('#555555')),
                 ('TOPPADDING',(0,0),(-1,-1),6), ('BOTTOMPADDING',(0,0),(-1,-1),6),
             ]))
             story.append(sec_banner3)
             story.append(Spacer(1, 4))
+            
+            premios = data.get('premios', '')
+            if premios:
+                story.append(Paragraph(f"<b>PREMIOS:</b> {premios}", reg_style))
+                story.append(Spacer(1, 6))
+
             reg_style = ParagraphStyle('Reg', fontName='Helvetica', fontSize=8,
                                        textColor=rl_colors.HexColor('#444444'), leading=11)
             story.append(Paragraph(text.replace('\n', '<br/>'), reg_style))
@@ -520,7 +572,8 @@ def trigger_receipt_email_async(ticket_data, recipient_email, recipient_name="Ad
                 folio=data.get('folio', 'N/A'),
                 fecha=data.get('fecha'),
                 partido=data.get('partido'),
-                is_futadmin=is_futadmin
+                is_futadmin=is_futadmin,
+                tournament_details=data # Pasar todo el dict para extraer detalles extra
             )
 
             # 6. Enviar vía Resend (o fallback SMTP interno)
