@@ -137,6 +137,20 @@ def diag_db_v3():
         res['trace'] = traceback.format_exc()
     return jsonify(res)
 
+@app.route('/api/view_errors')
+@talisman(force_https=False)
+def view_errors():
+    import os
+    log_path = 'error_debug.log'
+    if not os.path.exists(log_path):
+        return jsonify({"error": "Log file not found", "path": os.path.abspath(log_path)})
+    try:
+        with open(log_path, 'r', encoding='utf-8') as f:
+            lines = f.readlines()
+            return jsonify({"last_errors": lines[-20:]})
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
 from models import db, bcrypt, Torneo, Equipo, Jugador, Inscripcion, Pago, GrupoEntrenamiento, AlumnoEntrenamiento, Partido, EventoPartido, AsistenciaPartido, Arbitro, Cancha, Usuario, apply_liga_filter, get_liga_id, check_torneos_limit, get_role_limits, Liga, PagoCombo, Configuracion, LigaExpansion
 from utils import paginate_query, handle_image_upload
 from logic.receipts import generate_receipt_pdf, send_receipt_email
