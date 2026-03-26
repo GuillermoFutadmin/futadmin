@@ -105,14 +105,33 @@ def healthcheck():
 @app.route('/api/diag_paths')
 @talisman(force_https=False)
 def diag_paths():
-    import os
-    return jsonify({
-        'cwd': os.getcwd(),
-        'base_dir': BASE_DIR,
-        'upload_folder': app.config.get('UPLOAD_FOLDER'),
-        'exists': os.path.exists(app.config.get('UPLOAD_FOLDER', '')),
-        'files_in_uploads': os.listdir(app.config.get('UPLOAD_FOLDER', '.')) if os.path.exists(app.config.get('UPLOAD_FOLDER', '')) else []
     })
+
+@app.route('/api/diag_db_v3')
+@talisman(force_https=False)
+def diag_db_v3():
+    from models import Liga, PagoCombo, LigaExpansion, Usuario
+    import traceback
+    res = {}
+    try:
+        res['ligas'] = Liga.query.count()
+        res['usuarios'] = Usuario.query.count()
+        try:
+            res['pagos'] = PagoCombo.query.count()
+        except Exception as e:
+            res['pagos_err'] = str(e)
+        try:
+            res['expansiones'] = LigaExpansion.query.count()
+        except Exception as e:
+            res['expansiones_err'] = str(e)
+            
+        # Intentar db.create_all() por si acaso
+        db.create_all()
+        res['create_all_done'] = True
+    except Exception as e:
+        res['critical_err'] = str(e)
+        res['trace'] = traceback.format_exc()
+    return jsonify(res)
 
 from models import db, bcrypt, Torneo, Equipo, Jugador, Inscripcion, Pago, GrupoEntrenamiento, AlumnoEntrenamiento, Partido, EventoPartido, AsistenciaPartido, Arbitro, Cancha, Usuario, apply_liga_filter, get_liga_id, check_torneos_limit, get_role_limits, Liga, PagoCombo, Configuracion, LigaExpansion
 from utils import paginate_query, handle_image_upload
