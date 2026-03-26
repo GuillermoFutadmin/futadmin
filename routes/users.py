@@ -244,92 +244,94 @@ def handle_ligas():
 
 @users_bp.route('/api/ligas/<int:liga_id>', methods=['PUT', 'DELETE'])
 def handle_liga_single(liga_id):
-    liga = Liga.query.get_or_404(liga_id)
-    if request.method == 'DELETE':
-        try:
-            # Eliminar usuarios asociados primero (Eliminación total del combo)
-            for user in liga.usuarios:
-                db.session.delete(user)
-            
-            db.session.delete(liga)
-            db.session.commit()
-            return jsonify({'success': True})
-        except Exception as e:
-            db.session.rollback()
-            return jsonify({'error': str(e)}), 400
-            
-    if request.method == 'PUT':
-        data = request.json
-        nueva_activa = data.get('activa')
-        
-        # Sincronizar estado 'activo' con usuarios si cambia
-        if nueva_activa is not None and nueva_activa != liga.activa:
-            liga.activa = nueva_activa
-            for user in liga.usuarios:
-                user.activo = nueva_activa
-        
-        old_nombre = liga.nombre
-        new_nombre = data.get('nombre', liga.nombre)
-        
-        # Sincronizar nombres de usuarios y árbitros si cambia el nombre de la liga
-        if new_nombre != old_nombre:
-            # 1. Actualizar Usuarios
-            for user in liga.usuarios:
-                if old_nombre in user.nombre:
-                    user.nombre = user.nombre.replace(old_nombre, new_nombre)
-            
-            # 2. Actualizar Árbitros (si existen y tienen el nombre de la liga)
-            from models import Arbitro
-            arbitros_asociados = Arbitro.query.filter_by(liga_id=liga.id).all()
-            for arb in arbitros_asociados:
-                if old_nombre in arb.nombre:
-                    arb.nombre = arb.nombre.replace(old_nombre, new_nombre)
-        
-        liga.nombre = new_nombre
-        liga.color = data.get('color', liga.color)
-        liga.tipo_cliente = data.get('tipo_cliente', liga.tipo_cliente)
-        liga.contacto = data.get('contacto', liga.contacto)
-        liga.subdominio = data.get('subdominio', liga.subdominio)
-        
-        # Actualizar credenciales si se proporcionan
-        owner_email = data.get('owner_email')
-        owner_pass = data.get('owner_pass')
-
-        if owner_email or owner_pass:
-            # Identificar el usuario titular
-            from models import Usuario, Arbitro
-            titular = Usuario.query.filter_by(liga_id=liga.id).filter(Usuario.rol.in_(['dueño_liga', 'super_arbitro', 'equipo'])).first()
-            
-            if titular:
-                if owner_email:
-                    titular.email = owner_email
+    import traceback
+    from datetime import datetime
+    try:
+        liga = Liga.query.get_or_404(liga_id)
+        if request.method == 'DELETE':
+            try:
+                # Eliminar usuarios asociados primero (Eliminación total del combo)
+                for user in liga.usuarios:
+                    db.session.delete(user)
                 
-                if owner_pass:
-                    hashed_pw = bcrypt.generate_password_hash(owner_pass).decode('utf-8')
-                    # Sincronizar contraseña para TODOS los usuarios de la liga (Combo)
-                    for u in liga.usuarios:
-                        u.password_hash = hashed_pw
+                db.session.delete(liga)
+                db.session.commit()
+                return jsonify({'success': True})
+            except Exception as e:
+                db.session.rollback()
+                return jsonify({'error': str(e)}), 400
+                
+        if request.method == 'PUT':
+            data = request.json
+            nueva_activa = data.get('activa')
+            
+            # Sincronizar estado 'activo' con usuarios si cambia
+            if nueva_activa is not None and nueva_activa != liga.activa:
+                liga.activa = nueva_activa
+                for user in liga.usuarios:
+                    user.activo = nueva_activa
+            
+            old_nombre = liga.nombre
+            new_nombre = data.get('nombre', liga.nombre)
+            
+            # Sincronizar nombres de usuarios y árbitros si cambia el nombre de la liga
+            if new_nombre != old_nombre:
+                # 1. Actualizar Usuarios
+                for user in liga.usuarios:
+                    if old_nombre in user.nombre:
+                        user.nombre = user.nombre.replace(old_nombre, new_nombre)
+                
+                # 2. Actualizar Árbitros (si existen y tienen el nombre de la liga)
+                from models import Arbitro
+                arbitros_asociados = Arbitro.query.filter_by(liga_id=liga.id).all()
+                for arb in arbitros_asociados:
+                    if old_nombre in arb.nombre:
+                        arb.nombre = arb.nombre.replace(old_nombre, new_nombre)
+            
+            liga.nombre = new_nombre
+            liga.color = data.get('color', liga.color)
+            liga.tipo_cliente = data.get('tipo_cliente', liga.tipo_cliente)
+            liga.contacto = data.get('contacto', liga.contacto)
+            liga.subdominio = data.get('subdominio', liga.subdominio)
+            
+            # Actualizar credenciales si se proporcionan
+            owner_email = data.get('owner_email')
+            owner_pass = data.get('owner_pass')
+
+            if owner_email or owner_pass:
+                # Identificar el usuario titular
+                from models import Usuario, Arbitro
+                titular = Usuario.query.filter_by(liga_id=liga.id).filter(Usuario.rol.in_(['dueño_liga', 'super_arbitro', 'equipo'])).first()
+                
+                if titular:
+                    if owner_email:
+                        titular.email = owner_email
                     
-                    # Sincronizar también con la tabla de Árbitros (password en plano según modelo actual)
-                    arbitros_asociados = Arbitro.query.filter_by(liga_id=liga.id).all()
-                    for arb in arbitros_asociados:
-                        arb.password = owner_pass
-        
-        try:
+                    if owner_pass:
+                        hashed_pw = bcrypt.generate_password_hash(owner_pass).decode('utf-8')
+                        # Sincronizar contraseña para TODOS los usuarios de la liga (Combo)
+                        for u in liga.usuarios:
+                            u.password_hash = hashed_pw
+                        
+                        # Sincronizar también con la tabla de Árbitros (password en plano según modelo actual)
+                        arbitros_asociados = Arbitro.query.filter_by(liga_id=liga.id).all()
+                        for arb in arbitros_asociados:
+                            arb.password = owner_pass
+            
+            # Commit y respuesta única al final
             db.session.commit()
             return jsonify(liga.to_dict())
-        except Exception as e:
-            db.session.rollback()
-            import traceback
-            from datetime import datetime
-            error_msg = f"Error en handle_liga_single: {str(e)}\n{traceback.format_exc()}"
-            print(error_msg)
-            try:
-                with open('error_debug.log', 'a', encoding='utf-8') as f:
-                    f.write(f"[{datetime.now()}] {error_msg}\n")
-            except:
-                pass
-            return jsonify({'error': str(e), 'traceback': traceback.format_exc()}), 500
+            
+    except Exception as e:
+        db.session.rollback()
+        error_msg = f"GLOBAL ERROR en handle_liga_single: {str(e)}\n{traceback.format_exc()}"
+        print(error_msg)
+        try:
+            with open('error_debug.log', 'a', encoding='utf-8') as f:
+                f.write(f"[{datetime.now()}] {error_msg}\n")
+        except:
+            pass
+        return jsonify({'error': str(e), 'traceback': traceback.format_exc()}), 500
 @users_bp.route('/api/combos', methods=['POST'])
 def handle_combo_creation():
     data = request.json
