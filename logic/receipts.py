@@ -528,6 +528,15 @@ def trigger_receipt_email_async(ticket_data, recipient_email, recipient_name="Ad
             if os.path.exists(pdf_path):
                 os.remove(pdf_path)
         except Exception as e:
-            print(f"Error asíncrono en envío de recibo (logic_async): {e}")
+            msg = f"Error asíncrono en envío de recibo (logic_async): {e}"
+            print(msg)
+            # Log to file for production visibility
+            try:
+                log_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "mail_debug.log")
+                with open(log_path, "a", encoding="utf-8") as f:
+                    from datetime import datetime
+                    f.write(f"[{datetime.now()}] THREAD ERROR: {msg}\n")
+            except:
+                pass
 
     threading.Thread(target=internal_worker, args=(ticket_data, recipient_email, recipient_name), daemon=True).start()
