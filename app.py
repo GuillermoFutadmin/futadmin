@@ -1393,7 +1393,6 @@ def resend_pago_receipt(id):
 
     ticket_data = {
         "pago_id": pago.id,
-        "pago_id": pago.id,
         "folio": f"FUT-{pago.id:04d}-{_fecha_local.strftime('%y%m%d')}",
         "equipo": ins.equipo.nombre,
         "torneo": torneo.nombre,
@@ -1414,8 +1413,10 @@ def resend_pago_receipt(id):
     if not _destinatario:
         return jsonify({"error": "El equipo no tiene un correo registrado."}), 400
         
-    ticket_data.pop('pago_obj', None) # Limpiar objeto para el hilo
+    _nombre_resp = ins.equipo.responsable or 'Delegado'
     ticket_data['fecha'] = _fecha_local.strftime('%d/%m/%Y %H:%M')
+    
+    # Usar el worker asíncrono unificado
     from logic.receipts import trigger_receipt_email_async
     trigger_receipt_email_async(ticket_data, _destinatario, _nombre_resp)
     
