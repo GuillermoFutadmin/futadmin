@@ -57,16 +57,20 @@ if os.getenv('RAILWAY_ENVIRONMENT'):
 
 @app.route('/ping')
 def ping():
-    return "pong - v12 (diag_endpoint_ready)", 200
+    return "pong - v13 (db_test_included)", 200
 
 @app.route('/api/test/receipt')
 def test_receipt_sync():
     try:
         from logic.receipts import generate_receipt_pdf
+        from models import Pago
+        # DB Test
+        count = Pago.query.count()
+        
         import os, tempfile
         pdf_path = os.path.join(tempfile.gettempdir(), f"test_{os.getpid()}.pdf")
         data = {
-            "equipo": "Meteoros 100",
+            "equipo": f"DB-OK (count={count})",
             "torneo": "TJ Municipal",
             "liga_nombre": "FutAdmin",
             "folio": "TEST-0001",
@@ -79,7 +83,7 @@ def test_receipt_sync():
         size = os.path.getsize(pdf_path)
         if os.path.exists(pdf_path):
             os.remove(pdf_path)
-        return jsonify({"success": True, "message": f"PDF generado con éxito ({size} bytes)"}), 200
+        return jsonify({"success": True, "message": f"PDF generado con éxito ({size} bytes). DB Count: {count}"}), 200
     except Exception as e:
         import traceback
         return jsonify({"success": False, "error": str(e), "trace": traceback.format_exc()}), 500
