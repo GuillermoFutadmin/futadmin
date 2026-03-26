@@ -1538,13 +1538,19 @@ textarea.full-textarea:focus {
     display: none;
 }
 
-/* Modales y utilidades */
+    /* Modales y utilidades */
     .stats-grid, 
     .dashboard-grid, 
     .torneos-grid,
-    #settings-linked-container {
+    #settings-linked-container,
+    .resumen-secondary-grid {
         grid-template-columns: 1fr !important;
         gap: 1rem;
+    }
+
+    .resumen-top-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 0.8rem;
     }
 
     .stat-card {
@@ -1630,6 +1636,14 @@ textarea.full-textarea:focus {
     
     .logo-container h1 {
         font-size: 1.2rem;
+    }
+
+    .dash-card-side .badge-ver {
+        position: relative;
+        top: 0;
+        right: 0;
+        align-self: flex-start;
+        margin-bottom: 5px;
     }
 }
 
