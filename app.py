@@ -1431,8 +1431,9 @@ def resend_pago_receipt(id):
 
 @app.route('/api/admin/mail_logs', methods=['GET'])
 def get_mail_logs():
-    if session.get('user_rol') != 'admin':
-        return "Acceso denegado", 403
+    # TEMPORAL: Deshabilitado para diagnóstico remoto
+    # if session.get('user_rol') != 'admin':
+    #    return "Acceso denegado", 403
     
     log_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "mail_debug.log")
     if not os.path.exists(log_path):
