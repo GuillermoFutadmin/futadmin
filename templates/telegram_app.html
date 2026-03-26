@@ -516,33 +516,50 @@
 </head>
 
 <body>
-    <div id="login-view">
-        <div class="card" style="text-align: center; margin-top: 20vh;">
-            <h2 style="margin: 0; font-weight: 800; color: var(--primary);">FUTADMIN</h2>
-            <div style="font-size: 4rem; margin: 1.5rem 0; filter: drop-shadow(0 0 10px var(--primary));">⚽</div>
-            <div id="login-form" style="display: none;">
-                <p style="color: var(--muted); margin-bottom: 20px;">INICIA SESIÓN CON TUS DATOS DEL PANEL</p>
-                <div style="text-align: left; margin-bottom: 15px;">
-                    <label style="font-size: 0.7rem; color: var(--muted); margin-left: 5px;">EMAIL / USUARIO</label>
-                    <input type="text" id="ref-email" placeholder="ejemplo@email.com" class="btn btn-outline"
-                        style="text-align:left; margin-top:5px; font-size: 1rem; border-color:rgba(255,255,255,0.1);">
+    <div id="login-view" class="view" style="display: none; height: 100vh; background: var(--bg); overflow: hidden;">
+        <div style="max-width:320px; margin: 0 auto; height: 100%; display: flex; flex-direction: column; justify-content: center; padding: 20px;">
+            <div style="text-align: center; margin-bottom: 30px;">
+                <div style="position: relative; display: inline-block;">
+                    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 80px; height: 80px; background: var(--primary); filter: blur(30px); opacity: 0.3; border-radius: 50%;"></div>
+                    <img src="/static/img/sidebar-logo.png" id="login-logo-img" style="width: 100px; height: 100px; object-fit: contain; position: relative; z-index: 1;">
                 </div>
-                <div style="text-align: left; margin-bottom: 25px;">
-                    <label style="font-size: 0.7rem; color: var(--muted); margin-left: 5px;">CONTRASEÑA</label>
-                    <input type="password" id="ref-password" placeholder="••••" class="btn btn-outline"
-                        style="text-align:left; margin-top:5px; font-size: 1rem; letter-spacing: 0.2em; border-color:rgba(255,255,255,0.1);">
-                </div>
-                <button class="btn btn-primary" onclick="attemptLogin()">ACCEDER</button>
+                <h1 style="margin: 10px 0 0 0; font-weight: 900; font-size: 1.8rem; color: #fff; letter-spacing: -0.5px;">FutAdmin <span style="color:var(--primary)">PRO</span></h1>
+                <p style="color: var(--muted); font-size: 0.8rem; margin: 5px 0 0 0; font-weight: 500;">Inicia sesión en tu liga</p>
             </div>
-            <div id="auth-status" style="color: var(--muted); margin-top: 10px;">Validando acceso...</div>
-            <div id="auth-error" style="color: var(--error); margin-top: 10px; font-weight: 600;"></div>
+
+            <div id="login-form" style="display: none;">
+                <div style="margin-bottom: 12px;">
+                    <label style="font-size: 0.65rem; color: var(--muted); font-weight: 800; letter-spacing: 1px; text-transform: uppercase;">CORREO ELECTRÓNICO / USER</label>
+                    <input type="text" id="ref-email" placeholder="admin@ejemplo.com" class="btn btn-outline"
+                        style="text-align:left; margin-top:6px; font-size: 0.9rem; height: 50px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px;">
+                </div>
+                <div style="margin-bottom: 20px;">
+                    <label style="font-size: 0.65rem; color: var(--muted); font-weight: 800; letter-spacing: 1px; text-transform: uppercase;">CONTRASEÑA</label>
+                    <input type="password" id="ref-password" placeholder="••••••••" class="btn btn-outline"
+                        style="text-align:left; margin-top:6px; font-size: 0.9rem; height: 50px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; letter-spacing: 0.2em;">
+                </div>
+                
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 25px;">
+                    <input type="checkbox" id="accept-privacy" checked style="width: 18px; height: 18px; accent-color: var(--primary);">
+                    <label for="accept-privacy" style="font-size: 0.75rem; color: var(--muted); font-weight: 500;">He leído y acepto el <span style="color: var(--primary); text-decoration: underline; cursor: pointer;">Aviso de Privacidad</span></label>
+                </div>
+
+                <button class="btn btn-primary" onclick="attemptLogin()" style="height: 55px; border-radius: 14px; font-weight: 900; font-size: 1rem; background: linear-gradient(to right, #22c55e, #16a34a); color: rgba(0,0,0,0.8); box-shadow: 0 4px 15px rgba(34,197,94,0.3);">ENTRAR AL SISTEMA</button>
+            </div>
+
+            <div id="auth-status" style="color: var(--muted); text-align: center; font-size: 0.8rem; margin-top: 15px;">Validando acceso...</div>
+            <div id="auth-error" style="color: var(--error); text-align: center; margin-top: 15px; font-weight: 600; font-size: 0.8rem;"></div>
+
+            <div style="text-align: center; margin-top: 40px; font-size: 0.65rem; color: rgba(255,255,255,0.3); font-weight: 500;">
+                © 2026 Diseñalo. FutAdmin Professional Edition.
+            </div>
         </div>
     </div>
 
     <div id="menu-view" class="view" style="display: none; padding: 20px;">
         <div class="header" style="margin-bottom: 30px;">
             <div style="display: flex; align-items: center; gap: 12px;">
-                <div style="font-size: 2.5rem;">⚽</div>
+                <img src="/static/img/sidebar-logo.png" style="width: 45px; height: 45px; object-fit: contain;">
                 <div>
                     <h3 style="margin:0;">MENU PRINCIPAL</h3>
                     <div style="font-size: 0.7rem; color: var(--muted);" id="user-info-detail"></div>
