@@ -2715,14 +2715,44 @@
 
             container.innerHTML = filtered.map(ins => {
                 const eqName = ins.equipo_nombre || (ins.equipo && ins.equipo.nombre) || "EQUIPO";
-                return `
-                    <div class="card" style="padding:15px; display:flex; justify-content:space-between; align-items:center; border-left:4px solid #6366f1;">
-                        <div style="flex:1;">
-                            <div style="font-weight:700; font-size:1rem;">${eqName.toUpperCase()}</div>
-                            <div style="font-size:0.7rem; color:var(--muted); margin-top:2px;">INSCRIPCIÓN PACTADA: $${parseFloat(ins.monto_pactado || 0).toFixed(2)}</div>
-                            <div style="font-size:0.7rem; color:var(--secondary); font-weight:800; margin-top:2px;">SALDO: $${parseFloat(ins.saldo_inscripcion || 0).toFixed(2)}</div>
+                const iid = ins.id;
+                const eid = ins.equipo_id || (ins.equipo && ins.equipo.id);
+                
+                let historyHtml = '';
+                if (ins.historial_pagos && ins.historial_pagos.length > 0) {
+                    historyHtml = `
+                    <div id="ins-details-${eid}" style="display: none; margin-top: 15px; border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 10px;">
+                        <div style="font-size:0.75rem; color:var(--secondary); font-weight:800; margin-bottom:8px;">HISTORIAL DE PAGOS</div>
+                        <div style="display:flex; flex-direction:column; gap:8px;">
+                            ${ins.historial_pagos.filter(p => p.tipo === 'Inscripcion').map(p => `
+                                <div style="background:rgba(255,255,255,0.03); padding:8px; border-radius:6px; display:flex; justify-content:space-between; align-items:center; border-left:2px solid var(--secondary);">
+                                    <div style="flex:1;">
+                                        <div style="font-size:0.75rem; font-weight:700;">$${p.monto.toFixed(2)}</div>
+                                        <div style="font-size:0.6rem; color:var(--muted);">${p.fecha} | ${p.metodo}</div>
+                                    </div>
+                                    <div style="font-size:0.6rem; opacity:0.6;">✅ RECIBIDO</div>
+                                </div>
+                            `).join('')}
                         </div>
-                        <button class="btn btn-primary" onclick="openPaymentForm(${ins.equipo_id || (ins.equipo && ins.equipo.id)}, 'Inscripción')" style="width:auto; padding:8px 15px; font-size:0.8rem; background:#6366f1;">PAGAR</button>
+                    </div>`;
+                } else {
+                    historyHtml = `<div id="ins-details-${eid}" style="display: none; font-size:0.7rem; color:var(--muted); margin-top:10px;">Sin abonos registrados.</div>`;
+                }
+
+                return `
+                    <div class="card" style="padding:15px; border-left:4px solid #6366f1; cursor:pointer;" onclick="toggleTWAInscripcionDetails(${eid})">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <div style="flex:1;">
+                                <div style="font-weight:700; font-size:1rem; display:flex; align-items:center; gap:8px;">
+                                    <span id="ins-caret-${eid}" style="transition: transform 0.3s; font-size:0.8rem; opacity:0.6;">▶</span>
+                                    ${eqName.toUpperCase()}
+                                </div>
+                                <div style="font-size:0.7rem; color:var(--muted); margin-top:2px;">INSCRIPCIÓN PACTADA: $${parseFloat(ins.monto_pactado || 0).toFixed(2)}</div>
+                                <div style="font-size:0.7rem; color:var(--secondary); font-weight:800; margin-top:2px;">SALDO: $${parseFloat(ins.saldo_inscripcion || 0).toFixed(2)}</div>
+                            </div>
+                            <button class="btn btn-primary" onclick="event.stopPropagation(); openPaymentForm(${eid}, 'Inscripción')" style="width:auto; padding:8px 15px; font-size:0.8rem; background:#6366f1;">PAGAR</button>
+                        </div>
+                        ${historyHtml}
                     </div>
                 `;
             }).join('');
@@ -2785,7 +2815,7 @@
                 let detailsHtml = '';
                 if (ins.detalle_partidos && ins.detalle_partidos.length > 0) {
                     detailsHtml = `
-                    <div style="margin-top: 15px; border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 10px;">
+                    <div id="arb-details-${ins.equipo_id}" style="display: none; margin-top: 15px; border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 10px;">
                         <div style="font-size:0.75rem; color:var(--primary); font-weight:800; margin-bottom:8px;">DESGLOSE POR JORNADA</div>
                         <div style="display:flex; flex-direction:column; gap:8px;">
                             ${ins.detalle_partidos.map(dp => {
@@ -2793,7 +2823,7 @@
                                 const estadoColor = isPaid ? '#00ff88' : (dp.estado === 'Played' ? '#00ff88' : (dp.estado === 'Live' ? '#ffae00' : '#aaa'));
                                 const saldoColor = dp.saldo > 0 ? '#ff4d4d' : '#00ff88';
                                 const actionHtml = dp.saldo > 0 
-                                    ? `<button onclick="openPaymentForm(${ins.equipo_id}, 'Arbitraje', ${dp.partido_id})" style="background:var(--warning); color:black; border:none; padding:4px 8px; border-radius:4px; font-weight:800; font-size:0.6rem; cursor:pointer;">PAGAR $${dp.saldo.toFixed(2)}</button>` 
+                                    ? `<button onclick="event.stopPropagation(); openPaymentForm(${ins.equipo_id}, 'Arbitraje', ${dp.partido_id})" style="background:var(--warning); color:black; border:none; padding:4px 8px; border-radius:4px; font-weight:800; font-size:0.6rem; cursor:pointer;">PAGAR $${dp.saldo.toFixed(2)}</button>` 
                                     : `<span style="font-size:0.6rem; color:#00ff88;">✅ PAGADO</span>`;
 
                                 return '<div style="background:rgba(0,0,0,0.2); padding:8px; border-radius:6px; display:flex; justify-content:space-between; align-items:center; border-left:2px solid ' + estadoColor + ';">' +
@@ -2807,13 +2837,16 @@
                         </div>
                     </div>`;
                 } else {
-                    detailsHtml = '<div style="font-size:0.7rem; color:var(--muted); margin-top:10px;">Sin partidos registrados.</div>';
+                    detailsHtml = '<div id="arb-details-' + ins.equipo_id + '" style="display: none; font-size:0.7rem; color:var(--muted); margin-top:10px;">Sin partidos registrados.</div>';
                 }
 
                 return `
-                <div class="card" style="padding:15px; border-left:4px solid var(--warning);">
+                <div class="card" style="padding:15px; border-left:4px solid var(--warning); cursor:pointer;" onclick="toggleTWAArbitrajeDetails(${ins.equipo_id})">
                     <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
-                        <h4 style="margin:0; color:white; font-size:1.1rem;">${ins.equipo_nombre}</h4>
+                        <h4 style="margin:0; color:white; font-size:1.1rem; display:flex; align-items:center; gap:8px;">
+                            <span id="arb-caret-${ins.equipo_id}" style="transition: transform 0.3s; font-size:0.8rem; opacity:0.6;">▶</span>
+                            ${ins.equipo_nombre}
+                        </h4>
                         <div style="text-align:right;">
                             <div style="font-size:0.65rem; color:var(--muted);">JUGADOS</div>
                             <div style="font-weight:900; color:var(--primary);">${jugados}</div>
@@ -2848,6 +2881,26 @@
                 </div>
                 `;
             }).join('');
+        }
+
+        function toggleTWAArbitrajeDetails(id) {
+            const el = document.getElementById(`arb-details-${id}`);
+            const caret = document.getElementById(`arb-caret-${id}`);
+            if (!el) return;
+            const isHidden = el.style.display === 'none';
+            el.style.display = isHidden ? 'block' : 'none';
+            if (caret) caret.style.transform = isHidden ? 'rotate(90deg)' : 'rotate(0deg)';
+            if (tg.isVersionAtLeast('6.1')) tg.HapticFeedback.impactOccurred('light');
+        }
+
+        function toggleTWAInscripcionDetails(id) {
+            const el = document.getElementById(`ins-details-${id}`);
+            const caret = document.getElementById(`ins-caret-${id}`);
+            if (!el) return;
+            const isHidden = el.style.display === 'none';
+            el.style.display = isHidden ? 'block' : 'none';
+            if (caret) caret.style.transform = isHidden ? 'rotate(90deg)' : 'rotate(0deg)';
+            if (tg.isVersionAtLeast('6.1')) tg.HapticFeedback.impactOccurred('light');
         }
 
         function setMatchSearchMode(mode) {
