@@ -673,68 +673,78 @@ def get_telegram_match(id):
 def _trigger_telegram_receipt_email(pago, equipo, inscripcion, torneo):
     if not equipo or not equipo.email:
         return
-    
-    from extensions import db
-    from models import Pago, Cancha, Partido
-    
-    pagado_ins = db.session.query(db.func.sum(Pago.monto)).filter_by(inscripcion_id=inscripcion.id, tipo='Inscripcion').scalar() or 0
-    pagado_arb = db.session.query(db.func.sum(Pago.monto)).filter_by(inscripcion_id=inscripcion.id, tipo='Arbitraje').scalar() or 0
-    
-    reglas_cancha = ""
-    sede_nombre = "Por definir"
-    if torneo and torneo.cancha:
-        nombre_cancha = torneo.cancha.strip()
-        cancha_asignada = Cancha.query.filter(Cancha.nombre.ilike(nombre_cancha)).first()
-        if cancha_asignada and cancha_asignada.notas:
-            reglas_cancha = f"REGLAS DE LA SEDE ({cancha_asignada.nombre}):\n{cancha_asignada.notas}"
-        sede_nombre = cancha_asignada.nombre if cancha_asignada else torneo.cancha
         
-    import string, random
-    folio_pago = 'FUT-' + ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
-    
-    partido_info = None
-    if pago.partido_id:
-        p = Partido.query.get(pago.partido_id)
-        if p:
-            partido_info = {
-                "rivales": f"{p.equipo_local.nombre} vs {p.equipo_visitante.nombre}",
-                "jornada": p.jornada,
-                "fecha": p.fecha.strftime('%d/%m/%Y') if p.fecha else "S/F"
-            }
-            
-    from datetime import timedelta
-    _fecha_local = pago.fecha - timedelta(hours=6)
-    
-    result = {
-        "success": True,
-        "pago_id": pago.id,
-        "folio": folio_pago,
-        "equipo": equipo.nombre,
-        "torneo": torneo.nombre if torneo else "N/A",
-        "sede": sede_nombre.strip(),
-        "liga_nombre": torneo.liga.nombre if torneo and torneo.liga else "FutAdmin",
-        "monto_abonado": float(pago.monto),
-        "tipo": pago.tipo,
-        "fecha": _fecha_local.strftime('%d/%m/%Y %H:%M'),
-        "metodo": pago.metodo,
-        "monto_pactado": float(inscripcion.monto_pactado_inscripcion) if inscripcion.monto_pactado_inscripcion else 0,
-        "total_pagado": float(pagado_ins) if pago.tipo == 'Inscripcion' else float(pagado_arb),
-        "saldo_pendiente": float(inscripcion.monto_pactado_inscripcion - pagado_ins) if pago.tipo == 'Inscripcion' and inscripcion.monto_pactado_inscripcion else 0,
-        "partido": partido_info,
-        "premios": torneo.premios if torneo and torneo.premios else "",
-        "reglamento": torneo.reglamento if torneo and torneo.reglamento else "",
-        "clausulas": (torneo.clausulas if torneo and torneo.clausulas else "") + ("\n\n" + reglas_cancha if reglas_cancha else ""),
-        "fecha_inicio_torneo": torneo.fecha_inicio.strftime('%d/%m/%Y') if torneo and torneo.fecha_inicio else "Pendiente"
-    }
-    
     try:
+        from extensions import db
+        from models import Pago, Cancha, Partido
+        import traceback
+        
+        pagado_ins = db.session.query(db.func.sum(Pago.monto)).filter_by(inscripcion_id=inscripcion.id, tipo='Inscripcion').scalar() or 0
+        pagado_arb = db.session.query(db.func.sum(Pago.monto)).filter_by(inscripcion_id=inscripcion.id, tipo='Arbitraje').scalar() or 0
+        
+        reglas_cancha = ""
+        sede_nombre = "Por definir"
+        if torneo and torneo.cancha:
+            nombre_cancha = torneo.cancha.strip()
+            cancha_asignada = Cancha.query.filter(Cancha.nombre.ilike(nombre_cancha)).first()
+            if cancha_asignada and cancha_asignada.notas:
+                reglas_cancha = f"REGLAS DE LA SEDE ({cancha_asignada.nombre}):\n{cancha_asignada.notas}"
+            sede_nombre = cancha_asignada.nombre if cancha_asignada else torneo.cancha
+            
+        import string, random
+        folio_pago = 'FUT-' + ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+        
+        partido_info = None
+        if pago.partido_id:
+            p = Partido.query.get(pago.partido_id)
+            if p:
+                partido_info = {
+                    "rivales": f"{p.equipo_local.nombre} vs {p.equipo_visitante.nombre}",
+                    "jornada": p.jornada,
+                    "fecha": p.fecha.strftime('%d/%m/%Y') if getattr(p, 'fecha', None) else "S/F"
+                }
+                
+        from datetime import timedelta
+        # Robust date handling
+        p_fecha = getattr(pago, 'fecha', None)
+        if not p_fecha:
+            from datetime import datetime as dt_sys
+            p_fecha = dt_sys.utcnow()
+            
+        _fecha_local = p_fecha - timedelta(hours=6)
+        
+        monto_pactado = float(inscripcion.monto_pactado_inscripcion) if getattr(inscripcion, 'monto_pactado_inscripcion', None) else 0.0
+        
+        result = {
+            "success": True,
+            "pago_id": pago.id,
+            "folio": folio_pago,
+            "equipo": equipo.nombre,
+            "torneo": torneo.nombre if torneo else "N/A",
+            "sede": sede_nombre.strip(),
+            "liga_nombre": torneo.liga.nombre if torneo and getattr(torneo, 'liga', None) else "FutAdmin",
+            "monto_abonado": float(pago.monto) if pago.monto else 0.0,
+            "tipo": pago.tipo,
+            "fecha": _fecha_local.strftime('%d/%m/%Y %H:%M'),
+            "metodo": pago.metodo,
+            "monto_pactado": monto_pactado,
+            "total_pagado": float(pagado_ins) if pago.tipo == 'Inscripcion' else float(pagado_arb),
+            "saldo_pendiente": float(monto_pactado - pagado_ins) if pago.tipo == 'Inscripcion' else 0.0,
+            "partido": partido_info,
+            "premios": torneo.premios if torneo and getattr(torneo, 'premios', None) else "",
+            "reglamento": torneo.reglamento if torneo and getattr(torneo, 'reglamento', None) else "",
+            "clausulas": (torneo.clausulas if torneo and getattr(torneo, 'clausulas', None) else "") + ("\n\n" + reglas_cancha if reglas_cancha else ""),
+            "fecha_inicio_torneo": torneo.fecha_inicio.strftime('%d/%m/%Y') if torneo and getattr(torneo, 'fecha_inicio', None) else "Pendiente"
+        }
+        
         from logic.receipts import trigger_receipt_email_async
-        trigger_receipt_email_async(result, equipo.email, equipo.responsable or "Delegado")
+        trigger_receipt_email_async(result, equipo.email, getattr(equipo, 'responsable', "Delegado"))
         with open("mail_debug.log", "a") as f:
             f.write(f"TRIGGERED TELEGRAM RECEIPT for pago {pago.id} to {equipo.email}\n")
     except Exception as e:
+        import traceback
         with open("mail_debug.log", "a") as f:
-            f.write(f"ERROR TRIGGERING TELEGRAM RECEIPT for pago {pago.id}: {str(e)}\n")
+            f.write(f"FATAL ERROR IN _trigger_telegram_receipt_email for pago {getattr(pago, 'id', 'unknown')}: {str(e)}\n{traceback.format_exc()}\n")
 @arbitros_bp.route('/api/telegram/match/<int:id>/payment', methods=['POST'])
 def telegram_match_payment(id):
     data = request.json
