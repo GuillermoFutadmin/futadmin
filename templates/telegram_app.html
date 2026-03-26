@@ -947,6 +947,7 @@
         let paymentTeamFilterId = null; // Para filtrar partidos de un equipo en pagos
 
         function renderMatchesInDrilldown(matches, container, options = {}) {
+            currentMatches = matches; // Sync global array for index-based handlers
             const { showAbonarButton = false, teamId = null, title = null } = options;
             
             let html = '';
