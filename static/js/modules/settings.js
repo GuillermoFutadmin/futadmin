@@ -1610,9 +1610,14 @@ export class SettingsModule {
                     </td>
                     <td><span class="badge" style="background:rgba(255,255,255,0.05); color:var(--text);">${l.paquete}</span></td>
                     <td>
-                        <div style="font-weight:700; color: #00ff88; font-size: 1rem;">$${(l.monto_total_mensual || 0).toFixed(2)}</div>
-                        <div style="font-size: 0.65rem; color: var(--text-muted); margin-top: 4px; line-height: 1.2;">
-                            <div>Base: $${(l.monto_mensual || 0).toFixed(2)}</div>
+                        <div onclick="ui.settings.toggleComboDetails(${l.id})" 
+                             style="font-weight:700; color: #00ff88; font-size: 1rem; cursor: pointer; display: flex; align-items: center; gap: 4px;" 
+                             title="Clic para ver desglose de cobro">
+                            $${(l.monto_total_mensual || 0).toFixed(2)}
+                            <span id="combo-arrow-${l.id}" style="font-size: 0.7rem; opacity: 0.5; transition: 0.3s;">▼</span>
+                        </div>
+                        <div id="combo-details-${l.id}" style="display: none; font-size: 0.65rem; color: var(--text-muted); margin-top: 4px; line-height: 1.2; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 8px;">
+                            <div style="margin-bottom: 2px;">• Base: $${(l.monto_mensual || 0).toFixed(2)}</div>
                             ${(l.expansiones || []).map(e => `
                                 <div style="color: ${e.cantidad < 0 ? '#ef4444' : '#eab308'}; display: flex; align-items: center; justify-content: space-between;">
                                     <span>
@@ -1656,6 +1661,20 @@ export class SettingsModule {
         }).join('');
 
         this.renderPagination('settings-combo-status-pagination', this.statusPage, totalPages, 'status');
+    }
+    
+    toggleComboDetails(ligaId) {
+        const details = document.getElementById(`combo-details-${ligaId}`);
+        const arrow = document.getElementById(`combo-arrow-${ligaId}`);
+        if (!details) return;
+        
+        if (details.style.display === 'none') {
+            details.style.display = 'block';
+            if (arrow) arrow.style.transform = 'rotate(180deg)';
+        } else {
+            details.style.display = 'none';
+            if (arrow) arrow.style.transform = 'rotate(0deg)';
+        }
     }
 
     renderComboPayments() {
