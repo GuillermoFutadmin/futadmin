@@ -225,7 +225,7 @@ def generate_receipt_pdf(data, filename):
 
     # --- LOGO ---
     logo_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                             'static', 'img', 'logos', 'futadmin_circle.png')
+                             'static', 'img', 'logos', 'futadmin_circle_alpha.png')
     logo_elem = None
     if os.path.exists(logo_path):
         logo_elem = RLImage(logo_path, width=70, height=70)
@@ -440,15 +440,15 @@ def generate_statement_pdf(data, filename):
 
     # --- HEADER ---
     logo_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                             'static', 'img', 'logos', 'futadmin_circle.png')
+                             'static', 'img', 'logos', 'futadmin_circle_alpha.png')
     logo_elem = RLImage(logo_path, width=60, height=60) if os.path.exists(logo_path) else Paragraph("", styles['Normal'])
 
     header_content = [
         logo_elem,
         [
-            Paragraph("FutAdmin PRO", ParagraphStyle('PT', fontName='Helvetica-Bold', fontSize=24, textColor=rl_colors.white)),
-            Paragraph("ESTADO DE CUENTA Y RESUMEN OPERATIVO", ParagraphStyle('PS', fontName='Helvetica', fontSize=10, textColor=TEAL)),
-            Paragraph(f"ORGANIZACIÓN: {liga_name.upper()}", ParagraphStyle('PO', fontName='Helvetica', fontSize=10, textColor=rl_colors.white))
+            Paragraph("FutAdmin PRO", ParagraphStyle('PT', fontName='Helvetica-Bold', fontSize=24, textColor=rl_colors.white, leading=28, spaceAfter=4)),
+            Paragraph("ESTADO DE CUENTA Y RESUMEN OPERATIVO", ParagraphStyle('PS', fontName='Helvetica', fontSize=10, textColor=TEAL, leading=12, spaceAfter=2)),
+            Paragraph(f"ORGANIZACIÓN: {liga_name.upper()}", ParagraphStyle('PO', fontName='Helvetica', fontSize=10, textColor=rl_colors.white, leading=12))
         ],
         [
             Paragraph(f"Generado: {fecha}", ParagraphStyle('PG', fontName='Helvetica', fontSize=10, textColor=rl_colors.white, alignment=TA_RIGHT)),
