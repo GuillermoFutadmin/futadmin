@@ -2603,6 +2603,7 @@
         let matchExplorerData = [];
         async function loadMatchExplorerData() {
             const tId = document.getElementById('match-explorer-torneo').value;
+            const status = document.getElementById('match-explorer-status-filter').value;
             const container = document.getElementById('match-explorer-container');
             if (!tId) {
                 container.innerHTML = '<div style="text-align:center; padding:20px; color:var(--muted);">Selecciona un torneo para ver los partidos.</div>';
@@ -2610,7 +2611,7 @@
             }
             container.innerHTML = '<div class="loading">Cargando partidos...</div>';
             try {
-                const res = await fetch(`/api/telegram/matches?torneo_id=${tId}&rol=${currentUser.rol}&estado=${matchStatusFilter}&search_q=&date_filter=`);
+                const res = await fetch(`/api/telegram/matches?torneo_id=${tId}&rol=${currentUser.rol}&estado=${status}&search_q=&date_filter=`);
                 const matches = await res.json();
                 matchExplorerData = matches;
                 renderMatchExplorerResults(matches);
@@ -3220,7 +3221,7 @@
 
         function showTournamentsFromMenu() {
             if (currentUser.rol === 'admin' || currentUser.rol === 'ejecutivo' || currentUser.rol === 'dueño_liga') {
-                showSubmenu('matches');
+                showMatchExplorer();
             } else if (currentUser.rol === 'arbitro' || currentUser.rol === 'super_arbitro') {
                 showMyMatches();
             } else {
@@ -3995,7 +3996,7 @@
 
     <div id="match-explorer-view" class="view" style="display: none; padding: 16px;">
         <div class="header">
-            <button class="btn btn-outline" onclick="showSubmenu('matches')" style="width: auto; padding: 6px 12px;">← VOLVER</button>
+            <button class="btn btn-outline" onclick="showMenu()" style="width: auto; padding: 6px 12px;">← VOLVER</button>
             <h3>GESTIÓN DE PARTIDOS</h3>
         </div>
 
@@ -4005,7 +4006,19 @@
                 <option value="">Cargando torneos...</option>
             </select>
             
-            <div style="font-size:0.7rem; color:var(--muted); font-weight:800; margin-bottom:5px;">BUSCAR PARTIDO</div>
+            <div style="display:flex; gap:10px; margin-bottom:15px;">
+                <div style="flex:1;">
+                    <div style="font-size:0.7rem; color:var(--muted); font-weight:800; margin-bottom:5px;">ESTADO</div>
+                    <select id="match-explorer-status-filter" class="btn btn-outline" style="width:100%; text-align:left; font-size:0.9rem; border-color:rgba(255,255,255,0.2);" onchange="loadMatchExplorerData()">
+                        <option value="">TODOS</option>
+                        <option value="Scheduled">PENDIENTES</option>
+                        <option value="Live">EN VIVO</option>
+                        <option value="Played">JUGADOS</option>
+                    </select>
+                </div>
+            </div>
+
+            <div style="font-size:0.7rem; color:var(--muted); font-weight:800; margin-bottom:5px;">BUSCAR EQUIPO</div>
             <input type="text" id="match-explorer-search" placeholder="Nombre de equipo..." class="btn btn-outline" style="text-align:left; font-size:1rem; border-color:rgba(255,255,255,0.2);" oninput="filterMatchExplorer()">
         </div>
 

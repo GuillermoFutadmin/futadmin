@@ -381,7 +381,11 @@ def telegram_get_matches():
         return jsonify([])
 
     if estado:
-        query = query.filter_by(estado=estado)
+        if estado == 'Live':
+            from sqlalchemy import or_
+            query = query.filter(Partido.estado.in_(['Live', 'HalfTime']))
+        else:
+            query = query.filter_by(estado=estado)
 
     # Si es dueño de equipo, solo ver sus partidos
     if rol == 'equipo' and equipo_id:
