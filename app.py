@@ -57,7 +57,7 @@ if os.getenv('RAILWAY_ENVIRONMENT'):
 
 @app.route('/ping')
 def ping():
-    return "pong - v11 (logging_instrumented)", 200
+    return "pong - v12 (diag_endpoint_ready)", 200
 
 @app.route('/api/test/receipt')
 def test_receipt_sync():
@@ -166,9 +166,29 @@ LAST_STATS_ERROR = "No errors yet"
 @app.before_request
 def check_login():
     # Rutas que no requieren login
-    public_routes = ['users.login_view', 'users.login', 'users.privacy_view', 'static', 'healthcheck', 'debug_stats', 'diag_db', 'ping', 'get_mail_logs', 'test_receipt_sync']
+    public_routes = ['users.login_view', 'users.login', 'users.privacy_view', 'static', 'healthcheck', 'debug_stats', 'diag_db', 'ping', 'get_mail_logs', 'test_receipt_sync', 'diag_resend_pago_receipt']
     if request.endpoint in public_routes or not request.endpoint:
         return
+...
+@app.route('/api/diag/resend/<int:id>', methods=['GET'])
+@talisman(force_https=False)
+def diag_resend_pago_receipt(id):
+    try:
+        from logic.receipts import trigger_receipt_email_async
+        pago = Pago.query.get(id)
+        if not pago: return jsonify({"error": "Pago no encontrado"}), 404
+        
+        # Simular la lógica mínima para ver si explota
+        ins = pago.inscripcion
+        if not ins: return jsonify({"error": "Ins no encontrada"}), 404
+        
+        ticket_data = {"pago_id": pago.id, "folio": f"DIAG-{pago.id}", "monto_abonado": float(pago.monto)}
+        trigger_receipt_email_async(ticket_data, "gdiaz@futadmin.com.mx", "Diagnostic User")
+        
+        return jsonify({"success": True, "details": "Diag trigger sent to background thread"}), 200
+    except Exception as e:
+        import traceback
+        return jsonify({"success": False, "error": str(e), "trace": traceback.format_exc()}), 500
     
     # Permitir si el usuario está en sesión
     if 'user_id' not in session:
