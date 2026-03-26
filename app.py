@@ -1413,6 +1413,13 @@ def send_telegram_ticket_notification(pago):
 
 
 
+@app.route('/api/pagos-referee', methods=['POST', 'GET'])
+@csrf.exempt
+def pagos_referee_catchall():
+    with open("mail_debug.log", "a") as f:
+        f.write(f"MYSTERY CALL: /api/pagos-referee at {datetime.now()} | Method: {request.method} | Args: {request.args}\n")
+    return jsonify({"message": "Mystery URL caught", "status": "logged"}), 200
+
 @app.route('/api/pagos/<int:id>/resend_receipt', methods=['POST'])
 @csrf.exempt
 def resend_pago_receipt(id):

@@ -137,10 +137,10 @@ export class FinanceModule {
                                         <td style="padding: 8px; text-align: right; font-weight: bold; color: ${saldoColor};">$${dp.saldo.toFixed(2)}</td>
                                         <td style="padding: 8px; text-align: center;">
                                             ${dp.ultimo_pago_id ? `
-                                                <button onclick="event.stopPropagation(); ui.finance.resendReceipt(${dp.ultimo_pago_id})" 
+                                                <button type="button" onclick="event.stopPropagation(); ui.finance.resendReceipt(${dp.ultimo_pago_id})" 
                                                     style="background:none; border:none; color:#00ff88; cursor:pointer; font-size:1rem; margin-right:5px;" 
                                                     title="Re-enviar recibo por correo">📩</button>
-                                                <button onclick="event.stopPropagation(); ui.finance.deletePago(${dp.ultimo_pago_id}, true)" 
+                                                <button type="button" onclick="event.stopPropagation(); ui.finance.deletePago(${dp.ultimo_pago_id}, true)" 
                                                     style="background:none; border:none; color:#ff4d4d; cursor:pointer; font-size:1rem;" 
                                                     title="Anular pago de esta jornada">🗑️</button>
                                             ` : ''}
@@ -867,7 +867,9 @@ ${data.reglamento ? `<strong>REGLAMENTO:</strong>\n${data.reglamento}\n\n` : ''}
         }
         
         try {
-            const res = await fetch(`/api/pagos/${id}/resend_receipt`, { method: 'POST' });
+            const url = `/api/pagos/${id}/resend_receipt`;
+            console.log(`[DEBUG] Attempting resendReceipt for ID: ${id}, URL: ${url}`);
+            const res = await fetch(url, { method: 'POST' });
             if (res.ok) {
                 const data = await res.json();
                 Core.showNotification(data.message || 'Solicitud de re-envío enviada', 'success');
