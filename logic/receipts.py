@@ -207,13 +207,18 @@ def generate_receipt_pdf(data, filename):
     RED_COLOR = rl_colors.HexColor('#e74c3c')
     GREEN_COLOR = rl_colors.HexColor('#27ae60')
 
+    is_futadmin = data.get('is_futadmin', False)
+    
+    # Si es futadmin (Combo), usamos el generador de Estado de Cuenta detallado
+    if is_futadmin:
+        return generate_statement_pdf(data, filename)
+
     doc = SimpleDocTemplate(filename, pagesize=letter,
                             leftMargin=0.6*inch, rightMargin=0.6*inch,
                             topMargin=0.4*inch, bottomMargin=0.5*inch)
     story = []
     styles = getSampleStyleSheet()
 
-    is_futadmin = data.get('is_futadmin', False)
     liga_nombre = data.get('liga_nombre', 'Liga FutAdmin')
     folio       = data.get('folio', 'N/A')
     fecha       = data.get('fecha', datetime.now().strftime('%d/%m/%Y %H:%M'))
@@ -274,10 +279,7 @@ def generate_receipt_pdf(data, filename):
     greeting_style = ParagraphStyle('Greeting', fontName='Helvetica', fontSize=10,
                                     textColor=DARK_TEXT, alignment=TA_LEFT, leading=14)
     
-    if is_futadmin:
-        greeting_text = f"Este documento acredita el pago realizado por la liga <b>{liga_m}</b> a la plataforma <b>FutAdmin</b>. Consérvelo como comprobante oficial."
-    else:
-        greeting_text = f"Este documento acredita el pago realizado por el equipo <b>{equipo_nombre}</b> en el torneo <b>{torneo_nombre}</b> de la liga <b>{liga_m}</b>. Consérvelo como comprobante oficial."
+    greeting_text = f"Este documento acredita el pago realizado por el equipo <b>{equipo_nombre}</b> en el torneo <b>{torneo_nombre}</b> de la liga <b>{liga_m}</b>. Consérvelo como comprobante oficial."
         
     story.append(Paragraph(greeting_text, greeting_style))
     story.append(Spacer(1, 8))
@@ -296,33 +298,24 @@ def generate_receipt_pdf(data, filename):
     label_s = ParagraphStyle('Label', fontName='Helvetica-Bold', fontSize=10, textColor=DARK_TEXT)
     value_s = ParagraphStyle('Value', fontName='Helvetica', fontSize=10, textColor=rl_colors.HexColor('#333333'))
 
-    detail_rows = []
-    if is_futadmin:
-        detail_rows = [
-            [Paragraph("Liga:", label_s), Paragraph(liga_nombre, value_s)],
-            [Paragraph("Capacidad / Detalle:", label_s), Paragraph(data.get('equipo','N/A'), value_s)],
-            [Paragraph("Concepto:", label_s), Paragraph(data.get('tipo','Suscripción'), value_s)],
-            [Paragraph("Mes Pagado:", label_s), Paragraph(str(data.get('mes_pagado','N/A')), value_s)],
-        ]
-    else:
-        detail_rows = [
-            [Paragraph("Liga / Administrador:", label_s), Paragraph(liga_nombre, value_s)],
-            [Paragraph("Equipo:", label_s), Paragraph(data.get('equipo','N/A'), value_s)],
-            [Paragraph("Torneo:", label_s), Paragraph(data.get('torneo','N/A'), value_s)],
-            [Paragraph("Inicio Torneo:", label_s), Paragraph(data.get('fecha_inicio_torneo','Pendiente'), value_s)],
-            [Paragraph("Horarios / Días:", label_s), Paragraph(data.get('horarios','N/A'), value_s)],
-            [Paragraph("Sede:", label_s), Paragraph(data.get('sede','Por definir'), value_s)],
-            [Paragraph("Tipo / Formato:", label_s), Paragraph(f"{data.get('tipo_torneo','Liga')} / {data.get('formato','Torneo')}", value_s)],
-            [Paragraph("Organiza / Contacto:", label_s), Paragraph(f"{data.get('organiza','FutAdmin')} - {data.get('contacto','')}", value_s)],
-            [Paragraph("Concepto:", label_s), Paragraph(data.get('tipo','Abono'), value_s)],
-            [Paragraph("Método de Pago:", label_s), Paragraph(data.get('metodo','Efectivo'), value_s)],
-        ]
-        if data.get('partido'):
-            p = data['partido']
-            detail_rows.append([
-                Paragraph("Partido:", label_s),
-                Paragraph(f"{p.get('rivales','N/A')}  (Jornada {p.get('jornada','?')})", value_s)
-            ])
+    detail_rows = [
+        [Paragraph("Liga / Administrador:", label_s), Paragraph(liga_nombre, value_s)],
+        [Paragraph("Equipo:", label_s), Paragraph(data.get('equipo','N/A'), value_s)],
+        [Paragraph("Torneo:", label_s), Paragraph(data.get('torneo','N/A'), value_s)],
+        [Paragraph("Inicio Torneo:", label_s), Paragraph(data.get('fecha_inicio_torneo','Pendiente'), value_s)],
+        [Paragraph("Horarios / Días:", label_s), Paragraph(data.get('horarios','N/A'), value_s)],
+        [Paragraph("Sede:", label_s), Paragraph(data.get('sede','Por definir'), value_s)],
+        [Paragraph("Tipo / Formato:", label_s), Paragraph(f"{data.get('tipo_torneo','Liga')} / {data.get('formato','Torneo')}", value_s)],
+        [Paragraph("Organiza / Contacto:", label_s), Paragraph(f"{data.get('organiza','FutAdmin')} - {data.get('contacto','')}", value_s)],
+        [Paragraph("Concepto:", label_s), Paragraph(data.get('tipo','Abono'), value_s)],
+        [Paragraph("Método de Pago:", label_s), Paragraph(data.get('metodo','Efectivo'), value_s)],
+    ]
+    if data.get('partido'):
+        p = data['partido']
+        detail_rows.append([
+            Paragraph("Partido:", label_s),
+            Paragraph(f"{p.get('rivales','N/A')}  (Jornada {p.get('jornada','?')})", value_s)
+        ])
 
     detail_table = Table(detail_rows, colWidths=[160, None])
     detail_table.setStyle(TableStyle([
@@ -357,13 +350,10 @@ def generate_receipt_pdf(data, filename):
 
     fin_rows = [
         [Paragraph("💵  Monto Abonado (esta operación):", label_s), Paragraph(f"${abonado:,.2f}  ({data.get('metodo','Efectivo')})", green_style)],
+        [Paragraph("📋  Monto Pactado Total:", label_s), Paragraph(f"${monto_pactado:,.2f}", value_s)],
+        [Paragraph("✅  Total Acumulado Pagado:", label_s), Paragraph(f"${total_pagado:,.2f}", value_s)],
+        [Paragraph("🔴  Saldo Pendiente:", label_s), Paragraph(f"${saldo:,.2f}", saldo_style)],
     ]
-    if not is_futadmin:
-        fin_rows += [
-            [Paragraph("📋  Monto Pactado Total:", label_s), Paragraph(f"${monto_pactado:,.2f}", value_s)],
-            [Paragraph("✅  Total Acumulado Pagado:", label_s), Paragraph(f"${total_pagado:,.2f}", value_s)],
-            [Paragraph("🔴  Saldo Pendiente:", label_s), Paragraph(f"${saldo:,.2f}", saldo_style)],
-        ]
 
     fin_table = Table(fin_rows, colWidths=[240, None])
     fin_table.setStyle(TableStyle([
@@ -378,27 +368,26 @@ def generate_receipt_pdf(data, filename):
     story.append(Spacer(1, 12))
 
     # --- SECCIÓN: Reglamento / Notas ---
-    if not is_futadmin:
-        text = data.get('clausulas', '') or data.get('reglamento', '')
-        if text and text.strip():
-            sec_banner3 = Table([[Paragraph("  Reglamento, Premios y Notas", sec_style)]], colWidths=[None])
-            sec_banner3.setStyle(TableStyle([
-                ('BACKGROUND', (0,0),(-1,-1), rl_colors.HexColor('#555555')),
-                ('TOPPADDING',(0,0),(-1,-1),6), ('BOTTOMPADDING',(0,0),(-1,-1),6),
-            ]))
-            story.append(sec_banner3)
-            story.append(Spacer(1, 4))
-            
-            reg_style = ParagraphStyle('Reg', fontName='Helvetica', fontSize=8,
-                                       textColor=rl_colors.HexColor('#444444'), leading=11)
+    text = data.get('clausulas', '') or data.get('reglamento', '')
+    if text and text.strip():
+        sec_banner3 = Table([[Paragraph("  Reglamento, Premios y Notas", sec_style)]], colWidths=[None])
+        sec_banner3.setStyle(TableStyle([
+            ('BACKGROUND', (0,0),(-1,-1), rl_colors.HexColor('#555555')),
+            ('TOPPADDING',(0,0),(-1,-1),6), ('BOTTOMPADDING',(0,0),(-1,-1),6),
+        ]))
+        story.append(sec_banner3)
+        story.append(Spacer(1, 4))
+        
+        reg_style = ParagraphStyle('Reg', fontName='Helvetica', fontSize=8,
+                                   textColor=rl_colors.HexColor('#444444'), leading=11)
 
-            premios = data.get('premios', '')
-            if premios:
-                story.append(Paragraph(f"<b>PREMIOS:</b> {premios}", reg_style))
-                story.append(Spacer(1, 6))
+        premios = data.get('premios', '')
+        if premios:
+            story.append(Paragraph(f"<b>PREMIOS:</b> {premios}", reg_style))
+            story.append(Spacer(1, 6))
 
-            story.append(Paragraph(text.replace('\n', '<br/>'), reg_style))
-            story.append(Spacer(1, 10))
+        story.append(Paragraph(text.replace('\n', '<br/>'), reg_style))
+        story.append(Spacer(1, 10))
 
     # --- FOOTER / FIRMA ---
     story.append(HRFlowable(width="100%", thickness=1, color=rl_colors.HexColor('#cccccc')))
@@ -409,6 +398,175 @@ def generate_receipt_pdf(data, filename):
         "Este es un comprobante digital generado automáticamente por <b>FutAdmin • futadmin.com.mx</b>.<br/>"
         "Plataforma de Gestión Deportiva — @futadmin.tj",
         footer_style))
+
+    doc.build(story)
+    return filename
+
+def generate_statement_pdf(data, filename):
+    """
+    Genera un PDF 'Estado de Cuenta' detallado (Imagen 2) con historial, métricas y términos legales.
+    """
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, HRFlowable, Image as RLImage, PageBreak
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
+    from reportlab.lib.units import inch, mm
+    from reportlab.lib import colors as rl_colors
+
+    # --- Colores de marca ---
+    DARK_BG   = rl_colors.HexColor('#1a1a2e')
+    TEAL      = rl_colors.HexColor('#00d4aa')
+    MID_BLUE  = rl_colors.HexColor('#0f3460')
+    LIGHT_GREY= rl_colors.HexColor('#f4f6f8')
+    DARK_TEXT = rl_colors.HexColor('#1a1a2e')
+    RED_COLOR = rl_colors.HexColor('#e74c3c')
+    GREEN_COLOR = rl_colors.HexColor('#27ae60')
+
+    doc = SimpleDocTemplate(filename, pagesize=letter,
+                            leftMargin=0.5*inch, rightMargin=0.5*inch,
+                            topMargin=0.4*inch, bottomMargin=0.4*inch)
+    story = []
+    styles = getSampleStyleSheet()
+    
+    liga_name = data.get('liga_nombre', 'Organización')
+    fecha     = data.get('fecha', datetime.now().strftime('%d/%m/%Y'))
+    id_cliente = data.get('id_cliente', 'N/A')
+
+    # --- ESTILOS ---
+    h1 = ParagraphStyle('H1', fontName='Helvetica-Bold', fontSize=14, textColor=DARK_TEXT, spaceAfter=2)
+    label_s = ParagraphStyle('LabelS', fontName='Helvetica-Bold', fontSize=10, textColor=DARK_TEXT)
+    value_s = ParagraphStyle('ValueS', fontName='Helvetica', fontSize=10, textColor=rl_colors.HexColor('#444444'))
+    small_label = ParagraphStyle('SmallL', fontName='Helvetica-Bold', fontSize=8, textColor=rl_colors.white)
+    small_val = ParagraphStyle('SmallV', fontName='Helvetica', fontSize=8, textColor=DARK_TEXT)
+
+    # --- HEADER ---
+    logo_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                             'static', 'img', 'logos', 'futadmin_circle.png')
+    logo_elem = RLImage(logo_path, width=60, height=60) if os.path.exists(logo_path) else Paragraph("", styles['Normal'])
+
+    header_content = [
+        logo_elem,
+        [
+            Paragraph("FutAdmin PRO", ParagraphStyle('PT', fontName='Helvetica-Bold', fontSize=24, textColor=rl_colors.white)),
+            Paragraph("ESTADO DE CUENTA Y RESUMEN OPERATIVO", ParagraphStyle('PS', fontName='Helvetica', fontSize=10, textColor=TEAL)),
+            Paragraph(f"ORGANIZACIÓN: {liga_name.upper()}", ParagraphStyle('PO', fontName='Helvetica', fontSize=10, textColor=rl_colors.white))
+        ],
+        [
+            Paragraph(f"Generado: {fecha}", ParagraphStyle('PG', fontName='Helvetica', fontSize=10, textColor=rl_colors.white, alignment=TA_RIGHT)),
+            Paragraph(f"ID Cliente: {id_cliente}", ParagraphStyle('PI', fontName='Helvetica', fontSize=10, textColor=rl_colors.white, alignment=TA_RIGHT))
+        ]
+    ]
+    header_table = Table([header_content], colWidths=[70, 320, 110])
+    header_table.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,-1), DARK_BG),
+        ('VALIGN',     (0,0), (-1,-1), 'MIDDLE'),
+        ('LEFTPADDING',(0,0), (-1,-1), 15), ('TOPPADDING', (0,0), (-1,-1), 12), ('BOTTOMPADDING',(0,0),(-1,-1), 12)
+    ]))
+    story.append(header_table)
+    story.append(Spacer(1, 15))
+
+    # --- SECCION 1: RESUMEN DE MEMBRESÍA ---
+    story.append(Paragraph("RESUMEN DE MEMBRESÍA", h1))
+    story.append(HRFlowable(width="100%", thickness=1.5, color=TEAL, spaceAfter=10))
+    
+    stats = data.get('stats', {})
+    membership_data = [
+        [Paragraph("Organización:", label_s), Paragraph(liga_name, value_s), Paragraph("Plan Actual:", label_s), Paragraph(data.get('paquete', 'N/A').upper(), value_s)],
+        [Paragraph("Meses Pagados:", label_s), Paragraph(f"{stats.get('total_meses_pagados', 0)} Mes(es)", value_s), Paragraph("Costo Mensual:", label_s), Paragraph(f"${data.get('monto_total_mensual', 0):,.2f} MXN", value_s)],
+        [Paragraph("Próximo Pago:", label_s), Paragraph(data.get('vencimiento', 'Vigente'), value_s), Paragraph("Monto a Pagar:", label_s), Paragraph(f"${data.get('monto_total_mensual', 0):,.2f} MXN", value_s)],
+    ]
+    mem_table = Table(membership_data, colWidths=[110, 140, 110, 140])
+    mem_table.setStyle(TableStyle([('VALIGN',(0,0),(-1,-1),'TOP'), ('BOTTOMPADDING',(0,0),(-1,-1),6)]))
+    story.append(mem_table)
+    story.append(Spacer(1, 10))
+
+    # --- SECCION 2: INFRAESTRUCTURA Y CAPACIDAD ---
+    story.append(Paragraph("INFRAESTRUCTURA Y CAPACIDAD", h1))
+    story.append(HRFlowable(width="100%", thickness=1.5, color=TEAL, spaceAfter=10))
+    
+    cap_sedes = 1 + (data.get('extra_canchas', 0))
+    cap_ligas = 5 + (data.get('extra_torneos', 0))
+    sedes_list = data.get('detalles', {}).get('canchas', []) or ["Ninguna registrada"]
+    ligas_list = data.get('detalles', {}).get('torneos', []) or ["Ninguna registrada"]
+
+    sedes_p = [Paragraph(f"<b>Sedes ({len(sedes_list)} de {cap_sedes} Permitidas):</b>", label_s)] + [Paragraph(f"• {s}", value_s) for s in sedes_list]
+    ligas_p = [Paragraph(f"<b>Torneos ({len(ligas_list)} de {cap_ligas} Permitidos):</b>", label_s)] + [Paragraph(f"• {l}", value_s) for l in ligas_list]
+
+    infra_table = Table([[sedes_p, ligas_p]], colWidths=[250, 250])
+    infra_table.setStyle(TableStyle([('VALIGN',(0,0),(-1,-1),'TOP')]))
+    story.append(infra_table)
+    story.append(Spacer(1, 15))
+
+    # --- SECCION 3: IMPACTO OPERATIVO ---
+    impacto_data = [[Paragraph(f"<b>Impacto Operativo:</b> &nbsp;&nbsp; {stats.get('equipos', 0)} Equipos Inscritos &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {stats.get('jugadores', 0)} Jugadores Registrados", value_s)]]
+    impacto_table = Table(impacto_data, colWidths=[500])
+    impacto_table.setStyle(TableStyle([('BACKGROUND',(0,0),(-1,-1), LIGHT_GREY), ('ALIGN',(0,0),(-1,-1),'CENTER'), ('PADDING',(0,0),(-1,-1),10)]))
+    story.append(impacto_table)
+    story.append(Spacer(1, 20))
+
+    # --- SECCION 4: HISTÓRICO DE INCREMENTOS ---
+    story.append(Paragraph("HISTÓRICO DE INCREMENTOS DE COMBOS", h1))
+    story.append(HRFlowable(width="100%", thickness=1.5, color=TEAL, spaceAfter=8))
+    
+    exp_header = [Paragraph("FECHA", small_label), Paragraph("TIPO DE CAMBIO", small_label), Paragraph("CANT.", small_label), Paragraph("MONTO ADIC.", small_label), Paragraph("ESTATUS", small_label)]
+    exp_rows = [exp_header]
+    
+    # Fila Inicial
+    exp_rows.append([Paragraph(data.get('fecha_registro', ''), small_val), Paragraph("Combo Base (Inscripción)", small_val), Paragraph("1 Sede / 5 Ligas", small_val), Paragraph(f"${data.get('monto_mensual', 0):,.2f}", small_val), Paragraph("<b>ACTIVO</b>", ParagraphStyle('A', fontSize=8, textColor=GREEN_COLOR))])
+    
+    for e in data.get('expansiones', []):
+        desc = "Sede Extra" if e.get('tipo', '') == 'extra_canchas' else "Torneo Extra"
+        cant = f"+{e.get('cantidad', 0)}" if e.get('cantidad',0) > 0 else str(e.get('cantidad', 0))
+        monto = f"${e.get('monto_adicional', 0):,.2f}" if e.get('monto_adicional',0) > 0 else ("--" if e.get('cantidad',0) < 0 else "Combo")
+        status = "ACTIVO" if e.get('cantidad',0) > 0 else "BAJA"
+        s_color = GREEN_COLOR if status == "ACTIVO" else RED_COLOR
+        exp_rows.append([Paragraph(e.get('fecha','').split(' ')[0], small_val), Paragraph(desc, small_val), Paragraph(cant, small_val), Paragraph(monto, small_val), Paragraph(f"<b>{status}</b>", ParagraphStyle('S', fontSize=8, textColor=s_color))])
+
+    exp_table = Table(exp_rows, colWidths=[70, 160, 90, 100, 80])
+    exp_table.setStyle(TableStyle([('BACKGROUND',(0,0),(-1,0), rl_colors.HexColor('#505050')), ('GRID',(0,0),(-1,-1),0.5, rl_colors.grey), ('VALIGN',(0,0),(-1,-1),'MIDDLE')]))
+    story.append(exp_table)
+    story.append(Spacer(1, 20))
+
+    # --- SECCION 5: HISTORIAL DE APORTACIONES ---
+    story.append(Paragraph("HISTORIAL DE APORTACIONES MENSUALES", h1))
+    story.append(HRFlowable(width="100%", thickness=1.5, color=TEAL, spaceAfter=8))
+    
+    pay_header = [Paragraph("FECHA PAGO", small_label), Paragraph("MES CUBIERTO / CONCEPTO", small_label), Paragraph("MÉTODO", small_label), Paragraph("MONTO PAGADO", small_label)]
+    pay_rows = [pay_header]
+    
+    for p in data.get('pagos_historial', []):
+        pay_rows.append([Paragraph(p.get('fecha',''), small_val), Paragraph(p.get('mes_pagado',''), small_val), Paragraph(p.get('metodo',''), small_val), Paragraph(f"<b>${p.get('monto',0):,.2f}</b>", small_val)])
+    
+    if len(pay_rows) == 1:
+        pay_rows.append([Paragraph("No se han registrado pagos históricos.", small_val), "", "", ""])
+
+    pay_table = Table(pay_rows, colWidths=[100, 200, 100, 100])
+    pay_table.setStyle(TableStyle([('BACKGROUND',(0,0),(-1,0), rl_colors.HexColor('#323232')), ('GRID',(0,0),(-1,-1),0.5, rl_colors.grey), ('VALIGN',(0,0),(-1,-1),'MIDDLE')]))
+    story.append(pay_table)
+    story.append(PageBreak())
+
+    # --- SECCION 6: TÉRMINOS LEGALES (PAGINA 2) ---
+    story.append(Paragraph("TÉRMINOS, CONDICIONES Y RESPONSABILIDADES LEGALES:", ParagraphStyle('LegalT', fontName='Helvetica-Bold', fontSize=12, textColor=rl_colors.HexColor('#666666'))))
+    story.append(HRFlowable(width="100%", thickness=1, color=rl_colors.HexColor('#666666'), spaceAfter=10))
+    
+    legal_style = ParagraphStyle('Legal', fontName='Helvetica', fontSize=8.5, textColor=rl_colors.HexColor('#555555'), leading=11, alignment=TA_LEFT, spaceAfter=8)
+    legal_bold  = ParagraphStyle('LegalB', fontName='Helvetica-Bold', fontSize=8.5, textColor=rl_colors.HexColor('#444444'), leading=11, spaceAfter=2)
+
+    full_legal_1 = "Conforme a lo dispuesto en el Código de Comercio y la Ley Federal de Protección al Consumidor, FutAdmin se constituye exclusivamente como un proveedor de Software como Servicio (SaaS). Su función primordial es proveer herramientas tecnológicas avanzadas para el control de ingresos, gestión de roles y automatización de estadísticas deportivas. La plataforma NO interviene, organiza, ni supervisa la logística física de los torneos, partidos, traslados o la integridad física de los participantes en campo. El Administrador de la Liga reconoce que es el único responsable de la ejecución técnica y operativa de sus eventos deportivos. FutAdmin no se hace responsable por daños directos o indirectos derivados de cancelaciones, lesiones físicas o disputas legales entre terceros asociados a la organización. La relación jurídica entre FutAdmin y la Organización se limita estrictamente a la licencia temporal de uso del software. Cualquier falla técnica será atendida bajo los niveles de servicio estipulados, pero no generará bajo ninguna circunstancia derecho a indemnizaciones por lucro cesante o pérdida de oportunidades de negocio. El uso de la plataforma por parte del Administrador implica la aceptación total de que FutAdmin es un facilitador administrativo y no un garante de la seguridad o el éxito comercial de la liga. El Administrador debe asegurar proactivamente que todo su personal y usuarios finales sigan estrictamente las normativas locales vigentes de protección civil y reglamentos deportivos municipales."
+    full_legal_2 = "El tratamiento de la información personal dentro del sistema se rige por la Ley Federal de Protección de Datos Personales en Posesión de los Particulares (LFPDPPP), específicamente cumpliendo con sus artículos 8, 12, 16 y 17. En esta relación contractual, la Organización (Liga) actúa como el 'Responsable' absoluto del tratamiento de los datos de sus jugadores, equipos y personal, mientras que FutAdmin actúa únicamente como el 'Encargado' del almacenamiento técnico. Es obligación irrenunciable y exclusiva de la Organización contar con su propio Aviso de Privacidad vigente y obtener el consentimiento informado y expreso de sus usuarios para la captura de nombres, teléfonos, correos y datos biométricos. FutAdmin implementa medidas de seguridad técnicas y administrativas de alta calidad para proteger la base de datos contra accesos no autorizados, conforme a los estándares marcados por el Reglamento de la LFPDPPP. Los derechos ARCO (Acceso, Rectificación, Cancelación y Oposición) deben ser garantizados y gestionados primordialmente por el Administrador de la Liga ante sus inscritos. FutAdmin no comercializa, transfiere ni utiliza los datos de los jugadores para fines publicitarios o distintos a la operación técnica necesaria del sistema. En caso de una vulneración de seguridad imputable a la negligencia del Administrador (como el intercambio de contraseñas o descuido en los accesos), FutAdmin queda exento de toda responsabilidad legal, civil o pecunaria por el mal uso de dicha información."
+    full_legal_3 = "En estricto cumplimiento con la Ley General de los Derechos de Niñas, Niños y Adolescentes (LGDNNA), particularmente lo ordenado en los artículos 76, 77 y 78, se prohíbe terminantemente la difusión, publicación o manejo de imágenes y datos personales de menores de edad que permitan su plena identificación sin el consentimiento parental expreso, por escrito y verificable. El Administrador de la Liga es el único responsable legal ante las autoridades de verificar que cada fotografía de menor de edad subida al sistema cuente con la autorización firmada por los padres o tutores legales, autorizando específicamente el uso en listas de asistencia, credenciales digitales o perfiles de liguilla públicos. El principio del 'Interés Superior de la Niñez' debe prevalecer sobre cualquier necesidad administrativa o deportiva de la liga. FutAdmin provee las herramientas técnicas para permitir al administrador restringir la visibilidad de estos datos, pero la decisión final de publicar perfiles públicos de menores recae exclusivamente en la voluntad y gestión de la Organización. Cualquier violación a este derecho fundamental a la intimidad, o la exposición de menores a situaciones de riesgo por un manejo inadecuado de la plataforma, será responsabilidad penal y administrativa directa del Administrador de la Liga, deslindando a FutAdmin de cualquier proceso judicial o sanción derivada del incumplimiento de las normativas de la LGDNNA de Protección a la Niñez."
+    full_legal_4 = "El software FutAdmin, así como su código fuente, interfaces gráficas, algoritmos y logotipos asociados están protegidos por la Ley Federal del Derecho de Autor (artículos 101 y subsiguientes) y la Ley Federal de Protección a la Propiedad Industrial. Se otorga a la Organización una licencia de uso personal, intransferible y temporal mientras el pago se mantenga al corriente. Queda estrictamente prohibida la ingeniería inversa, copia no autorizada o distribución de cualquier módulo del software sin la autorización expresa y por escrito de FutAdmin. Respecto a los costos de operación, conforme al Código Civil Federal y el Código de Comercio, los montos se determinan por la capacidad técnica activa contratada (Sedes y Ligas extras habilitadas). La falta de pago oportuno generará la suspensión automática del acceso al sistema tras concluir el periodo de gracia establecido. Las cancelaciones de paquetes o reducciones de plan deben solicitarse con al menos 5 días hábiles de anticipación para ser procesadas antes del siguiente cierre. Los periodos de tiempo ya pagados o activaciones de capacidad técnica realizadas ('Combos') NO son reembolsables, ya que el servicio tecnológico se considera devengado al momento de habilitar el recurso en el servidor. La Organización acepta que los costos pueden ser actualizados periódicamente conforme a la inflación o mejoras estructurales críticas, notificando siempre con antelación a través del panel administrativo oficial."
+
+    story.append(Paragraph("1. NATURALEZA DEL SERVICIO Y LIMITACIÓN DE RESPONSABILIDAD (CÓDIGO DE COMERCIO Y LFPC):", legal_bold))
+    story.append(Paragraph(full_legal_1, legal_style))
+    story.append(Paragraph("2. PROTECCIÓN DE DATOS PERSONALES Y DERECHOS ARCO (LFPDPPP):", legal_bold))
+    story.append(Paragraph(full_legal_2, legal_style))
+    story.append(Paragraph("3. TUTELA DE DERECHOS DE MENORES Y DERECHO A LA INTIMIDAD (LGDNNA):", legal_bold))
+    story.append(Paragraph(full_legal_3, legal_style))
+    story.append(Paragraph("4. PROPIEDAD INTELECTUAL Y CONDICIONES DE COBRO (LFDA):", legal_bold))
+    story.append(Paragraph(full_legal_4, legal_style))
+
+    story.append(Spacer(1, 20))
+    story.append(Paragraph("DOCUMENTO OFICIAL - WWW.FUTADMIN.COM.MX", ParagraphStyle('F', fontSize=8, textColor=GREEN_COLOR, alignment=TA_CENTER, fontName='Helvetica-Bold')))
 
     doc.build(story)
     return filename

@@ -446,28 +446,40 @@ def handle_combo_creation():
             from logic.receipts import trigger_receipt_email_async
             from datetime import datetime, timedelta
             
-            # Preparar datos seguros para el hillo (sin objetos db)
-            capacidad_desc = "1 Sede, 5 Ligas" # Capacidad Inicial
+            # Obtener datos completos de la liga para el Estado de Cuenta
+            liga_info = nueva_liga.to_dict()
+            
+            # Preparar datos seguros para el hilo (objetos planos)
             ticket_data = {
                 "is_futadmin": True,
+                "id_cliente": nueva_liga.id,
                 "folio": f"COMB-{nueva_liga.id}-{datetime.now().strftime('%y%m%d')}",
                 "fecha": (datetime.utcnow() - timedelta(hours=6)).strftime('%d/%m/%Y %H:%M'),
+                "fecha_registro": liga_info.get('fecha_registro'),
                 "liga_nombre": nueva_liga.nombre,
                 "monto_abonado": float(monto_pactado),
+                "monto_mensual": float(nueva_liga.monto_mensual or 0),
+                "monto_total_mensual": float(nueva_liga.monto_total_mensual or 0),
                 "tipo": f"Suscripción - Plan {rol_owner.replace('_', ' ').title()}",
+                "paquete": rol_owner,
                 "metodo": "Transferencia",
                 "mes_pagado": mes_actual,
-                "equipo": capacidad_desc, # Usamos este campo para la capacidad en combos
+                "equipo": "Plan Inicial (1 Sede, 5 Ligas)", 
                 "torneo": "Activación FutAdmin PRO",
-                "contacto": nueva_liga.contacto
+                "contacto": nueva_liga.contacto,
+                "vencimiento": liga_info.get('vencimiento'),
+                "stats": liga_info.get('stats', {}),
+                "detalles": liga_info.get('detalles', {}),
+                "expansiones": liga_info.get('expansiones', []),
+                "pagos_historial": [nuevo_pago.to_dict()] # El pago que acabamos de crear
             }
             
             nombre_u = data.get('owner_nombre', 'Administrador')
             
-            # 1. Enviar al correo del Dueño (con credenciales)
+            # 1. Enviar al correo del Dueño
             trigger_receipt_email_async(ticket_data, data['owner_email'], nombre_u)
             
-            # 2. Enviar copia al correo de Contacto (si es distinto y existe)
+            # 2. Enviar copia al correo de Contacto (si es distinto)
             if nueva_liga.contacto and nueva_liga.contacto != data['owner_email']:
                 trigger_receipt_email_async(ticket_data, nueva_liga.contacto, nombre_u)
                 

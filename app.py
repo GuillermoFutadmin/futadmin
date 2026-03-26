@@ -3590,19 +3590,35 @@ def update_liga_extras(id):
             
             owner = Usuario.query.filter_by(liga_id=liga.id).filter(Usuario.rol.in_(['dueño_liga', 'super_arbitro', 'equipo'])).first()
             if owner:
+                # Obtener datos completos para el Estado de Cuenta
+                liga_info = liga.to_dict()
+                from models import PagoCombo
+                pagos = PagoCombo.query.filter_by(liga_id=liga.id).order_by(PagoCombo.fecha.desc()).all()
+                
                 sedes_totales = 1 + (liga.extra_canchas or 0)
                 ligas_totales = 5 + (liga.extra_torneos or 0)
-                capacidad_str = f"Nueva capacidad: {sedes_totales} Sede{'s' if sedes_totales > 1 else ''}, {ligas_totales} Ligas"
+                capacidad_str = f"{sedes_totales} Sede{'s' if sedes_totales > 1 else ''}, {ligas_totales} Ligas"
                 
                 ticket_data = {
                     "is_futadmin": True,
+                    "id_cliente": liga.id,
                     "folio": f"UPGR-{liga.id}-{datetime.now().strftime('%y%m%d')}",
+                    "fecha": (datetime.utcnow() - timedelta(hours=6)).strftime('%d/%m/%Y %H:%M'),
+                    "fecha_registro": liga_info.get('fecha_registro'),
                     "liga_nombre": liga.nombre,
                     "monto_abonado": 0.0, 
+                    "monto_mensual": float(liga.monto_mensual or 0),
+                    "monto_total_mensual": float(liga.monto_total_mensual or 0),
                     "tipo": f"Ampliación de Capacidad ({', '.join(changes)})",
+                    "paquete": liga_info.get('paquete', 'Dueño de Liga'),
                     "equipo": capacidad_str,
                     "torneo": "Actualización de Plan FutAdmin",
-                    "contacto": liga.contacto
+                    "contacto": liga.contacto,
+                    "vencimiento": liga_info.get('vencimiento'),
+                    "stats": liga_info.get('stats', {}),
+                    "detalles": liga_info.get('detalles', {}),
+                    "expansiones": liga_info.get('expansiones', []),
+                    "pagos_historial": [p.to_dict() for p in pagos]
                 }
                 
                 # Enviar al dueño

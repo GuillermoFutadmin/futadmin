@@ -911,6 +911,7 @@ export class SettingsModule {
                     rowY += 10;
                 });
             }
+            currentY = rowY + 10;
 
 
             // --- SECCIÓN 6: TÉRMINOS, CONDICIONES Y MARCO LEGAL (UNIFICADO Y EXPANDIDO) ---
