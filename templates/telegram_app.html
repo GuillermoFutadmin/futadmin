@@ -993,7 +993,7 @@
         function showView(id) {
             console.log("==> showView(", id, ")");
             // checkin-view es position:fixed, se maneja por separado como overlay
-            const views = ['login-view', 'menu-view', 'tournament-view', 'list-view', 'match-view', 'halftime-view', 'registration-view', 'payments-view', 'ids-lookup-view', 'drilldown-view', 'submenu-view', 'payment-form-view', 'ticket-view'];
+            const views = ['login-view', 'menu-view', 'tournament-view', 'list-view', 'match-view', 'halftime-view', 'registration-view', 'payments-view', 'ids-lookup-view', 'drilldown-view', 'submenu-view', 'payment-form-view', 'ticket-view', 'arbitraje-sync-view'];
             views.forEach(v => {
                 const el = document.getElementById(v);
                 if (el) {
@@ -2518,8 +2518,148 @@
 
         function setPaymentType(type) {
             paymentTypeFilter = type; // 'Inscripción' | 'Arbitraje'
-            drillPurpose = 'payments';
-            startDrilldown('sede');
+            if (type === 'Arbitraje') {
+                showView('arbitraje-sync-view');
+                loadTWAArbitrajesFilter();
+            } else {
+                drillPurpose = 'payments';
+                startDrilldown('sede');
+            }
+        }
+
+        async function loadTWAArbitrajesFilter() {
+            try {
+                const res = await fetch(`/api/telegram/tours?liga_id=${currentUser.liga_id || ''}&rol=${currentUser.rol}&_v=${Date.now()}`);
+                const torneos = await res.json();
+                const sel = document.getElementById('twa-arbitraje-torneo');
+                sel.innerHTML = '<option value="">Selecciona un torneo...</option>' + 
+                    torneos.map(t => `<option value="${t.id}">${t.nombre}</option>`).join('');
+                document.getElementById('twa-arbitrajes-container').innerHTML = '<div style="text-align:center; padding:20px; color:var(--muted);">Selecciona un torneo para ver los equipos.</div>';
+                twaArbitrajesData = [];
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        let twaArbitrajesData = [];
+
+        async function loadTWAArbitrajesData() {
+            const tId = document.getElementById('twa-arbitraje-torneo').value;
+            const container = document.getElementById('twa-arbitrajes-container');
+            if (!tId) {
+                container.innerHTML = '<div style="text-align:center; padding:20px; color:var(--muted);">Selecciona un torneo para ver los equipos.</div>';
+                twaArbitrajesData = [];
+                return;
+            }
+            container.innerHTML = '<div style="text-align:center; padding:20px; color:var(--primary);">Cargando datos de arbitraje...</div>';
+            try {
+                const res = await fetch(`/api/inscripciones?torneo_id=${tId}&per_page=1000`);
+                let data = await res.json();
+                twaArbitrajesData = data.items || data || [];
+                renderTWAArbitrajes();
+            } catch (e) {
+                console.error(e);
+                container.innerHTML = '<div style="text-align:center; padding:20px; color:var(--error);">Error al cargar datos.</div>';
+            }
+        }
+
+        function filterTWAArbitrajes() {
+            renderTWAArbitrajes();
+        }
+
+        function renderTWAArbitrajes() {
+            const container = document.getElementById('twa-arbitrajes-container');
+            const q = document.getElementById('twa-arbitraje-search').value.toLowerCase().trim();
+            
+            let filtered = twaArbitrajesData;
+            if (q) {
+                filtered = filtered.filter(ins => {
+                    const name = (ins.equipo_nombre || '').toLowerCase();
+                    return name.includes(q);
+                });
+            }
+
+            if (filtered.length === 0) {
+                container.innerHTML = '<div style="text-align:center; padding:20px; color:var(--muted);">No se encontraron equipos.</div>';
+                return;
+            }
+
+            container.innerHTML = filtered.map(ins => {
+                const esperado = Number(ins.esperado_arbitraje || 0);
+                const pagado = Number(ins.pagado_arbitraje || 0);
+                const saldo = Number(ins.saldo_arbitraje ?? (esperado - pagado));
+                const tarifa = Number(ins.tarifa_arbitraje || 0);
+                const jugados = ins.partidos_jugados || 0;
+                
+                const pct = esperado > 0 ? Math.min(100, Math.round((pagado / esperado) * 100)) : (pagado > 0 ? 100 : 0);
+                const barColor = pct === 100 ? '#00ff88' : pct > 50 ? '#ffae00' : '#ff4d4d';
+
+                let detailsHtml = '';
+                if (ins.detalle_partidos && ins.detalle_partidos.length > 0) {
+                    detailsHtml = `
+                    <div style="margin-top: 15px; border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 10px;">
+                        <div style="font-size:0.75rem; color:var(--primary); font-weight:800; margin-bottom:8px;">DESGLOSE POR JORNADA</div>
+                        <div style="display:flex; flex-direction:column; gap:8px;">
+                            ${ins.detalle_partidos.map(dp => {
+                                const isPaid = dp.saldo <= 0;
+                                const estadoColor = isPaid ? '#00ff88' : (dp.estado === 'Played' ? '#00ff88' : (dp.estado === 'Live' ? '#ffae00' : '#aaa'));
+                                const saldoColor = dp.saldo > 0 ? '#ff4d4d' : '#00ff88';
+                                const actionHtml = dp.saldo > 0 
+                                    ? `<button onclick="openPaymentForm(${ins.equipo_id}, 'Arbitraje', ${dp.partido_id})" style="background:var(--warning); color:black; border:none; padding:4px 8px; border-radius:4px; font-weight:800; font-size:0.6rem; cursor:pointer;">PAGAR $${dp.saldo.toFixed(2)}</button>` 
+                                    : `<span style="font-size:0.6rem; color:#00ff88;">✅ PAGADO</span>`;
+
+                                return '<div style="background:rgba(0,0,0,0.2); padding:8px; border-radius:6px; display:flex; justify-content:space-between; align-items:center; border-left:2px solid ' + estadoColor + ';">' +
+                                    '<div style="flex:1;">' +
+                                        '<div style="font-size:0.75rem; font-weight:700;">J' + dp.jornada + ' vs ' + dp.rival + '</div>' +
+                                        '<div style="font-size:0.6rem; color:var(--muted);">Apo: $' + dp.tarifa.toFixed(2) + ' | Pend: <span style="color:' + saldoColor + '; font-weight:bold;">$' + dp.saldo.toFixed(2) + '</span></div>' +
+                                    '</div>' +
+                                    '<div>' + actionHtml + '</div>' +
+                                '</div>';
+                            }).join('')}
+                        </div>
+                    </div>`;
+                } else {
+                    detailsHtml = '<div style="font-size:0.7rem; color:var(--muted); margin-top:10px;">Sin partidos registrados.</div>';
+                }
+
+                return `
+                <div class="card" style="padding:15px; border-left:4px solid var(--warning);">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                        <h4 style="margin:0; color:white; font-size:1.1rem;">${ins.equipo_nombre}</h4>
+                        <div style="text-align:right;">
+                            <div style="font-size:0.65rem; color:var(--muted);">JUGADOS</div>
+                            <div style="font-weight:900; color:var(--primary);">${jugados}</div>
+                        </div>
+                    </div>
+                    
+                    <div style="display:flex; justify-content:space-between; background:rgba(255,255,255,0.03); padding:8px; border-radius:8px; margin-bottom:10px;">
+                        <div style="text-align:center; flex:1;">
+                            <div style="font-size:0.6rem; color:var(--muted);">META</div>
+                            <div style="font-size:0.8rem; font-weight:700;">$${esperado.toFixed(2)}</div>
+                        </div>
+                        <div style="text-align:center; flex:1; border-left:1px solid rgba(255,255,255,0.1); border-right:1px solid rgba(255,255,255,0.1);">
+                            <div style="font-size:0.6rem; color:var(--muted);">APORTADO</div>
+                            <div style="font-size:0.8rem; font-weight:700; color:#00ff88;">$${pagado.toFixed(2)}</div>
+                        </div>
+                        <div style="text-align:center; flex:1;">
+                            <div style="font-size:0.6rem; color:var(--muted);">PENDIENTE</div>
+                            <div style="font-size:0.8rem; font-weight:700; color:#ff4d4d;">$${saldo.toFixed(2)}</div>
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom:10px;">
+                        <div style="display:flex; justify-content:space-between; font-size:0.65rem; margin-bottom:4px;">
+                            <span>Avance: ${pct}% cubierto</span>
+                        </div>
+                        <div style="width:100%; height:4px; background:rgba(255,255,255,0.1); border-radius:2px; overflow:hidden;">
+                            <div style="height:100%; width:${pct}%; background:${barColor}; box-shadow:0 0 10px ${barColor};"></div>
+                        </div>
+                    </div>
+                    
+                    ${detailsHtml}
+                </div>
+                `;
+            }).join('');
         }
 
         function setMatchSearchMode(mode) {
@@ -2887,11 +3027,14 @@
             matchSelect.innerHTML = '<option value="">Seleccionar partido...</option>';
 
             // Adaptar colores del formulario
-            const formCard = document.querySelector('#payment-form-view .card');
+            // Update back button dynamic path
+            const backBtn = document.querySelector('#payment-form-view .header button');
             if (type === 'Arbitraje') {
+                backBtn.setAttribute('onclick', "showView('arbitraje-sync-view')");
                 formCard.style.borderTopColor = 'var(--warning)';
                 document.getElementById('pay-type-label').style.color = 'var(--warning)';
             } else {
+                backBtn.setAttribute('onclick', "showView('drilldown-view')");
                 formCard.style.borderTopColor = 'var(--secondary)';
                 document.getElementById('pay-type-label').style.color = 'var(--primary)';
             }
@@ -3524,6 +3667,27 @@
         </div>
         <input type="text" id="search-ids" placeholder="Buscar por nombre o ID..." class="btn btn-outline" oninput="filterTeamIds()" style="text-align:left; margin-bottom:15px;">
         <div id="ids-container"></div>
+    </div>
+
+    <div id="arbitraje-sync-view" class="view" style="display: none; padding: 16px;">
+        <div class="header">
+            <button class="btn btn-outline" onclick="showSubmenu('payments')" style="width: auto; padding: 6px 12px;">← VOLVER</button>
+            <h3>PAGO ARBITRAJE</h3>
+        </div>
+        
+        <div class="card" style="padding: 15px; margin-bottom: 20px;">
+            <div style="font-size:0.7rem; color:var(--muted); font-weight:800; margin-bottom:5px;">TORNEO</div>
+            <select id="twa-arbitraje-torneo" class="btn btn-outline" style="width:100%; text-align:left; font-size:1rem; border-color:rgba(255,255,255,0.2); margin-bottom: 15px;" onchange="loadTWAArbitrajesData()">
+                <option value="">Cargando torneos...</option>
+            </select>
+            
+            <div style="font-size:0.7rem; color:var(--muted); font-weight:800; margin-bottom:5px;">BUSCAR EQUIPO / SEDE</div>
+            <input type="text" id="twa-arbitraje-search" placeholder="Ingresa nombre de equipo..." class="btn btn-outline" style="text-align:left; font-size:1rem; border-color:rgba(255,255,255,0.2);" oninput="filterTWAArbitrajes()">
+        </div>
+
+        <div id="twa-arbitrajes-container" style="display: flex; flex-direction: column; gap: 15px;">
+            <div style="text-align:center; padding:20px; color:var(--muted);">Selecciona un torneo para ver los equipos.</div>
+        </div>
     </div>
 
     <!-- Vista de Formulario de Pago -->
