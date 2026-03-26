@@ -1006,20 +1006,8 @@ export class SettingsModule {
                 
                 // Ofrecer ticket si no es un pago de expansión (que ya tuvo su ticket)
                 // O si el usuario lo desea
-                if ((result.pago || result.id) && confirm('¿Deseas imprimir el comprobante de esta aportación?')) {
-                    const liga = this.ligas.find(l => l.id == data.liga_id);
-                    const owner = {
-                        owner_rol: liga ? liga.paquete : 'Dueño de Liga',
-                        owner_email: liga ? liga.contacto : 'Sistema',
-                        owner_pass: 'Confirmado'
-                    };
-                    const pagoObj = (result.id && result.liga_nombre) ? result : { ...data, id: result.id || 'NUEVO', liga_nombre: (liga ? liga.nombre : 'Organización'), fecha: new Date().toLocaleDateString() };
-                    // Usar el nuevo generador profesional PDF
-                    this.downloadComboPaymentPDF(pagoObj.id, { 
-                        isActivation: false, 
-                        customPago: pagoObj,
-                        ownerRol: owner.owner_rol
-                    });
+                if ((result.pago || result.id) && confirm('¿Deseas imprimir el Estado de Cuenta profesional?')) {
+                    this.downloadComboPDF(data.liga_id);
                 }
             } else {
                 alert('Error: ' + (result.error || 'No se pudo guardar el pago'));
@@ -1716,7 +1704,8 @@ export class SettingsModule {
                 <td>
                     <div style="display: flex; gap: 8px; justify-content: flex-end;">
                         ${p.comprobante_url ? `<a href="${p.comprobante_url}" target="_blank" class="btn-icon" title="Ver Comprobante">📄</a>` : ''}
-                        <button onclick="ui.settings.downloadComboPaymentPDF(${p.id})" class="btn-icon" title="Imprimir Recibo" style="background: rgba(255,255,255,0.05); color: var(--text); border: 1px solid var(--border); width: 30px; height: 30px; border-radius: 8px; cursor: pointer;">🖨️</button>
+                        <button onclick="ui.settings.downloadComboPDF('${p.liga_id}')" class="btn-icon" title="Descargar Estado de Cuenta Completo" style="background: rgba(255,255,255,0.05); color: var(--text); border: 1px solid var(--border); width: 30px; height: 30px; border-radius: 8px; cursor: pointer;">📄</button>
+
                         <button onclick="ui.settings.editComboPayment(${p.id})" class="btn-icon" title="Editar" style="background: rgba(255,255,255,0.05); color: var(--text); border: 1px solid var(--border); width: 30px; height: 30px; border-radius: 8px; cursor: pointer;">✏️</button>
                         <button onclick="ui.settings.confirmDeleteComboPayment(${p.id})" class="btn-icon" title="Eliminar" style="background: rgba(239,68,68,0.1); color: #ef4444; border: 1px solid rgba(239,68,68,0.2); width: 30px; height: 30px; border-radius: 8px; cursor: pointer;">🗑️</button>
                     </div>
