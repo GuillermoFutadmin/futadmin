@@ -1117,7 +1117,7 @@ export class SettingsModule {
                                 <div style="font-weight: 700;">🏟️ ${stats.canchas} / ${1 + (ligaData?.extra_canchas || 0)}</div>
                                 ${lid !== 'global' ? `
                                 <div style="display: flex; gap: 2px;">
-                                    <button onclick="ui.settings.updateLigaExtras(${lid}, 'extra_canchas', -1)" style="width:18px; height:18px; border-radius:4px; border:1px solid var(--border); background:rgba(255,255,255,0.05); color:#fff; cursor:pointer; font-size:0.7rem; display:flex; align-items:center; justify-content:center;">-</button>
+                                    ${['admin','ejecutivo'].includes(window.USER_ROL) ? `<button onclick="ui.settings.updateLigaExtras(${lid}, 'extra_canchas', -1)" title="Quitar Sede Extra (admin only)" style="width:18px; height:18px; border-radius:4px; border:1px solid #ef444455; background:rgba(239,68,68,0.1); color:#ef4444; cursor:pointer; font-size:0.7rem; display:flex; align-items:center; justify-content:center;">-</button>` : ''}
                                     <button onclick="ui.settings.updateLigaExtras(${lid}, 'extra_canchas', 1)" title="Añadir Sede Extra ($290)" style="width:18px; height:18px; border-radius:4px; border:1px solid var(--primary); background:var(--primary-glow); color:var(--primary); cursor:pointer; font-size:0.7rem; display:flex; align-items:center; justify-content:center; font-weight:bold;">+</button>
                                 </div>` : ''}
                             </div>
@@ -1129,7 +1129,7 @@ export class SettingsModule {
                                 <div style="font-weight: 700;">⚽ ${stats.torneos} / ${limitBaseTorneos + (ligaData?.extra_torneos || 0)}</div>
                                 ${lid !== 'global' ? `
                                 <div style="display: flex; gap: 2px;">
-                                    <button onclick="ui.settings.updateLigaExtras(${lid}, 'extra_torneos', -1)" style="width:18px; height:18px; border-radius:4px; border:1px solid var(--border); background:rgba(255,255,255,0.05); color:#fff; cursor:pointer; font-size:0.7rem; display:flex; align-items:center; justify-content:center;">-</button>
+                                    ${['admin','ejecutivo'].includes(window.USER_ROL) ? `<button onclick="ui.settings.updateLigaExtras(${lid}, 'extra_torneos', -1)" title="Quitar Liga Extra (admin only)" style="width:18px; height:18px; border-radius:4px; border:1px solid #ef444455; background:rgba(239,68,68,0.1); color:#ef4444; cursor:pointer; font-size:0.7rem; display:flex; align-items:center; justify-content:center;">-</button>` : ''}
                                     <button onclick="ui.settings.updateLigaExtras(${lid}, 'extra_torneos', 1)" title="Añadir Liga Extra ($85)" style="width:18px; height:18px; border-radius:4px; border:1px solid var(--primary); background:var(--primary-glow); color:var(--primary); cursor:pointer; font-size:0.7rem; display:flex; align-items:center; justify-content:center; font-weight:bold;">+</button>
                                 </div>` : ''}
                             </div>
