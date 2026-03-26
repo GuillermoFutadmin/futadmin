@@ -795,28 +795,77 @@ export class SettingsModule {
             doc.text(`${liga.stats?.jugadores || 0} Jugadores Registrados`, 125, currentY + 10);
             currentY += 28;
 
-            // --- SECCIÓN 4: HISTORIAL DE APORTACIONES ---
+            // --- SECCIÓN 4: HISTORIAL DE CAMBIOS EN EL PLAN (PROFESIONAL) ---
             doc.setFontSize(14);
             doc.setFont('helvetica', 'bold');
-            doc.text('HISTORIAL DE APORTACIONES', 20, currentY);
+            doc.text('HISTORIAL DE CAMBIOS EN EL PLAN', 20, currentY);
             doc.line(20, currentY + 3, 190, currentY + 3);
             currentY += 10;
 
-            // Cabecera de Tabla
-            doc.setFillColor(50, 50, 50);
+            // Cabecera de Tabla Expansiones
+            doc.setFillColor(80, 80, 80);
             doc.rect(20, currentY, 170, 8, 'F');
             doc.setTextColor(255, 255, 255);
             doc.setFontSize(9);
             doc.text('FECHA', 25, currentY + 6);
-            doc.text('CONCEPTO / MES', 60, currentY + 6);
+            doc.text('TIPO DE CAMBIO / EXPANSIÓN', 60, currentY + 6);
+            doc.text('CANTIDAD', 130, currentY + 6);
+            doc.text('MONTO ADICIONAL', 165, currentY + 6);
+
+            let expY = currentY + 14;
+            doc.setTextColor(...textColor);
+            
+            const expansions = liga.expansiones || [];
+            if (expansions.length === 0) {
+                doc.setFont('helvetica', 'italic');
+                doc.text('No hay cambios registrados desde la inscripción inicial.', 25, expY);
+                expY += 10;
+            } else {
+                expansions.forEach((e) => {
+                    if (expY > 265) { doc.addPage(); expY = 30; }
+                    doc.setFont('helvetica', 'normal');
+                    doc.text(e.fecha || '', 25, expY);
+                    
+                    let desc = e.tipo === 'extra_canchas' ? 'Sede Extra' : 'Torneo/Liga Extra';
+                    doc.text(desc, 60, expY);
+                    doc.text(`+${e.cantidad}`, 130, expY);
+                    
+                    doc.setFont('helvetica', 'bold');
+                    const montoTxt = e.monto_adicional > 0 ? `$${e.monto_adicional.toFixed(2)}` : 'Bonificado (Combo)';
+                    doc.text(montoTxt, 165, expY);
+                    
+                    doc.setDrawColor(230, 230, 230);
+                    doc.setLineWidth(0.1);
+                    doc.line(20, expY + 2, 190, expY + 2);
+                    expY += 10;
+                });
+            }
+            currentY = expY + 10;
+
+            // --- SECCIÓN 5: HISTORIAL DE APORTACIONES ---
+            if (currentY > 240) { doc.addPage(); currentY = 30; }
+            doc.setFontSize(14);
+            doc.setFont('helvetica', 'bold');
+            doc.text('HISTORIAL DE APORTACIONES MENSUALES', 20, currentY);
+            doc.line(20, currentY + 3, 190, currentY + 3);
+            currentY += 10;
+
+            // Cabecera de Tabla Pagos
+            doc.setFillColor(50, 50, 50);
+            doc.rect(20, currentY, 170, 8, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(9);
+            doc.text('FECHA PAGO', 25, currentY + 6);
+            doc.text('MES CUBIERTO / CONCEPTO', 60, currentY + 6);
             doc.text('MÉTODO', 130, currentY + 6);
-            doc.text('MONTO (MXN)', 165, currentY + 6);
+            doc.text('MONTO PAGADO', 165, currentY + 6);
 
             let rowY = currentY + 14;
             doc.setTextColor(...textColor);
             
             const payments = (this.payments || []).filter(p => p.liga_id == ligaId);
             if (payments.length === 0) {
+                doc.setFont('helvetica', 'italic');
                 doc.text('No se han registrado pagos históricos para esta organización.', 25, rowY);
             } else {
                 payments.forEach((p) => {
@@ -833,6 +882,7 @@ export class SettingsModule {
                     rowY += 10;
                 });
             }
+
 
             // Footer Legal (Términos cortos)
             doc.setFontSize(8);
