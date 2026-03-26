@@ -1146,7 +1146,14 @@ export class SettingsModule {
                         })()}
                     </div>
 
-                    <div style="padding:20px; flex: 1; display: flex; flex-direction: column; gap: 20px;">
+                    <!-- Toggle button -->
+                    <div style="padding: 0 20px 10px 20px;" onclick="this.closest('.stat-card').querySelector('.combo-details').classList.toggle('combo-expanded'); const btn = this.querySelector('.combo-toggle-btn'); btn.textContent = btn.textContent.includes('▼') ? '▲ Ocultar detalles' : '▼ Ver detalles';">
+                        <button class="combo-toggle-btn" style="width:100%; background: rgba(255,255,255,0.04); border: 1px dashed var(--border); border-radius: 8px; color: var(--text-muted); font-size: 0.72rem; padding: 6px; cursor: pointer; transition: all 0.2s; text-align:center;">▼ Ver detalles</button>
+                    </div>
+
+                    <!-- Collapsible detail sections -->
+                    <div class="combo-details" style="display:none; flex-direction:column;">
+                        <div style="padding:20px; flex: 1; display: flex; flex-direction: column; gap: 20px;">
                         
                         <!-- Sedes vinculadas -->
                         <div>
@@ -1155,7 +1162,7 @@ export class SettingsModule {
                                     <span style="color:${combo.color}">🏟️</span> Sedes Vinculadas
                                 </div>
                                 ${window.USER_ROL !== 'resultados' && window.USER_ROL !== 'arbitro' ? `
-                                <button onclick="ui.canchas.showModal(null, '${lid}')" class="btn-icon" title="Añadir Sede a este Combo" style="background: none; border: none; padding: 0; font-size: 1.1rem; color: ${combo.color}; cursor: pointer;">+</button>
+                                <button onclick="event.stopPropagation(); ui.canchas.showModal(null, '${lid}')" class="btn-icon" title="Añadir Sede a este Combo" style="background: none; border: none; padding: 0; font-size: 1.1rem; color: ${combo.color}; cursor: pointer;">+</button>
                                 ` : ''}
                             </div>
                             <div style="display: flex; flex-wrap: wrap; gap: 8px;">
@@ -1174,7 +1181,7 @@ export class SettingsModule {
                             <div style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase; font-weight:800; letter-spacing:1px; margin-bottom:8px; display: flex; align-items: center; justify-content: space-between;">
                                 <span>Dueños / Acceso Principal</span>
                                 ${window.USER_ROL !== 'resultados' && window.USER_ROL !== 'arbitro' ? `
-                                <button onclick="ui.settings.showUserModal('${lid}', '${pacote}')" class="btn-icon" title="Añadir Dueño" style="background: none; border: none; padding: 0; font-size: 1.1rem; color: var(--text-muted); cursor: pointer;">+</button>
+                                <button onclick="event.stopPropagation(); ui.settings.showUserModal('${lid}', '${pacote}')" class="btn-icon" title="Añadir Dueño" style="background: none; border: none; padding: 0; font-size: 1.1rem; color: var(--text-muted); cursor: pointer;">+</button>
                                 ` : ''}
                             </div>
                             <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px;">
@@ -1186,7 +1193,7 @@ export class SettingsModule {
                             <div style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase; font-weight:800; letter-spacing:1px; margin-bottom:8px; display: flex; align-items: center; justify-content: space-between;">
                                 <span>Staff Operativo</span>
                                 ${window.USER_ROL !== 'resultados' && window.USER_ROL !== 'arbitro' ? `
-                                <button onclick="ui.arbitros.showArbitroModal('${lid}')" class="btn-icon" title="Añadir Staff / Árbitro" style="background: none; border: none; padding: 0; font-size: 1.1rem; color: var(--text-muted); cursor: pointer;">+</button>
+                                <button onclick="event.stopPropagation(); ui.arbitros.showArbitroModal('${lid}')" class="btn-icon" title="Añadir Staff / Árbitro" style="background: none; border: none; padding: 0; font-size: 1.1rem; color: var(--text-muted); cursor: pointer;">+</button>
                                 ` : ''}
                             </div>
                             <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px;">
@@ -1198,7 +1205,7 @@ export class SettingsModule {
                             <div style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase; font-weight:800; letter-spacing:1px; margin-bottom:8px; display: flex; align-items: center; justify-content: space-between;">
                                 <span>Equipos / Delegados</span>
                                 ${window.USER_ROL !== 'resultados' && window.USER_ROL !== 'arbitro' ? `
-                                <button onclick="ui.settings.showUserModal('${lid}', 'equipo')" class="btn-icon" title="Añadir Equipo / Delegado" style="background: none; border: none; padding: 0; font-size: 1.1rem; color: var(--text-muted); cursor: pointer;">+</button>
+                                <button onclick="event.stopPropagation(); ui.settings.showUserModal('${lid}', 'equipo')" class="btn-icon" title="Añadir Equipo / Delegado" style="background: none; border: none; padding: 0; font-size: 1.1rem; color: var(--text-muted); cursor: pointer;">+</button>
                                 ` : ''}
                             </div>
                             <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px;">
@@ -1214,12 +1221,13 @@ export class SettingsModule {
                                 </div>
                             ` : ''}
                         </div>
-                    </div>
+                        </div>
 
-                    <div style="padding: 12px 20px; background: rgba(0,0,0,0.1); border-top: 1px solid var(--border); font-size: 0.75rem; color: var(--text-muted); display: flex; justify-content: space-between; align-items: center;">
-                        <span>${combo.users.length} cuentas vinculadas</span>
-                        <div style="display:flex; gap:8px; align-items:center;">
-                            <div style="width: 8px; height: 8px; border-radius: 50%; background: ${combo.color}; box-shadow: 0 0 10px ${combo.color};"></div>
+                        <div style="padding: 12px 20px; background: rgba(0,0,0,0.1); border-top: 1px solid var(--border); font-size: 0.75rem; color: var(--text-muted); display: flex; justify-content: space-between; align-items: center;">
+                            <span>${combo.users.length} cuentas vinculadas</span>
+                            <div style="display:flex; gap:8px; align-items:center;">
+                                <div style="width: 8px; height: 8px; border-radius: 50%; background: ${combo.color}; box-shadow: 0 0 10px ${combo.color};"></div>
+                            </div>
                         </div>
                     </div>
                 </div>

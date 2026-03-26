@@ -647,6 +647,14 @@ body {
     display: none; /* hidden on desktop */
 }
 
+/* Combo card collapse */
+.combo-details {
+    display: none;
+}
+.combo-details.combo-expanded {
+    display: flex !important;
+}
+
 .modal-tab-content {
     opacity: 0; visibility: hidden;
     animation: fadeIn 0.3s ease;
