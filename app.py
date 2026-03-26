@@ -770,6 +770,84 @@ def handle_hub_bulk():
                     comentario=comentario_arb
                 )
                 db.session.add(pago_arb)
+                
+            # FLUSH para tener los IDs de pago disponibles para el recibo
+            db.session.flush()
+
+            # Enviar correo si el equipo tiene email registrado
+            if ins.equipo and ins.equipo.email:
+                from logic.receipts import trigger_receipt_email_async
+                from datetime import datetime, timedelta
+                import string, random
+                _fecha_local = datetime.utcnow() - timedelta(hours=6)
+                
+                # Para Inscripción
+                if monto_ins > 0 and pago_ins.id:
+                    folio_pago = 'FUT-' + ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+                    pagado_hasta_ahora = db.session.query(db.func.sum(Pago.monto)).filter_by(inscripcion_id=ins.id, tipo='Inscripcion').scalar() or 0
+                    result_ins = {
+                        "success": True,
+                        "pago_id": pago_ins.id,
+                        "folio": folio_pago,
+                        "equipo": ins.equipo.nombre,
+                        "torneo": torneo.nombre,
+                        "sede": torneo.cancha or "Por definir",
+                        "liga_nombre": torneo.liga.nombre if torneo.liga else "FutAdmin",
+                        "monto_abonado": monto_ins,
+                        "tipo": "Inscripcion",
+                        "fecha": _fecha_local.strftime('%d/%m/%Y %H:%M'),
+                        "metodo": metodo,
+                        "monto_pactado": float(ins.monto_pactado_inscripcion) if ins.monto_pactado_inscripcion else 0.0,
+                        "total_pagado": float(pagado_hasta_ahora),
+                        "saldo_pendiente": float((ins.monto_pactado_inscripcion or 0) - pagado_hasta_ahora),
+                        "tipo_torneo": torneo.tipo or "Liga",
+                        "horarios": f"{torneo.dias_juego or ''} {torneo.horario_juego or ''}".strip() or "Por definir",
+                        "formato": torneo.formato or "Torneo",
+                        "fecha_inicio_torneo": torneo.fecha_inicio.strftime('%d/%m/%Y') if torneo.fecha_inicio else "Pendiente",
+                        "organiza": torneo.liga.nombre if torneo.liga else "FutAdmin",
+                        "contacto": torneo.liga.contacto or "No disponible"
+                    }
+                    trigger_receipt_email_async(result_ins, ins.equipo.email, ins.equipo.responsable or "Delegado")
+                    
+                # Para Arbitraje
+                if monto_arb > 0 and pago_arb.id:
+                    folio_pago = 'FUT-' + ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+                    pagado_hasta_ahora_arb = db.session.query(db.func.sum(Pago.monto)).filter_by(inscripcion_id=ins.id, tipo='Arbitraje').scalar() or 0
+                    
+                    partido_info = None
+                    if pago_arb.partido_id:
+                        p = Partido.query.get(pago_arb.partido_id)
+                        if p:
+                            partido_info = {
+                                "rivales": f"{p.equipo_local.nombre} vs {p.equipo_visitante.nombre}",
+                                "jornada": p.jornada,
+                                "fecha": p.fecha.strftime('%d/%m/%Y') if p.fecha else "S/F"
+                            }
+                            
+                    result_arb = {
+                        "success": True,
+                        "pago_id": pago_arb.id,
+                        "folio": folio_pago,
+                        "equipo": ins.equipo.nombre,
+                        "torneo": torneo.nombre,
+                        "sede": torneo.cancha or "Por definir",
+                        "liga_nombre": torneo.liga.nombre if torneo.liga else "FutAdmin",
+                        "monto_abonado": monto_arb,
+                        "tipo": "Arbitraje",
+                        "fecha": _fecha_local.strftime('%d/%m/%Y %H:%M'),
+                        "metodo": metodo,
+                        "monto_pactado": float(torneo.costo_arbitraje) if torneo.costo_arbitraje else 0.0,
+                        "total_pagado": float(pagado_hasta_ahora_arb),
+                        "saldo_pendiente": 0.0,
+                        "partido": partido_info,
+                        "tipo_torneo": torneo.tipo or "Liga",
+                        "horarios": f"{torneo.dias_juego or ''} {torneo.horario_juego or ''}".strip() or "Por definir",
+                        "formato": torneo.formato or "Torneo",
+                        "fecha_inicio_torneo": torneo.fecha_inicio.strftime('%d/%m/%Y') if torneo.fecha_inicio else "Pendiente",
+                        "organiza": torneo.liga.nombre if torneo.liga else "FutAdmin",
+                        "contacto": torneo.liga.contacto or "No disponible"
+                    }
+                    trigger_receipt_email_async(result_arb, ins.equipo.email, ins.equipo.responsable or "Delegado")
 
         db.session.commit()
         return jsonify({"success": True, "message": "Hub V5 sincronizado correctamente"}), 200
