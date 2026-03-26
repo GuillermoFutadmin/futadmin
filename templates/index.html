@@ -112,7 +112,7 @@
                 <div class="nav-section">
                     <p class="section-title">CONFIGURACIÓN</p>
                     <ul>
-                        <li class="nav-item has-submenu" onclick="ui.toggleSubmenu(this); ui.switchView('ajustes', '{{ 'users' if user_rol.lower() == 'admin' else 'linked' }}', this)">
+                        <li class="nav-item has-submenu" onclick='ui.toggleSubmenu(this); ui.switchView("ajustes", "{{ "users" if user_rol.lower() == "admin" else "linked" }}", this)'>
                             <a href="javascript:void(0)">
                                 <span>⚙️ Ajustes del Sistema</span>
                                 <i class="arrow">▼</i>
