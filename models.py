@@ -44,23 +44,32 @@ class Liga(db.Model):
 
 
     def to_dict(self):
-        # Estadísticas de registros desde el inicio
-        users_count = Usuario.query.filter_by(liga_id=self.id).count()
-        canchas_count = Cancha.query.filter_by(liga_id=self.id).count()
-        torneos_count = Torneo.query.filter_by(liga_id=self.id).count()
-        # Verificar si tiene pagos y obtener el último
-        last_payment = PagoCombo.query.filter_by(liga_id=self.id).order_by(PagoCombo.fecha.desc()).first()
-        has_payments = last_payment is not None
-        
-        # Totales para el resumen
-        from sqlalchemy import func
-        total_acumulado_meses = db.session.query(func.sum(PagoCombo.cantidad_meses)).filter_by(liga_id=self.id).scalar() or 0
-        
-        # Detalles de entidades
-        canchas = Cancha.query.filter_by(liga_id=self.id).all()
-        torneos = Torneo.query.filter_by(liga_id=self.id).all()
-        teams_count = Equipo.query.filter_by(liga_id=self.id).count()
-        players_count = Jugador.query.filter_by(liga_id=self.id).count()
+        try:
+            # Estadísticas de registros desde el inicio
+            users_count = Usuario.query.filter_by(liga_id=self.id).count()
+            canchas_count = Cancha.query.filter_by(liga_id=self.id).count()
+            torneos_count = Torneo.query.filter_by(liga_id=self.id).count()
+            # Verificar si tiene pagos y obtener el último
+            last_payment = PagoCombo.query.filter_by(liga_id=self.id).order_by(PagoCombo.fecha.desc()).first()
+            has_payments = last_payment is not None
+            
+            # Totales para el resumen
+            from sqlalchemy import func
+            total_acumulado_meses = db.session.query(func.sum(PagoCombo.cantidad_meses)).filter_by(liga_id=self.id).scalar() or 0
+            
+            # Detalles de entidades
+            canchas = Cancha.query.filter_by(liga_id=self.id).all()
+            torneos = Torneo.query.filter_by(liga_id=self.id).all()
+            teams_count = Equipo.query.filter_by(liga_id=self.id).count()
+            players_count = Jugador.query.filter_by(liga_id=self.id).count()
+        except Exception as e:
+            print(f"Error calculando stats para liga {self.id}: {e}")
+            users_count = canchas_count = torneos_count = teams_count = players_count = 0
+            total_acumulado_meses = 0
+            last_payment = None
+            has_payments = False
+            canchas = []
+            torneos = []
         
         # Determinar paquete basado en el dueño
         owner = Usuario.query.filter_by(liga_id=self.id).filter(Usuario.rol.in_(['dueño_liga', 'super_arbitro', 'equipo'])).first()
@@ -111,23 +120,27 @@ class Liga(db.Model):
         # El corte es el día de inscripción
         # Vencimiento = fecha_registro + Sum(meses_pagados)
         from sqlalchemy import func
-        total_meses = db.session.query(func.sum(PagoCombo.cantidad_meses)).filter_by(liga_id=self.id).scalar() or 0
-        
-        if not self.fecha_registro:
-            return None
+        try:
+            total_meses = db.session.query(func.sum(PagoCombo.cantidad_meses)).filter_by(liga_id=self.id).scalar() or 0
             
-        # Lógica nativa para añadir meses sin dateutil
-        start_date = self.fecha_registro
-        month = start_date.month - 1 + int(total_meses)
-        year = start_date.year + month // 12
-        month = month % 12 + 1
-        # Asegurar día válido (ej: si es 31 y el mes tiene 30)
-        import calendar
-        last_day = calendar.monthrange(year, month)[1]
-        day = min(start_date.day, last_day)
-        
-        vence = datetime(year, month, day)
-        return vence.strftime('%Y-%m-%d')
+            if not self.fecha_registro:
+                return None
+                
+            # Lógica nativa para añadir meses sin dateutil
+            start_date = self.fecha_registro
+            month = start_date.month - 1 + int(total_meses)
+            year = start_date.year + month // 12
+            month = month % 12 + 1
+            # Asegurar día válido (ej: si es 31 y el mes tiene 30)
+            import calendar
+            last_day = calendar.monthrange(year, month)[1]
+            day = min(start_date.day, last_day)
+            
+            vence = datetime(year, month, day)
+            return vence.strftime('%Y-%m-%d')
+        except Exception as e:
+            print(f"Error calculando vencimiento para liga {self.id}: {e}")
+            return None
 
 class Usuario(db.Model):
     __tablename__ = 'usuarios'

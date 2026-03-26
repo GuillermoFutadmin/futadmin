@@ -3,6 +3,8 @@ from flask import Blueprint, jsonify, request, session, redirect, url_for, rende
 
 from models import db, Usuario, Liga, Cancha, Configuracion, bcrypt
 from datetime import datetime
+import uuid
+import re
 from logic.receipts import generate_receipt_pdf, send_receipt_email
 
 users_bp = Blueprint('users', __name__)
@@ -302,7 +304,6 @@ def handle_liga_single(liga_id):
                     titular.email = owner_email
                 
                 if owner_pass:
-                    from app import bcrypt
                     hashed_pw = bcrypt.generate_password_hash(owner_pass).decode('utf-8')
                     # Sincronizar contraseña para TODOS los usuarios de la liga (Combo)
                     for u in liga.usuarios:
@@ -374,8 +375,6 @@ def handle_combo_creation():
                 db.session.add(nuevo_arbitro)
 
             # --- AUTO-GENERAR 3 CUENTAS EXTRA (Total 4 cuentas por combo) ---
-            import uuid
-            import re
             
             # Limpiar nombre de liga para el correo (solo letras y números)
             liga_clean = re.sub(r'[^a-zA-Z0-9]', '', nueva_liga.nombre).lower()
