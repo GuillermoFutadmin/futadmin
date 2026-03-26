@@ -3536,11 +3536,16 @@ def update_liga_extras(id):
     liga = Liga.query.get_or_404(id)
     data = request.json
     
+    notification_needed = False
+    changes = []
+    
     if 'extra_canchas' in data:
         new_val = max(0, int(data['extra_canchas']))
         old_val = liga.extra_canchas or 0
         if new_val > old_val:
+            notification_needed = True
             diff = new_val - old_val
+            changes.append(f"+{diff} Sede{'s' if diff > 1 else ''}")
             # +1 sede extra = $290 (incluye 5 ligas por ser el combo base)
             exp = LigaExpansion(liga_id=liga.id, tipo='extra_canchas', cantidad=diff, monto_adicional=diff * 290)
             db.session.add(exp)
@@ -3566,6 +3571,8 @@ def update_liga_extras(id):
         old_val = liga.extra_torneos or 0
         if new_val > old_val:
             diff = new_val - old_val
+            notification_needed = True
+            changes.append(f"+{diff} Liga{'s' if diff > 1 else ''}")
             exp = LigaExpansion(liga_id=liga.id, tipo='extra_torneos', cantidad=diff, monto_adicional=diff * 85)
             db.session.add(exp)
         elif new_val < old_val:
@@ -3575,6 +3582,38 @@ def update_liga_extras(id):
         liga.extra_torneos = new_val
         
     db.session.commit()
+
+    if notification_needed:
+        try:
+            from logic.receipts import trigger_receipt_email_async
+            from models import Usuario
+            
+            owner = Usuario.query.filter_by(liga_id=liga.id).filter(Usuario.rol.in_(['dueño_liga', 'super_arbitro', 'equipo'])).first()
+            if owner:
+                sedes_totales = 1 + (liga.extra_canchas or 0)
+                ligas_totales = 5 + (liga.extra_torneos or 0)
+                capacidad_str = f"Nueva capacidad: {sedes_totales} Sede{'s' if sedes_totales > 1 else ''}, {ligas_totales} Ligas"
+                
+                ticket_data = {
+                    "is_futadmin": True,
+                    "folio": f"UPGR-{liga.id}-{datetime.now().strftime('%y%m%d')}",
+                    "liga_nombre": liga.nombre,
+                    "monto_abonado": 0.0, 
+                    "tipo": f"Ampliación de Capacidad ({', '.join(changes)})",
+                    "equipo": capacidad_str,
+                    "torneo": "Actualización de Plan FutAdmin",
+                    "contacto": liga.contacto
+                }
+                
+                # Enviar al dueño
+                trigger_receipt_email_async(ticket_data, owner.email, owner.nombre)
+                
+                # Enviar al contacto si es distinto
+                if liga.contacto and liga.contacto != owner.email:
+                    trigger_receipt_email_async(ticket_data, liga.contacto, owner.nombre)
+        except Exception as e:
+            print(f"Error enviando notificación de upgrade: {e}")
+
     return jsonify({
         "success": True, 
         "liga": liga.to_dict(),

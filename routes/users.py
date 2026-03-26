@@ -441,12 +441,13 @@ def handle_combo_creation():
             if u_sub:
                 cuentas_ticket.append({"email": u_sub.email, "rol": sub_rol})
 
-        # --- ENVIAR RECIBO POR CORREO (Async) ---
+        # --- ENVIAR NOTIFICACIÓN POR CORREO (Async) ---
         try:
             from logic.receipts import trigger_receipt_email_async
             from datetime import datetime, timedelta
             
-            # Preparar datos seguros para el hilo (sin objetos db)
+            # Preparar datos seguros para el hillo (sin objetos db)
+            capacidad_desc = "1 Sede, 5 Ligas" # Capacidad Inicial
             ticket_data = {
                 "is_futadmin": True,
                 "folio": f"COMB-{nueva_liga.id}-{datetime.now().strftime('%y%m%d')}",
@@ -456,12 +457,20 @@ def handle_combo_creation():
                 "tipo": f"Suscripción - Plan {rol_owner.replace('_', ' ').title()}",
                 "metodo": "Transferencia",
                 "mes_pagado": mes_actual,
-                "equipo": "Suscripción FutAdmin",
-                "torneo": f"Plan {rol_owner}"
+                "equipo": capacidad_desc, # Usamos este campo para la capacidad en combos
+                "torneo": "Activación FutAdmin PRO",
+                "contacto": nueva_liga.contacto
             }
             
             nombre_u = data.get('owner_nombre', 'Administrador')
+            
+            # 1. Enviar al correo del Dueño (con credenciales)
             trigger_receipt_email_async(ticket_data, data['owner_email'], nombre_u)
+            
+            # 2. Enviar copia al correo de Contacto (si es distinto y existe)
+            if nueva_liga.contacto and nueva_liga.contacto != data['owner_email']:
+                trigger_receipt_email_async(ticket_data, nueva_liga.contacto, nombre_u)
+                
         except Exception as e:
             print(f"Error en hook asíncrono de correo (combo): {e}")
 

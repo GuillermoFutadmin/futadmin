@@ -87,7 +87,7 @@ def build_receipt_email_html(nombre, liga_nombre, equipo, torneo, tipo, monto_ab
             </table>
             <div style="margin-top:10px;padding:12px;background:#f9f9f9;border:1px solid #eee;border-radius:8px;font-size:11px;color:#666;line-height:1.5;max-height:150px;overflow-y:auto;">
                 <strong>REGLAS Y CLÁUSULAS:</strong><br>
-                {(t.get('reglamento','') + '\n' + t.get('clausulas','')).strip() or 'Consultar con el organizador.'}
+                { (t.get('reglamento','') + ' ' + t.get('clausulas','')).strip() or 'Consultar con el organizador.' }
             </div>
           </td>
         </tr>"""
@@ -135,7 +135,7 @@ def build_receipt_email_html(nombre, liga_nombre, equipo, torneo, tipo, monto_ab
                 <td style="padding:6px 12px;font-weight:600;border-bottom:1px solid #f0f0f0;background:#fafafa;">{liga_nombre}</td>
               </tr>
               <tr>
-                <td style="padding:8px 12px;color:#555;border-bottom:1px solid #f0f0f0;">👕 Equipo</td>
+                <td style="padding:8px 12px;color:#555;border-bottom:1px solid #f0f0f0;">{ '📊 Capacidad' if is_futadmin else '👕 Equipo' }</td>
                 <td style="padding:8px 12px;font-weight:600;border-bottom:1px solid #f0f0f0;">{equipo}</td>
               </tr>
               <tr>
@@ -300,6 +300,7 @@ def generate_receipt_pdf(data, filename):
     if is_futadmin:
         detail_rows = [
             [Paragraph("Liga:", label_s), Paragraph(liga_nombre, value_s)],
+            [Paragraph("Capacidad / Detalle:", label_s), Paragraph(data.get('equipo','N/A'), value_s)],
             [Paragraph("Concepto:", label_s), Paragraph(data.get('tipo','Suscripción'), value_s)],
             [Paragraph("Mes Pagado:", label_s), Paragraph(str(data.get('mes_pagado','N/A')), value_s)],
         ]
