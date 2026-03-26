@@ -674,27 +674,18 @@ def _trigger_telegram_receipt_email(pago, equipo, inscripcion, torneo):
     if not equipo:
         return False
 
-    from extensions import db
-    try:
-        # Refresh object to avoid stale session data
-        db.session.refresh(equipo)
-    except:
-        pass
-
+    # Get email directly from object
     recipient_email = getattr(equipo, 'email', None) or None
-    if not recipient_email:
-        # Final attempt: direct query
-        from models import Equipo
-        fresh_equipo = Equipo.query.get(equipo.id)
-        recipient_email = getattr(fresh_equipo, 'email', None) if fresh_equipo else None
-
+    
     if not recipient_email:
         with open("mail_debug.log", "a") as f:
-            f.write(f"[SKIP] Equipo '{equipo.nombre}' (ID:{equipo.id}) sin correo en pago {getattr(pago, 'id', '?')}\n")
+            f.write(f"[SKIP] Equipo '{equipo.nombre}' (ID:{getattr(equipo, 'id', 'N/A')}) sin correo en pago {getattr(pago, 'id', '?')}\n")
         return False  # Sin correo registrado
         
     try:
         from extensions import db
+        # If possible, just check DB one last time if email is null, 
+        # but avoid refresh() which can hang on committed objects in some envs.
         from models import Pago, Cancha, Partido
         import traceback
         
