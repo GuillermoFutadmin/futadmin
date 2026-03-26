@@ -683,7 +683,7 @@ def _trigger_telegram_receipt_email(pago, equipo, inscripcion, torneo):
         return False  # Sin correo registrado
         
     try:
-        from extensions import db
+        from models import db
         # If possible, just check DB one last time if email is null, 
         # but avoid refresh() which can hang on committed objects in some envs.
         from models import Pago, Cancha, Partido
