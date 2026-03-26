@@ -344,9 +344,25 @@ def handle_combo_creation():
         rol_owner = data.get('owner_rol', 'dueño_liga')
         monto_pactado = costos.get(rol_owner, 0.0)
         
+        # 0. Validar si el correo del titular ya existe (Causa común de 400)
+        owner_email = data.get('owner_email')
+        if not owner_email:
+            return jsonify({'error': 'El correo del titular es obligatorio'}), 400
+            
+        if Usuario.query.filter_by(email=owner_email).first():
+            return jsonify({'error': f'El correo {owner_email} ya está registrado en el sistema'}), 400
+
         # 1. Crear la Liga (Combo)
+        raw_sub = data.get('subdominio')
+        clean_sub = raw_sub.strip() if raw_sub and raw_sub.strip() != "" else None
+        
+        # Validar unicidad de subdominio manualmente para dar error claro
+        if clean_sub and Liga.query.filter_by(subdominio=clean_sub).first():
+            return jsonify({'error': f'El subdominio {clean_sub} ya está en uso'}), 400
+
         nueva_liga = Liga(
             nombre=data.get('nombre'),
+            subdominio=clean_sub,
             color=data.get('color', '#00ff88'),
             tipo_cliente=data.get('tipo_cliente', ''),
             contacto=data.get('contacto', ''),
@@ -357,11 +373,12 @@ def handle_combo_creation():
         db.session.flush() # Para obtener el ID
         
         # 3. Crear el Usuario Responsable y Subcuentas
-        if data.get('owner_email') and data.get('owner_pass'):
-            hashed_pw = bcrypt.generate_password_hash(data['owner_pass']).decode('utf-8')
+        owner_pass = data.get('owner_pass')
+        if owner_email and owner_pass:
+            hashed_pw = bcrypt.generate_password_hash(owner_pass).decode('utf-8')
             new_user = Usuario(
                 nombre=data.get('owner_nombre', data.get('nombre')),
-                email=data['owner_email'],
+                email=owner_email,
                 password_hash=hashed_pw,
                 rol=rol_owner,
                 liga_id=nueva_liga.id,
