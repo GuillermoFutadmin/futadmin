@@ -1351,17 +1351,64 @@ textarea.full-textarea:focus {
         height: auto;
     }
 
+    /* Botón de Menú Móvil */
+    .mobile-menu-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255,255,255,0.05);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        color: #fff;
+        padding: 6px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .mobile-menu-btn:active {
+        background: rgba(255,255,255,0.1);
+        transform: scale(0.95);
+    }
+
+    /* Overlay oscuro */
+    .sidebar-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0,0,0,0.6);
+        backdrop-filter: blur(2px);
+        z-index: 99998;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+    }
+
+    .sidebar-overlay.active {
+        opacity: 1;
+        visibility: visible;
+    }
+
     /* Sidebar en modo móvil */
     .sidebar {
-        width: 100%;
-        flex-shrink: 0;
-        background-color: var(--sidebar-bg);
+        position: fixed;
+        top: 0;
+        right: -100%; /* Oculto por defecto a la derecha */
+        width: 280px !important;
+        height: 100vh;
+        z-index: 99999;
+        transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         border-right: none;
-        border-bottom: 1px solid var(--border);
+        border-left: 1px solid var(--border);
+        background-color: var(--sidebar-bg);
         display: flex;
         flex-direction: column;
-        position: relative; /* Puedes usar sticky top:0 si lo quieres fijar al hacer scroll */
-        z-index: 9999;
+        box-shadow: -5px 0 25px rgba(0,0,0,0.5);
+    }
+
+    .sidebar.mobile-open {
+        right: 0;
     }
 
     .sidebar-footer {
@@ -1370,23 +1417,21 @@ textarea.full-textarea:focus {
 
     .logo-container {
         padding: 1rem;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
     }
 
     .main-nav {
         display: block;
-        padding: 0 10px;
+        padding: 15px 10px;
+        overflow-y: auto;
+        flex: 1;
     }
 
     .main-nav ul {
         display: flex;
-        overflow-x: auto;
+        flex-direction: column; /* Volvemos a modo vertical */
         gap: 8px;
-        padding: 5px 0;
-        scrollbar-width: none;
-    }
-    
-    .main-nav ul::-webkit-scrollbar {
-        display: none;
+        padding: 0;
     }
 
     .nav-item {
@@ -1395,17 +1440,22 @@ textarea.full-textarea:focus {
     }
 
     .nav-item a {
-        padding: 8px 12px;
-        font-size: 0.8rem;
+        padding: 10px 14px;
+        font-size: 0.9rem;
     }
 
-    /* Secciones de navegaciÃƒÆ’Ã‚Â³n en mÃƒÆ’Ã‚Â³vil */
+    /* Secciones de navegación en móvil */
     .nav-section {
-        margin-bottom: 0.5rem;
+        margin-bottom: 1.5rem;
     }
 
     .section-title {
-        display: none;
+        display: block; /* Volvemos a mostrar el título de sección */
+        margin-bottom: 10px;
+        padding-left: 14px;
+        color: var(--text-muted);
+        font-size: 0.75rem;
+        letter-spacing: 1px;
     }
 
     /* Contenido Principal */
@@ -1427,12 +1477,14 @@ textarea.full-textarea:focus {
     .user-profile {
         width: 100%;
         justify-content: flex-end;
-        background: rgba(255,255,255,0.03);
-        padding: 8px;
-        border-radius: 12px;
-    }
+    display: none;
+}
 
-    /* Grillas y Tarjetas */
+.sidebar-overlay {
+    display: none;
+}
+
+/* Modales y utilidades */
     .stats-grid, 
     .dashboard-grid, 
     .torneos-grid,

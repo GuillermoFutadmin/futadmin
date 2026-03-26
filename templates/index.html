@@ -44,6 +44,9 @@
 
 <body class="dark-mode">
     <div class="app-container">
+        <!-- Overlay oscuro para menú móvil -->
+        <div class="sidebar-overlay" onclick="ui.toggleMobileMenu()"></div>
+
         <!-- Sidebar Principal -->
         <aside class="sidebar">
 
@@ -142,8 +145,13 @@
         <!-- Contenido Principal -->
         <main class="content">
             <header class="top-bar">
-                <div class="view-title">
-                    <h2 id="current-view-title">Resumen General</h2>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <button class="mobile-menu-btn" onclick="ui.toggleMobileMenu()" title="Abrir Menú">
+                        <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+                    </button>
+                    <div class="view-title">
+                        <h2 id="current-view-title">Resumen General</h2>
+                    </div>
                 </div>
                 <div class="user-profile">
             <div class="pago-status online">FutAdmin PRO</div>

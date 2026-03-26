@@ -112,6 +112,12 @@ class FutAdminUI {
             await this.loadInitialStats();
         }
 
+        // Auto-cerrar menú móvil al navegar
+        const sidebar = document.querySelector('.sidebar');
+        const overlay = document.querySelector('.sidebar-overlay');
+        if (sidebar) sidebar.classList.remove('mobile-open');
+        if (overlay) overlay.classList.remove('active');
+
         if (element) {
             this.updateActiveNav(element);
         }
@@ -339,6 +345,13 @@ class FutAdminUI {
 
     toggleSubmenu(element) {
         element.classList.toggle('open');
+    }
+
+    toggleMobileMenu() {
+        const sidebar = document.querySelector('.sidebar');
+        const overlay = document.querySelector('.sidebar-overlay');
+        if (sidebar) sidebar.classList.toggle('mobile-open');
+        if (overlay) overlay.classList.toggle('active');
     }
 }
 
