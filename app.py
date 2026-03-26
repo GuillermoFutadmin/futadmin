@@ -57,7 +57,7 @@ if os.getenv('RAILWAY_ENVIRONMENT'):
 
 @app.route('/ping')
 def ping():
-    return "pong - v2.0-combo-fix", 200
+    return "pong - v2.1-debug-active", 200
 
 @app.route('/api/test/receipt')
 def test_receipt_sync():

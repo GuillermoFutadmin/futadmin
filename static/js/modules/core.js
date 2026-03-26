@@ -5,7 +5,15 @@ export class Core {
     static async fetchAPI(url, options = {}) {
         try {
             const response = await fetch(url, options);
-            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            if (!response.ok) {
+                let errData = {};
+                try {
+                    errData = await response.json();
+                } catch (e) {}
+                const error = new Error(`HTTP error! status: ${response.status}`);
+                error.data = errData;
+                throw error;
+            }
             return await response.json();
         } catch (error) {
             console.error(`Fetch error on ${url}:`, error);

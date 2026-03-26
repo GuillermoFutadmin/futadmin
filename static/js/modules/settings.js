@@ -244,7 +244,8 @@ export class SettingsModule {
             }
         } catch (err) {
             console.error('Error procesando combo:', err);
-            alert('Error técnico al procesar el combo');
+            const msg = err.data?.error || err.message || 'Error técnico al procesar el combo';
+            alert('Atención: ' + msg);
         }
     }
 
@@ -1015,7 +1016,8 @@ export class SettingsModule {
             }
         } catch (err) {
             console.error('Error al registrar pago:', err);
-            alert('Error técnico al registrar pago');
+            const msg = err.data?.error || err.message || 'Error técnico al registrar pago';
+            alert('Atención: ' + msg);
         }
     }
 
