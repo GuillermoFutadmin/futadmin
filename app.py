@@ -1514,20 +1514,104 @@ def resend_pago_receipt(id):
 
 @app.route('/api/admin/mail_logs', methods=['GET'])
 def get_mail_logs():
-    # TEMPORAL: Deshabilitado para diagnóstico remoto
-    # if session.get('user_rol') != 'admin':
-    #    return "Acceso denegado", 403
-    
     log_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "mail_debug.log")
     if not os.path.exists(log_path):
         return "No hay logs registrados.", 200
-    
     try:
         with open(log_path, "r", encoding="utf-8") as f:
             lines = f.readlines()
-            return "<pre>" + "".join(lines[-50:]) + "</pre>"
+            return "<pre>" + "".join(lines[-100:]) + "</pre>"
     except Exception as e:
         return str(e), 500
+
+@app.route('/api/admin/test-email-pago/<int:pago_id>', methods=['GET'])
+def test_email_pago(pago_id):
+    """Diagnostic: re-trigger receipt email synchronously and return result."""
+    from models import Pago, Equipo, Inscripcion, Torneo
+    import traceback, string, random
+    from datetime import timedelta, datetime
+
+    try:
+        pago = Pago.query.get_or_404(pago_id)
+        insc = Inscripcion.query.get(pago.inscripcion_id)
+        equipo = Equipo.query.get(insc.equipo_id) if insc else None
+        torneo = Torneo.query.get(pago.torneo_id or (insc.torneo_id if insc else None))
+
+        if not equipo:
+            return f"No equipo for pago {pago_id}", 404
+        
+        recipient_email = equipo.email
+        if not recipient_email:
+            return f"Equipo '{equipo.nombre}' tiene EMAIL VACIO en la base de datos. pago={pago_id}", 200
+        
+        folio = 'FUT-' + ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+        p_fecha = getattr(pago, 'fecha', None) or datetime.utcnow()
+        fecha_local = p_fecha - timedelta(hours=6)
+
+        pagado_arb = db.session.query(db.func.sum(Pago.monto)).filter_by(
+            inscripcion_id=insc.id, tipo='Arbitraje').scalar() or 0
+
+        from logic.receipts import generate_receipt_pdf, send_receipt_email, build_receipt_email_html
+        import os, tempfile
+
+        result = {
+            "success": True,
+            "pago_id": pago.id,
+            "folio": folio,
+            "equipo": equipo.nombre,
+            "torneo": torneo.nombre if torneo else "N/A",
+            "sede": torneo.cancha.strip() if torneo and torneo.cancha else "Por definir",
+            "liga_nombre": torneo.liga.nombre if torneo and getattr(torneo, 'liga', None) else "FutAdmin",
+            "monto_abonado": float(pago.monto),
+            "tipo": pago.tipo,
+            "fecha": fecha_local.strftime('%d/%m/%Y %H:%M'),
+            "metodo": pago.metodo or "Efectivo",
+            "monto_pactado": 0.0,
+            "total_pagado": float(pagado_arb),
+            "saldo_pendiente": 0.0,
+            "partido": None,
+            "premios": "",
+            "reglamento": "",
+            "clausulas": "",
+            "fecha_inicio_torneo": "Pendiente"
+        }
+
+        # Generate PDF
+        pdf_path = os.path.join(tempfile.gettempdir(), f"test_recibo_{pago_id}.pdf")
+        generate_receipt_pdf(result, pdf_path)
+        pdf_ok = os.path.exists(pdf_path)
+
+        # Build + send email synchronously
+        subject = f"[TEST] Recibo de Pago - {equipo.nombre}"
+        body = build_receipt_email_html(
+            nombre=getattr(equipo, 'responsable', 'Delegado') or 'Delegado',
+            liga_nombre=result["liga_nombre"],
+            equipo=equipo.nombre,
+            torneo=result["torneo"],
+            tipo=pago.tipo,
+            monto_abonado=float(pago.monto),
+            monto_pactado=0.0,
+            total_pagado=float(pagado_arb),
+            saldo_pendiente=0.0,
+            metodo=pago.metodo or "Efectivo",
+            folio=folio,
+            fecha=result["fecha"],
+            partido=None,
+        )
+        send_ok = send_receipt_email(recipient_email, subject, body, pdf_path if pdf_ok else None)
+        if pdf_ok:
+            os.remove(pdf_path)
+
+        return f"""<pre>
+PAGO ID: {pago_id}
+Equipo: {equipo.nombre}
+Email: {recipient_email}
+PDF generado: {pdf_ok}
+Email enviado: {send_ok}
+Revisar /api/admin/mail_logs para detalles completos.
+</pre>"""
+    except Exception as e:
+        return f"<pre>ERROR:\n{traceback.format_exc()}</pre>", 500
 
 @app.route('/api/pagos/<int:id>', methods=['DELETE'])
 @csrf.exempt
