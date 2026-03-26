@@ -57,7 +57,32 @@ if os.getenv('RAILWAY_ENVIRONMENT'):
 
 @app.route('/ping')
 def ping():
-    return "pong - v6 (unblocked)", 200
+    return "pong - v9 (cache_busted)", 200
+
+@app.route('/api/test/receipt')
+def test_receipt_sync():
+    try:
+        from logic.receipts import generate_receipt_pdf
+        import os, tempfile
+        pdf_path = os.path.join(tempfile.gettempdir(), f"test_{os.getpid()}.pdf")
+        data = {
+            "equipo": "Meteoros 100",
+            "torneo": "TJ Municipal",
+            "liga_nombre": "FutAdmin",
+            "folio": "TEST-0001",
+            "fecha": "25/03/2026 17:30",
+            "monto_abonado": 150.0,
+            "tipo": "Abono Arbitraje",
+            "metodo": "Efectivo"
+        }
+        generate_receipt_pdf(data, pdf_path)
+        size = os.path.getsize(pdf_path)
+        if os.path.exists(pdf_path):
+            os.remove(pdf_path)
+        return jsonify({"success": True, "message": f"PDF generado con éxito ({size} bytes)"}), 200
+    except Exception as e:
+        import traceback
+        return jsonify({"success": False, "error": str(e), "trace": traceback.format_exc()}), 500
 
 # Inicializar Talisman para headers de seguridad y SSL (si SSL_REQUIRED=True)
 talisman = Talisman(app, 
@@ -141,7 +166,7 @@ LAST_STATS_ERROR = "No errors yet"
 @app.before_request
 def check_login():
     # Rutas que no requieren login
-    public_routes = ['users.login_view', 'users.login', 'users.privacy_view', 'static', 'healthcheck', 'debug_stats', 'diag_db', 'ping', 'get_mail_logs']
+    public_routes = ['users.login_view', 'users.login', 'users.privacy_view', 'static', 'healthcheck', 'debug_stats', 'diag_db', 'ping', 'get_mail_logs', 'test_receipt_sync']
     if request.endpoint in public_routes or not request.endpoint:
         return
     
