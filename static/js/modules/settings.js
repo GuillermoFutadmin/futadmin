@@ -757,18 +757,21 @@ export class SettingsModule {
                 currentY += 7;
             });
 
-            // --- SECCIÓN 2: DESGLOSE DE OPERACIÓN ---
-            currentY += 8;
             doc.setFontSize(14);
             doc.setFont('helvetica', 'bold');
-            doc.text('INFRAESTRUCTURA ACTIVA', 20, currentY);
+            doc.text('INFRAESTRUCTURA Y CAPACIDAD', 20, currentY);
             doc.line(20, currentY + 3, 190, currentY + 3);
             currentY += 12;
 
             doc.setFontSize(10);
             doc.setFont('helvetica', 'bold');
-            doc.text(`Sedes en Sistema (${liga.stats?.canchas || 0}):`, col1, currentY);
-            doc.text(`Ligas/Torneos Activos (${liga.stats?.torneos || 0}):`, col3, currentY);
+            
+            const limitBaseTorneos = ['dueño_liga', 'equipo', 'super_arbitro'].includes(liga.paquete) ? 5 : 2;
+            const capSedes = 1 + (liga.extra_canchas || 0);
+            const capLigas = limitBaseTorneos + (liga.extra_torneos || 0);
+
+            doc.text(`Sedes (${liga.stats?.canchas || 0} de ${capSedes} Permitidas):`, col1, currentY);
+            doc.text(`Torneos (${liga.stats?.torneos || 0} de ${capLigas} Permitidos):`, col3, currentY);
             doc.setFont('helvetica', 'normal');
             
             let listY_Sedes = currentY + 6;
@@ -800,7 +803,6 @@ export class SettingsModule {
             doc.setFont('helvetica', 'bold');
             doc.text('HISTÓRICO DE INCREMENTOS DE COMBOS', 20, currentY);
             doc.line(20, currentY + 3, 190, currentY + 3);
-
             currentY += 10;
 
             // Cabecera de Tabla Expansiones
@@ -809,9 +811,10 @@ export class SettingsModule {
             doc.setTextColor(255, 255, 255);
             doc.setFontSize(9);
             doc.text('FECHA', 25, currentY + 6);
-            doc.text('TIPO DE CAMBIO / EXPANSIÓN', 60, currentY + 6);
-            doc.text('CANTIDAD', 130, currentY + 6);
-            doc.text('MONTO ADICIONAL', 165, currentY + 6);
+            doc.text('TIPO DE CAMBIO', 60, currentY + 6);
+            doc.text('CANT.', 120, currentY + 6);
+            doc.text('MONTO ADIC.', 145, currentY + 6);
+            doc.text('ESTATUS', 175, currentY + 6);
 
             let expY = currentY + 14;
             doc.setTextColor(...textColor);
@@ -825,15 +828,22 @@ export class SettingsModule {
                 expansions.forEach((e) => {
                     if (expY > 265) { doc.addPage(); expY = 30; }
                     doc.setFont('helvetica', 'normal');
-                    doc.text(e.fecha || '', 25, expY);
+                    doc.text(e.fecha?.split(' ')[0] || '', 25, expY);
                     
-                    let desc = e.tipo === 'extra_canchas' ? 'Sede Extra' : 'Torneo/Liga Extra';
+                    let desc = e.tipo === 'extra_canchas' ? 'Sede Extra' : 'Torneo Extra';
                     doc.text(desc, 60, expY);
-                    doc.text(`+${e.cantidad}`, 130, expY);
+                    
+                    doc.text(`${e.cantidad > 0 ? '+' : ''}${e.cantidad}`, 120, expY);
+                    
+                    const montoTxt = e.monto_adicional > 0 ? `$${e.monto_adicional.toFixed(2)}` : (e.cantidad < 0 ? '--' : 'Combo');
+                    doc.text(montoTxt, 145, expY);
                     
                     doc.setFont('helvetica', 'bold');
-                    const montoTxt = e.monto_adicional > 0 ? `$${e.monto_adicional.toFixed(2)}` : 'Bonificado (Combo)';
-                    doc.text(montoTxt, 165, expY);
+                    const statusTxt = e.cantidad > 0 ? 'ACTIVO' : 'BAJA';
+                    doc.setTextColor(e.cantidad > 0 ? 0 : 200, e.cantidad > 0 ? 150 : 0, 0);
+                    doc.text(statusTxt, 175, expY);
+                    doc.setTextColor(...textColor);
+                    doc.setFont('helvetica', 'normal');
                     
                     doc.setDrawColor(230, 230, 230);
                     doc.setLineWidth(0.1);
@@ -842,6 +852,7 @@ export class SettingsModule {
                 });
             }
             currentY = expY + 10;
+
 
             // --- SECCIÓN 5: HISTORIAL DE APORTACIONES ---
             if (currentY > 240) { doc.addPage(); currentY = 30; }
