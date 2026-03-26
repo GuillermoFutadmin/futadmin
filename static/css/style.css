@@ -1351,29 +1351,22 @@ textarea.full-textarea:focus {
         height: auto;
     }
 
-    /* Sidebar colapsable o modo mÃƒÆ’Ã‚Â³vil */
+    /* Sidebar en modo móvil */
     .sidebar {
-    width: 280px;
-    flex-shrink: 0;
-    background-color: var(--sidebar-bg);
-    border-right: 1px solid var(--border);
-    display: flex;
-    flex-direction: column;
-    position: relative;
-    z-index: 9999;
-    overflow-y: auto;
-    scrollbar-width: thin;
-    scrollbar-color: rgba(255,255,255,0.1) transparent;
-}
+        width: 100%;
+        flex-shrink: 0;
+        background-color: var(--sidebar-bg);
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        flex-direction: column;
+        position: relative; /* Puedes usar sticky top:0 si lo quieres fijar al hacer scroll */
+        z-index: 9999;
+    }
 
-.sidebar::-webkit-scrollbar {
-    width: 4px;
-}
-
-.sidebar::-webkit-scrollbar-thumb {
-    background: rgba(255,255,255,0.1);
-    border-radius: 10px;
-}
+    .sidebar-footer {
+        display: none !important; /* Ocultamos el gran logo para ahorrar pantalla en móvil */
+    }
 
     .logo-container {
         padding: 1rem;
