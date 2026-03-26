@@ -105,6 +105,10 @@ def healthcheck():
 @app.route('/api/diag_paths')
 @talisman(force_https=False)
 def diag_paths():
+    import os
+    return jsonify({
+        'cwd': os.getcwd(),
+        'base_dir': BASE_DIR
     })
 
 @app.route('/api/diag_db_v3')
