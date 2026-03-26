@@ -57,7 +57,7 @@ if os.getenv('RAILWAY_ENVIRONMENT'):
 
 @app.route('/ping')
 def ping():
-    return "pong - v2.4-payment-fix", 200
+    return "pong - v2.6-mail-fix", 200
 
 @app.route('/api/test/receipt')
 def test_receipt_sync():
@@ -3675,8 +3675,8 @@ def handle_combo_pagos():
                 if liga:
                     owner_roles = ['dueño_liga', 'super_arbitro', 'equipo']
                     owner = Usuario.query.filter(Usuario.liga_id==liga.id, Usuario.rol.in_(owner_roles)).first()
-                    contact_email = owner.email if owner and owner.email else liga.contacto
-                    contact_name = owner.nombre if owner else liga.nombre
+                    contact_email = liga.contacto if liga.contacto else (owner.email if owner and owner.email else "")
+                    contact_name = liga.nombre
 
                     if contact_email:
                         liga_info = liga.to_dict()
@@ -3714,85 +3714,6 @@ def handle_combo_pagos():
         except Exception as e:
             db.session.rollback()
             return jsonify({"error": str(e)}), 400
-
-@app.route('/api/debug_pago_mail/<int:liga_id>', methods=['GET'])
-def debug_pago_mail(liga_id):
-    import traceback
-    import os
-    from datetime import datetime, timedelta
-    from models import Liga, Usuario, PagoCombo
-    from flask import jsonify
-    try:
-        liga = Liga.query.get(liga_id)
-        if not liga:
-            return "Liga no encontrada", 404
-            
-        owner_roles = ['dueño_liga', 'super_arbitro', 'equipo']
-        owner = Usuario.query.filter(Usuario.liga_id==liga.id, Usuario.rol.in_(owner_roles)).first()
-        contact_email = owner.email if owner and owner.email else liga.contacto
-        contact_name = owner.nombre if owner else liga.nombre
-
-        if contact_email:
-            liga_info = liga.to_dict()
-            nuevo_pago = PagoCombo.query.filter_by(liga_id=liga.id).order_by(PagoCombo.id.desc()).first()
-            if not nuevo_pago:
-                return "No hay pagos", 404
-                
-            ticket_data = {
-                "is_futadmin": True,
-                "id_cliente": liga.id,
-                "folio": f"COMB-PAY-{nuevo_pago.id}-{(datetime.utcnow() - timedelta(hours=6)).strftime('%y%m%d')}",
-                "fecha": (datetime.utcnow() - timedelta(hours=6)).strftime('%d/%m/%Y %H:%M'),
-                "fecha_registro": liga_info.get('fecha_registro'),
-                "liga_nombre": liga.nombre,
-                "monto_abonado": float(nuevo_pago.monto),
-                "monto_mensual": float(liga.monto_mensual or 0),
-                "monto_total_mensual": float(liga.monto_total_mensual or 0),
-                "tipo": f"Aportación - Suscripción",
-                "paquete": "Renovación",
-                "metodo": nuevo_pago.metodo or "Transferencia",
-                "mes_pagado": nuevo_pago.mes_pagado,
-                "contacto": liga.contacto,
-                "vencimiento": liga_info.get('vencimiento'),
-                "stats": liga_info.get('stats', {}),
-                "detalles": liga_info.get('detalles', {}),
-                "expansiones": liga_info.get('expansiones', []),
-                "pagos_historial": liga_info.get('aportaciones', [])
-            }
-            if not any(p.get('id') == nuevo_pago.id for p in ticket_data['pagos_historial']):
-                ticket_data['pagos_historial'].insert(0, nuevo_pago.to_dict())
-
-            from logic.receipts import trigger_receipt_email_async
-            # Execute synchronously to capture exception
-            import logic.receipts as lr
-            import tempfile
-            temp_dir = tempfile.gettempdir()
-            filename = f"recibo_{ticket_data.get('folio', 'pago')}.pdf"
-            pdf_path = os.path.join(temp_dir, filename)
-            lr.generate_receipt_pdf(ticket_data, pdf_path)
-            
-            body = lr.build_receipt_email_html(
-                nombre=contact_name,
-                liga_nombre=liga.nombre,
-                equipo='',
-                torneo='',
-                tipo='Renovación',
-                monto_abonado=float(nuevo_pago.monto),
-                monto_pactado=float(nuevo_pago.monto),
-                total_pagado=0,
-                saldo_pendiente=0,
-                metodo=nuevo_pago.metodo,
-                folio=ticket_data['folio'],
-                fecha=ticket_data['fecha'],
-                partido='',
-                is_futadmin=True,
-                tournament_details=ticket_data
-            )
-            lr.send_receipt_email(contact_email, "Test Mail", body, pdf_path)
-            return jsonify({"status": "Success", "email": contact_email})
-        return "No contact email", 404
-    except Exception as e:
-        return f"<pre>{traceback.format_exc()}</pre>", 500
 
     # GET: Listar pagos
     query = PagoCombo.query
