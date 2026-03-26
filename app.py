@@ -4050,6 +4050,21 @@ def get_dashboard_stats():
             "error": str(e)
         }), 200
 
+
+@app.route('/debug/mail_logs')
+def view_mail_logs():
+    if not session.get('user_rol') == 'admin':
+        return "Unauthorized", 403
+    try:
+        log_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "mail_debug.log")
+        if not os.path.exists(log_path):
+            return f"Log file not found at {log_path}", 404
+        with open(log_path, "r", encoding="utf-8") as f:
+            lines = f.readlines()
+            return "<pre>" + "".join(lines[-100:]) + "</pre>"
+    except Exception as e:
+        return str(e), 500
+
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()

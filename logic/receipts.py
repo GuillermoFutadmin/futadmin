@@ -444,7 +444,7 @@ def _send_via_resend(api_key, sender_email, to_email, subject, body, attachment_
             "from": f"FutAdmin <{sender_email}>",
             "to": [to_email],
             "subject": subject,
-            "html": body.replace('\n', '<br>')
+            "html": body
         }
         
         if attachment_path and os.path.exists(attachment_path):
@@ -493,7 +493,7 @@ def _send_via_smtp(to_email, subject, body, attachment_path, sender_email):
         msg['To'] = to_email
         msg['Subject'] = subject
 
-        msg.attach(MIMEText(body, 'plain'))
+        msg.attach(MIMEText(body, 'html'))
 
         if attachment_path and os.path.exists(attachment_path):
             with open(attachment_path, "rb") as f:
@@ -531,6 +531,7 @@ def _send_via_smtp(to_email, subject, body, attachment_path, sender_email):
 def trigger_receipt_email_async(ticket_data, recipient_email, recipient_name="Administrador"):
     """Helper para generar PDF y enviar correo de recibo en un hilo separado (no bloqueante)."""
     def internal_worker(data, email, name):
+        _log_mail(f"THREAD START: Preparando envío para {email} (Folio: {data.get('folio')})")
         try:
             import os, tempfile
             from datetime import timedelta, datetime
