@@ -56,3 +56,6 @@ static/uploads/*
 
 # Cloudflare tunnel
 cloudflared.exe
+
+# Carpeta temporal para scripts de diagnóstico
+tmp/
