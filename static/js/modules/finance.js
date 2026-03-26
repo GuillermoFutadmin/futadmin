@@ -138,7 +138,7 @@ export class FinanceModule {
                                         <td style="padding: 8px; text-align: center;">
                                             ${dp.ultimo_pago_id ? `
                                                 <button type="button" onclick="event.stopPropagation(); ui.finance.resendReceipt(${dp.ultimo_pago_id})" 
-                                                    style="background:none; border:none; color:#00ff88; cursor:pointer; font-size:1rem; margin-right:5px;" 
+                                                    style="display: none; background:none; border:none; color:#00ff88; cursor:pointer; font-size:1rem; margin-right:5px;" 
                                                     title="Re-enviar recibo por correo">📩</button>
                                                 <button type="button" onclick="event.stopPropagation(); ui.finance.deletePago(${dp.ultimo_pago_id}, true)" 
                                                     style="background:none; border:none; color:#ff4d4d; cursor:pointer; font-size:1rem;" 
