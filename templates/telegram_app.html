@@ -2532,8 +2532,8 @@
                 const res = await fetch(`/api/telegram/tours?liga_id=${currentUser.liga_id || ''}&rol=${currentUser.rol}&_v=${Date.now()}`);
                 const torneos = await res.json();
                 const sel = document.getElementById('twa-arbitraje-torneo');
-                sel.innerHTML = '<option value="">Selecciona un torneo...</option>' + 
-                    torneos.map(t => `<option value="${t.id}">${t.nombre}</option>`).join('');
+                sel.innerHTML = '<option value="" style="color:#000; background:#fff;">Selecciona un torneo...</option>' + 
+                    torneos.map(t => `<option value="${t.id}" style="color:#000; background:#fff;">${t.nombre}</option>`).join('');
                 document.getElementById('twa-arbitrajes-container').innerHTML = '<div style="text-align:center; padding:20px; color:var(--muted);">Selecciona un torneo para ver los equipos.</div>';
                 twaArbitrajesData = [];
             } catch (e) {
