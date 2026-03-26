@@ -468,7 +468,7 @@ def handle_combo_creation():
         # --- ENVIAR NOTIFICACIÓN POR CORREO (Async) ---
         try:
             from logic.receipts import trigger_receipt_email_async
-            from datetime import datetime, timedelta
+            from datetime import timedelta
             
             # Obtener datos completos de la liga para el Estado de Cuenta
             liga_info = nueva_liga.to_dict()
