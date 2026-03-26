@@ -57,7 +57,7 @@ if os.getenv('RAILWAY_ENVIRONMENT'):
 
 @app.route('/ping')
 def ping():
-    return "pong - v16 (subdomain_fix_active)", 200
+    return "pong - v1.1-stable", 200
 
 @app.route('/api/test/receipt')
 def test_receipt_sync():
@@ -101,55 +101,6 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True) # Ensure upload folder e
 @talisman(force_https=False)
 def healthcheck():
     return jsonify({'status': 'ok'}), 200
-
-@app.route('/api/diag_paths')
-@talisman(force_https=False)
-def diag_paths():
-    import os
-    return jsonify({
-        'cwd': os.getcwd(),
-        'base_dir': BASE_DIR
-    })
-
-@app.route('/api/diag_db_v3')
-@talisman(force_https=False)
-def diag_db_v3():
-    from models import Liga, PagoCombo, LigaExpansion, Usuario
-    import traceback
-    res = {}
-    try:
-        res['ligas'] = Liga.query.count()
-        res['usuarios'] = Usuario.query.count()
-        try:
-            res['pagos'] = PagoCombo.query.count()
-        except Exception as e:
-            res['pagos_err'] = str(e)
-        try:
-            res['expansiones'] = LigaExpansion.query.count()
-        except Exception as e:
-            res['expansiones_err'] = str(e)
-            
-        # Detalles de IDs
-        res['liga_ids'] = [L.id for L in Liga.query.all()]
-        res['create_all_done'] = True
-    except Exception as e:
-        res['critical_err'] = str(e)
-        res['trace'] = traceback.format_exc()
-    return jsonify(res)
-
-@app.route('/api/view_errors')
-@talisman(force_https=False)
-def view_errors():
-    import os
-    log_path = 'error_debug.log'
-    if not os.path.exists(log_path):
-        return jsonify({"error": "Log file not found", "path": os.path.abspath(log_path)})
-    try:
-        with open(log_path, 'r', encoding='utf-8') as f:
-            lines = f.readlines()
-            return jsonify({"last_errors": lines[-20:]})
-    except Exception as e:
-        return jsonify({"error": str(e)})
 
 from models import db, bcrypt, Torneo, Equipo, Jugador, Inscripcion, Pago, GrupoEntrenamiento, AlumnoEntrenamiento, Partido, EventoPartido, AsistenciaPartido, Arbitro, Cancha, Usuario, apply_liga_filter, get_liga_id, check_torneos_limit, get_role_limits, Liga, PagoCombo, Configuracion, LigaExpansion
 from utils import paginate_query, handle_image_upload

@@ -325,14 +325,9 @@ def handle_liga_single(liga_id):
             
     except Exception as e:
         db.session.rollback()
-        error_msg = f"GLOBAL ERROR en handle_liga_single: {str(e)}\n{traceback.format_exc()}"
-        print(error_msg)
-        try:
-            with open('error_debug.log', 'a', encoding='utf-8') as f:
-                f.write(f"[{datetime.now()}] {error_msg}\n")
-        except:
-            pass
-        return jsonify({'error': str(e), 'traceback': traceback.format_exc()}), 500
+        error_msg = f"Error en handle_liga_single (ID {liga_id}): {str(e)}"
+        print(f"{error_msg}\n{traceback.format_exc()}")
+        return jsonify({'error': str(e)}), 500
 @users_bp.route('/api/combos', methods=['POST'])
 def handle_combo_creation():
     data = request.json
