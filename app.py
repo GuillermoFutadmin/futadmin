@@ -467,7 +467,7 @@ def handle_equipos():
         # Generar datos del ticket virtual COMPLETO
         ticket_data = {
             "pago_id": pago_id or nueva_ins.id,
-            "pago_obj": nuevo.inscripcion.pagos[0] if nuevo.inscripcion and nuevo.inscripcion.pagos else None,
+            "pago_id": nuevo.inscripcion.pagos[0].id if nuevo.inscripcion and nuevo.inscripcion.pagos else None,
             "folio": folio,
             "fecha": datetime.utcnow().strftime('%d/%m/%Y %H:%M'),
             "equipo": nuevo.nombre,
@@ -487,7 +487,9 @@ def handle_equipos():
         }
 
         # Trigger Email Receipt
-        _trigger_receipt_email(ticket_data, nuevo.email, nuevo.responsable or "Delegado")
+        from logic.receipts import trigger_receipt_email_async
+        ticket_data['liga_nombre'] = torneo.liga.nombre if torneo.liga else "Liga FutAdmin"
+        trigger_receipt_email_async(ticket_data, nuevo.email, nuevo.responsable or "Delegado")
 
         return jsonify({
             "id": nuevo.id, 
@@ -959,7 +961,7 @@ def handle_inscripciones():
 
         ticket_data = {
             "pago_id": nueva.id,
-            "pago_obj": nueva.pagos[0] if nueva.pagos else None,
+            "pago_id": nueva.id,
             "folio": folio_ins,
             "fecha": datetime.utcnow().strftime('%d/%m/%Y %H:%M'),
             "equipo": equipo.nombre if equipo else "Equipo",
@@ -977,9 +979,10 @@ def handle_inscripciones():
             "clausulas": (torneo.clausulas if torneo and torneo.clausulas else "") + ("\n\n" + reglas_cancha if reglas_cancha else "")
         }
         
-        # Trigger Email Receipt
         if equipo and equipo.email:
-             _trigger_receipt_email(ticket_data, equipo.email, equipo.responsable or "Delegado")
+             from logic.receipts import trigger_receipt_email_async
+             ticket_data['liga_nombre'] = torneo.liga.nombre if torneo and torneo.liga else "FutAdmin"
+             trigger_receipt_email_async(ticket_data, equipo.email, equipo.responsable or "Delegado")
 
         db.session.commit()
         return jsonify({
@@ -1287,7 +1290,7 @@ def handle_pagos():
         result = {
             "success": True,
             "pago_id": nuevo_pago.id,
-            "pago_obj": nuevo_pago,
+            "pago_id": nuevo_pago.id,
             "folio": folio_pago,
             "equipo": ins.equipo.nombre,
             "torneo": torneo.nombre,
@@ -1307,9 +1310,10 @@ def handle_pagos():
             "fecha_inicio_torneo": torneo.fecha_inicio.strftime('%d/%m/%Y') if torneo.fecha_inicio else "Pendiente"
         }
 
-        # Trigger Email Receipt
         if ins.equipo and ins.equipo.email:
-            _trigger_receipt_email(result, ins.equipo.email, ins.equipo.responsable or "Delegado")
+            from logic.receipts import trigger_receipt_email_async
+            result['liga_nombre'] = torneo.liga.nombre if torneo and torneo.liga else "FutAdmin"
+            trigger_receipt_email_async(result, ins.equipo.email, ins.equipo.responsable or "Delegado")
 
         return jsonify(result), 201
     except Exception as e:
@@ -1352,75 +1356,7 @@ def send_telegram_ticket_notification(pago):
     except Exception as e:
         print(f"Telegram API Error: {e}")
 
-def _trigger_receipt_email(ticket_data, recipient_email, recipient_name="Administrador"):
-    """Helper para generar PDF y enviar correo de recibo de forma segura en un hilo separado."""
-    if not recipient_email:
-        return
-    
-    # Extraer datos necesarios antes de entrar al hilo (para evitar problemas con proxies de Flask como session)
-    if not ticket_data.get('liga_nombre'):
-        if 'user_name' in session:
-            ticket_data['liga_nombre'] = session.get('user_name')
-        else:
-            ticket_data['liga_nombre'] = "Liga FutAdmin"
-    
-    def internal_worker(data, email, name):
-        try:
-            from logic.receipts import generate_receipt_pdf, send_receipt_email, build_receipt_email_html
-            import os, tempfile
-            from datetime import timedelta, datetime
-            
-            # --- AJUSTE DE HORA LOCAL (Tijuana -7) ---
-            # Si recibimos el objeto datetime original lo ajustamos, si no, intentamos parsear
-            if 'pago_obj' in data and data['pago_obj'].fecha:
-                local_dt = data['pago_obj'].fecha - timedelta(hours=7)
-                data['fecha'] = local_dt.strftime('%d/%m/%Y %H:%M')
-            elif not data.get('fecha'):
-                data['fecha'] = (datetime.now() - timedelta(hours=7)).strftime('%d/%m/%Y %H:%M')
 
-            # 1. Usar directorio temporal del sistema
-            temp_dir = tempfile.gettempdir()
-            filename = f"recibo_{data.get('folio', 'pago')}.pdf"
-            pdf_path = os.path.join(temp_dir, filename)
-
-            print(f"DEBUG: Generando recibo en {pdf_path} para {email}")
-            generate_receipt_pdf(data, pdf_path)
-            
-            is_futadmin = data.get('is_futadmin', False)
-            liga_n = data.get('liga_nombre', 'Liga FutAdmin')
-            if is_futadmin:
-                subject = f"Comprobante de Pago - FutAdmin - {liga_n}"
-            else:
-                subject = f"Recibo de Pago - {liga_n} - {data.get('equipo', 'Equipo')}"
-
-            body = build_receipt_email_html(
-                nombre=name,
-                liga_nombre=liga_n,
-                equipo=data.get('equipo', ''),
-                torneo=data.get('torneo', ''),
-                tipo=data.get('tipo', 'Abono'),
-                monto_abonado=float(data.get('monto_abonado', 0)),
-                monto_pactado=float(data.get('monto_pactado', 0)),
-                total_pagado=float(data.get('total_pagado', 0)),
-                saldo_pendiente=float(data.get('saldo_pendiente', 0)),
-                metodo=data.get('metodo', 'Efectivo'),
-                folio=data.get('folio', 'N/A'),
-                fecha=data.get('fecha'),
-                partido=data.get('partido'),
-                is_futadmin=is_futadmin
-            )
-
-            send_receipt_email(email, subject, body, pdf_path)
-            
-            if os.path.exists(pdf_path):
-                os.remove(pdf_path)
-                print(f"DEBUG: Recibo temporal eliminado: {pdf_path}")
-        except Exception as e:
-            print(f"Error asíncrono en envío de recibo: {e}")
-
-    # Iniciar hilo para no bloquear la respuesta al usuario
-    import threading
-    threading.Thread(target=internal_worker, args=(ticket_data, recipient_email, recipient_name), daemon=True).start()
 
 @app.route('/api/pagos/<int:id>/resend_receipt', methods=['POST'])
 @csrf.exempt
@@ -1457,7 +1393,7 @@ def resend_pago_receipt(id):
 
     ticket_data = {
         "pago_id": pago.id,
-        "pago_obj": pago, # Pasamos el objeto para ajuste de hora en el worker
+        "pago_id": pago.id,
         "folio": f"FUT-{pago.id:04d}-{_fecha_local.strftime('%y%m%d')}",
         "equipo": ins.equipo.nombre,
         "torneo": torneo.nombre,
@@ -1474,56 +1410,19 @@ def resend_pago_receipt(id):
         "reglamento": torneo.reglamento or ""
     }
     
-    destinatario = ins.equipo.email
-    if not destinatario:
+    _destinatario = ins.equipo.email
+    if not _destinatario:
         return jsonify({"error": "El equipo no tiene un correo registrado."}), 400
         
-    # Llamada Síncrona para depuración directa
-    try:
-        from logic.receipts import generate_receipt_pdf, send_receipt_email, build_receipt_email_html
-        import os, tempfile
-        
-        temp_dir = tempfile.gettempdir()
-        pdf_path = os.path.join(temp_dir, f"resend_{pago.id}.pdf")
-        
-        generate_receipt_pdf(ticket_data, pdf_path)
-        
-        liga_nombre = session.get('user_name', 'Liga FutAdmin')
-        subject = f"Recibo de Pago - {ins.equipo.nombre} - {liga_nombre}"
-        nombre_responsable = ins.equipo.responsable or 'Delegado'
-
-        # Calcular acumulados para mostrar en el correo HTML
-        total_pagado = sum(p.monto for p in ins.pagos) if ins.pagos else ticket_data.get('monto_abonado', 0)
-        monto_pactado = float(ins.monto_pactado_inscripcion) if ins.monto_pactado_inscripcion else 0
-        saldo_pendiente = max(0, monto_pactado - float(total_pagado))
-
-        body = build_receipt_email_html(
-            nombre=nombre_responsable,
-            liga_nombre=liga_nombre,
-            equipo=ins.equipo.nombre,
-            torneo=torneo.nombre,
-            tipo=pago.tipo,
-            monto_abonado=float(pago.monto),
-            monto_pactado=monto_pactado,
-            total_pagado=float(total_pagado),
-            saldo_pendiente=saldo_pendiente,
-            metodo=pago.metodo or 'Efectivo',
-            folio=ticket_data.get('folio', f'PAGO-{pago.id}'),
-            fecha=pago.fecha.strftime('%d/%m/%Y %H:%M'),
-            partido=ticket_data.get('partido'),
-        )
-
-        success = send_receipt_email(destinatario, subject, body, pdf_path)
-        
-        if os.path.exists(pdf_path):
-            os.remove(pdf_path)
-            
-        if success:
-            return jsonify({"success": True, "message": f"¡Recibo re-enviado con éxito a {destinatario}!"})
-        else:
-            return jsonify({"error": "El servidor SMTP rechazó el envío. Consulte 'mail_debug.log' para más detalles."}), 500
-    except Exception as e:
-        return jsonify({"error": f"Error técnico al generar el envío: {str(e)}"}), 500
+    ticket_data.pop('pago_obj', None) # Limpiar objeto para el hilo
+    ticket_data['fecha'] = _fecha_local.strftime('%d/%m/%Y %H:%M')
+    from logic.receipts import trigger_receipt_email_async
+    trigger_receipt_email_async(ticket_data, _destinatario, _nombre_resp)
+    
+    return jsonify({
+        "success": True, 
+        "message": f"Solicitud de re-envío procesada. El recibo llegará a {_destinatario} en breve."
+    })
 
 @app.route('/api/admin/mail_logs', methods=['GET'])
 def get_mail_logs():
@@ -3521,7 +3420,9 @@ def handle_combo_pagos():
                             "metodo": nuevo_pago.metodo or "Transferencia",
                             "mes_pagado": nuevo_pago.mes_pagado
                         }
-                        _trigger_receipt_email(ticket_data, owner.email, owner.nombre)
+                        from logic.receipts import trigger_receipt_email_async
+                        ticket_data['liga_nombre'] = session.get('user_name', 'Liga FutAdmin')
+                        trigger_receipt_email_async(ticket_data, owner.email, owner.nombre)
             except Exception as e_hook:
                 print(f"Error in hook de correo (combo renewal): {e_hook}")
 

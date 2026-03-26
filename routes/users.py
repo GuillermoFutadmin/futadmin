@@ -441,53 +441,29 @@ def handle_combo_creation():
             if u_sub:
                 cuentas_ticket.append({"email": u_sub.email, "rol": sub_rol})
 
-        # --- ENVIAR RECIBO POR CORREO ---
+        # --- ENVIAR RECIBO POR CORREO (Async) ---
         try:
-            from logic.receipts import generate_receipt_pdf, send_receipt_email, build_receipt_email_html
-            import os
-            
-            # Preparar datos para el PDF
+            from logic.receipts import trigger_receipt_email_async
             from datetime import datetime
+            
+            # Preparar datos seguros para el hilo (sin objetos db)
             ticket_data = {
                 "is_futadmin": True,
-                "pago_obj": nuevo_pago, # Pasamos el objeto para ajuste de hora global
                 "folio": f"COMB-{nueva_liga.id}-{datetime.now().strftime('%y%m%d')}",
-                "fecha": datetime.now().strftime('%d/%m/%Y %H:%M'),
+                "fecha": (datetime.now() - timedelta(hours=7)).strftime('%d/%m/%Y %H:%M'),
                 "liga_nombre": nueva_liga.nombre,
                 "monto_abonado": float(monto_pactado),
                 "tipo": f"Suscripción - Plan {rol_owner.replace('_', ' ').title()}",
                 "metodo": "Transferencia",
-                "mes_pagado": mes_actual
+                "mes_pagado": mes_actual,
+                "equipo": "Suscripción FutAdmin",
+                "torneo": f"Plan {rol_owner}"
             }
             
-            import tempfile
-            temp_dir = tempfile.gettempdir()
-            pdf_path = os.path.join(temp_dir, f"recibo_combo_{nueva_liga.id}.pdf")
-            generate_receipt_pdf(ticket_data, pdf_path)
-            
-            subject = f"Confirmación de Pago - FutAdmin - {nueva_liga.nombre}"
             nombre_u = data.get('owner_nombre', 'Administrador')
-            
-            body = build_receipt_email_html(
-                nombre=nombre_u,
-                liga_nombre=nueva_liga.nombre,
-                equipo="Suscripción FutAdmin",
-                torneo=f"Plan {rol_owner}",
-                tipo=ticket_data['tipo'],
-                monto_abonado=float(monto_pactado),
-                metodo="Transferencia",
-                folio=ticket_data['folio'],
-                fecha=ticket_data['fecha'],
-                is_futadmin=True
-            )
-            
-            send_receipt_email(data['owner_email'], subject, body, pdf_path)
-            
-            # Limpiar archivo temporal
-            if os.path.exists(pdf_path):
-                os.remove(pdf_path)
+            trigger_receipt_email_async(ticket_data, data['owner_email'], nombre_u)
         except Exception as e:
-            print(f"Error en hook de correo (combo): {e}")
+            print(f"Error en hook asíncrono de correo (combo): {e}")
 
         return jsonify({
             'success': True, 

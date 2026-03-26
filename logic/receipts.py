@@ -10,6 +10,7 @@ from reportlab.lib.units import inch
 from reportlab.lib import colors
 import base64
 import requests
+import threading
 
 RESEND_API_URL = "https://api.resend.com/emails"
 FUTADMIN_LOGO_URL = "https://futadmin.com.mx/static/img/logos/futadmin_circle.png"
@@ -474,3 +475,59 @@ def _send_via_smtp(to_email, subject, body, attachment_path, sender_email):
         _log_mail(f"ERROR GENERAL enviando correo a {to_email} vía SMTP: {str(e)}\n{traceback.format_exc()}")
         return False
 
+
+def trigger_receipt_email_async(ticket_data, recipient_email, recipient_name="Administrador"):
+    """Helper para generar PDF y enviar correo de recibo en un hilo separado (no bloqueante)."""
+    def internal_worker(data, email, name):
+        try:
+            import os, tempfile
+            from datetime import timedelta, datetime
+            
+            # 1. Asegurar fecha local si no viene (Tijuana -7)
+            if not data.get('fecha'):
+                data['fecha'] = (datetime.now() - timedelta(hours=7)).strftime('%d/%m/%Y %H:%M')
+
+            # 2. Directorio temporal
+            temp_dir = tempfile.gettempdir()
+            filename = f"recibo_{data.get('folio', 'pago')}.pdf"
+            pdf_path = os.path.join(temp_dir, filename)
+
+            # 3. Generar PDF
+            generate_receipt_pdf(data, pdf_path)
+            
+            # 4. Asunto según contexto
+            is_futadmin = data.get('is_futadmin', False)
+            liga_n = data.get('liga_nombre', 'FutAdmin')
+            if is_futadmin:
+                subject = f"Comprobante de Pago - FutAdmin - {liga_n}"
+            else:
+                subject = f"Recibo de Pago - {liga_n} - {data.get('equipo', 'Equipo')}"
+
+            # 5. Cuerpo HTML
+            body = build_receipt_email_html(
+                nombre=name,
+                liga_nombre=liga_n,
+                equipo=data.get('equipo', ''),
+                torneo=data.get('torneo', ''),
+                tipo=data.get('tipo', 'Abono'),
+                monto_abonado=float(data.get('monto_abonado', 0)),
+                monto_pactado=float(data.get('monto_pactado', 0)),
+                total_pagado=float(data.get('total_pagado', 0)),
+                saldo_pendiente=float(data.get('saldo_pendiente', 0)),
+                metodo=data.get('metodo', 'Efectivo'),
+                folio=data.get('folio', 'N/A'),
+                fecha=data.get('fecha'),
+                partido=data.get('partido'),
+                is_futadmin=is_futadmin
+            )
+
+            # 6. Enviar vía Resend (o fallback SMTP interno)
+            send_receipt_email(email, subject, body, pdf_path)
+            
+            # 7. Limpieza
+            if os.path.exists(pdf_path):
+                os.remove(pdf_path)
+        except Exception as e:
+            print(f"Error asíncrono en envío de recibo (logic_async): {e}")
+
+    threading.Thread(target=internal_worker, args=(ticket_data, recipient_email, recipient_name), daemon=True).start()
