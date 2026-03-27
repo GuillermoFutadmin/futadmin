@@ -4013,7 +4013,7 @@ def get_equipo_stats_summary(id):
         # Partidos y Récord
         partidos = Partido.query.filter(
             db.or_(Partido.equipo_local_id == id, Partido.equipo_visitante_id == id),
-            Partido.estado == 'Finalizado'
+            Partido.estado.in_(['Finalizado', 'Played', 'Finished'])
         ).all()
         
         jugados = len(partidos)
