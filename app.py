@@ -118,12 +118,12 @@ db.init_app(app)
 with app.app_context():
     try:
         from sqlalchemy import text
-        db.session.execute(text("ALTER TABLE ligas ADD COLUMN extra_campos INTEGER DEFAULT 0"))
-        db.session.commit()
-        print("MIGRACION: Columna extra_campos añadida.")
+        with db.engine.connect() as conn:
+            conn.execute(text("ALTER TABLE ligas ADD COLUMN IF NOT EXISTS extra_campos INTEGER DEFAULT 0"))
+            conn.commit()
+        print("MIGRACION: Columna extra_campos verificada/añadida.")
     except Exception as e:
-        db.session.rollback()
-        # print(f"MIGRACION: Saltada (ya existe o error: {e})")
+        print(f"MIGRACION: Error en ALTER TABLE: {e}")
 
 bcrypt.init_app(app)
 csrf = CSRFProtect(app)
