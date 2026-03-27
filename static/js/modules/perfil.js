@@ -55,7 +55,7 @@ export const Perfil = {
         if (!container) return;
 
         // Solo mostrar si es dueño, ejecutivo o super_arbitro (roles de gestión)
-        const canManage = ['dueño_liga', 'admin', 'ejecutivo', 'super_arbitro'].includes(window.USER_ROL);
+        const canManage = ['dueño_liga', 'super_arbitro', 'equipo'].includes(window.USER_ROL);
         if (!canManage) {
             container.style.display = 'none';
             return;
