@@ -352,6 +352,75 @@ export class CanchasModule {
         Core.showNotification('Plantilla cargada con éxito');
     }
 
+    showModalCampo() {
+        if (!this.canchas || this.canchas.length === 0) {
+            alert('Aún no tienes Sedes registradas. Primero crea una Sede (Predio) en la pestaña "Sedes".');
+            return;
+        }
+
+        const sedeSelect = document.getElementById('campo-sede-id');
+        if (sedeSelect) {
+            sedeSelect.innerHTML = '<option value="">-- Selecciona una Sede --</option>' + 
+                this.canchas.map(sede => `<option value="${sede.id}">${sede.nombre}</option>`).join('');
+        }
+
+        const form = document.getElementById('campo-form');
+        if (form) form.reset();
+        
+        document.getElementById('campo-id').value = '';
+        document.getElementById('campo-modal-title').innerText = '🥅 Nuevo Campo de Juego';
+
+        Core.openModal('modal-campo');
+    }
+
+    async handleCampoSubmit(e) {
+        e.preventDefault();
+        const sedeId = document.getElementById('campo-sede-id').value;
+        const nombre = document.getElementById('campo-nombre').value;
+        const modalidad = document.getElementById('campo-modalidad').value;
+        const superficie = document.getElementById('campo-superficie').value;
+        const techada = document.getElementById('campo-techada').checked;
+        const capacidad = document.getElementById('campo-capacidad').value;
+        const notas = document.getElementById('campo-notas').value;
+
+        if (!sedeId) {
+            Core.showNotification('Debes seleccionar una Sede', 'error');
+            return;
+        }
+
+        const data = {
+            nombre,
+            modalidad,
+            superficie,
+            techada,
+            capacidad_espectadores: parseInt(capacidad) || 0,
+            notas
+        };
+
+        const btn = e.target.querySelector('button[type="submit"]');
+        if (btn) btn.disabled = true;
+
+        try {
+            const result = await Core.fetchAPI(`/api/canchas/${sedeId}/campos`, {
+                method: 'POST',
+                body: JSON.stringify(data)
+            });
+
+            if (result.error) {
+                Core.showNotification(result.error, 'error');
+            } else {
+                Core.showNotification('Campo guardado exitosamente', 'success');
+                Core.closeModal('modal-campo');
+                // Opcional: recargar canchas o redibujar UI
+                await this.loadCanchas();
+            }
+        } catch (error) {
+            Core.showNotification('Error al guardar el campo (Límite o Falla de Red)', 'error');
+        } finally {
+            if (btn) btn.disabled = false;
+        }
+    }
+
     showModal(canchaId = null, ligaId = null) {
         if (!canchaId) {
             // Bloqueo de seguridad: No permitir abrir si ya se alcanzó el límite

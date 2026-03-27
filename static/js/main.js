@@ -170,8 +170,8 @@ class FutAdminUI {
         else if (viewId === 'canchas') {
             await this.canchas.loadCanchas();
             if (tabId === 'cancha') {
-                // Abrir modal de nueva cancha después de cargar la vista
-                setTimeout(() => this.canchas.showModal(), 200);
+                // Abrir modal de nueva cancha (campo) después de cargar la vista
+                setTimeout(() => this.canchas.showModalCampo(), 200);
             }
         }
         else if (viewId === 'pagos-canchas') this.pagosCanchas.loadEstadosCuenta();
