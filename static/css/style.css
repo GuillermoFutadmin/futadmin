@@ -1553,6 +1553,11 @@ textarea.full-textarea:focus {
         gap: 0.8rem;
     }
 
+    .resumen-main-area {
+        padding: 1rem !important;
+        align-items: stretch !important;
+    }
+
     .stat-card {
         padding: 1.2rem;
     }

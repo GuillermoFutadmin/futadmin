@@ -706,7 +706,7 @@ export class AnalyticsModule {
                 
                 <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 15px; padding: 1.5rem; margin-bottom: 1.5rem; text-align: center;">
                     <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; font-weight: 800; letter-spacing: 1.5px; margin-bottom: 5px;">Total ${filter === 'all' ? 'Integral' : filter}</div>
-                    <div style="font-size: 2.5rem; font-weight: 900; color: #fff;">$${(displayTotal || 0).toLocaleString('es-MX', {minimumFractionDigits:2})}</div>
+                    <div style="font-size: clamp(1.8rem, 8vw, 2.8rem); font-weight: 900; color: #fff; word-break: break-all;">$${(displayTotal || 0).toLocaleString('es-MX', {minimumFractionDigits:2})}</div>
                 </div>
 
                 <div class="premium-table-container">
@@ -768,7 +768,7 @@ export class AnalyticsModule {
                 
                 <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 15px; padding: 2rem; margin-bottom: 2rem; text-align: center;">
                     <div style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; font-weight: 800; letter-spacing: 1.5px; margin-bottom: 10px;">Balance ${filter === 'all' ? 'Total' : filter}</div>
-                    <div style="font-size: 3.5rem; font-weight: 900; color: #fff; letter-spacing: -2px;">$${(displayTotal || 0).toLocaleString('es-MX', {minimumFractionDigits:2})}</div>
+                    <div style="font-size: clamp(2rem, 10vw, 3.5rem); font-weight: 900; color: #fff; letter-spacing: -2px; word-break: break-all;">$${(displayTotal || 0).toLocaleString('es-MX', {minimumFractionDigits:2})}</div>
                 </div>
 
                 <div class="premium-table-container">
