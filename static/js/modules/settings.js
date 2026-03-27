@@ -1234,6 +1234,11 @@ export class SettingsModule {
                         </div>
 
                         <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+                            <span style="font-size: 0.65rem; color: var(--text-muted); font-weight: 700;">CANCHAS</span>
+                            <div style="font-weight: 700;">🥅 ${stats.campos || 0} ${lid !== 'global' ? (pacote === 'dueño_liga' ? '/ ∞' : `/ ${stats.canchas || 1}`) : ''}</div>
+                        </div>
+
+                        <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
                             <span style="font-size: 0.65rem; color: var(--text-muted); font-weight: 700;">LIGAS</span>
                             <div style="display: flex; align-items: center; gap: 6px;">
                                 <div style="font-weight: 700;">⚽ ${stats.torneos} / ${limitBaseTorneos + (ligaData?.extra_torneos || 0)}</div>

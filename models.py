@@ -49,6 +49,7 @@ class Liga(db.Model):
             try:
                 users_count = Usuario.query.filter_by(liga_id=self.id).count()
                 canchas_count = Cancha.query.filter_by(liga_id=self.id).count()
+                campos_count = CanchaDetalle.query.filter_by(liga_id=self.id).count()
                 torneos_count = Torneo.query.filter_by(liga_id=self.id).count()
                 # Verificar si tiene pagos y obtener el último
                 last_payment = PagoCombo.query.filter_by(liga_id=self.id).order_by(PagoCombo.fecha.desc()).first()
@@ -65,7 +66,7 @@ class Liga(db.Model):
                 players_count = Jugador.query.filter_by(liga_id=self.id).count()
             except Exception as e:
                 print(f"Error calculando stats para liga {self.id}: {e}")
-                users_count = canchas_count = torneos_count = teams_count = players_count = 0
+                users_count = canchas_count = campos_count = torneos_count = teams_count = players_count = 0
                 total_acumulado_meses = 0
                 last_payment = None
                 has_payments = False
@@ -98,6 +99,7 @@ class Liga(db.Model):
                 "stats": {
                     "usuarios": users_count,
                     "canchas": canchas_count,
+                    "campos": campos_count,
                     "torneos": torneos_count,
                     "equipos": teams_count,
                     "jugadores": players_count,
