@@ -113,18 +113,6 @@ from routes.arbitros import arbitros_bp
 from routes.anonymize import anonymize_bp
 
 db.init_app(app)
-
-# Migración de emergencia para extra_campos
-with app.app_context():
-    try:
-        from sqlalchemy import text
-        with db.engine.connect() as conn:
-            conn.execute(text("ALTER TABLE ligas ADD COLUMN IF NOT EXISTS extra_campos INTEGER DEFAULT 0"))
-            conn.commit()
-        print("MIGRACION: Columna extra_campos verificada/añadida.")
-    except Exception as e:
-        print(f"MIGRACION: Error en ALTER TABLE: {e}")
-
 bcrypt.init_app(app)
 csrf = CSRFProtect(app)
 
