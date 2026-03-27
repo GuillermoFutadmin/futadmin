@@ -3559,8 +3559,6 @@ def update_liga_extras(id):
         old_val = liga.extra_torneos or 0
         if new_val > old_val:
             diff = new_val - old_val
-            notification_needed = True
-            changes.append(f"+{diff} Liga{'s' if diff > 1 else ''}")
             exp = LigaExpansion(liga_id=liga.id, tipo='extra_torneos', cantidad=diff, monto_adicional=diff * 85)
             db.session.add(exp)
         elif new_val < old_val:
@@ -3568,6 +3566,20 @@ def update_liga_extras(id):
             exp = LigaExpansion(liga_id=liga.id, tipo='extra_torneos', cantidad=-diff, monto_adicional=0)
             db.session.add(exp)
         liga.extra_torneos = new_val
+
+    if 'extra_campos' in data:
+        new_val = max(0, int(data['extra_campos']))
+        old_val = liga.extra_campos or 0
+        if new_val > old_val:
+            diff = new_val - old_val
+            # El usuario aclara que los campos extra NO tienen costo
+            exp = LigaExpansion(liga_id=liga.id, tipo='extra_campos', cantidad=diff, monto_adicional=0)
+            db.session.add(exp)
+        elif new_val < old_val:
+            diff = old_val - new_val
+            exp = LigaExpansion(liga_id=liga.id, tipo='extra_campos', cantidad=-diff, monto_adicional=0)
+            db.session.add(exp)
+        liga.extra_campos = new_val
         
     db.session.commit()
 

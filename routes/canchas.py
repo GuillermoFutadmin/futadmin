@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify, session
-from models import db, Cancha, apply_liga_filter, Usuario, Arbitro, bcrypt, check_canchas_limit, check_users_limit
+from models import db, Cancha, apply_liga_filter, Usuario, Arbitro, bcrypt, check_canchas_limit, check_users_limit, check_campos_limit
 
 canchas_bp = Blueprint('canchas', __name__)
 
@@ -276,11 +276,11 @@ def add_campo(sede_id):
     user_rol = session.get('user_rol', '').lower()
     
     current_count = CanchaDetalle.query.filter_by(sede_id=sede_id).count()
-    limite = sede.limite_campos or 1
     
-    # Si no es admin, aplicamos el límite estricto
-    if user_rol not in ['admin', 'ejecutivo'] and current_count >= limite:
-        return jsonify({"error": f"Capacidad límite alcanzada. El predio '{sede.nombre}' tiene permiso para {limite} campo(s). Contacta a soporte para expandir la capacidad."}), 403
+    # Nueva validación basada en el pool global de la liga
+    can_add, msg = check_campos_limit(sede.liga_id, user_rol)
+    if not can_add:
+        return jsonify({"error": msg}), 403
     
     nuevo_campo = CanchaDetalle(
         sede_id=sede.id,

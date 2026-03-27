@@ -24,6 +24,7 @@ class Liga(db.Model):
     monto_mensual = db.Column(db.Float, default=0.0)
     extra_canchas = db.Column(db.Integer, default=0)
     extra_torneos = db.Column(db.Integer, default=0)
+    extra_campos = db.Column(db.Integer, default=0)
 
     @property
     def monto_total_mensual(self):
@@ -92,6 +93,7 @@ class Liga(db.Model):
                 "monto_mensual": float(self.monto_mensual or 0),
                 "extra_canchas": self.extra_canchas,
                 "extra_torneos": self.extra_torneos,
+                "extra_campos": self.extra_campos or 0,
                 "monto_total_mensual": self.monto_total_mensual,
                 "fecha_registro": self.fecha_registro.strftime('%Y-%m-%d') if self.fecha_registro else None,
                 "paquete": paquete,
@@ -1010,7 +1012,7 @@ def get_role_limits(rol):
 def check_canchas_limit(liga_id, rol):
     """Verifica si el rol puede crear más canchas."""
     limits = get_role_limits(rol)
-    if 'canchas' not in limits: return True
+    if 'canchas' not in limits: return True, ""
     
     # Sumar canchas extra permitidas para esta liga
     extra = 0
@@ -1022,6 +1024,29 @@ def check_canchas_limit(liga_id, rol):
     current_count = Cancha.query.filter_by(liga_id=liga_id).count()
     if current_count >= max_val:
         return False, f"Límite alcanzado: Tu plan permite {max_val} sede(s). (Base: {limits['canchas']} + Extra: {extra})"
+    return True, ""
+
+def check_campos_limit(liga_id, rol):
+    """Verifica si la liga puede crear más campos de juego (canchas individuales)."""
+    # Límite base: 1 campo por cada sede permitida (base + extra_canchas)
+    limits = get_role_limits(rol)
+    if 'canchas' not in limits: return True, ""
+    
+    extra_c = 0
+    extra_f = 0
+    if liga_id:
+        liga = Liga.query.get(liga_id)
+        if liga:
+            extra_c = liga.extra_canchas or 0
+            extra_f = liga.extra_campos or 0
+            
+    max_canchas_plan = limits['canchas'] + extra_c
+    # El usuario quiere un pool global: 1 campo por sede permitida + extras gratuitos
+    max_campos = max_canchas_plan + extra_f
+    
+    current_count = CanchaDetalle.query.filter_by(liga_id=liga_id).count()
+    if current_count >= max_campos:
+        return False, f"Límite de capacidad total alcanzado. El plan permite {max_campos} campos de juego para todas tus sedes. (Límite base: {max_canchas_plan} + Campos extra: {extra_f}). Contacta a soporte para expandir la capacidad."
     return True, ""
 
 def check_torneos_limit(liga_id, rol):
