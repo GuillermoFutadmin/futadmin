@@ -1215,13 +1215,13 @@ export class SettingsModule {
                     </div>
 
                     <!-- Métricas de Registro con Control de Extras -->
-                    <div style="padding: 12px 20px; border-bottom: 1px solid var(--border); background: rgba(255,255,255,0.02); display: flex; justify-content: space-around; font-size: 0.8rem;">
-                        <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+                    <div style="padding: 12px 10px; border-bottom: 1px solid var(--border); background: rgba(255,255,255,0.02); display: flex; justify-content: space-around; flex-wrap: wrap; gap: 12px; font-size: 0.8rem;">
+                        <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 60px; flex: 1;">
                             <span style="font-size: 0.65rem; color: var(--text-muted); font-weight: 700;">USUARIOS</span>
                             <div style="font-weight: 700;">👤 ${stats.usuarios}</div>
                         </div>
                         
-                        <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+                        <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 75px; flex: 1;">
                             <span style="font-size: 0.65rem; color: var(--text-muted); font-weight: 700;">SEDES</span>
                             <div style="display: flex; align-items: center; gap: 6px;">
                                 <div style="font-weight: 700;">🏟️ ${stats.canchas} / ${1 + (ligaData?.extra_canchas || 0)}</div>
@@ -1233,7 +1233,7 @@ export class SettingsModule {
                             </div>
                         </div>
 
-                        <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+                        <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 80px; flex: 1;">
                             <span style="font-size: 0.65rem; color: var(--text-muted); font-weight: 700;">CANCHAS</span>
                             <div style="display: flex; align-items: center; gap: 6px;">
                                 <div style="font-weight: 700;">🥅 ${stats.campos || 0} / ${lid !== 'global' ? (pacote === 'dueño_liga' ? '∞' : (stats.canchas || 1) + (ligaData?.extra_campos || 0)) : '∞'}</div>
@@ -1245,7 +1245,7 @@ export class SettingsModule {
                             </div>
                         </div>
 
-                        <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+                        <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 75px; flex: 1;">
                             <span style="font-size: 0.65rem; color: var(--text-muted); font-weight: 700;">LIGAS</span>
                             <div style="display: flex; align-items: center; gap: 6px;">
                                 <div style="font-weight: 700;">⚽ ${stats.torneos} / ${limitBaseTorneos + (ligaData?.extra_torneos || 0)}</div>
