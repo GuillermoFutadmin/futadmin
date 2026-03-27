@@ -59,6 +59,10 @@ if os.getenv('RAILWAY_ENVIRONMENT'):
 def ping():
     return "pong - v2.6-mail-fix", 200
 
+@app.route('/sw.js')
+def serve_sw():
+    return app.send_static_file('js/sw.js')
+
 @app.route('/api/test/receipt')
 def test_receipt_sync():
     try:
