@@ -548,7 +548,7 @@ def get_combo_collaborators():
         return jsonify({"success": False, "error": "No has iniciado sesión"}), 401
     
     user = Usuario.query.get(session['user_id'])
-    if not user or user.rol not in ['dueño_liga', 'super_arbitro', 'equipo']:
+    if not user or user.rol not in ['dueño_liga', 'super_arbitro', 'equipo', 'admin', 'ejecutivo']:
         return jsonify({"success": False, "error": "No tienes permisos para ver colaboradores"}), 403
     
     # Obtener otros usuarios de la misma liga
@@ -572,7 +572,7 @@ def update_collaborator_password(colab_id):
         return jsonify({"success": False, "error": "Colaborador no encontrado o no pertenece a tu liga"}), 404
     
     # Validar permisos
-    if current_user.rol not in ['dueño_liga', 'super_arbitro', 'equipo']:
+    if current_user.rol not in ['dueño_liga', 'super_arbitro', 'equipo', 'admin', 'ejecutivo']:
         return jsonify({"success": False, "error": "No tienes permisos para administrar esta cuenta"}), 403
         
     colab.password_hash = bcrypt.generate_password_hash(new_password).decode('utf-8')
