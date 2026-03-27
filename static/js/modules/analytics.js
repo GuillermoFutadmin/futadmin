@@ -884,8 +884,15 @@ export class AnalyticsModule {
             left = rect.left - tooltipWidth - 20;
         }
         
+        // Posicionamiento vertical con protección de bordes
+        let top = rect.top - 50;
+        const tooltipHeight = 350; // Estimado para equipos
+        if (top + tooltipHeight > window.innerHeight) {
+            top = window.innerHeight - tooltipHeight - 20;
+        }
+        
         tooltip.style.left = `${Math.max(10, left)}px`;
-        tooltip.style.top = `${Math.max(10, rect.top - 50)}px`;
+        tooltip.style.top = `${Math.max(10, top)}px`;
         
         tooltip.innerHTML = `<div style="text-align:center; padding:1rem;"><div class="spinner-sm"></div> Cargando estadísticas...</div>`;
         document.body.appendChild(tooltip);
@@ -960,8 +967,23 @@ export class AnalyticsModule {
         tooltip.style.pointerEvents = 'none';
         
         const rect = element.getBoundingClientRect();
-        tooltip.style.left = `${Math.max(10, rect.right + 20)}px`;
-        tooltip.style.top = `${Math.max(10, rect.top - 50)}px`;
+        const tooltipWidth = 280;
+        let left = rect.right + 20;
+
+        // Si no cabe a la derecha, mostrar a la izquierda
+        if (left + tooltipWidth > window.innerWidth) {
+            left = rect.left - tooltipWidth - 20;
+        }
+
+        // Posicionamiento vertical con protección de bordes
+        let top = rect.top - 50;
+        const tooltipHeight = 220; // Estimado para jugadores
+        if (top + tooltipHeight > window.innerHeight) {
+            top = window.innerHeight - tooltipHeight - 20;
+        }
+
+        tooltip.style.left = `${Math.max(10, left)}px`;
+        tooltip.style.top = `${Math.max(10, top)}px`;
         
         tooltip.innerHTML = `<div style="text-align:center; padding:1rem;"><div class="spinner-sm"></div> Cargando perfil...</div>`;
         document.body.appendChild(tooltip);
