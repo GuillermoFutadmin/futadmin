@@ -4050,10 +4050,14 @@ def get_equipo_stats_summary(id):
                 goles_favor += (p.goles_visitante or 0)
                 goles_contra += (p.goles_local or 0)
 
+        # Sumar stats legacy
+        goles_favor += (equipo.goles_f_legacy or 0)
+        goles_contra += (equipo.goles_c_legacy or 0)
+
         # Disciplina y Goleador (Desde eventos)
         eventos = EventoPartido.query.filter(EventoPartido.equipo_id == id).all()
-        amarillas = len([e for e in eventos if e.tipo == 'Tarjeta Amarilla'])
-        rojas = len([e for e in eventos if e.tipo == 'Tarjeta Roja'])
+        amarillas = len([e for e in eventos if e.tipo in ('Amarilla', 'Tarjeta Amarilla')]) + (equipo.amarillas_legacy or 0)
+        rojas = len([e for e in eventos if e.tipo in ('Roja', 'Tarjeta Roja')]) + (equipo.rojas_legacy or 0)
         
         # Goleador estrella
         goles = [e for e in eventos if e.tipo == 'Gol' and e.jugador_id]
@@ -4113,9 +4117,9 @@ def get_jugador_stats_summary(id):
         
         # Eventos (Goles, Tarjetas)
         eventos = EventoPartido.query.filter_by(jugador_id=id).all()
-        goles = len([e for e in eventos if e.tipo == 'Gol'])
-        amarillas = len([e for e in eventos if e.tipo == 'Tarjeta Amarilla'])
-        rojas = len([e for e in eventos if e.tipo == 'Tarjeta Roja'])
+        goles = len([e for e in eventos if e.tipo == 'Gol']) + (jugador.goles_legacy or 0)
+        amarillas = len([e for e in eventos if e.tipo in ('Amarilla', 'Tarjeta Amarilla')]) + (jugador.amarillas_legacy or 0)
+        rojas = len([e for e in eventos if e.tipo in ('Roja', 'Tarjeta Roja')]) + (jugador.rojas_legacy or 0)
         
         # Datos del equipo
         equipo_nombre = equipo.nombre if equipo else "Sin Equipo"
