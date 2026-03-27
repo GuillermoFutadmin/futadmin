@@ -925,7 +925,7 @@ ${data.reglamento ? `<strong>REGLAMENTO:</strong>\n${data.reglamento}\n\n` : ''}
 
     async showAndPrintHistoryReport(id, torneoId) {
         try {
-            const responseInscripciones = await Core.fetchAPI(`/api/inscripciones?torneo_id=${torneoId}`);
+            const responseInscripciones = await Core.fetchAPI(`/api/inscripciones?torneo_id=${torneoId}&per_page=1000`);
             const dataInscripciones = responseInscripciones.items || responseInscripciones || [];
             const insData = Array.isArray(dataInscripciones) ? dataInscripciones.find(i => i.id === id) : null;
             if (!insData) { alert('No se encontraron datos del equipo.'); return; }
