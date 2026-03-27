@@ -102,7 +102,7 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True) # Ensure upload folder e
 def healthcheck():
     return jsonify({'status': 'ok'}), 200
 
-from models import db, bcrypt, Torneo, Equipo, Jugador, Inscripcion, Pago, GrupoEntrenamiento, AlumnoEntrenamiento, Partido, EventoPartido, AsistenciaPartido, Arbitro, Cancha, Usuario, apply_liga_filter, get_liga_id, check_torneos_limit, get_role_limits, Liga, PagoCombo, Configuracion, LigaExpansion
+from models import db, bcrypt, Torneo, Equipo, Jugador, Inscripcion, Pago, GrupoEntrenamiento, AlumnoEntrenamiento, Partido, EventoPartido, AsistenciaPartido, Arbitro, Cancha, CanchaDetalle, Usuario, apply_liga_filter, get_liga_id, check_torneos_limit, get_role_limits, Liga, PagoCombo, Configuracion, LigaExpansion
 from utils import paginate_query, handle_image_upload
 from logic.receipts import generate_receipt_pdf, send_receipt_email
 from routes.entrenamientos import entrenamientos_bp

@@ -803,6 +803,41 @@ class Cancha(db.Model):
             "usuarios": [u.to_dict() for u in usuarios_query] if 'usuarios_query' in locals() else []
         }
 
+class CanchaDetalle(db.Model):
+    """Cancha individual (campo de juego) dentro de una Sede (Cancha)."""
+    __tablename__ = 'canchas_detalle'
+
+    id           = db.Column(db.Integer, primary_key=True)
+    sede_id      = db.Column(db.Integer, db.ForeignKey('canchas.id', ondelete='CASCADE'), nullable=False, index=True)
+    liga_id      = db.Column(db.Integer, db.ForeignKey('ligas.id'), nullable=True, index=True)
+    nombre       = db.Column(db.String(100), nullable=False)               # ej. "Cancha Central", "Cancha 2"
+    modalidad    = db.Column(db.String(50), default='Fútbol 7')            # Fútbol 7, 11, Futsal…
+    superficie   = db.Column(db.String(50), default='Césped natural')      # Pasto, Sintético, Concreto…
+    techada      = db.Column(db.Boolean, default=False)
+    capacidad    = db.Column(db.Integer, default=0)                        # espectadores aprox.
+    activa       = db.Column(db.Boolean, default=True)
+    notas        = db.Column(db.Text, nullable=True)
+    created_at   = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # Relaciones
+    sede         = db.relationship('Cancha', backref=db.backref('canchas_detalle', cascade='all, delete-orphan', lazy=True))
+
+    def to_dict(self):
+        return {
+            'id':        self.id,
+            'sede_id':   self.sede_id,
+            'liga_id':   self.liga_id,
+            'nombre':    self.nombre,
+            'modalidad': self.modalidad or 'Fútbol 7',
+            'superficie':self.superficie or 'Césped natural',
+            'techada':   self.techada,
+            'capacidad': self.capacidad or 0,
+            'activa':    self.activa,
+            'notas':     self.notas or '',
+            'created_at':self.created_at.strftime('%Y-%m-%d') if self.created_at else '',
+            'sede_nombre': self.sede.nombre if self.sede else '',
+        }
+
 class PagoCancha(db.Model):
     __tablename__ = 'pagos_canchas'
     id = db.Column(db.Integer, primary_key=True)

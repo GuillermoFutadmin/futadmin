@@ -247,3 +247,69 @@ def delete_cancha(id):
     db.session.delete(cancha)
     db.session.commit()
     return jsonify({"message": "Cancha eliminada"})
+
+# ==========================================
+# ENDPOINTS PARA CANCHAS INDIVIDUALES (CAMPOS)
+# ==========================================
+
+from models import CanchaDetalle
+
+@canchas_bp.route('/api/canchas/<int:sede_id>/campos', methods=['GET'])
+def get_campos(sede_id):
+    """Obtiene todas las canchas individuales de un predio/sede"""
+    campos = CanchaDetalle.query.filter_by(sede_id=sede_id).all()
+    # Si la solicitud no tiene filtros extras, regresamos la lista.
+    return jsonify([c.to_dict() for c in campos])
+
+@canchas_bp.route('/api/canchas/<int:sede_id>/campos', methods=['POST'])
+def add_campo(sede_id):
+    """Agrega una nueva cancha a un predio"""
+    sede = Cancha.query.get_or_404(sede_id)
+    data = request.get_json()
+    
+    # === VERIFICACIÓN DE LÍMITES POR PLAN (OPCIÓN A) ===
+    # El usuario dijo: equipo y super_arbitro -> max 1 cancha. dueño de liga -> varias
+    user_rol = session.get('user_rol', '').lower()
+    
+    current_count = CanchaDetalle.query.filter_by(sede_id=sede_id).count()
+    if user_rol in ['equipo', 'super_arbitro'] and current_count >= 1:
+        return jsonify({"error": "Tu plan amateur solo permite 1 cancha por sede. Haz upgrade a Dueño de Liga para tener canchas múltiples."}), 403
+    
+    nuevo_campo = CanchaDetalle(
+        sede_id=sede.id,
+        liga_id=sede.liga_id,
+        nombre=data.get('nombre', f'Cancha {current_count + 1}'),
+        modalidad=data.get('modalidad', 'Fútbol 7'),
+        superficie=data.get('superficie', 'Césped natural'),
+        techada=bool(data.get('techada', False)),
+        capacidad=int(data.get('capacidad', 0)),
+        activa=bool(data.get('activa', True)),
+        notas=data.get('notas', '')
+    )
+    
+    db.session.add(nuevo_campo)
+    db.session.commit()
+    return jsonify(nuevo_campo.to_dict()), 201
+
+@canchas_bp.route('/api/campos/<int:campo_id>', methods=['PUT'])
+def update_campo(campo_id):
+    campo = CanchaDetalle.query.get_or_404(campo_id)
+    data = request.get_json()
+    
+    if 'nombre' in data: campo.nombre = data['nombre']
+    if 'modalidad' in data: campo.modalidad = data['modalidad']
+    if 'superficie' in data: campo.superficie = data['superficie']
+    if 'techada' in data: campo.techada = bool(data['techada'])
+    if 'capacidad' in data: campo.capacidad = int(data['capacidad'])
+    if 'activa' in data: campo.activa = bool(data['activa'])
+    if 'notas' in data: campo.notas = data['notas']
+    
+    db.session.commit()
+    return jsonify(campo.to_dict())
+
+@canchas_bp.route('/api/campos/<int:campo_id>', methods=['DELETE'])
+def delete_campo(campo_id):
+    campo = CanchaDetalle.query.get_or_404(campo_id)
+    db.session.delete(campo)
+    db.session.commit()
+    return jsonify({"message": "Cancha individual (campo) eliminada con éxito"})
