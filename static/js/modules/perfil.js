@@ -9,6 +9,12 @@ export const Perfil = {
     },
 
     async openModal() {
+        // Bloqueo para cuentas genéricas/públicas
+        const userRol = (window.USER_ROL || '').toLowerCase().replace('ñ', 'n');
+        if (['resultados', 'espectador', 'visor'].includes(userRol)) {
+            console.warn("Acceso a perfil restringido para esta cuenta pública.");
+            return;
+        }
         Core.openModal('modal-perfil');
         this.renderComboManagement();
     },

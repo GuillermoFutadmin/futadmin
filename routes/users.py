@@ -537,6 +537,13 @@ def self_change_password():
     user = Usuario.query.get(session['user_id'])
     if not user:
         return jsonify({"success": False, "error": "Usuario no encontrado"}), 404
+    
+    # Bloqueo de seguridad para cuentas genéricas/públicas
+    if user.rol in ['resultados', 'espectador', 'visor']:
+        return jsonify({
+            "success": False, 
+            "error": "Esta es una cuenta pública de acceso general. Por seguridad, el cambio de contraseña está restringido."
+        }), 403
         
     user.password_hash = bcrypt.generate_password_hash(new_password).decode('utf-8')
     db.session.commit()

@@ -164,11 +164,17 @@
                     </div>
                 </div>
             <div class="user-profile">
-                <div class="pago-status online" onclick="ui.perfil.openModal()" style="cursor:pointer;" title="Ver Perfil y Configuración">FutAdmin PRO</div>
-                <span class="user-name" onclick="ui.perfil.openModal()" style="cursor:pointer;">{{ user_name or 'Usuario' }}</span>
+                {% if user_rol.lower() not in ['resultados', 'espectador', 'visor'] %}
+                    <div class="pago-status online" onclick="ui.perfil.openModal()" style="cursor:pointer;" title="Ver Perfil y Configuración">FutAdmin PRO</div>
+                    <span class="user-name" onclick="ui.perfil.openModal()" style="cursor:pointer;">{{ user_name or 'Usuario' }}</span>
+                {% else %}
+                    <span class="user-name" style="cursor:default;">{{ user_name or 'Usuario' }}</span>
+                {% endif %}
                 <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 5px;">{{ (user_rol.lower() or 'Invitado') | upper }}</div>
                 <div style="display: flex; gap: 5px; align-items: center;">
-                    <button class="btn-perfil" onclick="ui.perfil.openModal()" style="background: rgba(255,255,255,0.05); color: white; border: 1px solid rgba(255,255,255,0.1); padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; cursor: pointer;">⚙️ PERFIL</button>
+                    {% if user_rol.lower() not in ['resultados', 'espectador', 'visor'] %}
+                        <button class="btn-perfil" onclick="ui.perfil.openModal()" style="background: rgba(255,255,255,0.05); color: white; border: 1px solid rgba(255,255,255,0.1); padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; cursor: pointer;">⚙️ PERFIL</button>
+                    {% endif %}
                     <a href="/logout" class="btn-logout" style="color: #ef4444; font-size: 0.75rem; text-decoration: none; border: 1px solid rgba(239,68,68,0.2); padding: 2px 8px; border-radius: 4px; display: inline-block;">SALIR</a>
                 </div>
             </div>
