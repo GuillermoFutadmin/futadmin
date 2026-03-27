@@ -41,7 +41,10 @@ export class CanchasModule {
                 try {
                     const camposData = await Core.fetchAPI(`/api/canchas/${sede.id}/campos`);
                     const campos = Array.isArray(camposData) ? camposData : (camposData.items || []);
-                    campos.forEach(c => c._sede_nombre = sede.nombre);
+                    campos.forEach(c => {
+                        c._sede_nombre = sede.nombre;
+                        c._sede_color = sede.color || 'var(--primary)';
+                    });
                     allCampos = allCampos.concat(campos);
                 } catch(e2) {}
             }
@@ -75,23 +78,56 @@ export class CanchasModule {
                             <th style="padding:12px 20px; color:var(--text-muted); font-size:0.75rem; text-transform:uppercase;">Cancha</th>
                             <th style="padding:12px 20px; color:var(--text-muted); font-size:0.75rem; text-transform:uppercase;">Sede / Predio</th>
                             <th style="padding:12px 20px; color:var(--text-muted); font-size:0.75rem; text-transform:uppercase;">Modalidad</th>
-                            <th style="padding:12px 20px; color:var(--text-muted); font-size:0.75rem; text-transform:uppercase;">Superficie</th>
-                            <th style="padding:12px 20px; color:var(--text-muted); font-size:0.75rem; text-transform:uppercase;">Techada</th>
+                            <th style="padding:12px 20px; color:var(--text-muted); font-size:0.75rem; text-transform:uppercase;">Estado</th>
+                            <th style="padding:12px 20px; color:var(--text-muted); font-size:0.75rem; text-transform:uppercase; text-align:right;">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
                         ${campos.map((c, i) => `
-                            <tr style="border-bottom:1px solid var(--border); background:${i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)'};">
-                                <td style="padding:14px 20px; font-weight:700; color:#fff;">🥅 ${c.nombre}</td>
+                            <tr style="border-bottom:1px solid var(--border); background:${i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)'}; opacity: ${c.activa ? '1' : '0.6'};">
+                                <td style="padding:14px 20px; font-weight:700; color:#fff; display: flex; align-items: center; gap: 10px;">
+                                    <div style="width: 4px; height: 24px; background: ${c._sede_color}; border-radius: 2px;"></div>
+                                    🥅 ${c.nombre}
+                                </td>
                                 <td style="padding:14px 20px; color:var(--text-muted);">🏟️ ${c._sede_nombre || 'N/A'}</td>
-                                <td style="padding:14px 20px;">${c.modalidad || '—'}</td>
-                                <td style="padding:14px 20px;">${c.superficie || '—'}</td>
-                                <td style="padding:14px 20px;">${c.techada ? '✅ Sí' : '—'}</td>
+                                <td style="padding:14px 20px;">
+                                     <span class="badge" style="background: rgba(255,255,255,0.05); border: 1px solid var(--border); font-size: 0.7rem;">${c.modalidad || '—'}</span>
+                                </td>
+                                <td style="padding:14px 20px;">
+                                    <span class="badge" style="background: ${c.activa ? 'rgba(0,255,136,0.1)' : 'rgba(239,68,68,0.1)'}; color: ${c.activa ? 'var(--primary)' : '#ef4444'}; font-size: 0.7rem; border: 1px solid ${c.activa ? 'rgba(0,255,136,0.2)' : 'rgba(239,68,68,0.2)'};">
+                                        ${c.activa ? 'ACTIVA' : 'INACTIVA'}
+                                    </span>
+                                </td>
+                                <td style="padding:14px 20px; text-align:right;">
+                                    <button class="btn-action" onclick="ui.canchas.toggleCampoStatus(${c.id}, ${c.activa})" title="${c.activa ? 'Desactivar Cancha' : 'Activar Cancha'}" style="background: none; border: 1px solid var(--border); color: ${c.activa ? '#ef4444' : 'var(--primary)'}; padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; cursor: pointer;">
+                                        ${c.activa ? '⛔ Desactivar' : '✅ Activar'}
+                                    </button>
+                                </td>
                             </tr>
                         `).join('')}
                     </tbody>
                 </table>
             </div>`;
+    }
+
+    async toggleCampoStatus(campoId, currentStatus) {
+        if (!confirm(`¿Estás seguro de que deseas ${currentStatus ? 'desactivar' : 'activar'} esta cancha?`)) return;
+
+        try {
+            const result = await Core.fetchAPI(`/api/campos/${campoId}`, {
+                method: 'PUT',
+                body: JSON.stringify({ activa: !currentStatus })
+            });
+
+            if (result.error) {
+                Core.showNotification(result.error, 'error');
+            } else {
+                Core.showNotification(`Cancha ${!currentStatus ? 'activada' : 'desactivada'} con éxito`, 'success');
+                await this.loadCampos();
+            }
+        } catch (error) {
+            Core.showNotification('Error al cambiar el estado de la cancha', 'error');
+        }
     }
 
     filterCanchas() {
