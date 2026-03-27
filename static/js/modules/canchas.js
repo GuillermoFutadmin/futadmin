@@ -25,6 +25,75 @@ export class CanchasModule {
         }
     }
 
+    async loadCampos() {
+        const container = document.getElementById('campos-container');
+        if (!container) return;
+
+        container.innerHTML = '<div class="loading-premium"><span>⌛</span> Cargando canchas...</div>';
+
+        try {
+            if (!this.canchas || this.canchas.length === 0) {
+                const data = await Core.fetchAPI('/api/canchas?per_page=1000');
+                this.canchas = data.items || data;
+            }
+            let allCampos = [];
+            for (const sede of this.canchas) {
+                try {
+                    const camposData = await Core.fetchAPI(`/api/canchas/${sede.id}/campos`);
+                    const campos = Array.isArray(camposData) ? camposData : (camposData.items || []);
+                    campos.forEach(c => c._sede_nombre = sede.nombre);
+                    allCampos = allCampos.concat(campos);
+                } catch(e2) {}
+            }
+            this.renderCampos(allCampos);
+        } catch (e) {
+            container.innerHTML = '<div class="error-premium">Error al cargar las canchas</div>';
+            Core.showNotification('No se pudieron cargar las canchas', 'error');
+        }
+    }
+
+    renderCampos(campos) {
+        const container = document.getElementById('campos-container');
+        if (!container) return;
+
+        if (campos.length === 0) {
+            container.innerHTML = `
+                <div style="text-align:center; padding:4rem; background:var(--card-bg); border-radius:20px; border:1px dashed var(--border); grid-column:1/-1;">
+                    <div style="font-size:3rem; margin-bottom:1rem;">🥅</div>
+                    <h4>No tienes canchas registradas</h4>
+                    <p class="text-muted">Primero crea una Sede, luego agrega sus canchas individuales desde el botón de abajo.</p>
+                    <button class="btn-primary" onclick="ui.canchas.showModalCampo()" style="margin-top:1rem;">+ Nueva Cancha</button>
+                </div>`;
+            return;
+        }
+
+        container.innerHTML = `
+            <div style="grid-column:1/-1; width:100%; overflow-x:auto; background:var(--card); border-radius:14px; border:1px solid var(--border);">
+                <table style="width:100%; border-collapse:collapse;">
+                    <thead>
+                        <tr style="background:rgba(0,0,0,0.3); border-bottom:2px solid var(--border);">
+                            <th style="padding:12px 20px; color:var(--text-muted); font-size:0.75rem; text-transform:uppercase;">Cancha</th>
+                            <th style="padding:12px 20px; color:var(--text-muted); font-size:0.75rem; text-transform:uppercase;">Sede / Predio</th>
+                            <th style="padding:12px 20px; color:var(--text-muted); font-size:0.75rem; text-transform:uppercase;">Modalidad</th>
+                            <th style="padding:12px 20px; color:var(--text-muted); font-size:0.75rem; text-transform:uppercase;">Superficie</th>
+                            <th style="padding:12px 20px; color:var(--text-muted); font-size:0.75rem; text-transform:uppercase;">Techada</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${campos.map((c, i) => `
+                            <tr style="border-bottom:1px solid var(--border); background:${i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)'};">
+                                <td style="padding:14px 20px; font-weight:700; color:#fff;">🥅 ${c.nombre}</td>
+                                <td style="padding:14px 20px; color:var(--text-muted);">🏟️ ${c._sede_nombre || 'N/A'}</td>
+                                <td style="padding:14px 20px;">${c.modalidad || '—'}</td>
+                                <td style="padding:14px 20px;">${c.superficie || '—'}</td>
+                                <td style="padding:14px 20px;">${c.techada ? '✅ Sí' : '—'}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>`;
+    }
+
     filterCanchas() {
         const query = document.getElementById('cancha-search-filter').value.toLowerCase();
         if (!this.canchas) return;
@@ -87,9 +156,9 @@ export class CanchasModule {
                 <div class="empty-state" style="grid-column: 1/-1; padding: 4rem; text-align: center; background: var(--card-bg); border-radius: 20px; border: 1px dashed var(--border);">
                     <div style="font-size: 3rem; margin-bottom: 1rem;">🏟️</div>
                     <h4>No se encontraron sedes</h4>
-                    <p class="text-muted">${canchasToRender ? 'No hay sedes que coincidan con tu búsqueda.' : 'Comienza agregando tu primera cancha o complejo deportivo.'}</p>
+                    <p class="text-muted">${canchasToRender ? 'No hay sedes que coincidan con tu búsqueda.' : 'Comienza agregando tu primera sede o complejo deportivo.'}</p>
                     ${canCreate && !canchasToRender ? `
-                        <button class="btn-primary" onclick="ui.canchas.showModal()" style="margin-top: 1rem;">+ Nueva Cancha</button>
+                        <button class="btn-primary" onclick="ui.canchas.showModal()" style="margin-top: 1rem;">+ Nueva Sede</button>
                     ` : ''}
                 </div>
             `;
@@ -411,8 +480,12 @@ export class CanchasModule {
             } else {
                 Core.showNotification('Campo guardado exitosamente', 'success');
                 Core.closeModal('modal-campo');
-                // Opcional: recargar canchas o redibujar UI
-                await this.loadCanchas();
+                // Recargar según la vista activa
+                if (document.getElementById('view-campos') && document.getElementById('view-campos').style.display !== 'none') {
+                    await this.loadCampos();
+                } else {
+                    await this.loadCanchas();
+                }
             }
         } catch (error) {
             Core.showNotification('Error al guardar el campo (Límite o Falla de Red)', 'error');

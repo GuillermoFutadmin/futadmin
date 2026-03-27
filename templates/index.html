@@ -76,7 +76,8 @@
                                         <i class="arrow">▼</i>
                                     </div>
                                     <ul class="submenu-nested">
-                                        <li onclick="event.stopPropagation(); ui.switchView('canchas', 'cancha', this)">🔸 Cancha</li>
+                                        <li onclick="event.stopPropagation(); ui.switchView('canchas', null, this)">🏟️ Sedes</li>
+                                        <li onclick="event.stopPropagation(); ui.switchView('campos', null, this)">🥅 Canchas</li>
                                         <li onclick="event.stopPropagation(); ui.switchView('arbitros', null, this)">🔸 Cuerpo Arbitral</li>
                                     </ul>
                                 </li>
@@ -252,7 +253,7 @@
                 <div class="action-bar">
                     <div style="display: flex; align-items: center; gap: 15px; flex: 1;">
                     <div style="display: flex; align-items: center; gap: 12px;">
-                        <h3>Sedes y Canchas Deportivas</h3>
+                        <h3>Gestión de Sedes (Predios)</h3>
                         <span id="venue-counter-main" class="limit-badge"></span>
                     </div>
                         <div class="search-box-premium" style="flex: 1; max-width: 400px; position: relative;">
@@ -264,7 +265,7 @@
                                 onblur="this.style.borderColor='var(--border)'; this.style.boxShadow='none';">
                         </div>
                     </div>
-                    <button id="btn-nueva-cancha" class="btn-primary" onclick="ui.canchas.showModal()">+ Nueva Cancha</button>
+                    <button id="btn-nueva-cancha" class="btn-primary" onclick="ui.canchas.showModal()">+ Nueva Sede / Predio</button>
                 </div>
                 <div class="leagues-grid" id="canchas-container">
                     <!-- Cargado via JS -->
@@ -434,6 +435,29 @@
                         <span style="font-size: 3rem; display: block; margin-bottom: 1rem;">⚖️</span>
                         <p class="text-muted">Selecciona una liga para gestionar pagos de arbitraje por jornada.</p>
                     </div>
+                </div>
+            </div>
+
+            <div id="view-campos" class="sub-view view-container" style="display: none;">
+                <div class="action-bar" style="background: rgba(255,255,255,0.03); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center;">
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <div style="width: 45px; height: 45px; background: rgba(0,255,136,0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">🥅</div>
+                        <div>
+                            <h3 style="margin: 0;">Lista de Canchas</h3>
+                            <p style="margin: 0; font-size: 0.8rem; color: var(--text-muted);">Campos individuales registrados en tus sedes</p>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border); padding: 5px 15px; border-radius: 10px; display: flex; align-items: center; gap: 8px;">
+                            <span style="font-size: 0.8rem; color: var(--text-muted);">Total:</span>
+                            <span id="campos-count-badge" style="font-weight: bold; color: var(--primary);">0</span>
+                        </div>
+                        <button class="btn-primary" onclick="ui.canchas.showModalCampo()">+ Nueva Cancha</button>
+                    </div>
+                </div>
+
+                <div class="leagues-grid" id="campos-container">
+                    <!-- Cargado via JS -->
                 </div>
             </div>
 

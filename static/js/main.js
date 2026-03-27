@@ -147,6 +147,7 @@ class FutAdminUI {
             'entrenamientos': 'Academias y Entrenamientos',
             'pagos-academia': 'Pagos de Academia',
             'canchas': 'Sedes y Canchas',
+            'campos': 'Canchas de Juego',
             'pagos-canchas': 'Pagos de Sedes',
             'archivo': 'Historial / Papelera'
         };
@@ -169,10 +170,9 @@ class FutAdminUI {
         else if (viewId === 'pagos-academia') this.pagosAcademia.init();
         else if (viewId === 'canchas') {
             await this.canchas.loadCanchas();
-            if (tabId === 'cancha') {
-                // Abrir modal de nueva cancha (campo) después de cargar la vista
-                setTimeout(() => this.canchas.showModalCampo(), 200);
-            }
+        }
+        else if (viewId === 'campos') {
+            await this.canchas.loadCampos();
         }
         else if (viewId === 'pagos-canchas') this.pagosCanchas.loadEstadosCuenta();
         else if (viewId === 'archivo') this.leagues.loadArchivedLeagues();
