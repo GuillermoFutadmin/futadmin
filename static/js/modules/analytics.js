@@ -938,8 +938,77 @@ export class AnalyticsModule {
     hideTeamStats() {
         const existing = document.getElementById('team-stats-tooltip');
         if (existing) {
-            // Solo remover si no es sticky o si se fuerza
             existing.remove();
+        }
+    }
+
+    async showPlayerStats(element, playerId) {
+        this.hideTeamStats(); // Reutilizar el mismo contenedor de tooltip
+        
+        const tooltip = document.createElement('div');
+        tooltip.id = 'team-stats-tooltip'; // Reutilizar ID para consistencia CSS
+        tooltip.className = 'premium-tooltip fade-in';
+        tooltip.style.position = 'fixed';
+        tooltip.style.zIndex = '9999';
+        tooltip.style.background = 'rgba(15, 23, 42, 0.98)';
+        tooltip.style.backdropFilter = 'blur(15px)';
+        tooltip.style.border = '1px solid rgba(255,255,255,0.1)';
+        tooltip.style.borderRadius = '20px';
+        tooltip.style.padding = '1.5rem';
+        tooltip.style.boxShadow = '0 25px 50px rgba(0,0,0,0.6), 0 0 30px rgba(0,255,136,0.05)';
+        tooltip.style.width = '280px';
+        tooltip.style.pointerEvents = 'none';
+        
+        const rect = element.getBoundingClientRect();
+        tooltip.style.left = `${Math.max(10, rect.right + 20)}px`;
+        tooltip.style.top = `${Math.max(10, rect.top - 50)}px`;
+        
+        tooltip.innerHTML = `<div style="text-align:center; padding:1rem;"><div class="spinner-sm"></div> Cargando perfil...</div>`;
+        document.body.appendChild(tooltip);
+
+        try {
+            const data = await Core.fetchAPI(`/api/jugadores/${playerId}/stats-summary`);
+            if (!data) throw new Error('No data');
+
+            tooltip.innerHTML = `
+                <div style="display:flex; align-items:center; gap:15px; margin-bottom:1.2rem; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:1rem;">
+                    <div style="width:60px; height:60px; border-radius:50%; overflow:hidden; border:2px solid ${data.color || 'var(--primary)'}; background:rgba(0,0,0,0.3); flex-shrink:0;">
+                        <img src="${data.foto_url || ''}" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(data.nombre)}&background=random&color=fff'" style="width:100%; height:100%; object-fit:cover;">
+                    </div>
+                    <div style="overflow:hidden;">
+                        <div style="font-size:0.65rem; color:${data.color || 'var(--primary)'}; font-weight:800; text-transform:uppercase; letter-spacing:1px; margin-bottom:2px;">#${data.numero} • ${data.posicion}</div>
+                        <h4 style="margin:0; color:#fff; font-size:1.1rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${data.nombre}</h4>
+                        <div style="font-size:0.7rem; color:rgba(255,255,255,0.5); display:flex; align-items:center; gap:5px;">
+                            <span style="font-style:italic;">${data.equipo}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:0.8rem; margin-bottom:1rem;">
+                    <div style="background:rgba(255,255,255,0.03); padding:0.8rem; border-radius:12px; text-align:center; border:1px solid rgba(255,255,255,0.05);">
+                        <div style="font-size:0.6rem; color:var(--text-muted); text-transform:uppercase; font-weight:700; margin-bottom:4px;">Partidos</div>
+                        <div style="font-size:1.3rem; font-weight:900; color:#fff;">${data.stats.pj}</div>
+                    </div>
+                    <div style="background:rgba(0,255,136,0.05); padding:0.8rem; border-radius:12px; text-align:center; border:1px solid rgba(0,255,136,0.1);">
+                        <div style="font-size:0.6rem; color:#00ff88; text-transform:uppercase; font-weight:700; margin-bottom:4px;">Goles</div>
+                        <div style="font-size:1.3rem; font-weight:900; color:#00ff88;">${data.stats.goles}</div>
+                    </div>
+                </div>
+
+                <div style="display:flex; justify-content:center; gap:20px; background:rgba(255,255,255,0.02); padding:0.8rem; border-radius:12px; border:1px solid rgba(255,255,255,0.05);">
+                    <div style="display:flex; align-items:baseline; gap:6px;">
+                        <span style="font-size:0.6rem; color:rgba(255,255,255,0.4); text-transform:uppercase; font-weight:700;">🟨 Am.</span>
+                        <span style="font-size:1rem; font-weight:800; color:#facc15;">${data.stats.amarillas}</span>
+                    </div>
+                    <div style="width:1px; height:15px; background:rgba(255,255,255,0.1); align-self:center;"></div>
+                    <div style="display:flex; align-items:baseline; gap:6px;">
+                        <span style="font-size:0.6rem; color:rgba(255,255,255,0.4); text-transform:uppercase; font-weight:700;">🟥 Rojas</span>
+                        <span style="font-size:1rem; font-weight:800; color:#ef4444;">${data.stats.rojas}</span>
+                    </div>
+                </div>
+            `;
+        } catch (e) {
+            tooltip.innerHTML = `<div style="color:#ef4444; font-size:0.8rem; text-align:center; padding:1rem;">Error al cargar perfil.</div>`;
         }
     }
 }

@@ -81,7 +81,9 @@ export class PlayersModule {
                                 </span>
                             ` : ''}
                         </div>
-                        <h4 style="margin: 4px 0; font-size: 1.3rem; color: #fff;">${j.nombre}</h4>
+                        <h4 style="margin: 4px 0; font-size: 1.3rem; color: #fff; cursor: pointer;" 
+                            onmouseover="ui.analytics.showPlayerStats(this, ${j.id})" 
+                            onmouseout="ui.analytics.hideTeamStats()">${j.nombre}</h4>
                         <span style="font-size: 0.85rem; color: var(--text-muted); display: block; margin-bottom: 1.2rem; font-weight: 500;">
                             ${j.posicion || 'Sin Posición'} 
                             ${j.es_portero ? `<span style="color:${j.color || 'var(--primary)'}; font-weight:700">🧤 Portero</span>` : ''} 

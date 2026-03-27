@@ -4090,6 +4090,43 @@ def get_equipo_stats_summary(id):
         print(f"Error en stats-summary: {e}")
         return jsonify({"error": str(e)}), 500
 
+@app.route('/api/jugadores/<int:id>/stats-summary', methods=['GET'])
+def get_jugador_stats_summary(id):
+    try:
+        jugador = Jugador.query.get_or_404(id)
+        equipo = Equipo.query.get(jugador.equipo_id)
+        
+        # Estadísticas de partidos (Asistencias)
+        asistencias = AsistenciaPartido.query.filter_by(jugador_id=id, presente=True).count()
+        
+        # Eventos (Goles, Tarjetas)
+        eventos = EventoPartido.query.filter_by(jugador_id=id).all()
+        goles = len([e for e in eventos if e.tipo == 'Gol'])
+        amarillas = len([e for e in eventos if e.tipo == 'Tarjeta Amarilla'])
+        rojas = len([e for e in eventos if e.tipo == 'Tarjeta Roja'])
+        
+        # Datos del equipo
+        equipo_nombre = equipo.nombre if equipo else "Sin Equipo"
+        equipo_color = equipo.color if equipo else "var(--primary)"
+        
+        return jsonify({
+            "nombre": jugador.nombre,
+            "foto_url": jugador.foto_url,
+            "equipo": equipo_nombre,
+            "color": equipo_color,
+            "posicion": jugador.posicion or "Sin posición",
+            "numero": jugador.numero or "--",
+            "stats": {
+                "pj": asistencias,
+                "goles": goles,
+                "amarillas": amarillas,
+                "rojas": rojas
+            }
+        })
+    except Exception as e:
+        print(f"Error en jugador stats-summary: {e}")
+        return jsonify({"error": str(e)}), 500
+
 @app.route('/api/equipos/<int:id>/generate_uid', methods=['POST'])
 @csrf.exempt
 def generate_equipo_uid(id):
