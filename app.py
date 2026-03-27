@@ -150,7 +150,6 @@ def api_upload():
 def telegram_app_view():
     return render_template('telegram_app.html')
 
-db.init_app(app)
 from flask_migrate import Migrate
 migrate = Migrate(app, db)
 
