@@ -1,7 +1,7 @@
 /**
  * Punto de entrada principal - FutAdmin ESM
  */
-import { Core } from './modules/core.js';
+import { Core } from './modules/core.js?v=53';
 import { LeaguesModule } from './modules/leagues.js?v=53';
 import { TeamsModule } from './modules/teams.js?v=53';
 import { PlayersModule } from './modules/players.js?v=53';

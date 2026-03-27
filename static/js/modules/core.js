@@ -3,8 +3,9 @@
  */
 export class Core {
     static async fetchAPI(url, options = {}) {
-        // Asegurar que el header Content-Type sea JSON si hay un body y no se ha especificado otro
-        if (options.body && (!options.headers || !options.headers['Content-Type'])) {
+        // Asegurar que el header Content-Type sea JSON si hay un body y no se ha especificado otro,
+        // pero NO si el body es FormData (el navegador pone el boundary automáticamente)
+        if (options.body && !(options.body instanceof FormData) && (!options.headers || !options.headers['Content-Type'])) {
             options.headers = {
                 ...options.headers,
                 'Content-Type': 'application/json'
