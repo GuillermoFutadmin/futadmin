@@ -167,7 +167,13 @@ class FutAdminUI {
             }
         }
         else if (viewId === 'pagos-academia') this.pagosAcademia.init();
-        else if (viewId === 'canchas') this.canchas.loadCanchas();
+        else if (viewId === 'canchas') {
+            await this.canchas.loadCanchas();
+            if (tabId === 'cancha') {
+                // Abrir modal de nueva cancha después de cargar la vista
+                setTimeout(() => this.canchas.showModal(), 200);
+            }
+        }
         else if (viewId === 'pagos-canchas') this.pagosCanchas.loadEstadosCuenta();
         else if (viewId === 'archivo') this.leagues.loadArchivedLeagues();
         else if (viewId === 'ajustes') {
