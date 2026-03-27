@@ -523,3 +523,65 @@ def handle_combo_creation():
         return jsonify({'error': str(e)}), 400
 
 
+
+@users_bp.route('/api/user/self/change_password', methods=['POST'])
+def self_change_password():
+    if 'user_id' not in session:
+        return jsonify({"success": False, "error": "No has iniciado sesión"}), 401
+    
+    data = request.json
+    new_password = data.get('new_password')
+    if not new_password or len(new_password) < 6:
+        return jsonify({"success": False, "error": "La contraseña debe tener al menos 6 caracteres"}), 400
+    
+    user = Usuario.query.get(session['user_id'])
+    if not user:
+        return jsonify({"success": False, "error": "Usuario no encontrado"}), 404
+        
+    user.password_hash = bcrypt.generate_password_hash(new_password).decode('utf-8')
+    db.session.commit()
+    return jsonify({"success": True, "message": "Contraseña actualizada correctamente"})
+
+@users_bp.route('/api/user/combo/collaborators', methods=['GET'])
+def get_combo_collaborators():
+    if 'user_id' not in session:
+        return jsonify({"success": False, "error": "No has iniciado sesión"}), 401
+    
+    user = Usuario.query.get(session['user_id'])
+    if not user or user.rol not in ['dueño_liga', 'super_arbitro', 'equipo']:
+        return jsonify({"success": False, "error": "No tienes permisos para ver colaboradores"}), 403
+    
+    # Obtener otros usuarios de la misma liga
+    collaborators = Usuario.query.filter(Usuario.liga_id == user.liga_id, Usuario.id != user.id).all()
+    return jsonify([u.to_dict() for u in collaborators])
+
+@users_bp.route('/api/user/collaborator/<int:colab_id>/password', methods=['PUT'])
+def update_collaborator_password(colab_id):
+    if 'user_id' not in session:
+        return jsonify({"success": False, "error": "No has iniciado sesión"}), 401
+    
+    data = request.json
+    new_password = data.get('password')
+    if not new_password or len(new_password) < 6:
+        return jsonify({"success": False, "error": "La contraseña debe tener al menos 6 caracteres"}), 400
+    
+    current_user = Usuario.query.get(session['user_id'])
+    colab = Usuario.query.get(colab_id)
+    
+    if not colab or colab.liga_id != current_user.liga_id:
+        return jsonify({"success": False, "error": "Colaborador no encontrado o no pertenece a tu liga"}), 404
+    
+    # Validar permisos
+    if current_user.rol not in ['dueño_liga', 'super_arbitro', 'equipo']:
+        return jsonify({"success": False, "error": "No tienes permisos para administrar esta cuenta"}), 403
+        
+    colab.password_hash = bcrypt.generate_password_hash(new_password).decode('utf-8')
+    
+    # Si el colaborador es árbitro, sincronizar también su tabla
+    from models import Arbitro
+    sync_arb = Arbitro.query.filter_by(email=colab.email).first()
+    if sync_arb:
+        sync_arb.password = new_password
+        
+    db.session.commit()
+    return jsonify({"success": True, "message": f"Contraseña de {colab.nombre} actualizada correctamente"})

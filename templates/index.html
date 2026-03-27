@@ -163,12 +163,15 @@
                         <h2 id="current-view-title">Resumen General</h2>
                     </div>
                 </div>
-                <div class="user-profile">
-            <div class="pago-status online">FutAdmin PRO</div>
-            <span class="user-name">{{ user_name or 'Usuario' }}</span>
-            <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 5px;">{{ (user_rol.lower() or 'Invitado') | upper }}</div>
-            <a href="/logout" class="btn-logout" style="color: #ef4444; font-size: 0.75rem; text-decoration: none; border: 1px solid rgba(239,68,68,0.2); padding: 2px 8px; border-radius: 4px; display: inline-block;">Cerrar Sesión</a>
-        </div>
+            <div class="user-profile">
+                <div class="pago-status online" onclick="ui.perfil.openModal()" style="cursor:pointer;" title="Ver Perfil y Configuración">FutAdmin PRO</div>
+                <span class="user-name" onclick="ui.perfil.openModal()" style="cursor:pointer;">{{ user_name or 'Usuario' }}</span>
+                <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 5px;">{{ (user_rol.lower() or 'Invitado') | upper }}</div>
+                <div style="display: flex; gap: 5px; align-items: center;">
+                    <button class="btn-perfil" onclick="ui.perfil.openModal()" style="background: rgba(255,255,255,0.05); color: white; border: 1px solid rgba(255,255,255,0.1); padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; cursor: pointer;">⚙️ PERFIL</button>
+                    <a href="/logout" class="btn-logout" style="color: #ef4444; font-size: 0.75rem; text-decoration: none; border: 1px solid rgba(239,68,68,0.2); padding: 2px 8px; border-radius: 4px; display: inline-block;">SALIR</a>
+                </div>
+            </div>
             </header>
 
             <!-- Resumen General / Dashboard de Estadísticas -->
@@ -1570,6 +1573,42 @@
                     .catch(err => console.log('Error al registrar SW', err));
             });
         }
+    </script>
+
+    <!-- Modal de Perfil y Seguridad (Cambio de Pass y Combos) -->
+    <div id="modal-perfil" class="modal-overlay">
+        <div class="modal-content" style="max-width: 450px;">
+            <div class="modal-header">
+                <h3>Configuración de Seguridad</h3>
+                <button class="close-modal" onclick="Core.closeModal('modal-perfil')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div style="background: rgba(255,255,255,0.03); padding: 15px; border-radius: 8px; margin-bottom: 5px;">
+                    <h4 style="margin-bottom: 12px; font-size: 0.95rem; color: var(--primary);">Cambiar mi Contraseña</h4>
+                    <div class="input-group">
+                        <label>Nueva Contraseña</label>
+                        <input type="password" id="perf-new-pass" class="nav-select" style="width: 100%; border: 1px solid rgba(255,255,255,0.1);" placeholder="Mínimo 6 caracteres">
+                    </div>
+                    <div class="input-group" style="margin-top: 10px;">
+                        <label>Confirmar Contraseña</label>
+                        <input type="password" id="perf-confirm-pass" class="nav-select" style="width: 100%; border: 1px solid rgba(255,255,255,0.1);" placeholder="Repite la contraseña">
+                    </div>
+                    <button class="btn btn-primary" onclick="ui.perfil.changeSelfPassword()" style="width: 100%; margin-top: 15px;">
+                        ACTUALIZAR MI CONTRASEÑA
+                    </button>
+                </div>
+
+                <!-- Contenedor para gestión de combos (se llena por JS) -->
+                <div id="combo-accounts-container"></div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { ui } from '/static/js/main.js';
+        import { Perfil } from '/static/js/modules/perfil.js';
+        ui.perfil = Perfil;
+        ui.perfil.init();
     </script>
 </body>
 

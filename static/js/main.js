@@ -363,7 +363,8 @@ class FutAdminUI {
     }
 }
 
+export let ui;
 // Inicializar la App
 document.addEventListener('DOMContentLoaded', () => {
-    new FutAdminUI();
+    ui = new FutAdminUI();
 });
