@@ -1,3 +1,5 @@
+import { Core } from './core.js';
+
 /**
  * Módulo de Perfil y Gestión de Cuentas (Combos)
  */

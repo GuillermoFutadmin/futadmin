@@ -114,4 +114,8 @@ export class Core {
             document.head.appendChild(script);
         });
     }
+
+    static getCsrfToken() {
+        return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    }
 }
