@@ -687,6 +687,7 @@ class Cancha(db.Model):
     fecha_afiliacion = db.Column(db.DateTime, default=datetime.utcnow)
     activo = db.Column(db.Boolean, default=True)
     dueno_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=True)
+    limite_campos = db.Column(db.Integer, default=1)
 
     liga = db.relationship('Liga', backref='canchas_list', lazy=True)
 
@@ -802,6 +803,7 @@ class Cancha(db.Model):
             "ligas_count": ligas_count,
             "equipos_count": equipos_count,
             "arbitros": arbitros_asociados,
+            "limite_campos": self.limite_campos or 1,
             "usuarios": [u.to_dict() for u in usuarios_query] if 'usuarios_query' in locals() else []
         }
 

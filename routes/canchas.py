@@ -46,7 +46,8 @@ def add_cancha():
         notas=data.get('notas'),
         foto_url=data.get('foto_url'),
         modalidad=data.get('modalidad', 'Fútbol 7'),
-        liga_id=data.get('liga_id') or session.get('liga_id')
+        liga_id=data.get('liga_id') or session.get('liga_id'),
+        limite_campos=int(data.get('limite_campos', 1)) if user_rol in ['admin', 'ejecutivo'] else 1
     )
     db.session.add(new_cancha)
     db.session.flush() # Para obtener el ID de la nueva cancha
@@ -156,6 +157,10 @@ def update_cancha(id):
     cancha.foto_url = data.get('foto_url', cancha.foto_url)
     cancha.modalidad = data.get('modalidad', cancha.modalidad)
     cancha.activo = data.get('activo', cancha.activo)
+    
+    # === ACTUALIZACIÓN DE LÍMITES ADMINISTRATIVOS ===
+    if session.get('user_rol', '').lower() in ['admin', 'ejecutivo'] and 'limite_campos' in data:
+        cancha.limite_campos = int(data['limite_campos'])
     
     # Hook: Crear o enlazar cuenta de DUEÑO DE CANCHA
     owner_email = data.get('owner_email_custom') or data.get('email_encargado')
@@ -267,13 +272,15 @@ def add_campo(sede_id):
     sede = Cancha.query.get_or_404(sede_id)
     data = request.get_json()
     
-    # === VERIFICACIÓN DE LÍMITES POR PLAN (OPCIÓN A) ===
-    # El usuario dijo: equipo y super_arbitro -> max 1 cancha. dueño de liga -> varias
+    # === VERIFICACIÓN DE LÍMITES ADMINISTRATIVOS ===
     user_rol = session.get('user_rol', '').lower()
     
     current_count = CanchaDetalle.query.filter_by(sede_id=sede_id).count()
-    if user_rol in ['equipo', 'super_arbitro'] and current_count >= 1:
-        return jsonify({"error": "Tu plan amateur solo permite 1 cancha por sede. Haz upgrade a Dueño de Liga para tener canchas múltiples."}), 403
+    limite = sede.limite_campos or 1
+    
+    # Si no es admin, aplicamos el límite estricto
+    if user_rol not in ['admin', 'ejecutivo'] and current_count >= limite:
+        return jsonify({"error": f"Capacidad límite alcanzada. El predio '{sede.nombre}' tiene permiso para {limite} campo(s). Contacta a soporte para expandir la capacidad."}), 403
     
     nuevo_campo = CanchaDetalle(
         sede_id=sede.id,
