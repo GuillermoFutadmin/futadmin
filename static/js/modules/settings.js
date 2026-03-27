@@ -1237,7 +1237,7 @@ export class SettingsModule {
                             <span style="font-size: 0.65rem; color: var(--text-muted); font-weight: 700;">CANCHAS</span>
                             <div style="display: flex; align-items: center; gap: 6px;">
                                 <div style="font-weight: 700;">🥅 ${stats.campos || 0} / ${lid !== 'global' ? (pacote === 'dueño_liga' ? '∞' : (stats.canchas || 1) + (ligaData?.extra_campos || 0)) : '∞'}</div>
-                                ${lid !== 'global' && pacote !== 'dueño_liga' ? `
+                                ${lid !== 'global' ? `
                                 <div style="display: flex; gap: 2px;">
                                     ${['admin','ejecutivo'].includes(window.USER_ROL) ? `<button onclick="ui.settings.updateLigaExtras(${lid}, 'extra_campos', -1)" title="Quitar Capacidad de Cancha (admin only)" style="width:18px; height:18px; border-radius:4px; border:1px solid #ef444455; background:rgba(239,68,68,0.1); color:#ef4444; cursor:pointer; font-size:0.7rem; display:flex; align-items:center; justify-content:center;">-</button>` : ''}
                                     <button onclick="ui.settings.updateLigaExtras(${lid}, 'extra_campos', 1)" title="Añadir Capacidad de Cancha ($0)" style="width:18px; height:18px; border-radius:4px; border:1px solid var(--primary); background:var(--primary-glow); color:var(--primary); cursor:pointer; font-size:0.7rem; display:flex; align-items:center; justify-content:center; font-weight:bold;">+</button>
