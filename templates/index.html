@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <link rel="stylesheet" href="/static/libs/leaflet/leaflet.css">
     <title>futadmin- Administra TU liga 🫵</title>
     <link rel="icon" type="image/png" href="/static/img/logos/futadmin_circle_transp.png">
     <link rel="manifest" href="/static/manifest.json">
@@ -1568,7 +1568,7 @@
     <input type="file" id="global-file-upload" style="display: none;" accept="image/*"
         onchange="Core.handleGlobalFileUpload(event)">
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="" defer></script>
+    <script src="/static/libs/leaflet/leaflet.js" defer></script>
 
     <script src="{{ url_for('static', filename='js/resources/mexico_geo.js') }}" defer></script>
     <script src="{{ url_for('static', filename='js/resources/mexico_geo_data.js') }}" defer></script>
