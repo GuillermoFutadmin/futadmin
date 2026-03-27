@@ -3276,6 +3276,10 @@ def get_torneo_report(id):
             "details": str(e)
         }), 500
 
+@app.route('/dashboard')
+def dashboard_redirect():
+    return redirect(url_for('index'))
+
 @app.route('/')
 def index():
     if 'user_id' not in session:
