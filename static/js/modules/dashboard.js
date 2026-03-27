@@ -485,7 +485,11 @@ export class DashboardModule {
     async renderSchedule() {
         const container = document.getElementById('league-schedule-container');
         try {
-            const data = await Core.fetchAPI(`/api/torneos/${this.currentLeagueId}/partidos`);
+            if (!this._scheduleData || this._scheduleDataLeagueId !== this.currentLeagueId) {
+                this._scheduleData = await Core.fetchAPI(`/api/torneos/${this.currentLeagueId}/partidos`);
+                this._scheduleDataLeagueId = this.currentLeagueId;
+            }
+            const data = this._scheduleData;
 
             // Agrupar por jornada
             const jornadas = {};
@@ -495,144 +499,193 @@ export class DashboardModule {
             });
 
             const maxJornada = Math.max(...Object.keys(jornadas).map(Number), 0);
-            const isKnockout = this.leagueData?.formato === 'Eliminación Directa';
-            const isLeague = !isKnockout; // Liga, Fase de Grupos, etc.
-            const allPlayedInLast = maxJornada > 0 && jornadas[maxJornada].every(p => p.estado === 'Played');
-            const hasPendingSchedule = maxJornada > 0 && jornadas[maxJornada].some(p => p.estado === 'Scheduled' && (!p.fecha || !p.hora));
 
-            // Detect if there are already knockout phases (means liguilla was already started)
-            const hasKnockoutPhases = data.some(p => p.fase && p.fase !== 'Regular' && p.fase !== 'Fase de Grupos' && p.fase !== 'Liga');
-
-            let html = '';
-
-            // Botón para sorteo inicial si no hay partidos
-            if (isKnockout && data.length === 0) {
-                html += `
-                    <div style="grid-column: 1 / -1; padding: 40px; background: rgba(0,255,136,0.05); border-radius: 12px; border: 2px dashed var(--primary); text-align: center; margin: 20px;">
-                        <h2 style="color: var(--primary); margin-bottom: 15px;">🎲 Sorteo Pendiente</h2>
-                        <p style="margin-bottom: 25px; color: var(--text-muted);">Aún no se han generado los enfrentamientos para este torneo. El sistema mezclará a los equipos registrados y programará los horarios automáticamente.</p>
-                        <button class="btn-primary" onclick="ui.dashboard.inicializarTorneo()" style="padding: 15px 30px; font-size: 1rem;">EFECTUAR SORTEO Y PROGRAMAR LLAVES</button>
-                    </div>
-                `;
-            }
-
-            // Botón para avanzar ronda (Eliminación Directa o Liguilla de Liga)
-            if ((isKnockout || (isLeague && hasKnockoutPhases)) && allPlayedInLast && maxJornada > 0) {
-                html += `
-                    <div style="grid-column: 1 / -1; padding: 20px; background: rgba(0,255,136,0.1); border-radius: 12px; border: 1px dashed var(--primary); text-align: center; margin-bottom: 20px;">
-                        <p style="margin-bottom: 10px; font-weight: bold;">✅ Ronda completada</p>
-                        <button class="btn-primary" onclick="ui.dashboard.avanzarRonda()" style="background: var(--primary); color: #000;">GENERAR SIGUIENTE RONDA</button>
-                    </div>
-                `;
-            }
-
-            // Botón de Liguilla para formatos de Liga/Grupos cuando TODOS los juegos de fase regular están jugados
-            if (isLeague && allPlayedInLast && maxJornada > 0 && !hasKnockoutPhases) {
-                html += `
-                    <div style="grid-column: 1 / -1; padding: 20px; background: rgba(255,165,0,0.1); border-radius: 12px; border: 1px dashed orange; text-align: center; margin-bottom: 20px;">
-                        <p style="margin-bottom: 5px; font-weight: bold; color: orange;">🏆 Fase regular completada</p>
-                        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 15px;">Todos los juegos de esta fase han terminado. Puedes iniciar la siguiente fase eliminatoria.</p>
-                        <button class="btn-primary" onclick="ui.dashboard.startLiguilla()" style="background: orange; color: #000; border-color: orange;">INICIAR LIGUILLA / SIGUIENTE FASE</button>
-                    </div>
-                `;
-            }
-
-            // Botón azul de emergencia: Si se generó una nueva ronda pero los juegos no tienen horario assignado
-            if (hasPendingSchedule) {
-                html += `
-                    <div style="grid-column: 1 / -1; padding: 20px; background: rgba(59,130,246,0.1); border-radius: 12px; border: 1px dashed #3b82f6; text-align: center; margin-bottom: 20px;">
-                        <p style="margin-bottom: 10px; font-weight: bold;">📅 Nuevos encuentros sin programar</p>
-                        <button class="btn-primary" onclick="ui.dashboard.inicializarTorneo()" style="background: #3b82f6; color: #fff; border-color: #3b82f6;">INICIO DE SIGUIENTE RONDA (Programar Horarios)</button>
-                    </div>
-                `;
-            }
-
-            Object.keys(jornadas).sort((a, b) => b - a).forEach(j => {
-                const p0 = jornadas[j][0];
-                let faseName = `JORNADA ${j}`;
-                if (p0.fase && p0.fase !== 'Regular' && p0.fase !== 'Fase de Grupos') {
-                    faseName = `JORNADA ${j} - ${p0.fase}`;
-                } else if (p0.fase === 'Fase de Grupos') {
-                    faseName = `JORNADA ${j} - FASE DE GRUPOS`;
+            // --- FILTRO DE JORNADAS ---
+            const filterContainer = document.getElementById('jornadas-filter-container');
+            if (filterContainer) {
+                if (filterContainer.dataset.league !== this.currentLeagueId) {
+                    filterContainer.dataset.league = this.currentLeagueId;
+                    const sortedJ = Object.keys(jornadas).sort((a,b) => b - a);
+                    let filterHtml = '';
+                    sortedJ.forEach(j => {
+                        const isChecked = (parseInt(j) === maxJornada) ? 'checked' : '';
+                        filterHtml += `
+                            <label style="display: inline-flex; align-items: center; gap: 5px; background: rgba(0,0,0,0.3); padding: 5px 12px; border-radius: 20px; cursor: pointer; border: 1px solid rgba(255,255,255,0.1); user-select: none;">
+                                <input type="checkbox" class="jornada-dashboard-checkbox" value="${j}" ${isChecked} onchange="ui.dashboard.renderFilteredSchedule()">
+                                Jornada ${j}
+                            </label>
+                        `;
+                    });
+                    filterContainer.innerHTML = filterHtml;
                 }
+            }
 
-                html += `<div style="grid-column: 1 / -1; margin-top: 20px;"><p class="section-title">${faseName.toUpperCase()}</p></div>`;
-                jornadas[j].forEach(p => {
-                    const isPlayed = p.estado === 'Played';
-                    const isLive = p.estado === 'Live';
-                    const hasPenalties = p.penales_local !== null;
-                    const showTooltip = isPlayed || isLive;
+            this.renderFilteredSchedule();
+        } catch (e) {
+            console.error(e);
+            container.innerHTML = '<p class="text-error">Error al cargar jornadas</p>';
+        }
+    }
 
-                    const leagueColor = this.leagueData?.color || 'var(--primary)';
-                    html += `
-                        <div class="stat-card match-card premium-card" data-match-id="${p.id}" style="position: relative;">
-                            <div class="combo-indicator" style="background: ${leagueColor};"></div>
-                            <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:var(--text-muted); margin-bottom:10px;">
-                                <span>${p.fecha || ''} ${p.hora || ''}</span>
-                                <span style="color: ${isPlayed ? 'var(--primary)' : (isLive ? '#ff8c00' : 'var(--text-muted)')}">
-                                    ${p.estado === 'Played' ? 'Finalizado' : (p.estado === 'Live' ? 'En Vivo' : (p.estado === 'Scheduled' ? 'Programado' : p.estado))}
-                                </span>
-                            </div>
-                            <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
-                                <div style="text-align:center; flex:1">
-                                    <img src="${p.equipo_local_escudo || ''}" class="shield-placeholder" style="width:30px; height:30px; object-fit:contain" onerror="this.src='https://cdn-icons-png.flaticon.com/512/53/53283.png'"><br>
-                                    <span style="font-size:0.8rem; ${p.ganador_id === p.equipo_local_id ? 'font-weight:bold; color:var(--primary)' : ''}">${p.equipo_local}</span>
-                                </div>
-                                <div style="text-align:center;">
-                                    <div style="font-size:1.5rem; font-weight:bold; display:flex; gap:8px;">
-                                        ${isPlayed ? `<span>${(p.goles_local === null || p.goles_local === 'null') ? 0 : p.goles_local}</span><span>-</span><span>${(p.goles_visitante === null || p.goles_visitante === 'null') ? 0 : p.goles_visitante}</span>` : '<span>VS</span>'}
-                                    </div>
-                                    ${hasPenalties ? `<div style="font-size:0.7rem; color:var(--text-muted)">Pen: ${(p.penales_local === null || p.penales_local === 'null') ? 0 : p.penales_local}-${(p.penales_visitante === null || p.penales_visitante === 'null') ? 0 : p.penales_visitante}</div>` : ''}
-                                </div>
-                                <div style="text-align:center; flex:1">
-                                    <img src="${p.equipo_visitante_escudo || ''}" class="shield-placeholder" style="width:30px; height:30px; object-fit:contain" onerror="this.src='https://cdn-icons-png.flaticon.com/512/53/53283.png'"><br>
-                                    <span style="font-size:0.8rem; ${p.ganador_id === p.equipo_visitante_id ? 'font-weight:bold; color:var(--primary)' : ''}">${p.equipo_visitante}</span>
-                                </div>
-                            </div>
-                            ${showTooltip ? `<div class="match-tooltip" id="tooltip-${p.id}"><span class="tooltip-loading">⏳ Cargando detalles...</span></div>` : ''}
+    renderFilteredSchedule() {
+        const container = document.getElementById('league-schedule-container');
+        if (!container) return;
+        
+        const filterBoxes = document.querySelectorAll('.jornada-dashboard-checkbox:checked');
+        const selectedJornadas = Array.from(filterBoxes).map(cb => Number(cb.value));
+
+        const data = this._scheduleData || [];
+        
+        const jornadas = {};
+        data.forEach(p => {
+            if (!jornadas[p.jornada]) jornadas[p.jornada] = [];
+            jornadas[p.jornada].push(p);
+        });
+        
+        const isKnockout = this.leagueData?.formato === 'Eliminación Directa';
+        const isLeague = !isKnockout;
+        const maxJornada = Math.max(...Object.keys(jornadas).map(Number), 0);
+        const allPlayedInLast = maxJornada > 0 && jornadas[maxJornada] && jornadas[maxJornada].every(p => p.estado === 'Played');
+        const hasPendingSchedule = maxJornada > 0 && jornadas[maxJornada] && jornadas[maxJornada].some(p => p.estado === 'Scheduled' && (!p.fecha || !p.hora));
+        const hasKnockoutPhases = data.some(p => p.fase && p.fase !== 'Regular' && p.fase !== 'Fase de Grupos' && p.fase !== 'Liga');
+
+        let html = '';
+
+        if (isKnockout && data.length === 0) {
+            html += `
+                <div style="grid-column: 1 / -1; padding: 40px; background: rgba(0,255,136,0.05); border-radius: 12px; border: 2px dashed var(--primary); text-align: center; margin: 20px;">
+                    <h2 style="color: var(--primary); margin-bottom: 15px;">🎲 Sorteo Pendiente</h2>
+                    <p style="margin-bottom: 25px; color: var(--text-muted);">Aún no se han generado los enfrentamientos para este torneo. El sistema mezclará a los equipos registrados y programará los horarios automáticamente.</p>
+                    <button class="btn-primary" onclick="ui.dashboard.inicializarTorneo()" style="padding: 15px 30px; font-size: 1rem;">EFECTUAR SORTEO Y PROGRAMAR LLAVES</button>
+                </div>
+            `;
+        }
+
+        if ((isKnockout || (isLeague && hasKnockoutPhases)) && allPlayedInLast && maxJornada > 0) {
+            html += `
+                <div style="grid-column: 1 / -1; padding: 20px; background: rgba(0,255,136,0.1); border-radius: 12px; border: 1px dashed var(--primary); text-align: center; margin-bottom: 20px;">
+                    <p style="margin-bottom: 10px; font-weight: bold;">✅ Ronda completada</p>
+                    <button class="btn-primary" onclick="ui.dashboard.avanzarRonda()" style="background: var(--primary); color: #000;">GENERAR SIGUIENTE RONDA</button>
+                </div>
+            `;
+        }
+
+        if (isLeague && allPlayedInLast && maxJornada > 0 && !hasKnockoutPhases) {
+            html += `
+                <div style="grid-column: 1 / -1; padding: 20px; background: rgba(255,165,0,0.1); border-radius: 12px; border: 1px dashed orange; text-align: center; margin-bottom: 20px;">
+                    <p style="margin-bottom: 5px; font-weight: bold; color: orange;">🏆 Fase regular completada</p>
+                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 15px;">Todos los juegos de esta fase han terminado. Puedes iniciar la siguiente fase eliminatoria.</p>
+                    <button class="btn-primary" onclick="ui.dashboard.startLiguilla()" style="background: orange; color: #000; border-color: orange;">INICIAR LIGUILLA / SIGUIENTE FASE</button>
+                </div>
+            `;
+        }
+
+        if (hasPendingSchedule) {
+            html += `
+                <div style="grid-column: 1 / -1; padding: 20px; background: rgba(59,130,246,0.1); border-radius: 12px; border: 1px dashed #3b82f6; text-align: center; margin-bottom: 20px;">
+                    <p style="margin-bottom: 10px; font-weight: bold;">📅 Nuevos encuentros sin programar</p>
+                    <button class="btn-primary" onclick="ui.dashboard.inicializarTorneo()" style="background: #3b82f6; color: #fff; border-color: #3b82f6;">INICIO DE SIGUIENTE RONDA (Programar Horarios)</button>
+                </div>
+            `;
+        }
+
+        if (selectedJornadas.length === 0 && data.length > 0) {
+            html += '<p class="text-muted" style="grid-column: 1 / -1; text-align: center; margin-top: 20px;">Por favor, selecciona al menos una jornada en el filtro superior para ver los partidos.</p>';
+        }
+
+        Object.keys(jornadas).sort((a, b) => b - a).forEach(j => {
+            if (selectedJornadas.length > 0 && !selectedJornadas.includes(Number(j))) return; // Omitir no seleccionadas
+
+            const p0 = jornadas[j][0];
+            let faseName = `JORNADA ${j}`;
+            if (p0.fase && p0.fase !== 'Regular' && p0.fase !== 'Fase de Grupos') {
+                faseName = `JORNADA ${j} - ${p0.fase}`;
+            } else if (p0.fase === 'Fase de Grupos') {
+                faseName = `JORNADA ${j} - FASE DE GRUPOS`;
+            }
+
+            html += `<div style="grid-column: 1 / -1; margin-top: 20px;"><p class="section-title">${faseName.toUpperCase()}</p></div>`;
+            jornadas[j].forEach(p => {
+                const isPlayed = p.estado === 'Played';
+                const isLive = p.estado === 'Live';
+                const hasPenalties = p.penales_local !== null;
+                const showTooltip = isPlayed || isLive;
+
+                const leagueColor = this.leagueData?.color || 'var(--primary)';
+                html += `
+                    <div class="stat-card match-card premium-card" data-match-id="${p.id}" style="position: relative;">
+                        <div class="combo-indicator" style="background: ${leagueColor};"></div>
+                        <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:var(--text-muted); margin-bottom:10px;">
+                            <span>${p.fecha || ''} ${p.hora || ''}</span>
+                            <span style="color: ${isPlayed ? 'var(--primary)' : (isLive ? '#ff8c00' : 'var(--text-muted)')}">
+                                ${p.estado === 'Played' ? 'Finalizado' : (p.estado === 'Live' ? 'En Vivo' : (p.estado === 'Scheduled' ? 'Programado' : p.estado))}
+                            </span>
                         </div>
-                    `;
-                });
+                        <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+                            <div style="text-align:center; flex:1">
+                                <img src="${p.equipo_local_escudo || ''}" class="shield-placeholder" style="width:30px; height:30px; object-fit:contain" onerror="this.src='https://cdn-icons-png.flaticon.com/512/53/53283.png'"><br>
+                                <span style="font-size:0.8rem; ${p.ganador_id === p.equipo_local_id ? 'font-weight:bold; color:var(--primary)' : ''}">${p.equipo_local}</span>
+                            </div>
+                            <div style="text-align:center;">
+                                <div style="font-size:1.5rem; font-weight:bold; display:flex; gap:8px;">
+                                    ${isPlayed ? `<span>${(p.goles_local === null || p.goles_local === 'null') ? 0 : p.goles_local}</span><span>-</span><span>${(p.goles_visitante === null || p.goles_visitante === 'null') ? 0 : p.goles_visitante}</span>` : '<span>VS</span>'}
+                                </div>
+                                ${hasPenalties ? `<div style="font-size:0.7rem; color:var(--text-muted)">Pen: ${(p.penales_local === null || p.penales_local === 'null') ? 0 : p.penales_local}-${(p.penales_visitante === null || p.penales_visitante === 'null') ? 0 : p.penales_visitante}</div>` : ''}
+                            </div>
+                            <div style="text-align:center; flex:1">
+                                <img src="${p.equipo_visitante_escudo || ''}" class="shield-placeholder" style="width:30px; height:30px; object-fit:contain" onerror="this.src='https://cdn-icons-png.flaticon.com/512/53/53283.png'"><br>
+                                <span style="font-size:0.8rem; ${p.ganador_id === p.equipo_visitante_id ? 'font-weight:bold; color:var(--primary)' : ''}">${p.equipo_visitante}</span>
+                            </div>
+                        </div>
+                        ${showTooltip ? `<div class="match-tooltip" id="tooltip-${p.id}"><span class="tooltip-loading">⏳ Cargando detalles...</span></div>` : ''}
+                    </div>
+                `;
+            });
+        });
+
+        container.innerHTML = html || (data.length === 0 ? '<p class="text-muted">No hay partidos programados</p>' : '');
+
+        // Attach hover events after DOM insertion
+        container.querySelectorAll('.match-card[data-match-id]').forEach(card => {
+            const matchId = card.dataset.matchId;
+            const tooltip = card.querySelector('.match-tooltip');
+            if (!tooltip) return; // only Played / Live cards have tooltip
+
+            card.addEventListener('mouseenter', async () => {
+                // Ensure the card being hovered has a higher z-index than its neighbors
+                card.style.zIndex = '1000';
+
+                // Detect viewport position to show tooltip on top if near bottom
+                const rect = card.getBoundingClientRect();
+                const spaceBelow = window.innerHeight - rect.bottom;
+                if (spaceBelow < 250) { // If less than 250px below, show on top
+                    tooltip.classList.add('on-top');
+                } else {
+                    tooltip.classList.remove('on-top');
+                }
+                if (this._matchDetailsCache[matchId]) {
+                    this._renderTooltipContent(tooltip, this._matchDetailsCache[matchId]);
+                    return;
+                }
+                try {
+                    const data = await Core.fetchAPI(`/api/partido/${matchId}/detalles`);
+                    this._matchDetailsCache[matchId] = data;
+                    this._renderTooltipContent(tooltip, data);
+                } catch (e) {
+                    tooltip.innerHTML = '<span class="tooltip-empty">Error al cargar datos</span>';
+                }
             });
 
-            container.innerHTML = html || '<p class="text-muted">No hay partidos programados</p>';
-
-            // Attach hover events after DOM insertion
-            container.querySelectorAll('.match-card[data-match-id]').forEach(card => {
-                const matchId = card.dataset.matchId;
-                const tooltip = card.querySelector('.match-tooltip');
-                if (!tooltip) return; // only Played / Live cards have tooltip
-
-                card.addEventListener('mouseenter', async () => {
-                    // Ensure the card being hovered has a higher z-index than its neighbors
-                    card.style.zIndex = '1000';
-
-                    // Detect viewport position to show tooltip on top if near bottom
-                    const rect = card.getBoundingClientRect();
-                    const spaceBelow = window.innerHeight - rect.bottom;
-                    if (spaceBelow < 250) { // If less than 250px below, show on top
-                        tooltip.classList.add('on-top');
-                    } else {
-                        tooltip.classList.remove('on-top');
-                    }
-                    if (this._matchDetailsCache[matchId]) {
-                        this._renderTooltipContent(tooltip, this._matchDetailsCache[matchId]);
-                        return;
-                    }
-                    try {
-                        const data = await Core.fetchAPI(`/api/partido/${matchId}/detalles`);
-                        this._matchDetailsCache[matchId] = data;
-                        this._renderTooltipContent(tooltip, data);
-                    } catch (e) {
-                        tooltip.innerHTML = '<span class="tooltip-empty">Error al cargar datos</span>';
-                    }
-                });
-
-                card.addEventListener('mouseleave', () => {
-                    card.style.zIndex = '';
-                });
+            card.addEventListener('mouseleave', () => {
+                card.style.zIndex = '';
             });
-        } catch (e) { container.innerHTML = '<p class="text-error">Error al cargar jornadas</p>'; }
+        });
+    }
+
+    selectAllJornadas() {
+        const checkboxes = document.querySelectorAll('.jornada-dashboard-checkbox');
+        checkboxes.forEach(cb => cb.checked = true);
+        this.renderFilteredSchedule();
     }
 
     async avanzarRonda() {

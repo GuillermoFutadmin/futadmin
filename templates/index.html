@@ -235,6 +235,15 @@
                 </div>
 
                 <div id="dash-view-rol" class="dash-tab-content" style="display: none;">
+                    <div style="background: rgba(255,255,255,0.03); padding: 15px; border-radius: 12px; margin-bottom: 20px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <p class="section-title" style="margin: 0;">SELECCIONAR JORNADAS</p>
+                            <button class="btn-secondary" style="padding: 4px 10px; font-size: 0.7rem;" onclick="ui.dashboard.selectAllJornadas()">Seleccionar Todas</button>
+                        </div>
+                        <div id="jornadas-filter-container" style="display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px; white-space: nowrap;">
+                            <!-- Checkboxes generados dinámicamente -->
+                        </div>
+                    </div>
                     <div id="league-schedule-container" class="leagues-grid">
                         <p class="text-muted">Cargando jornadas...</p>
                     </div>
