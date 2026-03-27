@@ -17,6 +17,7 @@ import { AnalyticsModule } from './modules/analytics.js?v=60';
 import { PrivacyModule } from './modules/privacy.js?v=51';
 import { DashboardMap } from './modules/dashboard_map.js?v=51';
 import { MarketingModule } from './modules/marketing.js?v=51';
+import { Perfil } from './modules/perfil.js?v=60';
 
 class FutAdminUI {
     constructor() {
@@ -42,9 +43,10 @@ class FutAdminUI {
         this.privacy = new PrivacyModule(this);
         this.map = new DashboardMap();
         this.marketing = new MarketingModule(this);
+        this.perfil = Perfil;
+        this.perfil.init();
 
         this.initEventListeners();
-        this.loadInitialStats();
         this.dashboard.init(); // Cargar selector de ligas desde el inicio
 
 
@@ -363,8 +365,8 @@ class FutAdminUI {
     }
 }
 
-export let ui;
+export const ui = new FutAdminUI();
 // Inicializar la App
 document.addEventListener('DOMContentLoaded', () => {
-    ui = new FutAdminUI();
+    // ui already initialized
 });
