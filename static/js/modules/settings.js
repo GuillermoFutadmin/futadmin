@@ -1184,9 +1184,9 @@ export class SettingsModule {
                             </div>
                             <!-- Desglose de Extras -->
                             ${(ligaData?.extra_canchas > 0 || ligaData?.extra_torneos > 0) ? `
-                            <div style="font-size:0.6rem; color:var(--text-muted); margin-top: 4px; display: flex; gap: 8px;">
-                                ${ligaData?.extra_canchas > 0 ? `<span style="border-left: 2px solid ${combo.color}; padding-left: 4px;">+${ligaData.extra_canchas} Sedes (+$${(ligaData.extra_canchas * 290).toFixed(0)})</span>` : ''}
-                                ${ligaData?.extra_torneos > 0 ? `<span style="border-left: 2px solid ${combo.color}; padding-left: 4px;">+${ligaData.extra_torneos} Ligas (+$${(ligaData.extra_torneos * 85).toFixed(0)})</span>` : ''}
+                            <div style="font-size:0.6rem; color:var(--text-muted); margin-top: 4px; display: flex; gap: 8px; flex-wrap: wrap;">
+                                ${ligaData?.extra_canchas > 0 ? `<span style="border-left: 2px solid ${combo.color}; padding-left: 4px;">+${ligaData.extra_canchas} Sede${ligaData.extra_canchas > 1 ? 's' : ''} extra</span>` : ''}
+                                ${ligaData?.extra_torneos > 0 ? `<span style="border-left: 2px solid ${combo.color}; padding-left: 4px;">+${ligaData.extra_torneos} Liga${ligaData.extra_torneos > 1 ? 's' : ''} extra</span>` : ''}
                             </div>` : ''}
                         </div>
                         <div style="display:flex; gap:6px; align-items:center; flex-shrink: 0;">
