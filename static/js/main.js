@@ -1,19 +1,19 @@
 /**
  * Punto de entrada principal - FutAdmin ESM
  */
-import { Core } from './modules/core.js?v=57';
-import { LeaguesModule } from './modules/leagues.js?v=57';
-import { TeamsModule } from './modules/teams.js?v=57';
-import { PlayersModule } from './modules/players.js?v=57';
-import { FinanceModule } from './modules/finance.js?v=57';
-import { ArbitrosModule } from './modules/arbitros.js?v=57';
+import { Core } from './modules/core.js?v=58';
+import { LeaguesModule } from './modules/leagues.js?v=58';
+import { TeamsModule } from './modules/teams.js?v=58';
+import { PlayersModule } from './modules/players.js?v=58';
+import { FinanceModule } from './modules/finance.js?v=58';
+import { ArbitrosModule } from './modules/arbitros.js?v=58';
 import { DashboardModule } from './modules/dashboard.js?v=51';
 import EntrenamientosModule from './modules/entrenamientos.js?v=51';
 import PagosAcademiaModule from './modules/pagos-academia.js?v=51';
-import { CanchasModule } from './modules/canchas.js?v=57';
+import { CanchasModule } from './modules/canchas.js?v=58';
 import { PagosCanchasModule } from './modules/pagos-canchas.js?v=51';
-import { SettingsModule } from './modules/settings.js?v=57';
-import { AnalyticsModule } from './modules/analytics.js?v=57';
+import { SettingsModule } from './modules/settings.js?v=58';
+import { AnalyticsModule } from './modules/analytics.js?v=58';
 import { PrivacyModule } from './modules/privacy.js?v=51';
 import { DashboardMap } from './modules/dashboard_map.js?v=51';
 import { MarketingModule } from './modules/marketing.js?v=51';

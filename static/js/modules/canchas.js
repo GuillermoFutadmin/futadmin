@@ -545,14 +545,7 @@ export class CanchasModule {
             }
         }
         
-        // Toggle de permisos admin para límite de campos en la sede
-        const userRolFallback = String(window.USER_ROL || '').toLowerCase().replace('ñ', 'n');
-        const isAdminForUI = userRolFallback === 'admin' || userRolFallback === 'ejecutivo';
-        
-        const adminContainer = document.getElementById('admin-limite-campos-container');
-        if (adminContainer) {
-            adminContainer.style.display = isAdminForUI ? 'flex' : 'none';
-        }
+
         
         const form = document.getElementById('cancha-form');
         form.reset();
@@ -586,16 +579,11 @@ export class CanchasModule {
                 
                 document.getElementById('cancha-notas').value = c.notas;
                 document.getElementById('cancha-foto').value = c.foto_url || '';
-                
-                if (isAdminForUI && document.getElementById('cancha-limite-campos')) {
-                    document.getElementById('cancha-limite-campos').value = c.limite_campos || 1;
-                }
+
             }
         } else {
             document.getElementById('cancha-estado').value = '';
-            if (isAdminForUI && document.getElementById('cancha-limite-campos')) {
-                document.getElementById('cancha-limite-campos').value = 1;
-            }
+
             this.handleEstadoChange();
         }
 
@@ -624,13 +612,7 @@ export class CanchasModule {
             liga_id: document.getElementById('cancha-liga-id').value || null
         };
 
-        const userRol = String(window.USER_ROL || '').toLowerCase().replace('ñ', 'n');
-        if (userRol === 'admin' || userRol === 'ejecutivo') {
-            const limiteEl = document.getElementById('cancha-limite-campos');
-            if (limiteEl && limiteEl.value) {
-                data.limite_campos = parseInt(limiteEl.value, 10);
-            }
-        }
+
 
         const method = id ? 'PUT' : 'POST';
         const url = id ? `/api/canchas/${id}` : '/api/canchas';
