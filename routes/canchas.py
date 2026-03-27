@@ -28,6 +28,9 @@ def add_cancha():
     liga_id = session.get('liga_id')
     user_rol = session.get('user_rol')
     
+    if user_rol not in ['dueño_liga', 'dueño_cancha', 'super_arbitro', 'equipo', 'admin', 'ejecutivo']:
+        return jsonify({"error": "No tienes permisos para agregar sedes"}), 403
+        
     can_create, msg = check_canchas_limit(liga_id, user_rol)
     if not can_create:
         return jsonify({"error": msg}), 403
@@ -141,6 +144,10 @@ def add_cancha():
 @canchas_bp.route('/api/canchas/<int:id>', methods=['PUT'])
 def update_cancha(id):
     cancha = Cancha.query.get_or_404(id)
+    user_rol = session.get('user_rol')
+    if user_rol not in ['dueño_liga', 'dueño_cancha', 'super_arbitro', 'equipo', 'admin', 'ejecutivo']:
+        return jsonify({"error": "No tienes permisos para editar sedes"}), 403
+        
     data = request.get_json()
     
     cancha.nombre = data.get('nombre', cancha.nombre)
@@ -248,6 +255,10 @@ def update_cancha(id):
 
 @canchas_bp.route('/api/canchas/<int:id>', methods=['DELETE'])
 def delete_cancha(id):
+    user_rol = session.get('user_rol')
+    if user_rol not in ['dueño_liga', 'dueño_cancha', 'super_arbitro', 'equipo', 'admin', 'ejecutivo']:
+        return jsonify({"error": "No tienes permisos para eliminar sedes"}), 403
+        
     cancha = Cancha.query.get_or_404(id)
     db.session.delete(cancha)
     db.session.commit()
@@ -275,6 +286,9 @@ def add_campo(sede_id):
     # === VERIFICACIÓN DE LÍMITES ADMINISTRATIVOS ===
     user_rol = session.get('user_rol', '').lower()
     
+    if user_rol not in ['dueño_liga', 'dueño_cancha', 'super_arbitro', 'equipo', 'admin', 'ejecutivo']:
+        return jsonify({"error": "No tienes permisos para agregar campos"}), 403
+        
     current_count = CanchaDetalle.query.filter_by(sede_id=sede_id).count()
     
     # Nueva validación basada en el pool global de la liga
@@ -300,6 +314,10 @@ def add_campo(sede_id):
 
 @canchas_bp.route('/api/campos/<int:campo_id>', methods=['PUT'])
 def update_campo(campo_id):
+    user_rol = session.get('user_rol')
+    if user_rol not in ['dueño_liga', 'dueño_cancha', 'super_arbitro', 'equipo', 'admin', 'ejecutivo']:
+        return jsonify({"error": "No tienes permisos para editar campos"}), 403
+        
     campo = CanchaDetalle.query.get_or_404(campo_id)
     data = request.get_json()
     
@@ -316,6 +334,10 @@ def update_campo(campo_id):
 
 @canchas_bp.route('/api/campos/<int:campo_id>', methods=['DELETE'])
 def delete_campo(campo_id):
+    user_rol = session.get('user_rol')
+    if user_rol not in ['dueño_liga', 'dueño_cancha', 'super_arbitro', 'equipo', 'admin', 'ejecutivo']:
+        return jsonify({"error": "No tienes permisos para eliminar campos"}), 403
+        
     campo = CanchaDetalle.query.get_or_404(campo_id)
     db.session.delete(campo)
     db.session.commit()

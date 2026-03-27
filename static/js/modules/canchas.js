@@ -59,13 +59,16 @@ export class CanchasModule {
         const container = document.getElementById('campos-container');
         if (!container) return;
 
+        const userRol = (window.USER_ROL || '').toLowerCase().replace('ñ', 'n');
+        const canManage = ['dueno_liga', 'dueno_cancha', 'super_arbitro', 'equipo', 'admin', 'ejecutivo'].includes(userRol);
+
         if (campos.length === 0) {
             container.innerHTML = `
                 <div style="text-align:center; padding:4rem; background:var(--card-bg); border-radius:20px; border:1px dashed var(--border); grid-column:1/-1;">
                     <div style="font-size:3rem; margin-bottom:1rem;">🥅</div>
                     <h4>No tienes canchas registradas</h4>
                     <p class="text-muted">Primero crea una Sede, luego agrega sus canchas individuales desde el botón de abajo.</p>
-                    <button class="btn-primary" onclick="ui.canchas.showModalCampo()" style="margin-top:1rem;">+ Nueva Cancha</button>
+                    ${canManage ? `<button class="btn-primary" onclick="ui.canchas.showModalCampo()" style="margin-top:1rem;">+ Nueva Cancha</button>` : ''}
                 </div>`;
             return;
         }
@@ -79,7 +82,7 @@ export class CanchasModule {
                             <th style="padding:12px 20px; color:var(--text-muted); font-size:0.75rem; text-transform:uppercase;">Sede / Predio</th>
                             <th style="padding:12px 20px; color:var(--text-muted); font-size:0.75rem; text-transform:uppercase;">Modalidad</th>
                             <th style="padding:12px 20px; color:var(--text-muted); font-size:0.75rem; text-transform:uppercase;">Estado</th>
-                            <th style="padding:12px 20px; color:var(--text-muted); font-size:0.75rem; text-transform:uppercase; text-align:right;">Acciones</th>
+                            ${canManage ? `<th style="padding:12px 20px; color:var(--text-muted); font-size:0.75rem; text-transform:uppercase; text-align:right;">Acciones</th>` : ''}
                         </tr>
                     </thead>
                     <tbody>
@@ -98,11 +101,13 @@ export class CanchasModule {
                                         ${c.activa ? 'ACTIVA' : 'INACTIVA'}
                                     </span>
                                 </td>
+                                ${canManage ? `
                                 <td style="padding:14px 20px; text-align:right;">
                                     <button class="btn-action" onclick="ui.canchas.toggleCampoStatus(${c.id}, ${c.activa})" title="${c.activa ? 'Desactivar Cancha' : 'Activar Cancha'}" style="background: none; border: 1px solid var(--border); color: ${c.activa ? '#ef4444' : 'var(--primary)'}; padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; cursor: pointer;">
                                         ${c.activa ? '⛔ Desactivar' : '✅ Activar'}
                                     </button>
                                 </td>
+                                ` : ''}
                             </tr>
                         `).join('')}
                     </tbody>
@@ -147,11 +152,14 @@ export class CanchasModule {
         const btn = document.getElementById('btn-nueva-cancha');
         if (!btn) return;
         
-        const userRol = (window.USER_ROL || '').toLowerCase();
+        const userRol = (window.USER_ROL || '').toLowerCase().replace('ñ', 'n');
+        const canManage = ['dueno_liga', 'dueno_cancha', 'super_arbitro', 'equipo', 'admin', 'ejecutivo'].includes(userRol);
 
-        // Si el usuario es de solo vista o árbitro, ocultar botón siempre
-        if (userRol === 'resultados' || userRol === 'arbitro' || userRol === 'solo vista') {
+        // Si el usuario no es dueño, ocultar botones siempre
+        if (!canManage) {
             btn.style.display = 'none';
+            const btnIndiv = document.getElementById('btn-nueva-cancha-individual');
+            if (btnIndiv) btnIndiv.style.display = 'none';
             return;
         }
 
@@ -184,8 +192,8 @@ export class CanchasModule {
         // Si no se pasa nada, usamos la lista completa guardada
         const list = canchasToRender || this.canchas;
 
-        const userRol = (window.USER_ROL || '').toLowerCase();
-        const canCreate = !['resultados', 'arbitro', 'solo vista'].includes(userRol);
+        const userRol = (window.USER_ROL || '').toLowerCase().replace('ñ', 'n');
+        const canManage = ['dueno_liga', 'dueno_cancha', 'super_arbitro', 'equipo', 'admin', 'ejecutivo'].includes(userRol);
 
         if (list.length === 0) {
             container.innerHTML = `
@@ -193,7 +201,7 @@ export class CanchasModule {
                     <div style="font-size: 3rem; margin-bottom: 1rem;">🏟️</div>
                     <h4>No se encontraron sedes</h4>
                     <p class="text-muted">${canchasToRender ? 'No hay sedes que coincidan con tu búsqueda.' : 'Comienza agregando tu primera sede o complejo deportivo.'}</p>
-                    ${canCreate && !canchasToRender ? `
+                    ${canManage && !canchasToRender ? `
                         <button class="btn-primary" onclick="ui.canchas.showModal()" style="margin-top: 1rem;">+ Nueva Sede</button>
                     ` : ''}
                 </div>
@@ -312,7 +320,7 @@ export class CanchasModule {
                 </div>
 
                 <div class="card-footer" onclick="event.stopPropagation()" style="display: flex; flex-direction: column; gap: 10px; padding: 15px; border-top: 1px solid rgba(255,255,255,0.05);">
-                    ${window.USER_ROL !== 'resultados' && window.USER_ROL !== 'arbitro' ? `
+                    ${canManage ? `
                     <div style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
                         <button onclick="ui.canchas.goToLeagues('${c.nombre}')" style="width: 100%; padding: 10px; background: rgba(59,130,246,0.1); color: #3b82f6; border: 1px solid rgba(59,130,246,0.2); border-radius: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
                             <span>🏆</span> Ir a Ligas
