@@ -144,14 +144,12 @@ export class TeamsModule {
                 ${!isReader ? `<div style="margin-bottom: 20px; display: flex; gap: 10px;"></div>` : ''}
                 <p>Cargando equipos...</p>
             `;
-        } else {
-            container.innerHTML = `<p>Cargando página ${page}...</p>`;
         }
 
         try {
-            const response = await Core.fetchAPI(`/api/equipos?torneo_id=${torneoId}&page=${page}`);
+            const response = await Core.fetchAPI(`/api/equipos?torneo_id=${torneoId}&per_page=1000`);
             const equipos = response.items || response;
-            this.pagination = response.pagination || null;
+            this.pagination = null;
 
             let html = equipos.length ? equipos.map(e => `
                 <div class="league-card" style="padding: 1.5rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; cursor: pointer; min-height: 140px; border-left: 4px solid ${e.color || 'var(--primary)'};" onclick="ui.teams.goToJugadores(${e.id})">
@@ -188,15 +186,7 @@ export class TeamsModule {
 
             container.innerHTML = html;
 
-            if (this.pagination && this.pagination.total_pages > 1) {
-                container.innerHTML += `
-                    <div class="pagination-controls">
-                        <button class="btn-pagination" ${!this.pagination.has_prev ? 'disabled' : ''} onclick="ui.teams.changePage(${this.pagination.page - 1})">&laquo; Anterior</button>
-                        <span class="pagination-info">Página ${this.pagination.page} de ${this.pagination.total_pages}</span>
-                        <button class="btn-pagination" ${!this.pagination.has_next ? 'disabled' : ''} onclick="ui.teams.changePage(${this.pagination.page + 1})">Siguiente &raquo;</button>
-                    </div>
-                `;
-            }
+
         } catch (error) {
             container.innerHTML = '<p class="error">Error al cargar equipos.</p>';
         }
