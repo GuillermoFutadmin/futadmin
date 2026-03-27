@@ -2,24 +2,28 @@
  * Punto de entrada principal - FutAdmin ESM
  */
 import { Core } from './modules/core.js';
-import { LeaguesModule } from './modules/leagues.js?v=49';
-import { TeamsModule } from './modules/teams.js?v=49';
-import { PlayersModule } from './modules/players.js?v=49';
-import { FinanceModule } from './modules/finance.js?v=50';
-import { ArbitrosModule } from './modules/arbitros.js?v=49';
-import { DashboardModule } from './modules/dashboard.js?v=49';
-import EntrenamientosModule from './modules/entrenamientos.js?v=49';
-import PagosAcademiaModule from './modules/pagos-academia.js?v=49';
-import { CanchasModule } from './modules/canchas.js?v=50';
-import { PagosCanchasModule } from './modules/pagos-canchas.js?v=49';
-import { SettingsModule } from './modules/settings.js';
-import { AnalyticsModule } from './modules/analytics.js';
-import { PrivacyModule } from './modules/privacy.js';
-import { DashboardMap } from './modules/dashboard_map.js';
-import { MarketingModule } from './modules/marketing.js';
+import { LeaguesModule } from './modules/leagues.js?v=51';
+import { TeamsModule } from './modules/teams.js?v=51';
+import { PlayersModule } from './modules/players.js?v=51';
+import { FinanceModule } from './modules/finance.js?v=51';
+import { ArbitrosModule } from './modules/arbitros.js?v=51';
+import { DashboardModule } from './modules/dashboard.js?v=51';
+import EntrenamientosModule from './modules/entrenamientos.js?v=51';
+import PagosAcademiaModule from './modules/pagos-academia.js?v=51';
+import { CanchasModule } from './modules/canchas.js?v=51';
+import { PagosCanchasModule } from './modules/pagos-canchas.js?v=51';
+import { SettingsModule } from './modules/settings.js?v=51';
+import { AnalyticsModule } from './modules/analytics.js?v=51';
+import { PrivacyModule } from './modules/privacy.js?v=51';
+import { DashboardMap } from './modules/dashboard_map.js?v=51';
+import { MarketingModule } from './modules/marketing.js?v=51';
 
 class FutAdminUI {
     constructor() {
+        // Global access for onclick events (compatibility) - ASSIGN FIRST
+        window.ui = this;
+        window.Core = Core;
+
         this.currentView = 'resumen';
 
         // Inicializar módulos
@@ -44,9 +48,7 @@ class FutAdminUI {
         this.dashboard.init(); // Cargar selector de ligas desde el inicio
 
 
-        // Global access for onclick events (compatibility)
-        window.ui = this;
-        window.Core = Core;
+
     }
 
     initEventListeners() {

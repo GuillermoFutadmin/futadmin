@@ -3,6 +3,14 @@
  */
 export class Core {
     static async fetchAPI(url, options = {}) {
+        // Asegurar que el header Content-Type sea JSON si hay un body y no se ha especificado otro
+        if (options.body && (!options.headers || !options.headers['Content-Type'])) {
+            options.headers = {
+                ...options.headers,
+                'Content-Type': 'application/json'
+            };
+        }
+
         try {
             const response = await fetch(url, options);
             if (!response.ok) {
