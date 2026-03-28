@@ -1390,20 +1390,21 @@ def handle_pagos():
         torneo = ins.torneo
         
         # Robustez: Normalizar tipo para búsquedas de totales (Inscripcion vs Inscripción)
-        tipo_norm = nuevo_pago.tipo.replace('ó', 'o') if nuevo_pago.tipo else 'Inscripcion'
+        tipo_raw = nuevo_pago.tipo or 'Inscripcion'
+        tipo_norm = tipo_raw.lower().replace('ó', 'o').replace('í', 'i')
         
         # Calcular saldos actuales
         pagado_ins = db.session.query(db.func.sum(Pago.monto)).filter(
             Pago.inscripcion_id == ins.id, 
-            db.or_(Pago.tipo == 'Inscripcion', Pago.tipo == 'Inscripción')
+            or_(Pago.tipo.ilike('%inscripcion%'), Pago.tipo.ilike('%inscripcion%')) # ilike para robustez
         ).scalar() or 0
         pagado_arb_total = db.session.query(db.func.sum(Pago.monto)).filter(
             Pago.inscripcion_id == ins.id, 
-            db.or_(Pago.tipo == 'Arbitraje', Pago.tipo == 'Arbitraje/Campo')
+            or_(Pago.tipo.ilike('%arbitraje%'), Pago.tipo.ilike('%arbitraje%'))
         ).scalar() or 0
         
-        # Lógica específica por tipo para el recibo
-        is_arb = tipo_norm == 'Arbitraje'
+        # Lógica específica por tipo para el recibo (Detección inteligente)
+        is_arb = 'arbitraje' in tipo_norm
         monto_referencia = float(ins.monto_pactado_inscripcion or 0)
         total_acumulado = float(pagado_ins)
         saldo_movimiento = max(0, monto_referencia - total_acumulado)

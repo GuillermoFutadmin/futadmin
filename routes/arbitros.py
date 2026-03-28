@@ -1,4 +1,5 @@
 from flask import Blueprint, jsonify, request, session
+from sqlalchemy import or_
 from models import db, Arbitro, Usuario, Cancha, Torneo, Partido, Inscripcion, Pago, EventoPartido, AsistenciaPartido, Equipo, Jugador, apply_liga_filter, bcrypt, Liga
 from utils import paginate_query
 from datetime import datetime, date, timedelta
@@ -804,9 +805,10 @@ def _trigger_telegram_receipt_email(pago, equipo, inscripcion, torneo):
             
         _fecha_local = p_fecha - timedelta(hours=6)
         
-        # Lógica de precisión financiera: Diferenciar Inscripción vs Arbitraje
-        tipo_norm = pago.tipo.replace('ó', 'o') if pago.tipo else 'Inscripcion'
-        is_arb = tipo_norm == 'Arbitraje'
+        # Lógica de precisión financiera: Diferenciar Inscripción vs Arbitraje (Detección inteligente)
+        tipo_raw = pago.tipo or 'Inscripcion'
+        tipo_norm = tipo_raw.lower().replace('ó', 'o').replace('í', 'i')
+        is_arb = 'arbitraje' in tipo_norm
         
         monto_referencia = float(inscripcion.monto_pactado_inscripcion or 0)
         total_acumulado = float(pagado_ins)
@@ -825,7 +827,7 @@ def _trigger_telegram_receipt_email(pago, equipo, inscripcion, torneo):
                 saldo_movimiento = max(0, monto_referencia - total_acumulado)
             else:
                 total_acumulado = float(pagado_arb)
-                saldo_movimiento = 0 # No hay total pactado global para arbitraje definido usualmente
+                saldo_movimiento = 0 
         
         result = {
             "success": True,
