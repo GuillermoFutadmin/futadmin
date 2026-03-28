@@ -870,13 +870,14 @@
         <div class="header">
             <button class="btn btn-outline" onclick="showMatchView()" style="width:auto; padding:6px 12px;">← VOLVER</button>
             <h3 id="checkin-title">PASE DE LISTA</h3>
-            <button id="btn-checkin-done" class="btn btn-primary" onclick="showMatchView()" style="width:auto; padding:6px 12px;">LISTO</button>
         </div>
         <!-- Botón INICIAR PARTIDO condicional -->
         <button id="btn-start-from-checkin" class="btn btn-primary" onclick="gameAction('Inicio')" style="width:100%; margin-bottom:12px; background:linear-gradient(135deg,#22c55e,#10b981); font-weight:900; height:50px; font-size:1rem; display:none;">🚀 COMENZAR JUEGO</button>
-        <div id="checkin-container" style="padding-bottom:30px;">
+        <div id="checkin-container" style="padding-bottom:10px;">
             <!-- Jugadores -->
         </div>
+        <!-- Botón LISTO al final (Fase 16) -->
+        <button id="btn-checkin-done" class="btn btn-primary" onclick="showMatchView()" style="width:100%; margin-top:10px; height:50px; font-weight:900;">LISTO</button>
     </div>
 
     <!-- Vista de Medio Tiempo / Cobro de Arbitraje -->
@@ -2267,16 +2268,13 @@
 
             if (localList.length === 0 && visitList.length === 0) {
                 container.innerHTML = `
-                    ${canRegister ? `<button class="btn btn-outline" onclick="openRegistration()" style="margin: 10px; width: calc(100% - 20px);">&#x2795; REGISTRAR NUEVO JUGADOR</button>` : ''}
                     <div style="text-align:center; padding:30px; color:var(--muted); font-size:0.9rem;">&#x26BD; No hay jugadores registrados todavía.</div>
                 `;
                 return;
             }
 
             let html = '';
-            if (canRegister && mode === 'asistencia') {
-                html += `<button class="btn btn-outline" onclick="openRegistration()" style="margin:10px; width:calc(100% - 20px);">&#x2795; REGISTRAR NUEVO JUGADOR</button>`;
-            }
+            // Se remueve botón de registro de la parte superior (Fase 16)
 
             function renderPlayerItem(p, equipoId) {
                 const isPresent = p.presente;
