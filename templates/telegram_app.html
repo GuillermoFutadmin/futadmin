@@ -816,6 +816,12 @@
                     <div style="font-weight: 600; font-size: 0.95rem; color: var(--secondary); overflow:hidden;" id="visitante-name"><span class="marquee-wrap"><span class="marquee-text">VISITANTE</span></span></div>
                 </div>
             </div>
+            
+            <!-- Fase 24: Sede/Cancha con Ticker -->
+            <div id="match-cancha-container" style="display: flex; align-items: center; justify-content: center; gap: 5px; margin-top: 10px; color: var(--muted); font-size: 0.75rem; font-weight: 700; text-transform: uppercase;">
+                <span style="flex-shrink: 0;">📍</span>
+                <span class="marquee-wrap" style="max-width: calc(100% - 25px);"><span class="marquee-text" id="match-sede-name" data-automarquee="1">SEDE</span></span>
+            </div>
 
             <!-- Period indicator -->
             <div id="period-indicator" style="text-align:center; font-size: 0.65rem; color: var(--muted); font-weight:800; letter-spacing:2px; margin-top:8px; display:none;">1er TIEMPO</div>
@@ -2522,6 +2528,10 @@
                 
                 const torneoEl = document.getElementById('match-torneo-info');
                 if (torneoEl) torneoEl.innerText = (activeMatch.torneo_name || 'TORNEO').toUpperCase();
+                
+                // Actualizar Sede/Cancha con Ticker
+                const sedeEl = document.getElementById('match-sede-name');
+                if (sedeEl) setMarqueeText(sedeEl, (activeMatch.sede || activeMatch.cancha || '—').toUpperCase());
 
                 // Reconstruir el Log de Eventos si existen
                 const logContainer = document.getElementById('event-log');
@@ -2621,6 +2631,7 @@
 
         function logEvent(type, subject, min) {
             const container = document.getElementById('event-log');
+            if (!container) return;
             const div = document.createElement('div');
             div.className = 'event-item';
             let icon = '🔔';
@@ -2629,35 +2640,38 @@
             let sep = ': ';
             
             if (t === 'inicio' || t === 'fin' || t === 'medio tiempo' || t.includes('reanudaci')) {
-                // Eventos de sistema sin sujeto
                 icon = t.includes('inicio') || t.includes('reanudaci') ? '▶️' : (t === 'fin' ? '🏁' : '⏳');
                 label = t.charAt(0).toUpperCase() + t.slice(1);
-                sep = '';
-                subject = '';
+                sep = ''; subject = '';
             } else if (t.includes('gol') || t.includes('goal')) {
-                icon = '⚽';
-                label = 'Gol de';
-                sep = ' ';
-            } else if (t.includes('amarilla') || t.includes('yellow')) {
+                icon = '⚽'; label = 'Gol de'; sep = ' ';
+            } else if (t.includes('amarilla')) {
                 icon = '🟨';
-            } else if (t.includes('roja') || t.includes('red')) {
+            } else if (t.includes('roja')) {
                 icon = '🟥';
-            } else if (t.includes('azul') || t.includes('blue')) {
+            } else if (t.includes('azul')) {
                 icon = '🟦';
             } else if (t.includes('cambio')) {
                 icon = '🔄';
-                // Si ya viene con la nota descriptiva en el subject, no repetimos 'Cambio'
                 if (subject && (subject.includes('Sale') || subject.includes('Entra'))) {
                     label = 'Cambio';
                 }
             }
 
-            const fullText = `${min}' ${icon} - ${label}${subject ? sep + subject : ''}`;
-            // Envolvemos en estructura marquee para que texto largo se desplace
-            div.innerHTML = `<span class="marquee-wrap" style="max-width:100%;"><span class="marquee-text"><strong>${min}'</strong> ${icon} - ${label}${subject ? sep + subject : ''}</span></span>`;
+            // Estructura Marquee para el log de eventos
+            div.innerHTML = `
+                <div style="display:flex; align-items:center; gap:8px; width:100%; overflow:hidden;">
+                    <span class="event-min" style="flex-shrink:0;"><strong>${min}'</strong></span>
+                    <span class="event-icon" style="flex-shrink:0;">${icon}</span>
+                    <span class="marquee-wrap" style="flex:1; min-width:0;">
+                        <span class="marquee-text" data-automarquee="1">
+                            ${label}${subject ? sep + subject : ''}
+                        </span>
+                    </span>
+                </div>
+            `;
             container.prepend(div);
-            // Activar desplazamiento si el texto desborda
-            activateMarqueeIfNeeded(div);
+            requestAnimationFrame(() => activateMarqueeIfNeeded(div));
         }
 
         async function loadMatchPlayers() {
