@@ -2441,7 +2441,14 @@ def auto_assign_fields(torneo_id):
     num_campos = len(campos_activos)
     for i, p in enumerate(partidos):
         campo = campos_activos[i % num_campos]
-        p.cancha = campo.nombre
+        
+        # Si el objeto tiene sede (es CanchaDetalle), concatenamos para máxima claridad.
+        # Si es el objeto padre (Cancha), usamos solo su nombre.
+        if hasattr(campo, 'sede') and campo.sede:
+            p.cancha = f"{campo.sede.nombre} - {campo.nombre}"
+        else:
+            p.cancha = campo.nombre
+            
         count += 1
     
     db.session.commit()
