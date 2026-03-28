@@ -1720,10 +1720,25 @@
             isTimerPaused = false;
             showView('match-view');
 
-            document.getElementById('local-name').innerText = activeMatch.equipo_local;
-            document.getElementById('visitante-name').innerText = activeMatch.equipo_visitante;
-            document.getElementById('live-score').innerText = `${activeMatch.goles_local || 0} - ${activeMatch.goles_visitante || 0}`;
-            document.getElementById('match-torneo-info').innerText = activeMatch.torneo_name + " - Jornada " + activeMatch.jornada;
+            // Actualizar Marcador y Nombres (USANDO MARQUEE)
+            const localEl = document.getElementById('local-name');
+            if (localEl) setMarqueeText(localEl, (activeMatch.equipo_local || 'LOCAL').toUpperCase());
+            
+            const visitEl = document.getElementById('visitante-name');
+            if (visitEl) setMarqueeText(visitEl, (activeMatch.equipo_visitante || 'VISITANTE').toUpperCase());
+
+            const scoreEl = document.getElementById('live-score');
+            if (scoreEl) scoreEl.innerText = `${activeMatch.goles_local || 0} - ${activeMatch.goles_visitante || 0}`;
+
+            const torneoEl = document.getElementById('match-torneo-info');
+            if (torneoEl) torneoEl.innerText = (activeMatch.torneo_name || 'TORNEO').toUpperCase() + " - JORNADA " + activeMatch.jornada;
+
+            // Actualizar Sede/Cancha con Ticker
+            const sedeEl = document.getElementById('match-sede-name');
+            if (sedeEl) setMarqueeText(sedeEl, (activeMatch.sede || activeMatch.cancha || '—').toUpperCase());
+
+            // IMPORTANTE: Reconstruir el historial de eventos al abrir
+            renderMatchEvents();
 
             updateControlsVisibility();
 
@@ -2513,6 +2528,35 @@
             }
         }
 
+        /**
+         * Reconstruye el log de eventos visual basándose en activeMatch.eventos
+         */
+        function renderMatchEvents() {
+            const logContainer = document.getElementById('event-log');
+            if (!logContainer || !activeMatch || !activeMatch.eventos) return;
+            
+            logContainer.innerHTML = ''; 
+            // Ordenar por minuto para que al hacer prepend queden los más recientes arriba
+            [...activeMatch.eventos].sort((a,b) => a.minuto - b.minuto).forEach(ev => {
+                let subject = "";
+                const tipoLow = (ev.tipo || "").toLowerCase();
+                
+                if (['inicio', 'fin', 'medio tiempo', 'reanudación'].includes(tipoLow) || tipoLow.includes("reanudaci")) {
+                    subject = "";
+                } else {
+                    subject = ev.jugador_nombre && ev.jugador_nombre !== 'NN' ? ev.jugador_nombre : 'Desconocido';
+                    if (ev.equipo_nombre && ev.equipo_nombre !== '—') {
+                        subject += ` (${ev.equipo_nombre})`;
+                    }
+                    if (tipoLow.includes('cambio') && ev.nota) {
+                        subject = ev.nota;
+                        if (ev.equipo_nombre && ev.equipo_nombre !== '—') subject += ` (${ev.equipo_nombre})`;
+                    }
+                }
+                logEvent(ev.tipo, subject, ev.minuto);
+            });
+        }
+
         function showMatchView() { 
             showView('match-view'); 
             if (activeMatch) {
@@ -2533,33 +2577,9 @@
                 const sedeEl = document.getElementById('match-sede-name');
                 if (sedeEl) setMarqueeText(sedeEl, (activeMatch.sede || activeMatch.cancha || '—').toUpperCase());
 
-                // Reconstruir el Log de Eventos si existen
-                const logContainer = document.getElementById('event-log');
-                if (logContainer && activeMatch.eventos) {
-                    logContainer.innerHTML = ''; 
-                    // Ordenar por minuto para que al hacer prepend queden los ms recientes arriba
-                    [...activeMatch.eventos].sort((a,b) => a.minuto - b.minuto).forEach(ev => {
-                        let subject = "";
-                        const tipoLow = (ev.tipo || "").toLowerCase();
-                        
-                        // Si es un evento de sistema (Inicio, Fin, Medio Tiempo), no hay sujeto
-                        if (['inicio', 'fin', 'medio tiempo', 'reanudación'].includes(tipoLow) || tipoLow.includes("reanudaci")) {
-                            subject = "";
-                        } else {
-                            subject = ev.jugador_nombre && ev.jugador_nombre !== 'NN' ? ev.jugador_nombre : 'Desconocido';
-                            if (ev.equipo_nombre && ev.equipo_nombre !== '—') {
-                                subject += ` (${ev.equipo_nombre})`;
-                            }
-                            // Si es un cambio, la nota tiene el texto completo
-                            if (tipoLow.includes('cambio') && ev.nota) {
-                                subject = ev.nota;
-                                if (ev.equipo_nombre && ev.equipo_nombre !== '—') subject += ` (${ev.equipo_nombre})`;
-                            }
-                        }
+                // Reconstruir el historial de eventos
+                renderMatchEvents();
 
-                        logEvent(ev.tipo, subject, ev.minuto);
-                    });
-                }
                 updateControlsVisibility(); 
             }
         }
