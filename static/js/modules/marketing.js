@@ -188,9 +188,10 @@ export class MarketingModule {
         try {
             const res = await fetch('/api/torneos');
             const data = await res.json();
+            const items = data.items || data || [];
             
             selector.innerHTML = '<option value="">-- Elige un torneo --</option>';
-            data.forEach(t => {
+            items.forEach(t => {
                 const opt = document.createElement('option');
                 opt.value = t.id;
                 opt.textContent = t.nombre;
