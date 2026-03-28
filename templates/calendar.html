@@ -2303,7 +2303,14 @@
                 }
 
                 container.innerHTML = Object.keys(groups).sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'})).map(groupKey => {
-                    const groupMatches = groups[groupKey];
+                    const groupMatches = groups[groupKey].sort((a, b) => {
+                        // 1. Sort by Date
+                        if ((a.fecha || '') !== (b.fecha || '')) return (a.fecha || '').localeCompare(b.fecha || '');
+                        // 2. Sort by Time (HH:MM)
+                        const hA = a.hora || '23:59';
+                        const hB = b.hora || '23:59';
+                        return hA.localeCompare(hB, undefined, {numeric: true});
+                    });
                     const played = groupMatches.filter(p => p.estado === 'Played').length;
 
                     return `<div class="round-block" style="${isGroupView ? 'margin-bottom:0; height:100%;' : ''}">
