@@ -526,6 +526,12 @@ export class FinanceModule {
             }
         }
 
+        const submitBtn = document.querySelector('#modal-pago button[type="submit"]');
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = 'Generar Ticket y Guardar';
+        }
+
         Core.openModal('modal-pago');
     }
 
@@ -556,6 +562,10 @@ export class FinanceModule {
 
         if (isNaN(data.inscripcion_id) || isNaN(data.monto) || !data.tipo) {
             alert('Por favor complete todos los datos del pago correctamente.');
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = 'Generar Ticket y Guardar';
+            }
             return;
         }
 
