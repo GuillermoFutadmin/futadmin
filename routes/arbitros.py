@@ -592,10 +592,19 @@ def telegram_post_event(id):
                 partido.tiempo_corrido_segundos = (partido.tiempo_corrido_segundos or 0) + elapsed
             partido.timer_started_at = None
             
-            gl = partido.goles_local or 0
-            gv = partido.goles_visitante or 0
-            if gl > gv: partido.ganador_id = partido.equipo_local_id
-            elif gv > gl: partido.ganador_id = partido.equipo_visitante_id
+            # Soporte para penales y ganador manual
+            if data.get('penales_local') is not None:
+                partido.penales_local = data.get('penales_local')
+            if data.get('penales_visitante') is not None:
+                partido.penales_visitante = data.get('penales_visitante')
+            
+            if data.get('ganador_id'):
+                partido.ganador_id = data.get('ganador_id')
+            else:
+                gl = partido.goles_local or 0
+                gv = partido.goles_visitante or 0
+                if gl > gv: partido.ganador_id = partido.equipo_local_id
+                elif gv > gl: partido.ganador_id = partido.equipo_visitante_id
             
             db.session.commit()
             

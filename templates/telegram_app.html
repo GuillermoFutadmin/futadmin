@@ -254,6 +254,70 @@
             pointer-events: none;
         }
 
+        /* --- Action Groups (New Layout) --- */
+        .control-group {
+            grid-column: 1 / -1;
+            background: var(--surface);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .group-header {
+            padding: 14px 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 0.85rem;
+            color: var(--secondary);
+        }
+
+        .group-header .icon {
+            transition: transform 0.3s ease;
+            opacity: 0.5;
+        }
+
+        .control-group.active .group-header {
+            background: rgba(255, 255, 255, 0.05);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .control-group.active .group-header .icon {
+            transform: rotate(180deg);
+        }
+
+        .group-content {
+            display: flex;
+            gap: 12px;
+            padding: 0;
+            height: 0;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .control-group.active .group-content {
+            padding: 16px;
+            height: auto;
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .group-content .btn {
+            flex: 1;
+            font-size: 0.8rem;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+        }
+
         .camera-frame {
             width: 280px;
             height: 350px;
@@ -675,31 +739,57 @@
         </div>
 
         <div id="controls-panel" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 18px;">
-            <!-- Pre-start: Attendance + Start -->
+            <!-- Pre-start -->
             <button class="btn btn-outline" onclick="openCheckIn('asistencia')" id="btn-pre-start" style="grid-column: 1 / -1; border-color: var(--secondary); color: var(--secondary);">📋 PASE DE LISTA (ASISTENCIA)</button>
             <button class="btn btn-primary" onclick="openCheckIn('alineacion')" id="btn-start" style="grid-column: 1 / -1; background: linear-gradient(135deg, #22c55e, #10b981); font-weight:900; height:55px;">🚀 INICIAR PARTIDO</button>
 
-            <!-- Live controls -->
-            <button class="btn btn-outline" onclick="recordGoal('local')" id="btn-goal-l" style="border-color: var(--secondary); font-weight:800;">⚽ GOL LOCAL</button>
-            <button class="btn btn-outline" onclick="recordGoal('visitante')" id="btn-goal-v" style="border-color: var(--secondary); font-weight:800;">⚽ GOL VIS.</button>
-
-            <button class="btn btn-outline" onclick="openPlayerList('Amarilla')" style="border-color: var(--warning); color: var(--warning);">🟨 AMARILLA</button>
-            <button class="btn btn-outline" onclick="openPlayerList('Roja')" style="border-color: var(--error); color: var(--error);">🟥 ROJA</button>
-
-            <div style="grid-column: 1 / -1; display: flex; gap: 8px;">
-                <button class="btn btn-outline" onclick="recordPenaltyGoal('local')" style="flex:1; font-size: 0.8rem; border-color: #a78bfa; color: #a78bfa;">⚽ PENAL L</button>
-                <button class="btn btn-outline" onclick="recordPenaltyGoal('visitante')" style="flex:1; font-size: 0.8rem; border-color: #a78bfa; color: #a78bfa;">⚽ PENAL V</button>
-                <input type="number" id="extra-minutes" value="0" class="btn btn-outline" style="flex: 0.6; text-align: center; font-size:0.8rem;" placeholder="+MIN">
+            <!-- Goles Group -->
+            <div id="group-goals" class="control-group">
+                <div class="group-header" onclick="toggleControlGroup('group-goals')">
+                    <span>⚽ GOLES</span>
+                    <span class="icon">▼</span>
+                </div>
+                <div class="group-content">
+                    <button class="btn btn-outline" onclick="recordGoal('local')" style="border-color: var(--secondary); color: var(--secondary);">LOCAL</button>
+                    <button class="btn btn-outline" onclick="recordGoal('visitante')" style="border-color: var(--secondary); color: var(--secondary);">VISITANTE</button>
+                </div>
             </div>
 
-            <button class="btn btn-outline" onclick="gameAction('Medio Tiempo')" id="btn-halftime" style="grid-column: 1 / -1; border-color: var(--primary); color: var(--primary); font-weight:800;">⏳ MEDIO TIEMPO</button>
+            <!-- Tarjetas Group -->
+            <div id="group-cards" class="control-group">
+                <div class="group-header" onclick="toggleControlGroup('group-cards')" style="color: var(--warning);">
+                    <span>🎴 TARJETAS</span>
+                    <span class="icon">▼</span>
+                </div>
+                <div class="group-content">
+                    <button class="btn btn-outline" onclick="openPlayerList('Amarilla')" style="border-color: var(--warning); color: var(--warning);">🟨 AMARILLA</button>
+                    <button class="btn btn-outline" onclick="openPlayerList('Roja')" style="border-color: var(--error); color: var(--error);">🟥 ROJA</button>
+                </div>
+            </div>
 
-            <!-- 2nd half button (only visible during HalfTime state visually; handled by updateControlsVisibility) -->
-            <button class="btn btn-primary" onclick="gameAction('Reanudación')" id="btn-second-half" style="grid-column: 1 / -1; background: linear-gradient(135deg, var(--secondary), #059669); font-weight:900; height:55px; display:none;">▶️ INICIAR 2DO TIEMPO</button>
+            <!-- Penaltis Group -->
+            <div id="group-penalties" class="control-group">
+                <div class="group-header" onclick="toggleControlGroup('group-penalties')" style="color: #a78bfa;">
+                    <span>🎯 PENALTIS</span>
+                    <span class="icon">▼</span>
+                </div>
+                <div class="group-content" style="flex-direction: column;">
+                    <div style="display: flex; gap: 8px; width: 100%;">
+                        <button class="btn btn-outline" onclick="recordPenaltyGoal('local')" style="flex:1; border-color: #a78bfa; color: #a78bfa;">⚽ PENAL L</button>
+                        <button class="btn btn-outline" onclick="recordPenaltyGoal('visitante')" style="flex:1; border-color: #a78bfa; color: #a78bfa;">⚽ PENAL V</button>
+                    </div>
+                    <button class="btn btn-primary" onclick="openPenaltiesModal()" id="btn-penalties" style="width:100%; border: 1px dashed #a78bfa; background: rgba(167, 139, 250, 0.1); color: #a78bfa; font-size: 0.85rem; font-weight: 700; height: 50px;">🏆 DEFINICIÓN POR PENALES</button>
+                </div>
+            </div>
 
-            <button class="btn btn-primary" onclick="openPenaltiesModal()" id="btn-penalties" style="grid-column: 1 / -1; border: 1px dashed #a78bfa; background: rgba(167, 139, 250, 0.1); color: #a78bfa; font-size: 0.85rem; font-weight: 700; height: 50px;">⚽ DEFINICIÓN POR PENALES</button>
+            <!-- Extra actions -->
+            <div style="grid-column: 1 / -1; display: flex; gap: 8px;">
+                <input type="number" id="extra-minutes" value="0" class="btn btn-outline" style="flex: 1; text-align: center; font-size:0.85rem;" placeholder="+MIN EXTRA">
+            </div>
 
-            <button class="btn btn-outline" onclick="confirmEndMatch()" id="btn-end" style="grid-column: 1 / -1; margin-top: 8px; border-color: var(--error); color: var(--error); font-weight:800;">🏁 FINALIZAR PARTIDO</button>
+            <button class="btn btn-outline" onclick="gameAction('Medio Tiempo')" id="btn-halftime" style="grid-column: 1 / -1; border-color: var(--primary); color: var(--primary); font-weight:800;">⌛ MEDIO TIEMPO</button>
+            <button class="btn btn-primary" onclick="gameAction('Reanudación')" id="btn-second-half" style="grid-column: 1 / -1; background: linear-gradient(135deg, var(--secondary), #059669); font-weight:900; height:55px; display:none;">▶️ CONTINUAR JUEGO</button>
+            <button class="btn btn-outline" onclick="confirmEndMatch()" id="btn-end" style="grid-column: 1 / -1; border-color: var(--error); color: var(--error); font-weight:800;">🏁 FINALIZAR PARTIDO</button>
         </div>
 
         <div class="event-log" id="event-log">
@@ -1740,9 +1830,30 @@
             if (result) {
                 if (result.match) activeMatch = { ...activeMatch, ...result.match };
                 document.getElementById('penalties-modal').classList.remove('active');
+                
+                // Actualizar score en UI si se registraron penales
+                if (activeMatch.penales_local || activeMatch.penales_visitante) {
+                    document.getElementById('live-score').innerText = `${activeMatch.goles_local || 0} (${activeMatch.penales_local || 0}) - ${activeMatch.goles_visitante || 0} (${activeMatch.penales_visitante || 0})`;
+                }
+                
                 updateControlsVisibility();
-                logEvent('Fin (Penales)', null, data.minuto);
+                logEvent('Fin (Penales)', null, data.minuto || 0);
                 if (tg.isVersionAtLeast('6.1')) tg.HapticFeedback.notificationOccurred('success');
+            }
+        }
+
+        function toggleControlGroup(id) {
+            const group = document.getElementById(id);
+            if (!group) return;
+            
+            const currentlyActive = group.classList.contains('active');
+            
+            // Cerrar otros grupos (opcional, para mantener orden)
+            document.querySelectorAll('.control-group').forEach(cg => cg.classList.remove('active'));
+            
+            if (!currentlyActive) {
+                group.classList.add('active');
+                if (tg.isVersionAtLeast('6.1')) tg.HapticFeedback.selectionChanged();
             }
         }
 
