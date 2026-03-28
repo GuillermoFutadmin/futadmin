@@ -2153,6 +2153,17 @@ textarea.full-textarea:focus {
     height: 45px;
     object-fit: contain;
     filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
+    border-radius: 50%; /* Asegurar que si hay borde, sea circular */
+    transition: all 0.3s ease;
+}
+
+.live-team-box img.white-placeholder {
+    filter: invert(1) brightness(1.2);
+    border: 2px solid var(--primary);
+    border-radius: 50%;
+    padding: 3px;
+    box-shadow: 0 0 12px var(--primary-glow), inset 0 0 8px rgba(0, 255, 136, 0.3);
+    background: rgba(20, 25, 30, 0.8);
 }
 
 .live-team-box span {
