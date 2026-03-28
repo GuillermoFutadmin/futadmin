@@ -1736,7 +1736,13 @@
             // Pause button
             if (safe('btn-pause')) safe('btn-pause').style.display = (isLive && isStaff) ? 'block' : 'none';
 
-            // Live controls
+            // Live controls and groups (Fase 16)
+            const showLive = (isLive || isHalfTime) && isStaff;
+
+            ['group-goals', 'group-cards', 'group-penalties', 'group-subs'].forEach(id => {
+                if (safe(id)) safe(id).style.display = showLive ? 'block' : 'none';
+            });
+
             ['btn-goal-l','btn-goal-v','btn-halftime','btn-end','btn-penalties'].forEach(id => {
                 if (safe(id)) safe(id).style.display = (isLive && isStaff) ? 'block' : 'none';
             });
@@ -1744,9 +1750,10 @@
             // Card buttons + penalty row (by class/attribute)
             const cardButtons = document.querySelectorAll('button[onclick*="openPlayerList"]');
             cardButtons.forEach(btn => btn.style.display = (isLive && isStaff) ? 'block' : 'none');
+            
             // penalty row (the div containing PENAL L, PENAL V)
             const penaltyRow = safe('extra-minutes') ? safe('extra-minutes').closest('div') : null;
-            if (penaltyRow) penaltyRow.style.display = (isLive && isStaff) ? 'flex' : 'none';
+            if (penaltyRow) penaltyRow.style.display = showLive ? 'flex' : 'none';
 
             // HalfTime: show 2nd half button in match view, hide live controls
             if (safe('btn-second-half')) safe('btn-second-half').style.display = (isHalfTime && isStaff) ? 'block' : 'none';
