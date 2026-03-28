@@ -1442,6 +1442,17 @@
                     <input type="number" id="sched-max-day" class="form-input" placeholder="Ej: 5 (Dejar vacío para sin límite)">
                     <small style="color:var(--text-muted);">Si se supera el límite, se pasarán al siguiente día permitido.</small>
                 </div>
+
+                <div class="form-group">
+                    <label>Modo de Distribución</label>
+                    <select id="sched-dist-mode" class="form-input select-field" style="background-image:none;">
+                        <option value="capacity">Llenado por Capacidad (Saturar canchas)</option>
+                        <option value="round">Orden por Jornada (Una jornada por fecha)</option>
+                    </select>
+                    <small style="color:var(--text-muted); font-size:0.75rem;">
+                        'Por Capacidad' llena todos los huecos libres. 'Por Jornada' asegura que no se mezclen jornadas en un mismo día.
+                    </small>
+                </div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-ghost" onclick="CalendarApp.closeScheduleModal()">Cancelar</button>
@@ -2800,7 +2811,8 @@
                     max_matches_per_day,
                     start_time,
                     end_time,
-                    allowed_weekdays: dias_permitidos
+                    allowed_weekdays: dias_permitidos,
+                    distribution_mode: document.getElementById('sched-dist-mode').value
                 };
 
                 try {

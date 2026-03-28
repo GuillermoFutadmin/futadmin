@@ -2248,6 +2248,8 @@ def auto_schedule_torneo(torneo_id):
     manual_start_time = data.get('start_time')
     manual_end_time = data.get('end_time')
     max_matches_per_day = data.get('max_matches_per_day')
+    # Modo de distribución: 'capacity' (saturar) o 'round' (una jornada por fecha)
+    distribution_mode = data.get('distribution_mode', 'capacity')
 
     # 1. Parse tournament settings
     if manual_weekdays is not None and isinstance(manual_weekdays, list) and len(manual_weekdays) > 0:
@@ -2344,8 +2346,9 @@ def auto_schedule_torneo(torneo_id):
             day_dates[w_day] = current_date + timedelta(days=days_to_add)
 
         # Track time and count per day AND field
-        day_current_min = {} # Keys: "weekday_canchaid" o "weekday_global"
-        day_match_count = {}
+        if distribution_mode == 'round' or 'day_current_min' not in locals():
+            day_current_min = {} # Keys: "weekday_canchaid" o "weekday_global"
+            day_match_count = {}
         
         # Primero, identificar partidos que NO se mueven para ocupar sus horarios (Protección)
         for p in jornada_matches:
@@ -2407,10 +2410,25 @@ def auto_schedule_torneo(torneo_id):
                 current_w_idx += 1
                 attempts += 1
 
-        # Advance current_date to the NEXT week
-        current_date = min(day_dates.values()) + timedelta(days=7)
-        while current_date.weekday() not in allowed_weekdays:
-            current_date += timedelta(days=1)
+        # Avanzar fecha según el modo elegido
+        if distribution_mode == 'round':
+            # Modo Jornada: Forzar salto a la siguiente semana para la siguiente jornada
+            current_date = min(day_dates.values()) + timedelta(days=7)
+            while current_date.weekday() not in allowed_weekdays:
+                current_date += timedelta(days=1)
+        else:
+            # Modo Capacidad: Avanzar solo si realmente agotamos el tiempo de los días actuales
+            # En este modo, mantenemos day_current_min para que la J2 pueda aprovechar el espacio de la J1
+            # Pero debemos actualizar current_date si todos los días permitidos de este ciclo se llenaron
+            if all( ( (day_current_min.get(f"{w}_{p.cancha if p.cancha else 'global'}", 0) + match_duration_total) > end_min or 
+                      (max_matches_per_day and day_match_count.get(f"{w}_{p.cancha if p.cancha else 'global'}", 0) >= max_matches_per_day) ) 
+                    for w in allowed_weekdays for p in [jornada_matches[0]] ):
+                current_date = min(day_dates.values()) + timedelta(days=7)
+                while current_date.weekday() not in allowed_weekdays:
+                    current_date += timedelta(days=1)
+            else:
+                # Simplemente nos quedamos en el mismo current_date para que la J2 intente entrar
+                pass
         
     db.session.commit()
     return jsonify({'success': True, 'scheduled_count': len(partidos)})
