@@ -27,11 +27,20 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Fetch event - Network first, fallback to cache
+// Fetch event - Network first, fallback to cache (Only for GET requests)
 self.addEventListener('fetch', (event) => {
+  // Skip non-GET requests (POST, PUT, DELETE should always go to network)
+  if (event.request.method !== 'GET') return;
+
   event.respondWith(
     fetch(event.request).catch(() => {
-      return caches.match(event.request);
+      return caches.match(event.request).then(response => {
+        // Return match or a generic failure response if both fail
+        return response || new Response('Network error occurred', {
+            status: 408,
+            headers: { 'Content-Type': 'text/plain' }
+        });
+      });
     })
   );
 });
