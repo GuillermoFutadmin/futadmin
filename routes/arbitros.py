@@ -838,6 +838,8 @@ def telegram_match_checkin(id):
         jugador_id = data.get('jugador_id')
         equipo_id = data.get('equipo_id')
         presente = data.get('presente')
+        en_cancha = data.get('en_cancha')
+        tipo = data.get('tipo', 'asistencia') # 'asistencia' o 'alineacion'
         
         if not jugador_id or not equipo_id:
             return jsonify({"error": "jugador_id and equipo_id required"}), 400
@@ -849,13 +851,17 @@ def telegram_match_checkin(id):
         ).first()
         
         if existing:
-            existing.presente = presente
+            if tipo == 'alineacion':
+                existing.en_cancha = en_cancha if en_cancha is not None else existing.en_cancha
+            else:
+                existing.presente = presente if presente is not None else existing.presente
         else:
             new_checkin = AsistenciaPartido(
                 partido_id=id,
                 jugador_id=jugador_id,
                 equipo_id=equipo_id,
-                presente=presente,
+                presente=presente if presente is not None else False,
+                en_cancha=en_cancha if en_cancha is not None else False,
                 liga_id=partido.liga_id
             )
             db.session.add(new_checkin)
@@ -875,20 +881,22 @@ def telegram_match_players(id):
         visitante_players = Jugador.query.filter_by(equipo_id=partido.equipo_visitante_id).all()
 
         asistencias = AsistenciaPartido.query.filter_by(partido_id=id).all()
-        asistencia_map = {a.jugador_id: a.presente for a in asistencias}
+        asistencia_map = {a.jugador_id: {"presente": a.presente, "en_cancha": a.en_cancha} for a in asistencias}
 
         return jsonify({
             "local": [{
                 "id": j.id,
                 "nombre": j.nombre,
                 "numero": j.numero,
-                "presente": asistencia_map.get(j.id, False)
+                "presente": asistencia_map.get(j.id, {}).get("presente", False),
+                "en_cancha": asistencia_map.get(j.id, {}).get("en_cancha", False)
             } for j in local_players],
             "visitante": [{
                 "id": j.id,
                 "nombre": j.nombre,
                 "numero": j.numero,
-                "presente": asistencia_map.get(j.id, False)
+                "presente": asistencia_map.get(j.id, {}).get("presente", False),
+                "en_cancha": asistencia_map.get(j.id, {}).get("en_cancha", False)
             } for j in visitante_players]
         })
     except Exception as e:

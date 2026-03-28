@@ -676,8 +676,8 @@
 
         <div id="controls-panel" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 18px;">
             <!-- Pre-start: Attendance + Start -->
-            <button class="btn btn-outline" onclick="openCheckIn()" id="btn-pre-start" style="grid-column: 1 / -1; border-color: var(--secondary); color: var(--secondary);">📋 PASE DE LISTA (ASISTENCIA)</button>
-            <button class="btn btn-primary" onclick="gameAction('Inicio')" id="btn-start" style="grid-column: 1 / -1; background: linear-gradient(135deg, #22c55e, #10b981); font-weight:900; height:55px;">🚀 INICIAR PARTIDO</button>
+            <button class="btn btn-outline" onclick="openCheckIn('asistencia')" id="btn-pre-start" style="grid-column: 1 / -1; border-color: var(--secondary); color: var(--secondary);">📋 PASE DE LISTA (ASISTENCIA)</button>
+            <button class="btn btn-primary" onclick="openCheckIn('alineacion')" id="btn-start" style="grid-column: 1 / -1; background: linear-gradient(135deg, #22c55e, #10b981); font-weight:900; height:55px;">🚀 INICIAR PARTIDO</button>
 
             <!-- Live controls -->
             <button class="btn btn-outline" onclick="recordGoal('local')" id="btn-goal-l" style="border-color: var(--secondary); font-weight:800;">⚽ GOL LOCAL</button>
@@ -711,11 +711,11 @@
     <div id="checkin-view" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:var(--bg); z-index:150; padding:16px; overflow-y:auto; background: radial-gradient(circle at top right, #1e293b, #0f172a);">
         <div class="header">
             <button class="btn btn-outline" onclick="showMatchView()" style="width:auto; padding:6px 12px;">← VOLVER</button>
-            <h3>PASE DE LISTA</h3>
-            <button class="btn btn-primary" onclick="showMatchView()" style="width:auto; padding:6px 12px;">LISTO</button>
+            <h3 id="checkin-title">PASE DE LISTA</h3>
+            <button id="btn-checkin-done" class="btn btn-primary" onclick="showMatchView()" style="width:auto; padding:6px 12px;">LISTO</button>
         </div>
-        <!-- Botón INICIAR PARTIDO siempre visible en el pase de lista -->
-        <button class="btn btn-primary" onclick="gameAction('Inicio')" style="width:100%; margin-bottom:12px; background:linear-gradient(135deg,#22c55e,#10b981); font-weight:900; height:50px; font-size:1rem;">🚀 INICIAR PARTIDO</button>
+        <!-- Botón INICIAR PARTIDO condicional -->
+        <button id="btn-start-from-checkin" class="btn btn-primary" onclick="gameAction('Inicio')" style="width:100%; margin-bottom:12px; background:linear-gradient(135deg,#22c55e,#10b981); font-weight:900; height:50px; font-size:1rem; display:none;">🚀 COMENZAR JUEGO</button>
         <div id="checkin-container" style="padding-bottom:30px;">
             <!-- Jugadores -->
         </div>
@@ -1942,12 +1942,12 @@
 
             if (!teamId || teamId === activeMatch.equipo_local_id) {
                 html += `<div style="color:var(--primary); font-weight:bold; margin: 10px 0;">${activeMatch.equipo_local}</div>`;
-                // Solo mostrar jugadores marcados como PRESENTES
-                const presentes = (matchPlayers.local || []).filter(p => p.presente);
-                if (presentes.length === 0) {
-                    html += `<div style="padding:10px; color:var(--muted); font-size:0.8rem;">(Sin jugadores presentes)</div>`;
+                // Solo mostrar jugadores marcados como EN CANCHA
+                const enCancha = (matchPlayers.local || []).filter(p => p.en_cancha);
+                if (enCancha.length === 0) {
+                    html += `<div style="padding:10px; color:var(--muted); font-size:0.8rem;">(No hay jugadores registrados en cancha)</div>`;
                 } else {
-                    html += presentes.map(p => `
+                    html += enCancha.map(p => `
                         <div class="player-item" onclick="initEventDetails(${p.id}, ${activeMatch.equipo_local_id}, '${p.nombre}')">
                             <span>#${p.numero || '?'} ${p.nombre}</span>
                             <span>➔</span>
@@ -1958,12 +1958,12 @@
 
             if (!teamId || teamId === activeMatch.equipo_visitante_id) {
                 html += `<div style="color:var(--primary); font-weight:bold; margin: 20px 0 10px 0;">${activeMatch.equipo_visitante}</div>`;
-                // Solo mostrar jugadores marcados como PRESENTES
-                const presentes = (matchPlayers.visitante || []).filter(p => p.presente);
-                if (presentes.length === 0) {
-                    html += `<div style="padding:10px; color:var(--muted); font-size:0.8rem;">(Sin jugadores presentes)</div>`;
+                // Solo mostrar jugadores marcados como EN CANCHA
+                const enCancha = (matchPlayers.visitante || []).filter(p => p.en_cancha);
+                if (enCancha.length === 0) {
+                    html += `<div style="padding:10px; color:var(--muted); font-size:0.8rem;">(No hay jugadores registrados en cancha)</div>`;
                 } else {
-                    html += presentes.map(p => `
+                    html += enCancha.map(p => `
                         <div class="player-item" onclick="initEventDetails(${p.id}, ${activeMatch.equipo_visitante_id}, '${p.nombre}')">
                             <span>#${p.numero || '?'} ${p.nombre}</span>
                             <span>➔</span>
@@ -2043,55 +2043,83 @@
             }
         }
 
-        async function openCheckIn() {
-            console.log('[DEBUG] openCheckIn called. matchPlayers:', JSON.stringify(matchPlayers).substring(0, 100));
+        let currentCheckinMode = 'asistencia';
+
+        async function openCheckIn(mode = 'asistencia') {
+            currentCheckinMode = mode;
+            console.log(`[DEBUG] openCheckIn mode: ${mode}`);
 
             // Si es dueño de equipo, mostrar botón de registro
             const canRegister = currentUser.rol === 'equipo' || ['admin', 'ejecutivo', 'duéño_liga'].includes(currentUser.rol);
 
             showView('checkin-view');
-            const container = document.getElementById('checkin-container');
-            if (!container) {
-                console.error('[DEBUG] checkin-container element NOT FOUND!');
-                return;
+            
+            const titleEl = document.getElementById('checkin-title');
+            const startBtn = document.getElementById('btn-start-from-checkin');
+            const doneBtn = document.getElementById('btn-checkin-done');
+
+            if (mode === 'alineacion') {
+                titleEl.innerHTML = '📋 SELECCIONAR ALINEACIÓN';
+                startBtn.style.display = 'block';
+                doneBtn.style.display = 'none';
+            } else {
+                titleEl.innerHTML = '📋 PASE DE LISTA';
+                startBtn.style.display = 'none';
+                doneBtn.style.display = 'block';
             }
+
+            const container = document.getElementById('checkin-container');
+            if (!container) return;
 
             const localList = (matchPlayers && matchPlayers.local) ? matchPlayers.local : [];
             const visitList = (matchPlayers && matchPlayers.visitante) ? matchPlayers.visitante : [];
 
             if (localList.length === 0 && visitList.length === 0) {
-                console.warn('[DEBUG] No players found for either team.');
                 container.innerHTML = `
                     ${canRegister ? `<button class="btn btn-outline" onclick="openRegistration()" style="margin: 10px; width: calc(100% - 20px);">&#x2795; REGISTRAR NUEVO JUGADOR</button>` : ''}
-                    <div style="text-align:center; padding:30px; color:var(--muted); font-size:0.9rem;">&#x26BD; No hay jugadores registrados todavía.<br><small>Puedes iniciar el partido sin lista de asistencia.</small></div>
+                    <div style="text-align:center; padding:30px; color:var(--muted); font-size:0.9rem;">&#x26BD; No hay jugadores registrados todavía.</div>
                 `;
                 return;
             }
 
             let html = '';
-            if (canRegister) {
+            if (canRegister && mode === 'asistencia') {
                 html += `<button class="btn btn-outline" onclick="openRegistration()" style="margin:10px; width:calc(100% - 20px);">&#x2795; REGISTRAR NUEVO JUGADOR</button>`;
             }
 
+            function renderPlayerItem(p, equipoId) {
+                const isPresent = p.presente;
+                const inField = p.en_cancha;
+                
+                // Si estamos en modo alineación, solo mostrar jugadores presentes
+                if (mode === 'alineacion' && !isPresent) return '';
+
+                let statusHtml = '';
+                let bgColor = 'rgba(255, 255, 255, 0.03)';
+                
+                if (mode === 'alineacion') {
+                    statusHtml = inField ? '&#x26BD; EN CANCHA' : '💺 Banca';
+                    bgColor = inField ? 'rgba(0, 242, 255, 0.1)' : 'rgba(255, 255, 255, 0.03)';
+                } else {
+                    statusHtml = isPresent ? '&#x2705; PRESENTE' : '&#x274C; Ausente';
+                    bgColor = isPresent ? 'rgba(34, 197, 94, 0.1)' : 'rgba(255, 255, 255, 0.03)';
+                }
+
+                return `
+                    <div class="player-item" style="background:${bgColor}" onclick="togglePresence(${p.id}, ${equipoId}, this)">
+                        <span>#${p.numero || '?'} ${p.nombre}</span>
+                        <span class="presence-indicator" style="color: ${ (mode==='alineacion'?inField:isPresent)? 'var(--primary)' : 'var(--muted)'}">
+                            ${statusHtml}
+                        </span>
+                    </div>
+                `;
+            }
+
             html += `<div style="padding:10px; color:var(--primary); font-weight:bold;">${activeMatch.equipo_local}</div>`;
-            html += localList.map(p => `
-                <div class="player-item" onclick="togglePresence(${p.id}, ${activeMatch.equipo_local_id}, this)">
-                    <span>#${p.numero || '?'} ${p.nombre}</span>
-                    <span class="presence-indicator" style="color: ${p.presente ? 'var(--primary)' : 'var(--muted)'}">
-                        ${p.presente ? '&#x2705; PRESENTE' : '&#x274C; Ausente'}
-                    </span>
-                </div>
-            `).join('');
+            html += localList.map(p => renderPlayerItem(p, activeMatch.equipo_local_id)).join('');
 
             html += `<div style="padding:10px; color:var(--primary); font-weight:bold; margin-top:20px;">${activeMatch.equipo_visitante}</div>`;
-            html += visitList.map(p => `
-                <div class="player-item" onclick="togglePresence(${p.id}, ${activeMatch.equipo_visitante_id}, this)">
-                    <span>#${p.numero || '?'} ${p.nombre}</span>
-                    <span class="presence-indicator" style="color: ${p.presente ? 'var(--primary)' : 'var(--muted)'}">
-                        ${p.presente ? '&#x2705; PRESENTE' : '&#x274C; Ausente'}
-                    </span>
-                </div>
-            `).join('');
+            html += visitList.map(p => renderPlayerItem(p, activeMatch.equipo_visitante_id)).join('');
 
             container.innerHTML = html;
         }
@@ -2100,42 +2128,47 @@
             const indicator = el.querySelector('.presence-indicator');
             if (!indicator) return;
             
-            const isPresent = indicator.innerText.includes('PRESENTE');
-            const newStatus = !isPresent;
+            const mode = currentCheckinMode;
+            const isSet = indicator.innerText.includes('PRESENTE') || indicator.innerText.includes('EN CANCHA');
+            const newStatus = !isSet;
 
-            // Feedback visual inmediato (optimista)
-            indicator.innerHTML = newStatus ? '&#x2705; PRESENTE' : '&#x274C; Ausente';
-            indicator.style.color = newStatus ? 'var(--primary)' : 'var(--muted)';
-            el.style.background = newStatus ? 'rgba(34, 197, 94, 0.1)' : 'rgba(255, 255, 255, 0.03)';
+            // Feedback visual inmediato
+            if (mode === 'alineacion') {
+                indicator.innerHTML = newStatus ? '&#x26BD; EN CANCHA' : '💺 Banca';
+                indicator.style.color = newStatus ? 'var(--primary)' : 'var(--muted)';
+                el.style.background = newStatus ? 'rgba(0, 242, 255, 0.1)' : 'rgba(255, 255, 255, 0.03)';
+            } else {
+                indicator.innerHTML = newStatus ? '&#x2705; PRESENTE' : '&#x274C; Ausente';
+                indicator.style.color = newStatus ? 'var(--primary)' : 'var(--muted)';
+                el.style.background = newStatus ? 'rgba(34, 197, 94, 0.1)' : 'rgba(255, 255, 255, 0.03)';
+            }
 
             try {
+                const body = { jugador_id: playerId, equipo_id: equipoId, tipo: mode };
+                if (mode === 'alineacion') body.en_cancha = newStatus;
+                else body.presente = newStatus;
+
                 const res = await fetch(`/api/telegram/match/${activeMatch.id}/checkin`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ jugador_id: playerId, equipo_id: equipoId, presente: newStatus })
+                    body: JSON.stringify(body)
                 });
                 
                 if (!res.ok) {
-                    const err = await res.json().catch(() => ({ error: 'Error desconocido' }));
-                    alert("Error servidor: " + (err.error || "No se pudo guardar"));
-                    
-                    // Revertir UI
-                    indicator.innerHTML = isPresent ? '&#x2705; PRESENTE' : '&#x274C; Ausente';
-                    indicator.style.color = isPresent ? 'var(--primary)' : 'var(--muted)';
-                    el.style.background = isPresent ? 'rgba(34, 197, 94, 0.1)' : 'rgba(255, 255, 255, 0.03)';
+                    alert("Error al guardar cambios");
+                    openCheckIn(mode); // Re-render correct state
                 } else {
-                    if (tg.isVersionAtLeast('6.1')) {
-                        if (tg.isVersionAtLeast('6.1')) tg.HapticFeedback.impactOccurred('light');
-                    }
-                    
-                    // Actualizar estado en memoria
+                    if (tg.isVersionAtLeast('6.1')) tg.HapticFeedback.impactOccurred('light');
+                    // Sync local memory
                     const list = (matchPlayers.local || []).some(p => p.id === playerId) ? matchPlayers.local : matchPlayers.visitante;
                     const player = list.find(p => p.id === playerId);
-                    if (player) player.presente = newStatus;
+                    if (player) {
+                        if (mode === 'alineacion') player.en_cancha = newStatus;
+                        else player.presente = newStatus;
+                    }
                 }
             } catch (e) { 
-                console.error("Error toggling presence:", e);
-                alert("Error de red al registrar asistencia"); 
+                alert("Error de red"); 
             }
         }
 

@@ -670,6 +670,7 @@ class AsistenciaPartido(db.Model):
     jugador_id = db.Column(db.Integer, db.ForeignKey('jugadores.id'), nullable=False)
     equipo_id = db.Column(db.Integer, db.ForeignKey('equipos.id'), nullable=False)
     presente = db.Column(db.Boolean, default=False)
+    en_cancha = db.Column(db.Boolean, default=False)
 
 class Cancha(db.Model):
     __tablename__ = 'canchas'
