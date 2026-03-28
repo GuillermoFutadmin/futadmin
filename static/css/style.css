@@ -2353,3 +2353,15 @@ textarea.full-textarea:focus {
     50% { filter: drop-shadow(0 0 15px rgba(239, 68, 68, 1)); transform: scale(1.04); }
     100% { filter: drop-shadow(0 0 5px rgba(239, 68, 68, 0.7)); transform: scale(1); }
 }
+
+/* -- Logo Status (Final Intensified) -- */
+.logo-status-live {
+    filter: drop-shadow(0 0 20px rgba(255, 0, 0, 1)) drop-shadow(0 0 5px rgba(255, 255, 255, 0.5)) !important;
+    animation: pulse-red-glow 1.5s infinite ease-in-out !important;
+}
+
+@keyframes pulse-red-glow {
+    0% { filter: drop-shadow(0 0 10px rgba(255, 0, 0, 0.8)); transform: scale(1); }
+    50% { filter: drop-shadow(0 0 35px rgba(255, 0, 0, 1)); transform: scale(1.08); }
+    100% { filter: drop-shadow(0 0 10px rgba(255, 0, 0, 0.8)); transform: scale(1); }
+}

@@ -148,13 +148,14 @@ export class DashboardModule {
         if (!liveContainer) return;
 
         try {
+            // Actualización Global del Logo (Consulta independiente de la liga seleccionada)
+            const globalLive = await Core.fetchAPI(`/api/torneos/0/partidos/live`);
+            this.updateSidebarLogoStatus(globalLive && globalLive.length > 0);
+
             const torneoId = this.currentLeagueId === 'all' ? 0 : this.currentLeagueId;
             const liveMatches = await Core.fetchAPI(`/api/torneos/${torneoId}/partidos/live`);
 
-            const hasLive = liveMatches && liveMatches.length > 0;
-            this.updateSidebarLogoStatus(hasLive);
-
-            if (!hasLive) {
+            if (!liveMatches || liveMatches.length === 0) {
                 liveContainer.innerHTML = '';
                 liveContainer.style.display = 'none';
                 return;
