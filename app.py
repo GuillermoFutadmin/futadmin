@@ -1391,7 +1391,28 @@ def handle_pagos():
         
         # Calcular saldos actuales
         pagado_ins = db.session.query(db.func.sum(Pago.monto)).filter_by(inscripcion_id=ins.id, tipo='Inscripcion').scalar() or 0
-        pagado_arb = db.session.query(db.func.sum(Pago.monto)).filter_by(inscripcion_id=ins.id, tipo='Arbitraje').scalar() or 0
+        pagado_arb_total = db.session.query(db.func.sum(Pago.monto)).filter_by(inscripcion_id=ins.id, tipo='Arbitraje').scalar() or 0
+        
+        # Lógica específica por tipo para el recibo
+        is_arb = nuevo_pago.tipo == 'Arbitraje'
+        monto_referencia = float(ins.monto_pactado_inscripcion)
+        total_acumulado = float(pagado_ins)
+        saldo_movimiento = float(ins.monto_pactado_inscripcion - pagado_ins)
+
+        if is_arb:
+            monto_referencia = float(torneo.costo_arbitraje or 0)
+            if nuevo_pago.partido_id:
+                # Pagado específico para este partido
+                pagado_este_partido = db.session.query(db.func.sum(Pago.monto)).filter_by(
+                    inscripcion_id=ins.id, 
+                    tipo='Arbitraje', 
+                    partido_id=nuevo_pago.partido_id
+                ).scalar() or 0
+                total_acumulado = float(pagado_este_partido)
+                saldo_movimiento = max(0, monto_referencia - total_acumulado)
+            else:
+                total_acumulado = float(pagado_arb_total)
+                saldo_movimiento = 0 # No hay total pactado global para arbitraje definido usualmente
         
         reglas_cancha = ""
         cancha_asignada = None
@@ -1434,14 +1455,14 @@ def handle_pagos():
             "tipo": nuevo_pago.tipo,
             "fecha": _fecha_local.strftime('%d/%m/%Y %H:%M'),
             "metodo": nuevo_pago.metodo,
-            "monto_pactado": float(ins.monto_pactado_inscripcion),
-            "total_pagado": float(pagado_ins) if nuevo_pago.tipo == 'Inscripcion' else float(pagado_arb),
-            "saldo_pendiente": float(ins.monto_pactado_inscripcion - pagado_ins) if nuevo_pago.tipo == 'Inscripcion' else 0,
+            "monto_pactado": monto_referencia,
+            "total_pagado": total_acumulado,
+            "saldo_pendiente": saldo_movimiento,
             "partido": partido_info,
             "tipo_torneo": torneo.tipo or torneo.formato or "Liga",
             "horarios": f"{torneo.dias_juego or ''} {torneo.horario_juego or ''}".strip() or "Por definir",
             "formato": torneo.formato or "Torneo",
-            "fecha_inicio_torneo": torneo.fecha_inicio.strftime('%d/%m/%Y') if torneo.fecha_inicio else "Pendiente",
+            "fecha_inicio": torneo.fecha_inicio.strftime('%d/%m/%Y') if torneo.fecha_inicio else "Pendiente",
             "organiza": torneo.liga.nombre if torneo.liga else "FutAdmin",
             "contacto": torneo.liga.contacto or "No disponible",
             "premios": torneo.premios or "",
