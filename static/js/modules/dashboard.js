@@ -177,7 +177,7 @@ export class DashboardModule {
                             <div class="live-teams-container">
                                 <div class="live-team-box">
                                     <img src="${m.equipo_local_escudo || ''}" class="${!m.equipo_local_escudo ? 'white-placeholder' : ''}" onerror="this.src='https://cdn-icons-png.flaticon.com/512/53/53283.png'; this.classList.add('white-placeholder');">
-                                    <span>${m.equipo_local}</span>
+                                    <span class="marquee-wrap"><span class="marquee-text">${m.equipo_local}</span></span>
                                 </div>
                                 <div class="live-score-box">
                                     ${minute ? `<div class="live-minute-badge" style="margin-bottom: 2px;">${minute}</div>` : ''}
@@ -186,13 +186,13 @@ export class DashboardModule {
                                         <span class="score-divider">-</span>
                                         <span>${m.goles_visitante}</span>
                                     </div>
-                                    <div style="font-size: 0.65rem; color: rgba(255,255,255,0.6); text-transform: uppercase; letter-spacing: 1px; white-space: nowrap; font-weight: 700; margin-top: 2px; max-width: 120px; overflow: hidden; text-overflow: ellipsis; text-align: center;" title="${m.cancha || 'Por designar'}">
-                                        📍 ${m.cancha || 'Por designar'}
+                                    <div class="marquee-wrap" style="font-size: 0.65rem; color: rgba(255,255,255,0.6); text-transform: uppercase; letter-spacing: 1px; white-space: nowrap; font-weight: 700; margin-top: 2px; max-width: 120px; text-align: center;" title="${m.cancha || 'Por designar'}">
+                                        <span class="marquee-text">📍 ${m.cancha || 'Por designar'}</span>
                                     </div>
                                 </div>
                                 <div class="live-team-box">
                                     <img src="${m.equipo_visitante_escudo || ''}" class="${!m.equipo_visitante_escudo ? 'white-placeholder' : ''}" onerror="this.src='https://cdn-icons-png.flaticon.com/512/53/53283.png'; this.classList.add('white-placeholder');">
-                                    <span>${m.equipo_visitante}</span>
+                                    <span class="marquee-wrap"><span class="marquee-text">${m.equipo_visitante}</span></span>
                                 </div>
                             </div>
 
@@ -231,12 +231,7 @@ export class DashboardModule {
                                             }
                                         }
 
-                                        const unstyledText = nameContent.replace(/<[^>]*>?/gm, '');
-                                        let finalNameHtml = nameContent;
-                                        if (unstyledText.length > 32) {
-                                            // Usar marquee de HTML clásico, funciona perfectamente para dashboards simples sin meter CSS complejo
-                                            finalNameHtml = `<marquee scrollamount="3" scrolldelay="50" style="vertical-align: middle; padding-top: 1px;">${nameContent}</marquee>`;
-                                        }
+                                        const finalNameHtml = `<span class="marquee-wrap"><span class="marquee-text">${nameContent}</span></span>`;
 
                                         return `
                                             <div class="event-row-mini">
@@ -254,9 +249,42 @@ export class DashboardModule {
                     }).join('')}
                 </div>
             `;
+            
+            // Activar marquees dinámicos
+            this.activateMarqueeIfNeeded(liveContainer);
+
         } catch (e) {
             console.error("Error al cargar partidos en vivo:", e);
         }
+    }
+
+    /**
+     * Activa el efecto de desplazamiento para todos los .marquee-text dentro del contenedor
+     * solo si el texto desborda el ancho del envoltorio (marquee-wrap).
+     */
+    activateMarqueeIfNeeded(container) {
+        if (!container) return;
+        requestAnimationFrame(() => {
+            const elements = container.querySelectorAll('.marquee-text');
+            elements.forEach(span => {
+                const wrap = span.parentElement;
+                if (!wrap.classList.contains('marquee-wrap')) return;
+
+                const wrapWidth = wrap.offsetWidth;
+                const textWidth = span.scrollWidth;
+
+                if (textWidth > wrapWidth) {
+                    const offset = -((textWidth - wrapWidth) + 20); // 20px de margen extra
+                    const duration = Math.max(4, Math.floor(textWidth / 30)); // 30px per sec
+                    
+                    span.style.setProperty('--marquee-offset', `${offset}px`);
+                    span.style.setProperty('--marquee-dur', `${duration}s`);
+                    span.classList.add('scrolling');
+                } else {
+                    span.classList.remove('scrolling');
+                }
+            });
+        });
     }
 
     async renderResumen() {
