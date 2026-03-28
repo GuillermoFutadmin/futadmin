@@ -544,6 +544,7 @@ class Partido(db.Model):
     timer_started_at = db.Column(db.BigInteger, nullable=True)  # Unix ms when timer started
     tiempo_corrido_segundos = db.Column(db.Integer, default=0)  # Acumulado al hacer pausa/medio tiempo
     periodo_actual = db.Column(db.Integer, default=1)  # 1 = primer tiempo, 2 = segundo tiempo
+    fecha_inicio_efectiva = db.Column(db.DateTime, nullable=True)  # Registro real del inicio del árbitro
     
     torneo = db.relationship('Torneo', backref='partidos', lazy=True)
     equipo_local = db.relationship('Equipo', foreign_keys=[equipo_local_id], lazy=True)
@@ -589,6 +590,7 @@ class Partido(db.Model):
             "timer_started_at": self.timer_started_at,
             "tiempo_corrido_segundos": self.tiempo_corrido_segundos or 0,
             "periodo_actual": self.periodo_actual or 1,
+            "fecha_inicio_efectiva": self.fecha_inicio_efectiva.strftime('%Y-%m-%d %H:%M') if self.fecha_inicio_efectiva else None,
             "eventos": eventos
         }
 

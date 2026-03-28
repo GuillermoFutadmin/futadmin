@@ -1104,6 +1104,9 @@
                     <button class="btn btn-primary btn-full" onclick="CalendarApp.promptGenerateFixtures()">
                         🎲 Generar Rol Automático
                     </button>
+                    <button class="btn btn-secondary btn-full" onclick="CalendarApp.autoAssignFields()">
+                        📍 Posicionar Canchas
+                    </button>
                     <button class="btn btn-accent btn-full" onclick="CalendarApp.autoScheduleAll()">
                         📅 Auto-Programar Horarios
                     </button>
@@ -2827,6 +2830,26 @@
                 autoScheduleAll,
                 submitAutoSchedule,
                 closeScheduleModal,
+                autoAssignFields: async function() {
+                    if (!state.torneoId) {
+                        toast('Por favor, selecciona un torneo primero', 'warning');
+                        return;
+                    }
+                    if (!confirm('¿Deseas asignar las canchas registradas automáticamente? \n\nEsto NO afectará partidos en vivo ni finalizados.')) {
+                        return;
+                    }
+                    try {
+                        const res = await api('POST', `/api/torneos/${state.torneoId}/auto_assign_fields`);
+                        if (res.success === false) {
+                            toast(res.error || 'Error al asignar canchas', 'error');
+                            return;
+                        }
+                        toast(`¡Listo! Se asignaron ${res.assigned_count} partidos en ${res.total_fields} campos.`, 'success');
+                        await refreshData();
+                    } catch (e) {
+                        toast(e.message || 'Error al asignar canchas', 'error');
+                    }
+                },
                 toggleTraining: function () {
                     state.showTraining = document.getElementById('toggle-training').checked;
                     loadMatches().then(() => renderCalendar());

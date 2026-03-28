@@ -2303,8 +2303,10 @@ def auto_schedule_torneo(torneo_id):
     
     sorted_jornada_numbers = sorted(jornadas.keys())
     
-    # 3. Scheduling state
-    current_date = torneo.fecha_inicio or datetime.now().date()
+    # 3. Scheduling state - Rescue past matches by starting from today if needed
+    from datetime import datetime
+    today = datetime.now().date()
+    current_date = max(torneo.fecha_inicio, today) if torneo.fecha_inicio else today
     
     # Helper functions
     def get_minutes(time_str):
@@ -2336,20 +2338,31 @@ def auto_schedule_torneo(torneo_id):
             days_to_add = (w_day - current_date.weekday() + 7) % 7
             day_dates[w_day] = current_date + timedelta(days=days_to_add)
 
-        # Track time and count per day
-        day_current_min = {w_day: start_min for w_day in allowed_weekdays}
-        day_match_count = {w_day: 0 for w_day in allowed_weekdays}
+        # Track time and count per day AND field
+        day_current_min = {} # Keys: "weekday_canchaid" o "weekday_global"
+        day_match_count = {}
         
-        # Primero, identificar partidos que NO se mueven para ocupar sus horarios
+        # Primero, identificar partidos que NO se mueven para ocupar sus horarios (Protección)
         for p in jornada_matches:
+            # Solo reprogramamos los que están explícitamente en 'Scheduled' y NO tienen marcador.
+            # Cualquier otro estado (Played, Live, Cancelled) se considera bloqueado.
             has_score = p.goles_local is not None or p.goles_visitante is not None
-            if p.estado != 'Scheduled' or has_score:
+            is_active = p.estado != 'Scheduled'
+            
+            if is_active or has_score:
                 for w_day, d_date in day_dates.items():
                     if p.fecha == d_date and p.hora:
                         p_min = get_minutes(p.hora)
-                        if p_min >= day_current_min[w_day]:
-                            day_current_min[w_day] = p_min + match_duration_total
-                        day_match_count[w_day] += 1
+                        cancha_key = p.cancha if p.cancha else "global"
+                        day_key = f"{w_day}_{cancha_key}"
+                        
+                        if day_key not in day_current_min: 
+                            day_current_min[day_key] = start_min
+                            day_match_count[day_key] = 0
+
+                        if p_min >= day_current_min[day_key]:
+                            day_current_min[day_key] = p_min + match_duration_total
+                        day_match_count[day_key] += 1
 
         # Segundo, programar los que SÍ son pendientes
         pending_matches = [p for p in jornada_matches if p.estado == 'Scheduled' and p.goles_local is None and p.goles_visitante is None]
@@ -2360,28 +2373,34 @@ def auto_schedule_torneo(torneo_id):
             max_attempts = len(allowed_weekdays) * 3
             attempts = 0
             
+            # [NUEVO] Lógica de capacidad por cancha: 
+            # Si el administrador ya asignó canchas (vía auto_assign_fields), usamos una timeline por cancha.
+            # Si no, caemos en la lógica secuencial (un solo timeline global para el torneo).
+            
             while attempts < max_attempts:
                 w_day = allowed_weekdays[current_w_idx % len(allowed_weekdays)]
                 
-                over_max_count = max_matches_per_day and day_match_count[w_day] >= max_matches_per_day
-                over_time = (day_current_min[w_day] + match_duration_total) > end_min
+                # Definimos el timeline a usar: el del campo del partido, o uno general para el torneo.
+                cancha_key = p.cancha if p.cancha else "global"
+                day_key = f"{w_day}_{cancha_key}"
+                
+                # Inicializar timeline diario para esta cancha si no existe
+                if day_key not in day_current_min:
+                    day_current_min[day_key] = start_min
+                    day_match_count[day_key] = 0
+                
+                over_max_count = max_matches_per_day and day_match_count[day_key] >= max_matches_per_day
+                over_time = (day_current_min[day_key] + match_duration_total) > end_min
                 
                 if not over_max_count and not over_time:
+                    p.fecha = day_dates[w_day]
+                    p.hora = format_minutes(day_current_min[day_key])
+                    day_current_min[day_key] += match_duration_total
+                    day_match_count[day_key] += 1
                     break
                     
                 current_w_idx += 1
                 attempts += 1
-                
-            w_day = allowed_weekdays[current_w_idx % len(allowed_weekdays)]
-            
-            p.fecha = day_dates[w_day]
-            p.hora = format_minutes(day_current_min[w_day])
-            p.cancha = torneo.cancha or "Cancha Principal"
-            
-            day_current_min[w_day] += match_duration_total
-            day_match_count[w_day] += 1
-            # Eliminado: current_w_idx += 1 
-            # Esto permite que el sistema llene un día completo antes de saltar al siguiente.
 
         # Advance current_date to the NEXT week
         current_date = min(day_dates.values()) + timedelta(days=7)
@@ -2390,6 +2409,38 @@ def auto_schedule_torneo(torneo_id):
         
     db.session.commit()
     return jsonify({'success': True, 'scheduled_count': len(partidos)})
+
+@app.route('/api/torneos/<int:torneo_id>/auto_assign_fields', methods=['POST'])
+@csrf.exempt
+def auto_assign_fields(torneo_id):
+    """Asignación automática de canchas (campos de juego) a partidos pendientes del torneo."""
+    torneo = apply_liga_filter(Torneo.query, Torneo).filter_by(id=torneo_id).first_or_404()
+    
+    # 1. Obtener campos registrados activos de la liga
+    campos_activos = CanchaDetalle.query.filter_by(liga_id=torneo.liga_id, activa=True).all()
+    if not campos_activos:
+        return jsonify({'success': False, 'error': 'No hay campos de juego (Canchas Detalle) registrados y ACTIVOS para esta liga.'}), 200
+
+    # 2. Obtener partidos del torneo (Solo pendientes/Scheduled y sin marcador)
+    partidos = Partido.query.filter_by(torneo_id=torneo_id)\
+                      .filter(Partido.estado == 'Scheduled')\
+                      .filter(Partido.goles_local == None)\
+                      .filter(Partido.goles_visitante == None)\
+                      .order_by(Partido.jornada, Partido.id).all()
+    
+    if not partidos:
+        return jsonify({'success': False, 'error': 'No hay partidos pendientes de asignar en este torneo.'}), 200
+
+    # 3. Distribución Round-Robin entre campos activos
+    count = 0
+    num_campos = len(campos_activos)
+    for i, p in enumerate(partidos):
+        campo = campos_activos[i % num_campos]
+        p.cancha = campo.nombre
+        count += 1
+    
+    db.session.commit()
+    return jsonify({'success': True, 'assigned_count': count, 'total_fields': num_campos})
 
 # Los modelos de eventos y árbitros han sido movidos a models.py
 

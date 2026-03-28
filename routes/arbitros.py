@@ -560,6 +560,7 @@ def telegram_post_event(id):
             partido.periodo_actual = 1
             partido.fecha = datetime.now().date()
             partido.hora = datetime.now().strftime('%H:%M')
+            partido.fecha_inicio_efectiva = datetime.now()  # NUEVO: Registro real e inamovible
             partido.timer_started_at = now_ms  # Record server start time
             partido.tiempo_corrido_segundos = 0
             partido.goles_local = 0
