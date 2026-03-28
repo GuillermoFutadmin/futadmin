@@ -47,6 +47,20 @@ export class MarketingModule {
         }
     }
 
+    initResultadoEditor() {
+        this.activeMode = 'resultado';
+        this.setupDynamicEditor('RESULTADO DEL PARTIDO', 'Selecciona el Partido Finalizado');
+        this.loadMatchesForSelector('Finished');
+        this.showDynamicControls('mkt-ctrl-resultado');
+    }
+
+    initMVPEditor() {
+        this.activeMode = 'mvp';
+        this.setupDynamicEditor('JUGADOR MVP', 'Selecciona al Jugador Destacado');
+        this.loadPlayersForSelector();
+        this.showDynamicControls('mkt-ctrl-mvp');
+    }
+
     initRolEditor() {
         this.activeMode = 'rol';
         this.setupDynamicEditor('CARTELERA OFICIAL', 'Selecciona el Torneo');
@@ -79,7 +93,75 @@ export class MarketingModule {
         this.drawDynamic();
     }
 
+    showEditor(id) {
+        document.getElementById('marketing-grid').style.display = 'none';
+        document.getElementById('marketing-editor-logos').style.display = 'none';
+        document.getElementById('marketing-editor-avisos').style.display = 'none';
+        document.getElementById('marketing-editor-container').style.display = 'none';
+        document.getElementById(id).style.display = 'flex';
+    }
+
+    showDynamicControls(id) {
+        document.getElementById('mkt-ctrl-resultado').style.display = 'none';
+        document.getElementById('mkt-ctrl-mvp').style.display = 'none';
+        document.getElementById('mkt-ctrl-rol').style.display = 'none';
+        document.getElementById(id).style.display = 'block';
+    }
+
+    closeEditor() {
+        document.getElementById('marketing-editor-container').style.display = 'none';
+        document.getElementById('marketing-editor-avisos').style.display = 'none';
+        document.getElementById('marketing-editor-logos').style.display = 'none';
+        document.getElementById('marketing-grid').style.display = 'grid';
+    }
+
+    initLogosGallery() {
+        document.getElementById('marketing-grid').style.display = 'none';
+        document.getElementById('marketing-editor-avisos').style.display = 'none';
+        document.getElementById('marketing-editor-logos').style.display = 'flex';
+    }
+
+    closeLogosGallery() { this.closeEditor(); }
+
     // --- CARGA DE DATOS ---
+
+    async loadMatchesForSelector(status = null) {
+        const selector = document.getElementById('mkt-data-selector');
+        selector.innerHTML = '<option value="">Cargando partidos...</option>';
+        try {
+            let url = '/api/partidos?limit=50';
+            if(status) url += `&estado=${status}`;
+            const res = await fetch(url);
+            const data = await res.json();
+            this.data.matches = data.items || [];
+            
+            selector.innerHTML = '<option value="">-- Elige un partido --</option>';
+            this.data.matches.forEach(m => {
+                const opt = document.createElement('option');
+                opt.value = m.id;
+                opt.textContent = `${m.equipo_local} vs ${m.equipo_visitante} (${m.fecha})`;
+                selector.appendChild(opt);
+            });
+        } catch(e) { selector.innerHTML = '<option value="">Error al cargar</option>'; }
+    }
+
+    async loadPlayersForSelector() {
+        const selector = document.getElementById('mkt-data-selector');
+        selector.innerHTML = '<option value="">Cargando jugadores...</option>';
+        try {
+            const res = await fetch('/api/jugadores?limit=100');
+            const data = await res.json();
+            this.data.players = data.items || [];
+            
+            selector.innerHTML = '<option value="">-- Elige un jugador --</option>';
+            this.data.players.forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p.id;
+                opt.textContent = `${p.nombre} (${p.equipo_nombre || 'Sin equipo'})`;
+                selector.appendChild(opt);
+            });
+        } catch(e) { selector.innerHTML = '<option value="">Error al cargar</option>'; }
+    }
 
     async loadTeamsForFilter() {
         const selector = document.getElementById('mkt-filter-team');
@@ -116,6 +198,27 @@ export class MarketingModule {
 
     // --- EVENTOS ---
 
+    bindEventsAvisos() {
+        const list = ['mkt-title', 'mkt-subtitle', 'mkt-body', 'mkt-bg1', 'mkt-bg2'];
+        list.forEach(id => {
+            const el = document.getElementById(id);
+            if(el) el.oninput = () => this.updateConfigFromForm();
+        });
+
+        const logoInput = document.getElementById('mkt-logo-file');
+        if (logoInput) {
+            logoInput.onchange = (e) => {
+                const reader = new FileReader();
+                reader.onload = (evt) => {
+                    const img = new Image();
+                    img.onload = () => { this.config.logoImg = img; this.draw(); };
+                    img.src = evt.target.result;
+                };
+                reader.readAsDataURL(e.target.files[0]);
+            };
+        }
+    }
+
     bindEventsDynamic() {
         const list = ['mkt-gen-bg1', 'mkt-gen-bg2', 'mkt-glocal', 'mkt-gvisit', 'mkt-scorers', 
                       'mkt-mvp-name', 'mkt-mvp-team', 'mkt-mvp-goals', 'mkt-mvp-rating', 
@@ -129,7 +232,9 @@ export class MarketingModule {
             };
         });
 
-        document.getElementById('mkt-data-selector').onchange = (e) => this.handleDataSelection(e.target.value);
+        document.getElementById('mkt-data-selector').onchange = (e) => {
+            this.handleDataSelection(e.target.value);
+        };
 
         const imgInput = document.getElementById('mkt-image-file');
         if (imgInput) {
@@ -162,7 +267,6 @@ export class MarketingModule {
                 document.getElementById('mkt-mvp-team').value = (player.equipo_nombre || 'FUTADMIN').toUpperCase();
             }
         } else if(this.activeMode === 'rol') {
-            // Cargar partidos del torneo seleccionado
             try {
                 const res = await fetch(`/api/torneos/${id}/partidos`);
                 const data = await res.json();
@@ -172,7 +276,44 @@ export class MarketingModule {
         this.drawDynamic();
     }
 
+    updateConfigFromForm() {
+        this.config.title = document.getElementById('mkt-title').value.toUpperCase();
+        this.config.subtitle = document.getElementById('mkt-subtitle').value.toUpperCase();
+        this.config.body = document.getElementById('mkt-body').value || '';
+        this.config.bgColor1 = document.getElementById('mkt-bg1').value || '#0f172a';
+        this.config.bgColor2 = document.getElementById('mkt-bg2').value || '#020617';
+        this.draw();
+    }
+
     // --- DIBUJO ---
+
+    draw() {
+        if(!this.ctx) return;
+        const ctx = this.ctx;
+        const { width, height } = this.config;
+        this.drawBackground(ctx, width, height, this.config.bgColor1, this.config.bgColor2);
+
+        let y = 180;
+        if(this.config.logoImg) {
+            this.drawCenteredImage(ctx, this.config.logoImg, width/2, y, 240);
+            y += 300;
+        } else y += 120;
+
+        this.drawText(ctx, this.config.subtitle, width/2, y, '700 32px "Inter"', '#f59e0b');
+        y += 60;
+        this.drawText(ctx, this.config.title, width/2, y, '900 80px "Inter"', '#ffffff', true);
+        y += 40;
+        ctx.fillStyle = '#f59e0b';
+        ctx.fillRect((width/2) - 80, y - 30, 160, 6);
+        y += 40;
+
+        if(this.config.body) {
+            ctx.fillStyle = 'rgba(255,255,255,0.9)';
+            ctx.font = '400 42px "Inter"';
+            this.wrapText(ctx, this.config.body, width/2, y, width - 180, 55);
+        }
+        this.drawFooter(ctx, width, height);
+    }
 
     drawDynamic() {
         if(!this.ctxGen) return;
@@ -244,25 +385,22 @@ export class MarketingModule {
         const filterTeam = document.getElementById('mkt-filter-team').value;
         const footer = document.getElementById('mkt-rol-footer').value || '';
 
-        // HEADER PREMIUM
         ctx.fillStyle = '#00ff88';
         this.drawRoundRect(ctx, 80, 80, 250, 40, 5); ctx.fill();
         this.drawText(ctx, title, 205, 108, '900 20px "Inter"', '#000');
         
         this.drawText(ctx, 'FUTADMIN', 185, 160, '900 70px "Inter"', '#fff');
         
-        // CARD FECHA (Arriba derecha)
         ctx.fillStyle = 'rgba(255,255,255,0.05)';
         this.drawRoundRect(ctx, w - 400, 80, 320, 120, 15); ctx.fill();
         this.drawText(ctx, day, w - 240, 135, '900 45px "Inter"', '#00ff88');
         this.drawText(ctx, date, w - 240, 175, '500 22px "Inter"', 'rgba(255,255,255,0.6)');
 
-        // FILTRAR PARTIDOS
         let matches = this.data.matches;
         if(filterTeam) {
             matches = matches.filter(m => m.equipo_local.includes(filterTeam) || m.equipo_visitante.includes(filterTeam));
         }
-        matches = matches.slice(0, 16); // Max 16 para que quepan
+        matches = matches.slice(0, 16); 
 
         const cardW = (w - 200) / (w > 1200 ? 4 : 2);
         const cardH = 200;
@@ -275,25 +413,20 @@ export class MarketingModule {
             const x = startX + (col * (cardW + gap));
             const y = startY + (row * (cardH + gap));
 
-            // Card BG
             ctx.fillStyle = 'rgba(255,255,255,0.03)';
             this.drawRoundRect(ctx, x, y, cardW, cardH, 12); ctx.fill();
             ctx.strokeStyle = 'rgba(255,255,255,0.1)'; ctx.lineWidth = 1; ctx.stroke();
 
-            // Info Partido
             ctx.fillStyle = '#00ff88';
             ctx.font = '900 16px "Inter"'; ctx.textAlign = 'left';
             ctx.fillText("JORNADA " + (m.jornada || "-"), x + 20, y + 35);
             
-            // Hora Central
             this.drawText(ctx, m.hora || "00:00", x + cardW/2, y + 100, '900 45px "Inter"', '#fff');
             
-            // Equipos
             ctx.font = '800 18px "Inter"'; ctx.textAlign = 'center';
             ctx.fillText(this.truncate(m.equipo_local, 12), x + 60, y + 160);
             ctx.fillText(this.truncate(m.equipo_visitante, 12), x + cardW - 60, y + 160);
             
-            // Lugar
             ctx.fillStyle = 'rgba(255,255,255,0.4)';
             ctx.font = '500 14px "Inter"';
             ctx.fillText(m.campo || "POR DEFINIR", x + cardW/2, y + 190);
@@ -303,6 +436,67 @@ export class MarketingModule {
     }
 
     // --- UTILS ---
+    drawBackground(ctx, w, h, c1, c2) {
+        const grad = ctx.createLinearGradient(0, 0, w, h);
+        grad.addColorStop(0, c1);
+        grad.addColorStop(1, c2);
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, w, h);
+        
+        ctx.strokeStyle = 'rgba(255,255,255,0.02)';
+        ctx.lineWidth = 1;
+        for(let i=0; i<w; i+=50) {
+            ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, h); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(w, i); ctx.stroke();
+        }
+        ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+        ctx.lineWidth = 4;
+        ctx.strokeRect(60, 60, w - 120, h - 120);
+    }
+
+    drawCenteredImage(ctx, img, x, y, size) {
+        ctx.shadowColor = "rgba(0,0,0,0.5)"; ctx.shadowBlur = 20;
+        ctx.drawImage(img, x - size/2, y - size/2, size, size);
+        ctx.shadowColor = "transparent"; ctx.shadowBlur = 0;
+    }
+
+    drawText(ctx, text, x, y, font, color, stroke = false) {
+        if(!text) return;
+        ctx.fillStyle = color;
+        ctx.font = font;
+        ctx.textAlign = 'center';
+        if(stroke) {
+            ctx.lineWidth = 2; ctx.strokeStyle = '#000';
+            ctx.strokeText(text, x, y);
+        }
+        ctx.fillText(text, x, y);
+    }
+
+    wrapText(ctx, text, x, y, maxWidth, lineHeight) {
+        const paragraphs = text.split('\n');
+        paragraphs.forEach(p => {
+            const words = p.split(' ');
+            let line = '';
+            for(let n = 0; n < words.length; n++) {
+                let testLine = line + words[n] + ' ';
+                if (ctx.measureText(testLine).width > maxWidth && n > 0) {
+                    ctx.fillText(line, x, y);
+                    line = words[n] + ' ';
+                    y += lineHeight;
+                } else line = testLine;
+            }
+            ctx.fillText(line, x, y);
+            y += lineHeight;
+        });
+    }
+
+    drawFooter(ctx, w, h) {
+        ctx.fillStyle = 'rgba(255,255,255,0.3)';
+        ctx.font = '700 24px "Inter"';
+        ctx.textAlign = 'center';
+        ctx.fillText('CREADO POR FUTADMIN.COM.MX', w/2, h - 85);
+    }
+
     drawRoundRect(ctx, x, y, w, h, r) {
         ctx.beginPath();
         ctx.moveTo(x + r, y);
