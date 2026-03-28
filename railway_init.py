@@ -26,7 +26,8 @@ def init():
                 "ALTER TABLE jugadores ADD COLUMN IF NOT EXISTS amarillas_legacy INTEGER DEFAULT 0;",
                 "ALTER TABLE jugadores ADD COLUMN IF NOT EXISTS rojas_legacy INTEGER DEFAULT 0;",
                 "ALTER TABLE equipos ADD COLUMN IF NOT EXISTS saldo_arbitraje_legacy FLOAT DEFAULT 0.0;",
-                "ALTER TABLE pagos ADD COLUMN IF NOT EXISTS comprobante_url VARCHAR(255);"
+                "ALTER TABLE pagos ADD COLUMN IF NOT EXISTS comprobante_url VARCHAR(255);",
+                "ALTER TABLE partidos ADD COLUMN IF NOT EXISTS fecha_inicio_efectiva TIMESTAMP;"
             ]
             
             for q in manual_queries:
