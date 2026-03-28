@@ -65,11 +65,6 @@ class FutAdminUI {
                 const liveList = Array.isArray(matches) ? matches : (matches.items || []);
                 const hasLive = liveList.length > 0;
                 
-                // DIAGNÓSTICO TEMPORAL: Mostrar al Ing. qué está viendo el sistema
-                if (hasLive) {
-                    console.log(`FUTADMIN DEBUG: ${liveList.length} partidos en vivo detectados.`);
-                }
-
                 this.updateSidebarLogoStatus(hasLive);
             } catch (e) {
                 console.warn("Error en sync de logo:", e);
