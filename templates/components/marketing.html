@@ -15,48 +15,145 @@
         <div id="marketing-grid" class="leagues-grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); display: grid;">
             
             <!-- Herramienta: Resultado del Partido -->
-            <div class="premium-card clickable" style="padding: 24px; text-align: center; border: 1px solid rgba(236,72,153,0.3); background: rgba(236,72,153,0.05); transition: transform 0.2s; opacity: 0.5; filter: grayscale(1);" title="Próximamente">
+            <div class="premium-card clickable" onclick="ui.marketing.initResultadoEditor()" style="padding: 24px; text-align: center; border: 1px solid rgba(236,72,153,0.5); background: rgba(236,72,153,0.1); transition: transform 0.2s; box-shadow: 0 0 20px rgba(236,72,153,0.2);" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
                 <div style="font-size: 3rem; margin-bottom: 15px;">⚽</div>
                 <h3 style="margin: 0 0 10px 0; color: #fff;">Resultado Final</h3>
                 <p class="text-muted" style="font-size: 0.85rem; margin-bottom: 20px;">Diseño con el marcador del partido y estadísticas clave.</p>
-                <button class="btn-primary" style="background: linear-gradient(135deg, #ec4899, #be185d); border: none; width: 100%;" disabled>Próximamente</button>
+                <button class="btn-primary" style="background: linear-gradient(135deg, #ec4899, #be185d); border: none; width: 100%; cursor: pointer;">Comenzar Edición</button>
             </div>
 
             <!-- Herramienta: MVP -->
-            <div class="premium-card clickable" style="padding: 24px; text-align: center; border: 1px solid rgba(139,92,246,0.3); background: rgba(139,92,246,0.05); transition: transform 0.2s; opacity: 0.5; filter: grayscale(1);" title="Próximamente">
+            <div class="premium-card clickable" onclick="ui.marketing.initMVPEditor()" style="padding: 24px; text-align: center; border: 1px solid rgba(139,92,246,0.5); background: rgba(139,92,246,0.1); transition: transform 0.2s; box-shadow: 0 0 20px rgba(139,92,246,0.2);" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
                 <div style="font-size: 3rem; margin-bottom: 15px;">⭐</div>
                 <h3 style="margin: 0 0 10px 0; color: #fff;">Jugador MVP</h3>
                 <p class="text-muted" style="font-size: 0.85rem; margin-bottom: 20px;">Destaca al mejor jugador del partido con su foto y rendimiento.</p>
-                <button class="btn-primary" style="background: linear-gradient(135deg, #8b5cf6, #6d28d9); border: none; width: 100%;" disabled>Próximamente</button>
+                <button class="btn-primary" style="background: linear-gradient(135deg, #8b5cf6, #6d28d9); border: none; width: 100%; cursor: pointer;">Comenzar Edición</button>
             </div>
 
             <!-- Herramienta: Rol de Juegos -->
-            <div class="premium-card clickable" style="padding: 24px; text-align: center; border: 1px solid rgba(14,165,233,0.3); background: rgba(14,165,233,0.05); transition: transform 0.2s; opacity: 0.5; filter: grayscale(1);" title="Próximamente">
+            <div class="premium-card clickable" onclick="ui.marketing.initRolEditor()" style="padding: 24px; text-align: center; border: 1px solid rgba(14,165,233,0.5); background: rgba(14,165,233,0.1); transition: transform 0.2s; box-shadow: 0 0 20px rgba(14,165,233,0.2);" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
                 <div style="font-size: 3rem; margin-bottom: 15px;">📅</div>
                 <h3 style="margin: 0 0 10px 0; color: #fff;">Rol de Juegos</h3>
                 <p class="text-muted" style="font-size: 0.85rem; margin-bottom: 20px;">Imagen con todos los horarios de la próxima jornada.</p>
-                <button class="btn-primary" style="background: linear-gradient(135deg, #0ea5e9, #0284c7); border: none; width: 100%;" disabled>Próximamente</button>
+                <button class="btn-primary" style="background: linear-gradient(135deg, #0ea5e9, #0284c7); border: none; width: 100%; cursor: pointer;">Comenzar Edición</button>
             </div>
 
             <!-- Herramienta: Comunicado -->
-            <div class="premium-card clickable" style="padding: 24px; text-align: center; border: 1px solid rgba(245,158,11,0.5); background: rgba(245,158,11,0.1); transition: transform 0.2s; box-shadow: 0 0 20px rgba(245,158,11,0.2);" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+            <div class="premium-card clickable" onclick="ui.marketing.initAvisosEditor()" style="padding: 24px; text-align: center; border: 1px solid rgba(245,158,11,0.5); background: rgba(245,158,11,0.1); transition: transform 0.2s; box-shadow: 0 0 20px rgba(245,158,11,0.2);" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
                 <div style="font-size: 3rem; margin-bottom: 15px;">📢</div>
                 <h3 style="margin: 0 0 10px 0; color: #fff;">Avisos Oficiales</h3>
                 <p class="text-muted" style="font-size: 0.85rem; margin-bottom: 20px;">Genera comunicados elegantes para tu comunidad o foto de perfil.</p>
-                <button class="btn-primary" style="background: linear-gradient(135deg, #f59e0b, #d97706); border: none; width: 100%; cursor: pointer;" onclick="ui.marketing.initAvisosEditor()">Comenzar Edición</button>
+                <button class="btn-primary" style="background: linear-gradient(135deg, #f59e0b, #d97706); border: none; width: 100%; cursor: pointer;">Comenzar Edición</button>
             </div>
 
             <!-- Herramienta: Logos VIP -->
-            <div class="premium-card clickable" style="padding: 24px; text-align: center; border: 1px solid rgba(16,185,129,0.5); background: rgba(16,185,129,0.1); transition: transform 0.2s; box-shadow: 0 0 20px rgba(16,185,129,0.2);" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+            <div class="premium-card clickable" onclick="ui.marketing.initLogosGallery()" style="padding: 24px; text-align: center; border: 1px solid rgba(16,185,129,0.5); background: rgba(16,185,129,0.1); transition: transform 0.2s; box-shadow: 0 0 20px rgba(16,185,129,0.2);" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
                 <div style="font-size: 3rem; margin-bottom: 15px;">💎</div>
                 <h3 style="margin: 0 0 10px 0; color: #fff;">Galería de Logos</h3>
                 <p class="text-muted" style="font-size: 0.85rem; margin-bottom: 20px;">Descarga 5 avatares y logos premium exclusivos para redes.</p>
-                <button class="btn-primary" style="background: linear-gradient(135deg, #10b981, #059669); border: none; width: 100%; cursor: pointer;" onclick="ui.marketing.initLogosGallery()">Ver Logos</button>
+                <button class="btn-primary" style="background: linear-gradient(135deg, #10b981, #059669); border: none; width: 100%; cursor: pointer;">Ver Logos</button>
             </div>
 
         </div>
 
-        <!-- Editor de Avisos Oficiales (Oculto por defecto) -->
+        <!-- Editor Dinámico Genérico (Resultado, MVP, Rol) -->
+        <div id="marketing-editor-container" style="display: none; align-items: stretch; gap: 20px; flex-wrap: wrap;">
+            
+            <!-- CONTROLES -->
+            <div style="flex: 1; min-width: 350px; background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 12px; padding: 20px;">
+                <div style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+                    <h3 style="margin: 0; color: #fff;" id="mkt-editor-title">Editor Gráfico</h3>
+                    <button class="btn-secondary" onclick="ui.marketing.closeEditor()" style="padding: 6px 12px;">← Volver</button>
+                </div>
+
+                <!-- SELECTOR DE DATOS (Se llena vía JS) -->
+                <div id="mkt-data-selector-group" class="form-group" style="display: none;">
+                    <label id="mkt-selector-label">Selecciona el Partido</label>
+                    <select id="mkt-data-selector" class="select-field"></select>
+                </div>
+
+                <div id="mkt-controls-dynamic">
+                    <!-- Los inputs específicos se inyectan/muestran aquí -->
+                    <div id="mkt-ctrl-resultado" style="display: none;">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label id="label-local">Goles Local</label>
+                                <input type="number" id="mkt-glocal" value="0">
+                            </div>
+                            <div class="form-group">
+                                <label id="label-visitante">Goles Visita</label>
+                                <input type="number" id="mkt-gvisit" value="0">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Goleadores / Notas</label>
+                            <input type="text" id="mkt-scorers" placeholder="Ej. Goles: Carlos (2), Juan (1)">
+                        </div>
+                    </div>
+
+                    <div id="mkt-ctrl-mvp" style="display: none;">
+                        <div class="form-group">
+                            <label>Nombre del Jugador</label>
+                            <input type="text" id="mkt-mvp-name" placeholder="Ej. CRISTIANO RONALDO">
+                        </div>
+                        <div class="form-group">
+                            <label>Equipo / Escudo</label>
+                            <input type="text" id="mkt-mvp-team" placeholder="Ej. REAL MADRID">
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Goles</label>
+                                <input type="number" id="mkt-mvp-goals" value="1">
+                            </div>
+                            <div class="form-group">
+                                <label>Rating</label>
+                                <input type="number" id="mkt-mvp-rating" value="9.5" step="0.1">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="mkt-ctrl-rol" style="display: none;">
+                        <div class="form-group">
+                            <label>Título de la Jornada</label>
+                            <input type="text" id="mkt-rol-title" value="JORNADA 5 - LIGA MAYOR">
+                        </div>
+                        <div class="form-group">
+                            <label>Nota al pie</label>
+                            <input type="text" id="mkt-rol-footer" value="¡No faltes! - FutAdmin">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Logo / Imagen Personalizada</label>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <input type="file" id="mkt-image-file" accept="image/*" style="flex: 1; padding: 8px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 6px; color: #fff; cursor: pointer;">
+                        <button class="btn-secondary" onclick="ui.marketing.clearDynamicImage()" title="Quitar imagen">✕</button>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group" style="flex: 1;">
+                        <label>Color Fondo 1</label>
+                        <input type="color" id="mkt-gen-bg1" value="#0f172a" style="width: 100%; height: 40px; border: none; background: transparent; cursor: pointer;">
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label>Color Fondo 2</label>
+                        <input type="color" id="mkt-gen-bg2" value="#020617" style="width: 100%; height: 40px; border: none; background: transparent; cursor: pointer;">
+                    </div>
+                </div>
+
+                <button class="btn-primary" id="mkt-download-btn" style="width: 100%; margin-top: 20px; padding: 15px; font-size: 1.1rem; border-radius: 8px; font-weight: bold; background: linear-gradient(135deg, #22c55e, #16a34a);" onclick="ui.marketing.downloadDynamicImage()">📥 Descargar Gráfico PNG</button>
+            </div>
+
+            <!-- VISTA PREVIA CANVAS -->
+            <div style="flex: 1; min-width: 320px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; background: #000; border-radius: 12px; padding: 20px; box-shadow: inset 0 0 20px rgba(0,0,0,0.8);">
+                <span class="text-muted" style="margin-bottom: 10px; font-size: 0.8rem; text-transform: uppercase;">Vista Previa Web</span>
+                <canvas id="marketing-canvas-gen" style="width: 100%; max-width: 450px; aspect-ratio: 1/1; box-shadow: 0 10px 30px rgba(0,0,0,0.5); object-fit: contain; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);"></canvas>
+            </div>
+        </div>
+
+        <!-- Editor de Avisos Oficiales (Mantener Original) -->
         <div id="marketing-editor-avisos" style="display: none; align-items: stretch; gap: 20px; flex-wrap: wrap;">
             
             <!-- CONTROLES -->
@@ -64,6 +161,62 @@
                 <div style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
                     <h3 style="margin: 0; color: #fff;">Editor de Aviso</h3>
                     <button class="btn-secondary" onclick="ui.marketing.closeEditor()" style="padding: 6px 12px;">← Volver</button>
+                </div>
+
+                <div class="form-group">
+                    <label>Título Principal</label>
+                    <input type="text" id="mkt-title" value="AVISO IMPORTANTE" placeholder="Ej. COMUNICADO">
+                </div>
+
+                <div class="form-group">
+                    <label>Subtítulo o Fecha</label>
+                    <input type="text" id="mkt-subtitle" value="COMUNICADO OFICIAL" placeholder="Ej. LIGA PREMIER">
+                </div>
+
+                <div class="form-group">
+                    <label>Cuerpo del Mensaje</label>
+                    <textarea id="mkt-body" rows="4" class="full-textarea" placeholder="Escribe tu mensaje..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Logo / Escudo Central</label>
+                    <!-- Carga DIRECTA desde el dispositivo: no usa servidor, lee en base64 al instante -->
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <input type="file" id="mkt-logo-file" accept="image/*" style="flex: 1; padding: 8px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 6px; color: #fff; cursor: pointer;">
+                        <button class="btn-secondary" onclick="ui.marketing.clearLogo()" title="Quitar logo">✕</button>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group" style="flex: 1;">
+                        <label>Color Fondo 1</label>
+                        <input type="color" id="mkt-bg1" value="#0f172a" style="width: 100%; height: 40px; border: none; background: transparent; cursor: pointer;">
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label>Color Fondo 2</label>
+                        <input type="color" id="mkt-bg2" value="#020617" style="width: 100%; height: 40px; border: none; background: transparent; cursor: pointer;">
+                    </div>
+                </div>
+
+                <button class="btn-primary" style="width: 100%; margin-top: 20px; padding: 15px; font-size: 1.1rem; border-radius: 8px; font-weight: bold; background: linear-gradient(135deg, #10b981, #059669);" onclick="ui.marketing.downloadImage()">📥 Descargar Gráfico PNG</button>
+            </div>
+
+            <!-- VISTA PREVIA CANVAS -->
+            <div style="flex: 1; min-width: 320px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; background: #000; border-radius: 12px; padding: 20px; box-shadow: inset 0 0 20px rgba(0,0,0,0.8);">
+                <span class="text-muted" style="margin-bottom: 10px; font-size: 0.8rem; text-transform: uppercase;">Vista Previa Web</span>
+                <canvas id="marketing-canvas" style="width: 100%; max-width: 450px; aspect-ratio: 1/1; box-shadow: 0 10px 30px rgba(0,0,0,0.5); object-fit: contain; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);"></canvas>
+            </div>
+        </div>
+
+        <!-- Galería de Logos VIP (Oculto por defecto) -->
+        <div id="marketing-editor-logos" style="display: none; align-items: stretch; gap: 20px; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 100%; background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 12px; padding: 20px;">
+                <div style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <h3 style="margin: 0; color: #fff;">Galería de Logos Variantes</h3>
+                        <p class="text-muted" style="margin: 5px 0 0 0; font-size: 0.85rem;">Escoge y descarga cualquiera de los logos oficiales en alta resolución.</p>
+                    </div>
+                    <button class="btn-secondary" onclick="ui.marketing.closeLogosGallery()" style="padding: 6px 12px;">← Volver</button>
                 </div>
 
                 <div class="form-group">

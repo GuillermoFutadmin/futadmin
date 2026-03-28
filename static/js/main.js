@@ -193,7 +193,8 @@ class FutAdminUI {
             'canchas': 'Sedes y Canchas',
             'campos': 'Canchas de Juego',
             'pagos-canchas': 'Pagos de Sedes',
-            'archivo': 'Historial / Papelera'
+            'archivo': 'Historial / Papelera',
+            'marketing': 'Estudio Creativo'
         };
         document.getElementById('current-view-title').innerText = titleMap[viewId] || 'FutAdmin';
 
