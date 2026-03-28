@@ -17,43 +17,61 @@ def handle_arbitros():
             return jsonify({"error": "No tiene permisos para crear árbitros"}), 403
 
         data = request.json
-        nuevo = Arbitro(
-            nombre=data.get('nombre'),
-            email=data.get('email'),
-            telefono=data.get('telefono'),
-            nivel=data.get('nivel', 'Local'),
-            foto_url=data.get('foto_url'),
-            activo=data.get('activo', True),
-            telegram_id=data.get('telegram_id'),
-            password=data.get('password') or f"Ref{secrets.token_hex(3).upper()}",
-            liga_id=data.get('liga_id') or session.get('liga_id')
-        )
-        db.session.add(nuevo)
-        
-        # Hook: Crear usuario si se solicita explícitamente y hay email
-        crear_cuenta = data.get('crear_cuenta', False)
-        rol_solicitado = data.get('rol', 'arbitro')
-        
-        if crear_cuenta and nuevo.email:
-            existing = Usuario.query.filter_by(email=nuevo.email).first()
-            if not existing:
-                from flask_bcrypt import Bcrypt
-                bcrypt = Bcrypt() # Local instantiation if needed or use global if available
-                hashed_pw = bcrypt.generate_password_hash(nuevo.password).decode('utf-8')
-                new_user = Usuario(
-                    nombre=nuevo.nombre,
-                    email=nuevo.email,
-                    password_hash=hashed_pw,
-                    rol=rol_solicitado,
-                    liga_id=nuevo.liga_id or session.get('liga_id'),
-                    activo=True
-                )
-                db.session.add(new_user)
-            else:
-                existing.rol = rol_solicitado
+        if not data:
+            return jsonify({"error": "No se recibieron datos"}), 400
 
-        db.session.commit()
-        return jsonify({"id": nuevo.id, "nombre": nuevo.nombre}), 201
+        # Robustez: Convertir campos vacíos a None para evitar conflictos de unicidad
+        def clean_val(val):
+            if val is None: return None
+            v = str(val).strip()
+            return v if v != "" else None
+
+        try:
+            # 1. Crear el Árbitro
+            nuevo = Arbitro(
+                nombre=data.get('nombre'),
+                email=clean_val(data.get('email')),
+                telefono=data.get('telefono'),
+                nivel=data.get('nivel', 'Local'),
+                foto_url=data.get('foto_url'),
+                activo=data.get('activo', True),
+                telegram_id=clean_val(data.get('telegram_id')),
+                password=data.get('password') or f"Ref{secrets.token_hex(3).upper()}",
+                liga_id=data.get('liga_id') or session.get('liga_id')
+            )
+            db.session.add(nuevo)
+            
+            # 2. Hook: Crear usuario si se solicita explícitamente y hay email
+            crear_cuenta = data.get('crear_cuenta', False)
+            rol_solicitado = data.get('rol', 'arbitro')
+            
+            if crear_cuenta and nuevo.email:
+                existing = Usuario.query.filter_by(email=nuevo.email).first()
+                if not existing:
+                    # Usar la instancia global de bcrypt si existe, o local
+                    from models import bcrypt as models_bcrypt
+                    hashed_pw = models_bcrypt.generate_password_hash(nuevo.password).decode('utf-8')
+                    new_user = Usuario(
+                        nombre=nuevo.nombre,
+                        email=nuevo.email,
+                        password_hash=hashed_pw,
+                        rol=rol_solicitado,
+                        liga_id=nuevo.liga_id or session.get('liga_id'),
+                        activo=True
+                    )
+                    db.session.add(new_user)
+                else:
+                    existing.rol = rol_solicitado
+
+            db.session.commit()
+            return jsonify({"success": True, "id": nuevo.id, "nombre": nuevo.nombre}), 201
+            
+        except Exception as e:
+            db.session.rollback()
+            error_msg = str(e)
+            if 'unique' in error_msg.lower():
+                return jsonify({"error": "El Telegram ID o Email ya están registrados con otro árbitro."}), 400
+            return jsonify({"error": f"Error al crear árbitro: {error_msg}"}), 500
     
     if request.method == 'GET':
         # Sincronización Just-in-Time mejorada: Asegurar que TODO el staff operativo tenga tarjeta
@@ -141,26 +159,46 @@ def handle_arbitro_single(id):
         return jsonify({"success": True})
     
     if request.method == 'PUT':
-        data = request.json
-        arbitro.nombre = data.get('nombre', arbitro.nombre)
-        arbitro.email = data.get('email', arbitro.email)
-        arbitro.telefono = data.get('telefono', arbitro.telefono)
-        arbitro.nivel = data.get('nivel', arbitro.nivel)
-        arbitro.foto_url = data.get('foto_url', arbitro.foto_url)
-        if 'activo' in data:
-            arbitro.activo = data['activo']
-        if 'telegram_id' in data:
-            arbitro.telegram_id = data['telegram_id']
-        arbitro.password = data.get('password', arbitro.password)
-        if 'liga_id' in data:
-            arbitro.liga_id = data['liga_id']
-            # Sincronizar con el usuario si existe
-            if arbitro.email:
-                usuario = Usuario.query.filter_by(email=arbitro.email).first()
-                if usuario:
-                    usuario.liga_id = data['liga_id']
-        db.session.commit()
-        return jsonify({"success": True})
+        try:
+            data = request.json
+            
+            # Robustez: Convertir campos vacíos a None para evitar conflictos de unicidad
+            def clean_val(val):
+                if val is None: return None
+                v = str(val).strip()
+                return v if v != "" else None
+
+            arbitro.nombre = data.get('nombre', arbitro.nombre)
+            arbitro.email = clean_val(data.get('email')) or arbitro.email
+            arbitro.telefono = data.get('telefono', arbitro.telefono)
+            arbitro.nivel = data.get('nivel', arbitro.nivel)
+            arbitro.foto_url = data.get('foto_url', arbitro.foto_url)
+            
+            if 'activo' in data:
+                arbitro.activo = data['activo']
+            
+            # Campo crítico: telegram_id único
+            if 'telegram_id' in data:
+                arbitro.telegram_id = clean_val(data['telegram_id'])
+                
+            arbitro.password = data.get('password', arbitro.password)
+            
+            if 'liga_id' in data:
+                arbitro.liga_id = data['liga_id']
+                # Sincronizar con el usuario si existe
+                if arbitro.email:
+                    usuario = Usuario.query.filter_by(email=arbitro.email).first()
+                    if usuario:
+                        usuario.liga_id = data['liga_id']
+            
+            db.session.commit()
+            return jsonify({"success": True})
+        except Exception as e:
+            db.session.rollback()
+            error_msg = str(e)
+            if 'unique' in error_msg.lower():
+                return jsonify({"error": "Conflicto: El Telegram ID o Email ya pertenecen a otro árbitro."}), 400
+            return jsonify({"error": f"Error 500: {error_msg}"}), 500
 
 # --- API: Telegram Referee App (TWA) ---
 
