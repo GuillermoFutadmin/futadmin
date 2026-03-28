@@ -3646,28 +3646,29 @@
                 container.innerHTML = items.map(item => {
                     const label = item.nombre || item.id;
                     const value = type === 'sede' ? item.nombre : item.id;
-                    
+                    const lHtml = `<span style="display:block;overflow:hidden;white-space:nowrap;max-width:100%"><span class="marquee-wrap" style="max-width:100%"><span class="marquee-text" data-automarquee="1">${label}</span></span></span>`;
+
                     if (nextType === 'roster') {
-                        return `<button class="btn btn-primary" onclick="openRoster(${item.id})" style="text-align:left; padding:15px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:var(--text); font-weight:600;">
-                                    ${label} <span style="font-size:0.7rem; color:var(--muted); display:block; opacity:0.6;">UID: ${item.uid || '—'}</span>
-                                </button>`;
+                        return `<button class="btn btn-primary" onclick="openRoster(${item.id})" style="text-align:left;padding:15px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:var(--text);font-weight:600;">${lHtml}<span style="font-size:0.7rem;color:var(--muted);display:block;opacity:0.6;margin-top:3px">UID: ${item.uid || '—'}</span></button>`;
                     }
                     if (nextType === 'payments_or_search') {
-                        const action = (drillPurpose === 'search_team') ? `showTeamMatchesForManagement(${item.id}, '${label}')` : `showTeamMatchesForPayment(${item.id}, '${label}')`;
-                        return `<button class="btn btn-primary" onclick="${action}" style="text-align:left; padding:15px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:var(--text); font-weight:600;">
-                                    ${label}
-                                </button>`;
+                        const safeLabel = label.replace(/'/g, "\\'");
+                        const action = (drillPurpose === 'search_team') ? `showTeamMatchesForManagement(${item.id}, '${safeLabel}')` : `showTeamMatchesForPayment(${item.id}, '${safeLabel}')`;
+                        return `<button class="btn btn-primary" onclick="${action}" style="text-align:left;padding:15px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:var(--text);font-weight:600;">${lHtml}</button>`;
                     }
                     if (nextType === 'payments' && drillPurpose === 'payments') {
-                         return `<button class="btn btn-primary" onclick="showTeamMatchesForPayment(${item.id}, '${label.replace(/'/g, "\\'")}')" style="text-align:left; padding:15px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:var(--text); font-weight:600;">
-                                    ${label}
-                                </button>`;
+                        const safeLabel = label.replace(/'/g, "\\'");
+                        return `<button class="btn btn-primary" onclick="showTeamMatchesForPayment(${item.id}, '${safeLabel}')" style="text-align:left;padding:15px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:var(--text);font-weight:600;">${lHtml}</button>`;
                     }
-
-                    return `<button class="btn btn-primary" onclick="loadDrillLevel('${nextType}', '${value}')" style="text-align:left; padding:15px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:var(--text); font-weight:600;">
-                                ${label}
-                            </button>`;
+                    return `<button class="btn btn-primary" onclick="loadDrillLevel('${nextType}', '${value}')" style="text-align:left;padding:15px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:var(--text);font-weight:600;">${lHtml}</button>`;
                 }).join('');
+
+                // Activar marquee en los botones recien renderizados
+                requestAnimationFrame(() => {
+                    container.querySelectorAll('[data-automarquee]').forEach(span => {
+                        activateMarqueeIfNeeded(span.parentElement && span.parentElement.parentElement ? span.parentElement.parentElement : span);
+                    });
+                });
 
                 if (items.length === 0) container.innerHTML = '<p style="text-align:center; padding:20px; color:var(--muted);">No se encontraron elementos.</p>';
 
