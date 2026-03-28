@@ -2235,7 +2235,21 @@
                     addPlayerToSinBin(pendingEventData.playerId, pendingEventData.playerName, '?', 2);
                 }
 
-                logEvent(logType, pendingEventData.playerName, currentMinute);
+                // Obtener el nombre del equipo correspondiente
+                let teamName = '';
+                if (activeMatch && pendingEventData.equipoId) {
+                    teamName = pendingEventData.equipoId === activeMatch.equipo_local_id ? activeMatch.equipo_local : activeMatch.equipo_visitante;
+                }
+                
+                let subject = pendingEventData.playerName || 'Jugador';
+                if (teamName) subject += ` (${teamName})`;
+
+                if (pendingEventType && pendingEventType.toLowerCase().includes('cambio') && note) {
+                    subject = note;
+                    if (teamName) subject += ` (${teamName})`;
+                }
+
+                logEvent(logType, subject, currentMinute);
             }
         }
 
@@ -2419,7 +2433,24 @@
                     logContainer.innerHTML = ''; 
                     // Ordenar por minuto para que al hacer prepend queden los ms recientes arriba
                     [...activeMatch.eventos].sort((a,b) => a.minuto - b.minuto).forEach(ev => {
-                        let subject = ev.jugador_nombre || ev.equipo_nombre || '';
+                        let subject = "";
+                        const tipoLow = (ev.tipo || "").toLowerCase();
+                        
+                        // Si es un evento de sistema (Inicio, Fin, Medio Tiempo), no hay sujeto
+                        if (['inicio', 'fin', 'medio tiempo', 'reanudación'].includes(tipoLow) || tipoLow.includes("reanudaci")) {
+                            subject = "";
+                        } else {
+                            subject = ev.jugador_nombre && ev.jugador_nombre !== 'NN' ? ev.jugador_nombre : 'Desconocido';
+                            if (ev.equipo_nombre && ev.equipo_nombre !== '—') {
+                                subject += ` (${ev.equipo_nombre})`;
+                            }
+                            // Si es un cambio, la nota tiene el texto completo
+                            if (tipoLow.includes('cambio') && ev.nota) {
+                                subject = ev.nota;
+                                if (ev.equipo_nombre && ev.equipo_nombre !== '—') subject += ` (${ev.equipo_nombre})`;
+                            }
+                        }
+
                         logEvent(ev.tipo, subject, ev.minuto);
                     });
                 }
@@ -2458,7 +2489,13 @@
             let label = type;
             let sep = ': ';
             
-            if (t.includes('gol') || t.includes('goal')) {
+            if (t === 'inicio' || t === 'fin' || t === 'medio tiempo' || t.includes('reanudaci')) {
+                // Eventos de sistema sin sujeto
+                icon = t.includes('inicio') || t.includes('reanudaci') ? '▶️' : (t === 'fin' ? '🏁' : '⏳');
+                label = t.charAt(0).toUpperCase() + t.slice(1);
+                sep = '';
+                subject = '';
+            } else if (t.includes('gol') || t.includes('goal')) {
                 icon = '⚽';
                 label = 'Gol de';
                 sep = ' ';

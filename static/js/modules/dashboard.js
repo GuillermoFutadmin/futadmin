@@ -211,11 +211,28 @@ export class DashboardModule {
                                         } else if (tipoLow.includes('azul') || tipoLow.includes('blue')) {
                                             icon = '🟦'; classType = 'event-icon-blue';
                                         }
+                                        let nameContent = "";
+                                        if (['inicio', 'fin', 'medio tiempo', 'reanudación'].includes(tipoLow) || tipoLow.includes('reanudaci')) {
+                                            nameContent = e.tipo; // Solo texto del estado
+                                        } else {
+                                            let playerText = e.jugador_nombre && e.jugador_nombre !== "NN" ? e.jugador_nombre : "Desconocido";
+                                            let numText = e.jugador_numero && e.jugador_numero !== "?" ? `<b>#${e.jugador_numero}</b> ` : "";
+                                            let equipoText = (e.equipo_nombre && e.equipo_nombre !== "—") ? ` <small style="opacity:0.7;">(${e.equipo_nombre})</small>` : "";
+                                            
+                                            if (tipoLow.includes("cambio")) {
+                                                playerText = e.nota || "Sustitución";
+                                                nameContent = `${playerText}${equipoText}`;
+                                            } else {
+                                                nameContent = `${numText}${playerText}${equipoText}`;
+                                                if (e.nota) nameContent += ` <small style="opacity:0.7;">- ${e.nota}</small>`;
+                                            }
+                                        }
+
                                         return `
                                             <div class="event-row-mini">
                                                 <span class="event-min-mini">${e.minuto}'</span>
                                                 <span class="${classType}">${icon}</span>
-                                                <span class="event-name-mini"><b>#${e.jugador_numero || '?'}</b> ${e.jugador_nombre || 'NN'} <small style="opacity:0.7;">(${e.equipo_nombre || ''})</small></span>
+                                                <span class="event-name-mini">${nameContent}</span>
                                             </div>
                                         `;
                                     }).join('')}
