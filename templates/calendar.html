@@ -2012,7 +2012,14 @@
             // DAY MODAL (click on a calendar day)
             // ----------------------------------------------------------
             function openDayModal(dateStr, dateObj, dayMatches) {
-                state.lastDayMatches = dayMatches;
+                // Sort matches by time once for both views
+                const sortedMatches = [...dayMatches].sort((a, b) => {
+                    const hA = (a.hora || '23:59').padStart(5, '0');
+                    const hB = (b.hora || '23:59').padStart(5, '0');
+                    return hA.localeCompare(hB, undefined, { numeric: true });
+                });
+
+                state.lastDayMatches = sortedMatches;
                 state.lastDayDate = dateObj;
 
                 const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
@@ -2031,10 +2038,10 @@
                 const isAdmin = ['admin', 'ejecutivo', 'dueño de liga', 'dueño_liga', 'dueno_liga', 'dueno de liga'].includes(('{{ user_rol }}' || '').toLowerCase());
 
                 // 1. Mostrar Partidos ya programados
-                if (dayMatches.length > 0) {
-                    html += `<h4 style="margin-bottom:10px; color:var(--text);">Partidos Programados (${dayMatches.length})</h4>
+                if (sortedMatches.length > 0) {
+                    html += `<h4 style="margin-bottom:10px; color:var(--text);">Partidos Programados (${sortedMatches.length})</h4>
                     <div style="display:flex; flex-direction:column; gap:8px; margin-bottom: 20px;">
-                    ${dayMatches.sort((a, b) => (a.hora || '23:59').localeCompare(b.hora || '23:59', undefined, {numeric: true})).map(p => {
+                    ${sortedMatches.map(p => {
                         const badge = badgeHtml(p.estado);
                         const score = p.estado === 'Played'
                             ? `<strong style="color:var(--primary)">${p.goles_local ?? '?'} – ${p.goles_visitante ?? '?'}</strong>`
@@ -2109,7 +2116,7 @@
                 if (matches.length === 0) {
                     listContainer.innerHTML = '<div style="text-align:center; padding:100px; opacity:0.5; font-size:2rem;">No hay partidos programados.</div>';
                 } else {
-                    listContainer.innerHTML = matches.sort((a, b) => (a.hora || '23:59').localeCompare(b.hora || '23:59', undefined, {numeric: true})).map(p => {
+                    listContainer.innerHTML = matches.map(p => {
                         const localInitial = (p.equipo_local || '?')[0].toUpperCase();
                         const visitorInitial = (p.equipo_visitante || '?')[0].toUpperCase();
                         
