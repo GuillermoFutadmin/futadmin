@@ -85,25 +85,16 @@ class FutAdminUI {
     }
 
     updateSidebarLogoStatus(isLive) {
-        const logo = document.querySelector('.sidebar-logo-img');
-        if (!logo) return;
+        const container = document.querySelector('.sidebar-logo-container');
+        if (!container) return;
 
         // Limpiar estados anteriores antes de aplicar el nuevo
-        logo.classList.remove('logo-status-live', 'logo-status-idle');
+        container.classList.remove('logo-status-live', 'logo-status-idle');
         
         if (isLive) {
-            logo.classList.add('logo-status-live');
-            // FORZADO: Brute force approach with box-shadow (much more visible than drop-shadow)
-            logo.style.boxShadow = '0 0 20px 5px rgba(255, 0, 0, 1)';
-            logo.style.border = '2px solid rgba(255, 0, 0, 1)';
-            logo.style.mixBlendMode = 'normal'; 
-            logo.style.filter = 'none'; // Clear any conflicting filters
+            container.classList.add('logo-status-live');
         } else {
-            logo.classList.add('logo-status-idle');
-            logo.style.boxShadow = '0 0 10px rgba(16, 185, 129, 0.6)';
-            logo.style.border = 'none';
-            logo.style.filter = ''; 
-            logo.style.mixBlendMode = ''; 
+            container.classList.add('logo-status-idle');
         }
     }
 
