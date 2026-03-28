@@ -75,6 +75,7 @@ export class MarketingModule {
         document.getElementById('mkt-data-selector-group').style.display = 'block';
         this.showEditor('marketing-editor-container');
         this.refreshCanvasSize();
+        this.bindEventsDynamic();
     }
 
     refreshCanvasSize() {
