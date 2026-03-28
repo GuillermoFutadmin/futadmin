@@ -1229,7 +1229,17 @@
                                 <div style="font-size: 0.75rem; color: var(--muted); line-height: 1.6;">
                                     <div style="display:flex; align-items:center; gap:6px;">
                                         <span style="font-size: 0.85rem;">📅</span>
-                                        <span style="color:var(--secondary); font-weight:800;">${m.fecha || 'Día pendiente'} · ${m.hora || '--:--'}</span>
+                                        <span style="color:var(--secondary); font-weight:800;">
+                                            ${(() => {
+                                                const rawDate = m.fecha || m.date || '';
+                                                let formattedDate = rawDate;
+                                                if (rawDate && rawDate.includes('-')) {
+                                                    const parts = rawDate.split('-');
+                                                    if (parts.length === 3) formattedDate = `${parts[2]}/${parts[1]}/${parts[0]}`;
+                                                }
+                                                return formattedDate || 'No programado';
+                                            })()} · ${m.hora || '--:--'}
+                                        </span>
                                     </div>
                                     <div style="display:flex; align-items:center; gap:6px;">
                                         <span style="font-size: 0.85rem;">📍</span>
