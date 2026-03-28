@@ -2034,7 +2034,7 @@
                 if (dayMatches.length > 0) {
                     html += `<h4 style="margin-bottom:10px; color:var(--text);">Partidos Programados (${dayMatches.length})</h4>
                     <div style="display:flex; flex-direction:column; gap:8px; margin-bottom: 20px;">
-                    ${dayMatches.map(p => {
+                    ${dayMatches.sort((a, b) => (a.hora || '23:59').localeCompare(b.hora || '23:59', undefined, {numeric: true})).map(p => {
                         const badge = badgeHtml(p.estado);
                         const score = p.estado === 'Played'
                             ? `<strong style="color:var(--primary)">${p.goles_local ?? '?'} – ${p.goles_visitante ?? '?'}</strong>`
@@ -2109,7 +2109,7 @@
                 if (matches.length === 0) {
                     listContainer.innerHTML = '<div style="text-align:center; padding:100px; opacity:0.5; font-size:2rem;">No hay partidos programados.</div>';
                 } else {
-                    listContainer.innerHTML = matches.map(p => {
+                    listContainer.innerHTML = matches.sort((a, b) => (a.hora || '23:59').localeCompare(b.hora || '23:59', undefined, {numeric: true})).map(p => {
                         const localInitial = (p.equipo_local || '?')[0].toUpperCase();
                         const visitorInitial = (p.equipo_visitante || '?')[0].toUpperCase();
                         
