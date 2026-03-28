@@ -842,9 +842,10 @@
                 </div>
             </div>
 
-            <!-- Extra actions -->
-            <div style="grid-column: 1 / -1; display: flex; gap: 8px;">
-                <input type="number" id="extra-minutes" value="0" class="btn btn-outline" style="flex: 1; text-align: center; font-size:0.85rem;" placeholder="+MIN EXTRA">
+            <!-- Extra minutes (Fase 16 Refresh) -->
+            <div style="grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.03); padding: 8px 15px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 5px;">
+                <span style="font-size: 0.75rem; color: var(--text); font-weight: 800; letter-spacing: 0.5px;">⏱ MINUTOS EXTRA (AGREGADO):</span>
+                <input type="number" id="extra-minutes" value="0" class="btn btn-outline" style="width: 70px; text-align: center; border-color: var(--primary); color: var(--primary); font-weight: 900; height: 38px; background: rgba(0, 242, 255, 0.05);" min="0">
             </div>
 
             <button class="btn btn-outline" onclick="gameAction('Medio Tiempo')" id="btn-halftime" style="grid-column: 1 / -1; border-color: var(--primary); color: var(--primary); font-weight:800;">⌛ MEDIO TIEMPO</button>
