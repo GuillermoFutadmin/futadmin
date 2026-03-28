@@ -93,12 +93,16 @@ class FutAdminUI {
         
         if (isLive) {
             logo.classList.add('logo-status-live');
-            // FORZADO: Asegurar que el filtro rojo se aplique y el blend-mode no lo apague
-            logo.style.filter = 'drop-shadow(0 0 20px rgba(255, 0, 0, 1))';
+            // FORZADO: Brute force approach with box-shadow (much more visible than drop-shadow)
+            logo.style.boxShadow = '0 0 20px 5px rgba(255, 0, 0, 1)';
+            logo.style.border = '2px solid rgba(255, 0, 0, 1)';
             logo.style.mixBlendMode = 'normal'; 
+            logo.style.filter = 'none'; // Clear any conflicting filters
         } else {
             logo.classList.add('logo-status-idle');
-            logo.style.filter = ''; // Volver al CSS base
+            logo.style.boxShadow = '0 0 10px rgba(16, 185, 129, 0.6)';
+            logo.style.border = 'none';
+            logo.style.filter = ''; 
             logo.style.mixBlendMode = ''; 
         }
     }
