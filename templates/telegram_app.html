@@ -175,6 +175,49 @@
             border-radius: 8px;
             border-left: 3px solid var(--primary);
             animation: slideIn 0.3s ease-out;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+
+        /* ── Marquee / Ticker (estilo noticiero) ─────────────── */
+        .marquee-wrap {
+            display: inline-block;
+            max-width: 100%;
+            overflow: hidden;
+            vertical-align: bottom;
+        }
+        .marquee-text {
+            display: inline-block;
+            white-space: nowrap;
+            /* La animación se activa via JS solo cuando el texto desborda */
+        }
+        .marquee-text.scrolling {
+            animation: marquee-scroll var(--marquee-dur, 8s) linear 1.5s infinite;
+        }
+        @keyframes marquee-scroll {
+            0%   { transform: translateX(0); }
+            45%  { transform: translateX(var(--marquee-offset, -60%)); }
+            55%  { transform: translateX(var(--marquee-offset, -60%)); }
+            100% { transform: translateX(0); }
+        }
+
+        /* Nombres de equipos en el marcador principal */
+        #local-name, #visitante-name {
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+        #local-name .marquee-wrap,
+        #visitante-name .marquee-wrap {
+            max-width: 100%;
+        }
+
+        /* Nombres en tarjetas de partidos */
+        .team-ticker {
+            display: block;
+            overflow: hidden;
+            white-space: nowrap;
+            max-width: 100%;
         }
 
         @keyframes fadeIn {
@@ -766,11 +809,11 @@
             <!-- Score -->
             <div class="teams">
                 <div style="flex: 1; text-align: center;">
-                    <div style="font-weight: 600; font-size: 0.95rem; color: var(--secondary);" id="local-name">LOCAL</div>
+                    <div style="font-weight: 600; font-size: 0.95rem; color: var(--secondary); overflow:hidden;" id="local-name"><span class="marquee-wrap"><span class="marquee-text">LOCAL</span></span></div>
                 </div>
                 <div class="score" id="live-score" style="min-width: 80px;">0 - 0</div>
                 <div style="flex: 1; text-align: center;">
-                    <div style="font-weight: 600; font-size: 0.95rem; color: var(--secondary);" id="visitante-name">VISITANTE</div>
+                    <div style="font-weight: 600; font-size: 0.95rem; color: var(--secondary); overflow:hidden;" id="visitante-name"><span class="marquee-wrap"><span class="marquee-text">VISITANTE</span></span></div>
                 </div>
             </div>
 
@@ -1169,9 +1212,9 @@
                                 <span class="status-badge" style="color:${statusColor}; border:1px solid ${statusColor}; background:transparent;">${m.estado}</span>
                             </div>
                             <div class="teams" style="margin: 8px 0;">
-                                <span style="font-weight: 600; font-size: 0.9rem;">${m.equipo_local}</span>
-                                <span class="score" style="font-size: 1rem; min-width: 50px; padding: 4px 8px;">${m.goles_local || 0} - ${m.goles_visitante || 0}</span>
-                                <span style="font-weight: 600; font-size: 0.9rem;">${m.equipo_visitante}</span>
+                                <span class="team-ticker" style="flex:1; font-weight:600; font-size:0.9rem;"><span class="marquee-wrap" style="max-width:100%;"><span class="marquee-text" data-automarquee="1">${m.equipo_local}</span></span></span>
+                                <span class="score" style="font-size: 1rem; min-width: 50px; padding: 4px 8px; flex-shrink:0;">${m.goles_local || 0} - ${m.goles_visitante || 0}</span>
+                                <span class="team-ticker" style="flex:1; font-weight:600; font-size:0.9rem; text-align:right;"><span class="marquee-wrap" style="max-width:100%; float:right;"><span class="marquee-text" data-automarquee="1">${m.equipo_visitante}</span></span></span>
                             </div>
                             <div style="display:flex; justify-content: space-between; align-items: flex-end; margin-top: 10px;">
                                 <div style="font-size: 0.7rem; color: var(--muted); line-height: 1.3;">📅 ${m.fecha} ${m.hora}<br>👤 ${m.arbitro_nombre || 'P.A.'}</div>
@@ -1189,6 +1232,12 @@
                 }).join('');
             }
             container.innerHTML = html;
+            // Activar marquee en todos los elementos recién renderizados
+            requestAnimationFrame(() => {
+                container.querySelectorAll('[data-automarquee]').forEach(span => {
+                    activateMarqueeIfNeeded(span.closest('.event-item') || span.parentElement?.parentElement || span);
+                });
+            });
         }
 
         function showView(id) {
@@ -1268,8 +1317,8 @@
                         
                         card.innerHTML = `
                             <div style="flex: 1;">
-                                <div style="font-size: 0.6rem; color: var(--muted); text-transform: uppercase;">${m.torneo_name || 'PARTIDO'}${m.jornada ? ' · Jornada ' + m.jornada : ''}</div>
-                                <div style="font-weight: 700; font-size: 0.9rem;">${m.equipo_local} vs ${m.equipo_visitante}</div>
+                                <div style="font-size: 0.6rem; color: var(--muted); text-transform: uppercase; overflow:hidden; white-space:nowrap;"><span class="marquee-wrap" style="max-width:100%;"><span class="marquee-text" data-automarquee="1">${m.torneo_name || 'PARTIDO'}${m.jornada ? ' · Jornada ' + m.jornada : ''}</span></span></div>
+                                <div style="font-weight: 700; font-size: 0.9rem; overflow:hidden; white-space:nowrap;"><span class="marquee-wrap" style="max-width:100%;"><span class="marquee-text" data-automarquee="1">${m.equipo_local} vs ${m.equipo_visitante}</span></span></div>
                                 <div style="display:flex; align-items:center; gap:5px; margin-top:4px;">
                                     <span style="font-size: 0.75rem; color: ${statusColor}; font-weight: 800;">${statusIcon} ${m.estado === 'HalfTime' ? 'MEDIO TIEMPO' : 'EN VIVO'}</span>
                                     <span class="menu-match-timer" data-start="${m.timer_started_at || ''}" data-acc="${m.tiempo_corrido_segundos || 0}" style="font-size: 0.8rem; font-family:monospace; color:var(--secondary); font-weight:bold;">--:--</span>
@@ -1278,6 +1327,12 @@
                             <button class="btn btn-primary" onclick="resumeMatchFromMenu(${m.id})" style="width: auto; padding: 8px 15px; font-size: 0.8rem;">RETOMAR</button>
                         `;
                         container.appendChild(card);
+                        // Activar marquee en la tarjeta recién agregada
+                        requestAnimationFrame(() => {
+                            card.querySelectorAll('[data-automarquee]').forEach(span => {
+                                activateMarqueeIfNeeded(span.closest('.event-item') || span.parentElement?.parentElement || span);
+                            });
+                        });
                     });
 
                     // Iniciar intervalo de actualización de relojes
@@ -2460,10 +2515,10 @@
                 if (scoreEl) scoreEl.innerText = `${activeMatch.goles_local || 0} - ${activeMatch.goles_visitante || 0}`;
                 
                 const localEl = document.getElementById('local-name');
-                if (localEl) localEl.innerText = (activeMatch.equipo_local || 'LOCAL').toUpperCase();
+                if (localEl) setMarqueeText(localEl, (activeMatch.equipo_local || 'LOCAL').toUpperCase());
                 
                 const visitEl = document.getElementById('visitante-name');
-                if (visitEl) visitEl.innerText = (activeMatch.equipo_visitante || 'VISITANTE').toUpperCase();
+                if (visitEl) setMarqueeText(visitEl, (activeMatch.equipo_visitante || 'VISITANTE').toUpperCase());
                 
                 const torneoEl = document.getElementById('match-torneo-info');
                 if (torneoEl) torneoEl.innerText = (activeMatch.torneo_name || 'TORNEO').toUpperCase();
@@ -2521,6 +2576,49 @@
         }
 
 
+        /**
+         * Activa marquee (ticker de noticiero) en un elemento si su contenido
+         * desborda el ancho disponible. Usa CSS custom properties para calcular
+         * la distancia y duración del desplazamiento proporcionalmente.
+         */
+        function activateMarqueeIfNeeded(el) {
+            const wrap = el.querySelector ? el.querySelector('.marquee-wrap') : null;
+            const span = el.querySelector ? el.querySelector('.marquee-text') : null;
+            if (!wrap || !span) return;
+            requestAnimationFrame(() => {
+                const containerW = wrap.offsetWidth;
+                const textW = span.scrollWidth;
+                if (textW > containerW + 2) {
+                    // Calcula cuánto hay que desplazar (en px, negativo)
+                    const offset = -(textW - containerW + 10);
+                    const dur = Math.max(4, Math.abs(offset) / 35); // ~35px/s
+                    span.style.setProperty('--marquee-offset', offset + 'px');
+                    span.style.setProperty('--marquee-dur', dur + 's');
+                    span.classList.add('scrolling');
+                } else {
+                    span.classList.remove('scrolling');
+                }
+            });
+        }
+
+        /**
+         * Establece el texto de un elemento que contiene .marquee-wrap > .marquee-text
+         * Si no existe esa estructura la crea, luego activa el marquee si es necesario.
+         */
+        function setMarqueeText(el, text) {
+            let wrap = el.querySelector('.marquee-wrap');
+            let span = el.querySelector('.marquee-text');
+            if (!wrap) {
+                el.innerHTML = '<span class="marquee-wrap"><span class="marquee-text"></span></span>';
+                wrap = el.querySelector('.marquee-wrap');
+                span = el.querySelector('.marquee-text');
+            }
+            wrap.style.maxWidth = '100%';
+            span.classList.remove('scrolling');
+            span.textContent = text;
+            activateMarqueeIfNeeded(el);
+        }
+
         function logEvent(type, subject, min) {
             const container = document.getElementById('event-log');
             const div = document.createElement('div');
@@ -2553,9 +2651,13 @@
                     label = 'Cambio';
                 }
             }
-            
-            div.innerHTML = `<strong>${min}'</strong> ${icon} - ${label}${subject ? sep + subject : ''}`;
+
+            const fullText = `${min}' ${icon} - ${label}${subject ? sep + subject : ''}`;
+            // Envolvemos en estructura marquee para que texto largo se desplace
+            div.innerHTML = `<span class="marquee-wrap" style="max-width:100%;"><span class="marquee-text"><strong>${min}'</strong> ${icon} - ${label}${subject ? sep + subject : ''}</span></span>`;
             container.prepend(div);
+            // Activar desplazamiento si el texto desborda
+            activateMarqueeIfNeeded(div);
         }
 
         async function loadMatchPlayers() {
