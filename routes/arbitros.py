@@ -804,7 +804,26 @@ def _trigger_telegram_receipt_email(pago, equipo, inscripcion, torneo):
             
         _fecha_local = p_fecha - timedelta(hours=6)
         
-        monto_pactado = float(inscripcion.monto_pactado_inscripcion) if getattr(inscripcion, 'monto_pactado_inscripcion', None) else 0.0
+        # Lógica de precisión financiera: Diferenciar Inscripción vs Arbitraje
+        is_arb = pago.tipo == 'Arbitraje'
+        monto_referencia = float(inscripcion.monto_pactado_inscripcion or 0)
+        total_acumulado = float(pagado_ins)
+        saldo_movimiento = max(0, monto_referencia - pagado_ins)
+
+        if is_arb:
+            monto_referencia = float(torneo.costo_arbitraje or 0)
+            if pago.partido_id:
+                # Pagado específico para este partido
+                pagado_este_partido = db.session.query(db.func.sum(Pago.monto)).filter_by(
+                    inscripcion_id=inscripcion.id, 
+                    tipo='Arbitraje', 
+                    partido_id=pago.partido_id
+                ).scalar() or 0
+                total_acumulado = float(pagado_este_partido)
+                saldo_movimiento = max(0, monto_referencia - total_acumulado)
+            else:
+                total_acumulado = float(pagado_arb)
+                saldo_movimiento = 0 # No hay total pactado global para arbitraje definido usualmente
         
         result = {
             "success": True,
@@ -818,14 +837,14 @@ def _trigger_telegram_receipt_email(pago, equipo, inscripcion, torneo):
             "tipo": pago.tipo,
             "fecha": _fecha_local.strftime('%d/%m/%Y %H:%M'),
             "metodo": pago.metodo,
-            "monto_pactado": monto_pactado,
-            "total_pagado": float(pagado_ins) if pago.tipo == 'Inscripcion' else float(pagado_arb),
-            "saldo_pendiente": float(monto_pactado - pagado_ins) if pago.tipo == 'Inscripcion' else 0.0,
+            "monto_pactado": monto_referencia,
+            "total_pagado": total_acumulado,
+            "saldo_pendiente": saldo_movimiento,
             "partido": partido_info,
             "tipo_torneo": torneo.tipo or torneo.formato or "Liga" if torneo else "Liga",
             "horarios": f"{torneo.dias_juego or ''} {torneo.horario_juego or ''}".strip() or "Por definir" if torneo else "Por definir",
             "formato": torneo.formato or "Torneo" if torneo else "Torneo",
-            "fecha_inicio_torneo": torneo.fecha_inicio.strftime('%d/%m/%Y') if torneo and getattr(torneo, 'fecha_inicio', None) else "Pendiente",
+            "fecha_inicio": torneo.fecha_inicio.strftime('%d/%m/%Y') if torneo and getattr(torneo, 'fecha_inicio', None) else "Pendiente",
             "organiza": torneo.liga.nombre if torneo and getattr(torneo, 'liga', None) else "FutAdmin",
             "contacto": torneo.liga.contacto if torneo and getattr(torneo, 'liga', None) else "No disponible",
             "premios": torneo.premios if torneo and getattr(torneo, 'premios', None) else "",
