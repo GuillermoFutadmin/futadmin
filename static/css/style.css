@@ -2332,3 +2332,24 @@ textarea.full-textarea:focus {
     55%  { transform: translateX(var(--marquee-offset, -60%)); }
     100% { transform: translateX(0); }
 }
+
+/* -- Logo Status Indicator (Red for Live, Green for Idle) -- */
+.sidebar-logo-img {
+    transition: filter 0.5s ease, transform 0.3s ease;
+    border-radius: 50%;
+}
+
+.logo-status-live {
+    filter: drop-shadow(0 0 10px rgba(239, 68, 68, 0.9)) !important;
+    animation: pulse-red-glow 2.5s infinite ease-in-out;
+}
+
+.logo-status-idle {
+    filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.8)) !important;
+}
+
+@keyframes pulse-red-glow {
+    0% { filter: drop-shadow(0 0 5px rgba(239, 68, 68, 0.7)); transform: scale(1); }
+    50% { filter: drop-shadow(0 0 15px rgba(239, 68, 68, 1)); transform: scale(1.04); }
+    100% { filter: drop-shadow(0 0 5px rgba(239, 68, 68, 0.7)); transform: scale(1); }
+}
