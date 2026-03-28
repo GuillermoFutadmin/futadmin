@@ -172,7 +172,6 @@ export class DashboardModule {
                                     <span>EN VIVO</span>
                                     ${m.jornada ? `<span style="margin-left: 8px; border-left: 1px solid rgba(255,255,255,0.2); padding-left: 8px; opacity: 0.8;">Jornada ${m.jornada}</span>` : ''}
                                 </div>
-                                ${minute ? `<div class="live-minute-badge">${minute}</div>` : ''}
                             </div>
 
                             <div class="live-teams-container">
@@ -181,10 +180,14 @@ export class DashboardModule {
                                     <span>${m.equipo_local}</span>
                                 </div>
                                 <div class="live-score-box">
+                                    ${minute ? `<div class="live-minute-badge" style="margin-bottom: 2px;">${minute}</div>` : ''}
                                     <div class="score-numerals">
                                         <span>${m.goles_local}</span>
                                         <span class="score-divider">-</span>
                                         <span>${m.goles_visitante}</span>
+                                    </div>
+                                    <div style="font-size: 0.65rem; color: rgba(255,255,255,0.6); text-transform: uppercase; letter-spacing: 1px; white-space: nowrap; font-weight: 700; margin-top: 2px;">
+                                        📍 ${m.cancha || 'Por designar'}
                                     </div>
                                 </div>
                                 <div class="live-team-box">
