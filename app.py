@@ -2416,10 +2416,15 @@ def auto_assign_fields(torneo_id):
     """Asignación automática de canchas (campos de juego) a partidos pendientes del torneo."""
     torneo = apply_liga_filter(Torneo.query, Torneo).filter_by(id=torneo_id).first_or_404()
     
-    # 1. Obtener campos registrados activos de la liga
+    # 1. Obtener campos detallados o sedes si no hay detalles
     campos_activos = CanchaDetalle.query.filter_by(liga_id=torneo.liga_id, activa=True).all()
     if not campos_activos:
-        return jsonify({'success': False, 'error': 'No hay campos de juego (Canchas Detalle) registrados y ACTIVOS para esta liga.'}), 200
+        # Fallback a Sedes (Canchas) para ligas que solo tienen localizaciones principales
+        from models import Cancha
+        campos_activos = Cancha.query.filter_by(liga_id=torneo.liga_id, activo=True).all()
+
+    if not campos_activos:
+        return jsonify({'success': False, 'error': 'No hay sedes ni campos de juego registrados y ACTIVOS para esta liga.'}), 200
 
     # 2. Obtener partidos del torneo (Solo pendientes/Scheduled y sin marcador)
     partidos = Partido.query.filter_by(torneo_id=torneo_id)\
