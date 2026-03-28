@@ -318,6 +318,23 @@
             padding: 0;
         }
 
+        /* --- Substitution Modal Styles --- */
+        .sub-sale { color: #ef4444; font-weight: 800; font-size: 0.75rem; border: 1px solid #ef4444; padding: 2px 6px; border-radius: 4px; }
+        .sub-entra { color: #10b981; font-weight: 800; font-size: 0.75rem; border: 1px solid #10b981; padding: 2px 6px; border-radius: 4px; }
+        .player-item-sub {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 8px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .player-item-sub:active { background: rgba(255,255,255,0.1); }
+        .player-item-sub.selected { border: 2px solid var(--primary); background: rgba(0, 242, 255, 0.1); }
+
         .camera-frame {
             width: 280px;
             height: 350px;
@@ -779,6 +796,18 @@
                         <button class="btn btn-outline" onclick="recordPenaltyGoal('visitante')" style="flex:1; border-color: #a78bfa; color: #a78bfa;">⚽ PENAL V</button>
                     </div>
                     <button class="btn btn-primary" onclick="openPenaltiesModal()" id="btn-penalties" style="width:100%; border: 1px dashed #a78bfa; background: rgba(167, 139, 250, 0.1); color: #a78bfa; font-size: 0.85rem; font-weight: 700; height: 50px;">🏆 DEFINICIÓN POR PENALES</button>
+                </div>
+            </div>
+
+            <!-- Cambios Group -->
+            <div id="group-subs" class="control-group">
+                <div class="group-header" onclick="toggleControlGroup('group-subs')" style="color: #60a5fa;">
+                    <span>🔄 CAMBIOS</span>
+                    <span class="icon">▼</span>
+                </div>
+                <div class="group-content">
+                    <button class="btn btn-outline" onclick="openSubstitutionFlow('local')" style="border-color: #60a5fa; color: #60a5fa;">MODIF. LOCAL</button>
+                    <button class="btn btn-outline" onclick="openSubstitutionFlow('visitante')" style="border-color: #60a5fa; color: #60a5fa;">MODIF. VIS.</button>
                 </div>
             </div>
 
@@ -2349,9 +2378,23 @@
                 icon = '🟥';
             } else if (t.includes('azul') || t.includes('blue')) {
                 icon = '🟦';
+            } else if (t.includes('cambio')) {
+                icon = '🔄';
             }
             div.innerHTML = `<strong>${min}'</strong> ${icon} - ${type}${subject ? ': ' + subject : ''}`;
             container.prepend(div);
+        }
+
+        async function loadMatchPlayers() {
+            if (!activeMatch) return;
+            try {
+                const url = `/api/telegram/match/${activeMatch.id}/players`;
+                const res = await fetch(url);
+                if (res.ok) {
+                    matchPlayers = await res.json();
+                    console.log('[DEBUG] matchPlayers reloaded');
+                }
+            } catch (e) { console.error('Error reloading players:', e); }
         }
 
 
@@ -3948,6 +3991,117 @@
                 if (tg.isVersionAtLeast('6.1')) tg.HapticFeedback.notificationOccurred('success');
             }, 'image/jpeg', 0.75);
         }
+        // --- SISTEMA DE CAMBIOS (FASE 14) ---
+        let subTeam = null;
+        let subPlayerOut = null;
+        let subPlayerIn = null;
+
+        async function openSubstitutionFlow(team) {
+            subTeam = team;
+            subPlayerOut = null;
+            subPlayerIn = null;
+            
+            document.getElementById('sub-modal-title').innerText = `CAMBIO ${team.toUpperCase()}`;
+            document.getElementById('substitution-modal').classList.add('active');
+            goToSubStep(1);
+            
+            // Cargar lista de jugadores que salen (los que están en cancha)
+            const list = team === 'local' ? matchPlayers.local : matchPlayers.visitante;
+            const container = document.getElementById('sub-list-out');
+            
+            const playersOnField = list.filter(p => p.en_cancha);
+            
+            if (playersOnField.length === 0) {
+                container.innerHTML = '<div style="text-align:center; padding:20px; color:var(--muted);">No hay jugadores en cancha para este equipo.</div>';
+            } else {
+                container.innerHTML = playersOnField.map(p => `
+                    <div class="player-item-sub" onclick="selectSubOut(${p.id}, '${p.nombre}', '${p.numero}')">
+                        <span style="font-weight:700;">#${p.numero} ${p.nombre}</span>
+                        <span class="sub-sale">SALE</span>
+                    </div>
+                `).join('');
+            }
+        }
+
+        function goToSubStep(step) {
+            document.getElementById('sub-step-1').style.display = step === 1 ? 'block' : 'none';
+            document.getElementById('sub-step-2').style.display = step === 2 ? 'block' : 'none';
+        }
+
+        function selectSubOut(id, name, number) {
+            subPlayerOut = { id, name, number };
+            if (tg.isVersionAtLeast('6.1')) tg.HapticFeedback.selectionChanged();
+            
+            // Cargar lista de jugadores que entran (presentes pero en banca)
+            const list = subTeam === 'local' ? matchPlayers.local : matchPlayers.visitante;
+            const container = document.getElementById('sub-list-in');
+            
+            const playersOnBench = list.filter(p => p.presente && !p.en_cancha);
+            
+            if (playersOnBench.length === 0) {
+                container.innerHTML = '<div style="text-align:center; padding:20px; color:var(--muted);">No hay jugadores en banca (presentes) disponibles.</div>';
+                document.getElementById('btn-confirm-sub').style.display = 'none';
+            } else {
+                container.innerHTML = playersOnBench.map(p => `
+                    <div class="player-item-sub" id="sub-in-${p.id}" onclick="selectSubIn(${p.id}, '${p.nombre}', '${p.numero}')">
+                        <span style="font-weight:700;">#${p.numero} ${p.nombre}</span>
+                        <span class="sub-entra">ENTRA</span>
+                    </div>
+                `).join('');
+            }
+            goToSubStep(2);
+        }
+
+        function selectSubIn(id, name, number) {
+            subPlayerIn = { id, name, number };
+            // Visual highlight
+            document.querySelectorAll('#sub-list-in .player-item-sub').forEach(el => el.classList.remove('selected'));
+            const highlightEl = document.getElementById(`sub-in-${id}`);
+            if (highlightEl) highlightEl.classList.add('selected');
+            
+            document.getElementById('btn-confirm-sub').style.display = 'block';
+            if (tg.isVersionAtLeast('6.1')) tg.HapticFeedback.selectionChanged();
+        }
+
+        async function confirmSubstitution() {
+            if (!subPlayerOut || !subPlayerIn) return;
+            
+            const btn = document.getElementById('btn-confirm-sub');
+            btn.disabled = true;
+            btn.innerText = 'PROCESANDO...';
+            
+            const data = {
+                tipo: 'Cambio',
+                equipo_id: subTeam === 'local' ? activeMatch.equipo_local_id : activeMatch.equipo_visitante_id,
+                jugador_id: subPlayerOut.id, // El que sale
+                jugador_entra_id: subPlayerIn.id, // El que entra
+                minuto: Math.floor(calcElapsedSeconds() / 60),
+                nota: `Sale: #${subPlayerOut.number} ${subPlayerOut.name}, Entra: #${subPlayerIn.number} ${subPlayerIn.name}`
+            };
+            
+            try {
+                const res = await fetch(`/api/telegram/match/${activeMatch.id}/event`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                if (res.ok) {
+                    await loadMatchPlayers(); // Recargar estatus en_cancha localmente
+                    document.getElementById('substitution-modal').classList.remove('active');
+                    
+                    logEvent(`Cambio ${subTeam === 'local' ? 'Local' : 'Visitante'}`, data.nota, data.minuto);
+                    if (tg.isVersionAtLeast('6.1')) tg.HapticFeedback.notificationOccurred('success');
+                } else {
+                    alert('Error al registrar cambio');
+                }
+            } catch (e) {
+                alert('Error de conexión');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = 'CONFIRMAR CAMBIO';
+            }
+        }
     </script>
     <!-- Modal de Penales -->
     <div id="penalties-modal" class="modal" style="display: none;">
@@ -4306,6 +4460,34 @@
             📥 DESCARGAR TICKET (IMAGEN)
         </button>
         <p style="text-align: center; font-size: 0.7rem; color: var(--muted); margin-top: 10px;">Presiona descargar para guardar el comprobante en tu galería.</p>
+    </div>
+
+    <!-- Modal de Cambios (Fase 14) -->
+    <div id="substitution-modal" class="modal">
+        <div class="modal-content" style="max-height: 90vh; display: flex; flex-direction: column;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 style="margin:0; font-weight: 800; letter-spacing: -1px; color: var(--primary);" id="sub-modal-title">REGISTRAR CAMBIO</h3>
+                <button onclick="document.getElementById('substitution-modal').classList.remove('active')" style="background:none; border:none; color:white; font-size:1.5rem;">✕</button>
+            </div>
+            
+            <div id="sub-step-1">
+                <p style="font-size: 0.8rem; color: var(--muted); margin-bottom: 12px;">Paso 1: ¿Quién <span class="sub-sale">SALE</span> del campo?</p>
+                <div id="sub-list-out" style="max-height: 300px; overflow-y: auto;">
+                    <!-- List of players en_cancha=true -->
+                </div>
+            </div>
+
+            <div id="sub-step-2" style="display: none;">
+                <p style="font-size: 0.8rem; color: var(--muted); margin-bottom: 12px;">Paso 2: ¿Quién <span class="sub-entra">ENTRA</span> al campo?</p>
+                <div id="sub-list-in" style="max-height: 300px; overflow-y: auto;">
+                    <!-- List of players presente=true && en_cancha=false -->
+                </div>
+                <div style="margin-top: 20px; display: flex; gap: 10px;">
+                    <button class="btn btn-outline" onclick="goToSubStep(1)" style="flex: 1;">VOLVER</button>
+                    <button class="btn btn-primary" id="btn-confirm-sub" onclick="confirmSubstitution()" style="flex: 2; display: none;">CONFIRMAR CAMBIO</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- MODAL DE CÁMARA NATIVA (FASE 11) -->

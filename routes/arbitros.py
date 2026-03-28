@@ -607,6 +607,21 @@ def telegram_post_event(id):
                 elif gv > gl: partido.ganador_id = partido.equipo_visitante_id
             
             db.session.commit()
+        
+        elif data.get('tipo') == 'Cambio':
+            # Actualizar estatus en cancha
+            id_sale = data.get('jugador_id')
+            id_entra = data.get('jugador_entra_id')
+            
+            if id_sale:
+                asist_sale = AsistenciaPartido.query.filter_by(partido_id=id, jugador_id=id_sale).first()
+                if asist_sale: asist_sale.en_cancha = False
+            
+            if id_entra:
+                asist_entra = AsistenciaPartido.query.filter_by(partido_id=id, jugador_id=id_entra).first()
+                if asist_entra: asist_entra.en_cancha = True
+            
+            db.session.commit()
             
             try:
                 from app import auto_avanzar_ronda, check_and_start_liguilla_auto
