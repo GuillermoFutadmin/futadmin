@@ -985,6 +985,7 @@ def telegram_match_detalles(id):
 
         goles = []
         tarjetas = []
+        cambios = []
 
         for ev in eventos:
             if ev.tipo == 'Gol':
@@ -1002,10 +1003,18 @@ def telegram_match_detalles(id):
                     'tipo': ev.tipo,
                     'periodo': ev.periodo,
                 })
+            elif ev.tipo == 'Cambio':
+                cambios.append({
+                    'nota': ev.nota or '',
+                    'equipo': ev.equipo.nombre if ev.equipo else '',
+                    'minuto': ev.minuto,
+                    'periodo': ev.periodo,
+                })
 
         return jsonify({
             'goles': goles,
             'tarjetas': tarjetas,
+            'cambios': cambios,
             'arbitro': partido.arbitro.nombre if partido.arbitro else 'No asignado',
             'estado': partido.estado
         })

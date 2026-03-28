@@ -1593,19 +1593,22 @@
                 }
                 html += '</div>';
 
-                // Tarjetas
-                html += '<div class="detail-section"><h4>🃏 Tarjetas</h4>';
-                if (data.tarjetas && data.tarjetas.length > 0) {
-                    html += data.tarjetas.map(t => `
-                        <div class="detail-row">
-                            <span class="detail-min">${t.minuto}'</span>
-                            <span style="font-size:1.2rem;">${t.tipo === 'Amarilla' ? '🟨' : '🟥'}</span>
-                            <span style="flex:1"><b>${t.jugador}</b></span>
-                            <span style="color:var(--muted); font-size:0.8rem;">${t.equipo}</span>
+                html += '</div>';
+
+                // Cambios
+                html += '<div class="detail-section"><h4>🔄 Cambios</h4>';
+                if (data.cambios && data.cambios.length > 0) {
+                    html += data.cambios.map(c => `
+                        <div class="detail-row" style="align-items: flex-start; gap: 8px;">
+                            <span class="detail-min">${c.minuto}'</span>
+                            <div style="flex:1">
+                                <span style="font-size:0.85rem; color:var(--primary); font-weight:700;">${c.nota}</span>
+                                <div style="color:var(--muted); font-size:0.7rem;">${c.equipo}</div>
+                            </div>
                         </div>
                     `).join('');
                 } else {
-                    html += '<div style="color:var(--muted); font-size:0.9rem;">Sin tarjetas registradas.</div>';
+                    html += '<div style="color:var(--muted); font-size:0.9rem;">Sin cambios registrados.</div>';
                 }
                 html += '</div>';
 
@@ -2452,8 +2455,13 @@
             div.className = 'event-item';
             let icon = '🔔';
             const t = (type || '').toLowerCase();
+            let label = type;
+            let sep = ': ';
+            
             if (t.includes('gol') || t.includes('goal')) {
                 icon = '⚽';
+                label = 'Gol de';
+                sep = ' ';
             } else if (t.includes('amarilla') || t.includes('yellow')) {
                 icon = '🟨';
             } else if (t.includes('roja') || t.includes('red')) {
@@ -2462,8 +2470,13 @@
                 icon = '🟦';
             } else if (t.includes('cambio')) {
                 icon = '🔄';
+                // Si ya viene con la nota descriptiva en el subject, no repetimos 'Cambio'
+                if (subject && (subject.includes('Sale') || subject.includes('Entra'))) {
+                    label = 'Cambio';
+                }
             }
-            div.innerHTML = `<strong>${min}'</strong> ${icon} - ${type}${subject ? ': ' + subject : ''}`;
+            
+            div.innerHTML = `<strong>${min}'</strong> ${icon} - ${label}${subject ? sep + subject : ''}`;
             container.prepend(div);
         }
 
