@@ -1,4 +1,4 @@
-﻿:root {
+:root {
     --primary: #00ff88;
     --primary-glow: rgba(0, 255, 136, 0.3);
     --secondary: #1a1a1a;
@@ -2381,18 +2381,18 @@ textarea.full-textarea:focus {
 }
 
 .logo-status-live {
-    box-shadow: 0 0 25px 8px rgba(255, 0, 0, 1) !important;
-    border: 3px solid rgba(255, 0, 0, 0.8) !important;
-    animation: pulse-ring-red 1.5s infinite ease-in-out !important;
+    box-shadow: 0 0 15px rgba(255, 0, 0, 0.45) !important;
+    border: 2px solid rgba(255, 0, 0, 0.5) !important;
+    animation: pulse-ring-red 2s infinite ease-in-out !important;
 }
 
 .logo-status-idle {
-    box-shadow: 0 0 10px rgba(16, 185, 129, 0.4) !important;
-    border: 2px solid rgba(16, 185, 129, 0.2) !important;
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.2) !important;
+    border: 1.5px solid rgba(16, 185, 129, 0.1) !important;
 }
 
 @keyframes pulse-ring-red {
-    0% { box-shadow: 0 0 15px 5px rgba(255, 0, 0, 0.6); transform: scale(1); }
-    50% { box-shadow: 0 0 40px 15px rgba(255, 0, 0, 1); transform: scale(1.04); }
-    100% { box-shadow: 0 0 15px 5px rgba(255, 0, 0, 0.6); transform: scale(1); }
+    0% { box-shadow: 0 0 8px rgba(255, 0, 0, 0.3); transform: scale(1); }
+    50% { box-shadow: 0 0 20px rgba(255, 0, 0, 0.6); transform: scale(1.02); }
+    100% { box-shadow: 0 0 8px rgba(255, 0, 0, 0.3); transform: scale(1); }
 }
