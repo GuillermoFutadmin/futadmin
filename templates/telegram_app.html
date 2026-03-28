@@ -1782,6 +1782,26 @@
                 if (safe(id)) safe(id).style.display = (isLive && isStaff) ? 'block' : 'none';
             });
 
+            const btnHalfTime = safe('btn-halftime');
+            if (btnHalfTime && isLive && isStaff) {
+                const alreadyHalfTime = activeMatch.periodo_actual > 1 || (activeMatch.eventos && activeMatch.eventos.some(e => e.tipo === 'Medio Tiempo'));
+                if (alreadyHalfTime) {
+                    btnHalfTime.innerHTML = '⌛ MEDIO TIEMPO (Realizado)';
+                    btnHalfTime.disabled = true;
+                    btnHalfTime.style.opacity = '0.4';
+                    btnHalfTime.style.borderColor = 'rgba(255,255,255,0.2)';
+                    btnHalfTime.style.color = 'var(--muted)';
+                    btnHalfTime.onclick = null;
+                } else {
+                    btnHalfTime.innerHTML = '⌛ MEDIO TIEMPO';
+                    btnHalfTime.disabled = false;
+                    btnHalfTime.style.opacity = '1';
+                    btnHalfTime.style.borderColor = 'var(--primary)';
+                    btnHalfTime.style.color = 'var(--primary)';
+                    btnHalfTime.onclick = () => gameAction('Medio Tiempo');
+                }
+            }
+
             // Card buttons + penalty row (by class/attribute)
             const cardButtons = document.querySelectorAll('button[onclick*="openPlayerList"]');
             cardButtons.forEach(btn => btn.style.display = (isLive && isStaff) ? 'block' : 'none');
