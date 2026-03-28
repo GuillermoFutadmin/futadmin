@@ -143,6 +143,7 @@ export class MarketingModule {
                 opt.textContent = `${m.equipo_local} vs ${m.equipo_visitante} (${m.fecha})`;
                 selector.appendChild(opt);
             });
+            this.mktOptionsCache = Array.from(selector.options);
         } catch(e) { selector.innerHTML = '<option value="">Error al cargar</option>'; }
     }
 
@@ -161,6 +162,7 @@ export class MarketingModule {
                 opt.textContent = `${p.nombre} (${p.equipo_nombre || 'Sin equipo'})`;
                 selector.appendChild(opt);
             });
+            this.mktOptionsCache = Array.from(selector.options);
         } catch(e) { selector.innerHTML = '<option value="">Error al cargar</option>'; }
     }
 
@@ -194,6 +196,7 @@ export class MarketingModule {
                 opt.textContent = t.nombre;
                 selector.appendChild(opt);
             });
+            this.mktOptionsCache = Array.from(selector.options);
         } catch(e) { selector.innerHTML = '<option value="">Error al cargar</option>'; }
     }
 
@@ -233,16 +236,21 @@ export class MarketingModule {
             };
         });
 
-        // BUSCADOR DINÁMICO
+        // BUSCADOR DINÁMICO REFACTORIZADO
         const searchInput = document.getElementById('mkt-data-search');
         if(searchInput) {
             searchInput.oninput = (e) => {
                 const term = e.target.value.toLowerCase();
                 const selector = document.getElementById('mkt-data-selector');
-                const options = Array.from(selector.options);
-                options.forEach(opt => {
-                    const match = opt.text.toLowerCase().includes(term);
-                    opt.style.display = match ? 'block' : 'none';
+                if(!this.mktOptionsCache) return;
+                
+                // Vaciar el selector y reconstruirlo con los elementos cacheados filtrados
+                selector.innerHTML = '';
+                this.mktOptionsCache.forEach((opt, idx) => {
+                    // Mantener el primer elemento (placeholder) siempre visible, o si coincide
+                    if (idx === 0 || opt.textContent.toLowerCase().includes(term)) {
+                        selector.appendChild(opt.cloneNode(true));
+                    }
                 });
             };
         }
