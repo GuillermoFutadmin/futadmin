@@ -62,7 +62,14 @@ class FutAdminUI {
             try {
                 // Consultamos el endpoint global (torneo_id=0) para el indicador del logo
                 const matches = await Core.fetchAPI('/api/torneos/0/partidos/live');
-                const hasLive = Array.isArray(matches) && matches.length > 0;
+                const liveList = Array.isArray(matches) ? matches : (matches.items || []);
+                const hasLive = liveList.length > 0;
+                
+                // DIAGNÓSTICO TEMPORAL: Mostrar al Ing. qué está viendo el sistema
+                if (hasLive) {
+                    console.log(`FUTADMIN DEBUG: ${liveList.length} partidos en vivo detectados.`);
+                }
+
                 this.updateSidebarLogoStatus(hasLive);
             } catch (e) {
                 console.warn("Error en sync de logo:", e);
@@ -81,13 +88,18 @@ class FutAdminUI {
         const logo = document.querySelector('.sidebar-logo-img');
         if (!logo) return;
 
-        // Limpiar estados anteriores antes de aplicar el nuevo (Asegura visibilidad del rojo)
+        // Limpiar estados anteriores antes de aplicar el nuevo
         logo.classList.remove('logo-status-live', 'logo-status-idle');
         
         if (isLive) {
             logo.classList.add('logo-status-live');
+            // FORZADO: Asegurar que el filtro rojo se aplique y el blend-mode no lo apague
+            logo.style.filter = 'drop-shadow(0 0 20px rgba(255, 0, 0, 1))';
+            logo.style.mixBlendMode = 'normal'; 
         } else {
             logo.classList.add('logo-status-idle');
+            logo.style.filter = ''; // Volver al CSS base
+            logo.style.mixBlendMode = ''; 
         }
     }
 
