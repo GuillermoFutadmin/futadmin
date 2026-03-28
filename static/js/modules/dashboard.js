@@ -203,7 +203,10 @@ export class DashboardModule {
                                 </div>
                                 
                                 <div class="live-events-list">
-                                    ${eventosArr.sort((a, b) => b.minuto - a.minuto).map(e => {
+                                    ${eventosArr.sort((a, b) => {
+                                        if (b.minuto !== a.minuto) return b.minuto - a.minuto;
+                                        return b.id - a.id; 
+                                    }).map(e => {
                                         const tipoLow = (e.tipo || '').toLowerCase();
                                         let icon = '⚽';
                                         let classType = 'event-icon-goal-white';
