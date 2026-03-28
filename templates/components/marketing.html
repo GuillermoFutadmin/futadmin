@@ -66,10 +66,11 @@
                     <button class="btn-secondary" onclick="ui.marketing.closeEditor()" style="padding: 6px 12px;">← Volver</button>
                 </div>
 
-                <!-- SELECTOR DE DATOS (Se llena vía JS) -->
-                <div id="mkt-data-selector-group" class="form-group" style="display: none;">
-                    <label id="mkt-selector-label">Selecciona el Partido</label>
-                    <select id="mkt-data-selector" class="select-field"></select>
+                <!-- BÚSQUEDA Y SELECTOR DE DATOS -->
+                <div id="mkt-data-selector-group" class="form-group" style="display: none; border: 1px solid rgba(255,255,255,0.1); padding: 15px; border-radius: 8px; background: rgba(255,255,255,0.02);">
+                    <label id="mkt-selector-label" style="color: #00ff88; font-weight: bold; margin-bottom: 8px; display: block;">Selecciona los Datos</label>
+                    <input type="text" id="mkt-data-search" placeholder="🔍 Buscar equipo, jugador o liga..." style="margin-bottom: 10px; width: 100%; padding: 10px; background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 6px; color: #fff;">
+                    <select id="mkt-data-selector" class="select-field" style="height: 45px;"></select>
                 </div>
 
                 <div id="mkt-controls-dynamic">
@@ -102,8 +103,12 @@
                         </div>
                         <div class="form-row">
                             <div class="form-group">
-                                <label>Goles</label>
+                                <label>Goles (G)</label>
                                 <input type="number" id="mkt-mvp-goals" value="1">
+                            </div>
+                            <div class="form-group">
+                                <label>P. Jugados (GP)</label>
+                                <input type="number" id="mkt-mvp-gp" value="1">
                             </div>
                             <div class="form-group">
                                 <label>Rating</label>

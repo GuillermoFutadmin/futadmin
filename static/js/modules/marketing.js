@@ -221,7 +221,7 @@ export class MarketingModule {
 
     bindEventsDynamic() {
         const list = ['mkt-gen-bg1', 'mkt-gen-bg2', 'mkt-glocal', 'mkt-gvisit', 'mkt-scorers', 
-                      'mkt-mvp-name', 'mkt-mvp-team', 'mkt-mvp-goals', 'mkt-mvp-rating', 
+                      'mkt-mvp-name', 'mkt-mvp-team', 'mkt-mvp-goals', 'mkt-mvp-rating', 'mkt-mvp-gp',
                       'mkt-rol-title', 'mkt-rol-footer', 'mkt-rol-day', 'mkt-rol-date', 
                       'mkt-filter-team', 'mkt-format'];
         list.forEach(id => {
@@ -231,6 +231,19 @@ export class MarketingModule {
                 else this.drawDynamic();
             };
         });
+
+        // BUSCADOR DINÁMICO
+        const searchInput = document.getElementById('mkt-data-search');
+        if(searchInput) {
+            searchInput.oninput = (e) => {
+                const term = e.target.value.toLowerCase();
+                const selector = document.getElementById('mkt-data-selector');
+                Array.from(selector.options).forEach(opt => {
+                    const match = opt.text.toLowerCase().includes(term);
+                    opt.style.display = match ? 'block' : 'none';
+                });
+            };
+        }
 
         document.getElementById('mkt-data-selector').onchange = (e) => {
             this.handleDataSelection(e.target.value);
@@ -265,6 +278,8 @@ export class MarketingModule {
             if(player) {
                 document.getElementById('mkt-mvp-name').value = player.nombre.toUpperCase();
                 document.getElementById('mkt-mvp-team').value = (player.equipo_nombre || 'FUTADMIN').toUpperCase();
+                document.getElementById('mkt-mvp-gp').value = player.partidos_jugados || 1;
+                document.getElementById('mkt-mvp-goals').value = player.goles || 0;
             }
         } else if(this.activeMode === 'rol') {
             try {
@@ -360,8 +375,9 @@ export class MarketingModule {
     renderMVP(ctx, w, h) {
         const name = document.getElementById('mkt-mvp-name').value || 'JUGADOR MVP';
         const team = document.getElementById('mkt-mvp-team').value || 'EQUIPO';
-        const rating = document.getElementById('mkt-mvp-rating').value || '9.9';
+        const rating = document.getElementById('mkt-mvp-rating').value || '9.5';
         const goals = document.getElementById('mkt-mvp-goals').value || '0';
+        const gp = document.getElementById('mkt-mvp-gp').value || '1';
 
         const radial = ctx.createRadialGradient(w/2, 450, 50, w/2, 450, 500);
         radial.addColorStop(0, 'rgba(139,92,246,0.3)');
@@ -374,65 +390,111 @@ export class MarketingModule {
         this.drawText(ctx, name, w/2, 820, '900 80px "Inter"', '#fff', true);
         this.drawText(ctx, team, w/2, 880, '700 35px "Inter"', '#8b5cf6');
         
-        this.drawText(ctx, `GOLES: ${goals}`, w/2 - 150, 960, '800 45px "Inter"', '#fff');
-        this.drawText(ctx, `RATING: ${rating}`, w/2 + 150, 960, '800 45px "Inter"', '#f59e0b');
+        const statsY = 960;
+        this.drawText(ctx, `G: ${goals}`, w/2 - 200, statsY, '800 50px "Inter"', '#fff');
+        this.drawText(ctx, `GP: ${gp}`, w/2, statsY, '800 50px "Inter"', '#00ff88');
+        this.drawText(ctx, `RTG: ${rating}`, w/2 + 200, statsY, '800 50px "Inter"', '#f59e0b');
     }
 
     renderRolGrid(ctx, w, h) {
         const title = document.getElementById('mkt-rol-title').value || 'PROGRAMACIÓN OFICIAL';
-        const day = document.getElementById('mkt-rol-day').value || '';
-        const date = document.getElementById('mkt-rol-date').value || '';
+        const day = (document.getElementById('mkt-rol-day').value || 'SÁBADO').toUpperCase();
+        const date = (document.getElementById('mkt-rol-date').value || 'SETIEMBRE 2026').toUpperCase();
         const filterTeam = document.getElementById('mkt-filter-team').value;
-        const footer = document.getElementById('mkt-rol-footer').value || '';
+        const footerText = document.getElementById('mkt-rol-footer').value || '¡No faltes! - futbol en vivo';
 
+        // HEADER PRO (Logo FutAdmin y Subtítulo)
         ctx.fillStyle = '#00ff88';
-        this.drawRoundRect(ctx, 80, 80, 250, 40, 5); ctx.fill();
-        this.drawText(ctx, title, 205, 108, '900 20px "Inter"', '#000');
+        this.drawRoundRect(ctx, 80, 80, 240, 42, 6); ctx.fill();
+        this.drawText(ctx, title, 200, 110, '900 22px "Inter"', '#000');
         
-        this.drawText(ctx, 'FUTADMIN', 185, 160, '900 70px "Inter"', '#fff');
+        ctx.fillStyle = '#fff';
+        ctx.font = '900 85px "Inter"'; ctx.textAlign = 'left';
+        ctx.fillText("FUTADMIN", 80, 200);
         
-        ctx.fillStyle = 'rgba(255,255,255,0.05)';
-        this.drawRoundRect(ctx, w - 400, 80, 320, 120, 15); ctx.fill();
-        this.drawText(ctx, day, w - 240, 135, '900 45px "Inter"', '#00ff88');
-        this.drawText(ctx, date, w - 240, 175, '500 22px "Inter"', 'rgba(255,255,255,0.6)');
+        ctx.fillStyle = 'rgba(255,255,255,0.6)';
+        ctx.font = '500 24px "Inter"';
+        ctx.fillText("| Tu liga en la palma de tu mano", 80, 240);
 
+        // DATE CARD PRO (Esquina Superior Derecha)
+        const dateW = 380, dateH = 140;
+        const dateX = w - dateW - 80, dateY = 80;
+        ctx.fillStyle = 'rgba(255,255,255,0.05)';
+        this.drawRoundRect(ctx, dateX, dateY, dateW, dateH, 18); ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,0.1)'; ctx.stroke();
+        
+        this.drawText(ctx, day, dateX + dateW/2, dateY + 65, '900 65px "Inter"', '#00ff88');
+        this.drawText(ctx, date, dateX + dateW/2, dateY + 110, '600 26px "Inter"', 'rgba(255,255,255,0.7)');
+
+        // FILTRADO DE PARTIDOS
         let matches = this.data.matches;
         if(filterTeam) {
             matches = matches.filter(m => m.equipo_local.includes(filterTeam) || m.equipo_visitante.includes(filterTeam));
         }
-        matches = matches.slice(0, 16); 
+        matches = matches.slice(0, 16);
 
-        const cardW = (w - 200) / (w > 1200 ? 4 : 2);
-        const cardH = 200;
-        const gap = 20;
-        let startX = 100, startY = 250;
+        // CONFIGURACIÓN DE REJILLA (Adaptive)
+        const cols = (w > 1200) ? 4 : 2;
+        const gap = 25;
+        const cardW = (w - 180 - (gap * (cols-1))) / cols; // Ajuste fino de ancho
+        const cardH = 220;
+        let startX = 80, startY = 320;
 
         matches.forEach((m, i) => {
-            const col = i % (w > 1200 ? 4 : 2);
-            const row = Math.floor(i / (w > 1200 ? 4 : 2));
+            const col = i % cols;
+            const row = Math.floor(i / cols);
             const x = startX + (col * (cardW + gap));
             const y = startY + (row * (cardH + gap));
 
-            ctx.fillStyle = 'rgba(255,255,255,0.03)';
-            this.drawRoundRect(ctx, x, y, cardW, cardH, 12); ctx.fill();
-            ctx.strokeStyle = 'rgba(255,255,255,0.1)'; ctx.lineWidth = 1; ctx.stroke();
+            // Card BG Pro
+            ctx.fillStyle = 'rgba(255,255,255,0.04)';
+            this.drawRoundRect(ctx, x, y, cardW, cardH, 15); ctx.fill();
+            ctx.strokeStyle = 'rgba(255,255,255,0.12)'; ctx.lineWidth = 1.5; ctx.stroke();
 
+            // Jornada Badge
             ctx.fillStyle = '#00ff88';
-            ctx.font = '900 16px "Inter"'; ctx.textAlign = 'left';
-            ctx.fillText("JORNADA " + (m.jornada || "-"), x + 20, y + 35);
+            ctx.font = '900 18px "Inter"'; ctx.textAlign = 'left';
+            ctx.fillText("JORNADA " + (m.jornada || "5"), x + 25, y + 42);
             
-            this.drawText(ctx, m.hora || "00:00", x + cardW/2, y + 100, '900 45px "Inter"', '#fff');
-            
-            ctx.font = '800 18px "Inter"'; ctx.textAlign = 'center';
-            ctx.fillText(this.truncate(m.equipo_local, 12), x + 60, y + 160);
-            ctx.fillText(this.truncate(m.equipo_visitante, 12), x + cardW - 60, y + 160);
-            
+            // Sede Info
             ctx.fillStyle = 'rgba(255,255,255,0.4)';
-            ctx.font = '500 14px "Inter"';
-            ctx.fillText(m.campo || "POR DEFINIR", x + cardW/2, y + 190);
+            ctx.font = '500 15px "Inter"'; ctx.textAlign = 'right';
+            ctx.fillText("📍 " + (m.campo || "CANCHA #1"), x + cardW - 25, y + 42);
+
+            // Time Divider
+            this.drawText(ctx, m.hora || "10:00", x + cardW/2, y + 115, '900 55px "Inter"', '#fff');
+            ctx.fillStyle = 'rgba(255,255,255,0.1)';
+            ctx.font = '700 14px "Inter"';
+            ctx.fillText("VS", x + cardW/2, y + 140);
+            
+            // Team Names & Fake Logos
+            ctx.font = '800 20px "Inter"'; ctx.textAlign = 'center';
+            ctx.fillStyle = '#fff';
+            ctx.fillText(this.truncate(m.equipo_local.toUpperCase(), 14), x + cardW*0.25, y + 190);
+            ctx.fillText(this.truncate(m.equipo_visitante.toUpperCase(), 14), x + cardW*0.75, y + 190);
+            
+            // Circles for logos
+            ctx.fillStyle = '#00ff88';
+            ctx.beginPath(); ctx.arc(x + cardW*0.25, y + 105, 35, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#0ea5e9';
+            ctx.beginPath(); ctx.arc(x + cardW*0.75, y + 105, 35, 0, Math.PI*2); ctx.fill();
+            this.drawText(ctx, m.equipo_local[0], x + cardW*0.25, y + 118, '900 35px "Inter"', '#000');
+            this.drawText(ctx, m.equipo_visitante[0], x + cardW*0.75, y + 118, '900 35px "Inter"', '#000');
         });
 
-        if(footer) this.drawText(ctx, footer.toUpperCase(), w/2, h - 140, '700 35px "Inter"', '#00ff88');
+        // FOOTER PRO
+        const footerY = h - 120;
+        this.drawText(ctx, footerText.toUpperCase(), w/2, footerY - 50, '700 35px "Inter"', '#fff');
+        
+        ctx.fillStyle = '#00ff88';
+        ctx.font = '900 28px "Inter"'; ctx.textAlign = 'center';
+        ctx.fillText("futadmin.com.mx", w/2 + 80, footerY);
+        
+        ctx.fillStyle = 'rgba(255,255,255,0.4)';
+        ctx.font = '500 22px "Inter"';
+        ctx.fillText("Si quieres ver el resumen detallado de tu liga, miralo en", w/2 - 180, footerY);
+        
+        this.drawText(ctx, "RESULTADOS • ESTADÍSTICAS • POSICIONES • FOTOS", w/2, footerY + 50, '600 20px "Inter"', 'rgba(255,255,255,0.4)');
     }
 
     // --- UTILS ---
@@ -443,19 +505,17 @@ export class MarketingModule {
         ctx.fillStyle = grad;
         ctx.fillRect(0, 0, w, h);
         
-        ctx.strokeStyle = 'rgba(255,255,255,0.02)';
+        // Grid pattern sutil
+        ctx.strokeStyle = 'rgba(255,255,255,0.015)';
         ctx.lineWidth = 1;
-        for(let i=0; i<w; i+=50) {
+        for(let i=0; i<w; i+=80) {
             ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, h); ctx.stroke();
             ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(w, i); ctx.stroke();
         }
-        ctx.strokeStyle = 'rgba(255,255,255,0.1)';
-        ctx.lineWidth = 4;
-        ctx.strokeRect(60, 60, w - 120, h - 120);
     }
 
     drawCenteredImage(ctx, img, x, y, size) {
-        ctx.shadowColor = "rgba(0,0,0,0.5)"; ctx.shadowBlur = 20;
+        ctx.shadowColor = "rgba(0,0,0,0.6)"; ctx.shadowBlur = 30;
         ctx.drawImage(img, x - size/2, y - size/2, size, size);
         ctx.shadowColor = "transparent"; ctx.shadowBlur = 0;
     }
@@ -466,7 +526,7 @@ export class MarketingModule {
         ctx.font = font;
         ctx.textAlign = 'center';
         if(stroke) {
-            ctx.lineWidth = 2; ctx.strokeStyle = '#000';
+            ctx.lineWidth = 3; ctx.strokeStyle = '#000';
             ctx.strokeText(text, x, y);
         }
         ctx.fillText(text, x, y);
@@ -491,10 +551,13 @@ export class MarketingModule {
     }
 
     drawFooter(ctx, w, h) {
-        ctx.fillStyle = 'rgba(255,255,255,0.3)';
-        ctx.font = '700 24px "Inter"';
-        ctx.textAlign = 'center';
-        ctx.fillText('CREADO POR FUTADMIN.COM.MX', w/2, h - 85);
+        // Footer genérico solo para Avisos
+        if(this.activeMode === 'avisos') {
+            ctx.fillStyle = 'rgba(255,255,255,0.2)';
+            ctx.font = '700 22px "Inter"';
+            ctx.textAlign = 'center';
+            ctx.fillText('POWERED BY FUTADMIN.COM.MX', w/2, h - 80);
+        }
     }
 
     drawRoundRect(ctx, x, y, w, h, r) {
@@ -511,7 +574,7 @@ export class MarketingModule {
         ctx.closePath();
     }
 
-    truncate(str, n) { return (str.length > n) ? str.substr(0, n-1) + '...' : str; }
+    truncate(str, n) { return (str.length > n) ? str.substr(0, n-1) + '...' : str.substring(0, n); }
 
     clearLogo() { this.config.logoImg = null; this.draw(); }
     clearDynamicImage() { this.config.dynamicImg = null; this.drawDynamic(); }
@@ -524,7 +587,7 @@ export class MarketingModule {
         if(!canvas) return;
         const url = canvas.toDataURL('image/png', 1.0);
         const link = document.createElement('a');
-        link.download = `FutAdmin_Graphic_${Date.now()}.png`;
+        link.download = `FutAdmin_Pro_${Date.now()}.png`;
         link.href = url;
         link.click();
         link.remove();

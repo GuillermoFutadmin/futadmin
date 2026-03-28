@@ -16,7 +16,7 @@ import { SettingsModule } from './modules/settings.js?v=60';
 import { AnalyticsModule } from './modules/analytics.js?v=60';
 import { PrivacyModule } from './modules/privacy.js?v=51';
 import { DashboardMap } from './modules/dashboard_map.js?v=51';
-import { MarketingModule } from './modules/marketing.js?v=62';
+import { MarketingModule } from './modules/marketing.js?v=63';
 import { Perfil } from './modules/perfil.js?v=60';
 
 class FutAdminUI {
