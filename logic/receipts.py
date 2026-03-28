@@ -26,6 +26,17 @@ def build_receipt_email_html(nombre, liga_nombre, equipo, torneo, tipo, monto_ab
     fecha_str = fecha or datetime.now().strftime('%d/%m/%Y %H:%M')
     saldo_color = "#e74c3c" if saldo_pendiente > 0 else "#27ae60"
 
+    # Etiquetas dinámicas según el tipo
+    tipo_low = str(tipo or "").lower()
+    label_total = "Monto Pactado Total"
+    label_pendiente = "Saldo Pendiente"
+    if "inscrip" in tipo_low:
+        label_total = "Total Inscripción"
+        label_pendiente = "Pendiente Inscripción"
+    elif "arbitra" in tipo_low:
+        label_total = "Total Arbitraje / Campo"
+        label_pendiente = "Pendiente Arbitraje"
+
     partido_row = ""
     if partido:
         partido_row = f"""
@@ -42,7 +53,7 @@ def build_receipt_email_html(nombre, liga_nombre, equipo, torneo, tipo, monto_ab
     if not is_futadmin:
         financial_rows += f"""
               <tr>
-                <td style="padding:8px 12px;color:#555;border-bottom:1px solid #f0f0f0;background:#fafafa;">📋 Monto Pactado</td>
+                <td style="padding:8px 12px;color:#555;border-bottom:1px solid #f0f0f0;background:#fafafa;">📋 {label_total}</td>
                 <td style="padding:8px 12px;font-weight:600;border-bottom:1px solid #f0f0f0;background:#fafafa;">${monto_pactado:,.2f}</td>
               </tr>
               <tr>
@@ -50,7 +61,7 @@ def build_receipt_email_html(nombre, liga_nombre, equipo, torneo, tipo, monto_ab
                 <td style="padding:8px 12px;font-weight:600;border-bottom:1px solid #f0f0f0;">${total_pagado:,.2f}</td>
               </tr>
               <tr>
-                <td style="padding:8px 12px;color:#555;">🔴 Saldo Pendiente</td>
+                <td style="padding:8px 12px;color:#555;">🔴 {label_pendiente}</td>
                 <td style="padding:8px 12px;font-weight:700;color:{saldo_color};">${saldo_pendiente:,.2f}</td>
               </tr>"""
 

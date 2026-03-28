@@ -305,9 +305,9 @@ export class FinanceModule {
                         <thead>
                             <tr style="background: rgba(0,0,0,0.3); border-bottom: 2px solid var(--border);">
                                 <th style="padding: 14px 20px; color: var(--text-muted); font-size: 0.75rem; font-weight: 700; text-transform: uppercase;">Equipo</th>
-                                <th style="padding: 14px 20px; color: var(--text-muted); font-size: 0.75rem; font-weight: 700; text-transform: uppercase;">Aportación Pactada</th>
-                                <th style="padding: 14px 20px; color: var(--text-muted); font-size: 0.75rem; font-weight: 700; text-transform: uppercase;">Total Donado</th>
-                                <th style="padding: 14px 20px; color: var(--text-muted); font-size: 0.75rem; font-weight: 700; text-transform: uppercase;">Donación Pendiente</th>
+                                <th style="padding: 14px 20px; color: var(--text-muted); font-size: 0.75rem; font-weight: 700; text-transform: uppercase;">Total Inscripción</th>
+                                <th style="padding: 14px 20px; color: var(--text-muted); font-size: 0.75rem; font-weight: 700; text-transform: uppercase;">Pagado a la fecha</th>
+                                <th style="padding: 14px 20px; color: var(--text-muted); font-size: 0.75rem; font-weight: 700; text-transform: uppercase;">Pendiente Inscripción</th>
                                 <th style="padding: 14px 20px; color: var(--text-muted); font-size: 0.75rem; font-weight: 700; text-transform: uppercase;">Donaciones</th>
                                 <th style="padding: 14px 20px; color: var(--text-muted); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; text-align: right;">Acciones</th>
                             </tr>
@@ -673,11 +673,11 @@ export class FinanceModule {
 
                 <div style="display: flex; gap: 10px; justify-content: center; margin-top: 15px; margin-bottom: 20px;">
                     <div style="flex: 1; background: rgba(255,255,255,0.03); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
-                        <div style="font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase;">Total Pagado</div>
+                        <div style="font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase;">Acumulado Pagado</div>
                         <div style="font-size: 1rem; font-weight: bold; color: #fff;">$${data.total_pagado.toLocaleString()}</div>
                     </div>
                     <div style="flex: 1; background: rgba(255,255,255,0.03); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
-                        <div style="font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase;">Abonar Más</div>
+                        <div style="font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase;">Pendiente de ${data.tipo}</div>
                         <div style="font-size: 1rem; font-weight: bold; color: ${data.saldo_pendiente > 0 ? '#ff4444' : '#00ff88'};">$${data.saldo_pendiente.toLocaleString()}</div>
                     </div>
                 </div>
@@ -768,9 +768,9 @@ ${data.reglamento ? `<strong>REGLAMENTO:</strong>\n${data.reglamento}\n\n` : ''}
   </div>
   <div class="cuenta">
     <div class="section-title">Resumen de Cuenta</div>
-    <div class="cuenta-row"><span>Monto Pactado:</span><span>$${data.monto_pactado.toLocaleString()}</span></div>
-    <div class="cuenta-row"><span>Total Pagado:</span><span>$${data.total_pagado.toLocaleString()}</span></div>
-    <div class="cuenta-row total"><span>SALDO PENDIENTE:</span><span>$${data.saldo_pendiente.toLocaleString()}</span></div>
+    <div class="cuenta-row"><span>Total de ${data.tipo}:</span><span>$${data.monto_pactado.toLocaleString()}</span></div>
+    <div class="cuenta-row"><span>Pagado a la fecha:</span><span>$${data.total_pagado.toLocaleString()}</span></div>
+    <div class="cuenta-row total"><span>PENDIENTE DE ${data.tipo.toUpperCase()}:</span><span style="color:${data.saldo_pendiente > 0 ? '#ef4444' : '#10b981'}">$${data.saldo_pendiente.toLocaleString()}</span></div>
   </div>
   ${premiosSection}
   <div class="section-title">T&eacute;rminos y Condiciones</div>
