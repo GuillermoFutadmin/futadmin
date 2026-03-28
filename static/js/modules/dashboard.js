@@ -186,7 +186,7 @@ export class DashboardModule {
                                         <span class="score-divider">-</span>
                                         <span>${m.goles_visitante}</span>
                                     </div>
-                                    <div style="font-size: 0.65rem; color: rgba(255,255,255,0.6); text-transform: uppercase; letter-spacing: 1px; white-space: nowrap; font-weight: 700; margin-top: 2px;">
+                                    <div style="font-size: 0.65rem; color: rgba(255,255,255,0.6); text-transform: uppercase; letter-spacing: 1px; white-space: nowrap; font-weight: 700; margin-top: 2px; max-width: 120px; overflow: hidden; text-overflow: ellipsis; text-align: center;" title="${m.cancha || 'Por designar'}">
                                         📍 ${m.cancha || 'Por designar'}
                                     </div>
                                 </div>
