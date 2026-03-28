@@ -805,10 +805,12 @@ def _trigger_telegram_receipt_email(pago, equipo, inscripcion, torneo):
         _fecha_local = p_fecha - timedelta(hours=6)
         
         # Lógica de precisión financiera: Diferenciar Inscripción vs Arbitraje
-        is_arb = pago.tipo == 'Arbitraje'
+        tipo_norm = pago.tipo.replace('ó', 'o') if pago.tipo else 'Inscripcion'
+        is_arb = tipo_norm == 'Arbitraje'
+        
         monto_referencia = float(inscripcion.monto_pactado_inscripcion or 0)
         total_acumulado = float(pagado_ins)
-        saldo_movimiento = max(0, monto_referencia - pagado_ins)
+        saldo_movimiento = max(0, monto_referencia - total_acumulado)
 
         if is_arb:
             monto_referencia = float(torneo.costo_arbitraje or 0)
@@ -816,7 +818,7 @@ def _trigger_telegram_receipt_email(pago, equipo, inscripcion, torneo):
                 # Pagado específico para este partido
                 pagado_este_partido = db.session.query(db.func.sum(Pago.monto)).filter_by(
                     inscripcion_id=inscripcion.id, 
-                    tipo='Arbitraje', 
+                    tipo=pago.tipo, 
                     partido_id=pago.partido_id
                 ).scalar() or 0
                 total_acumulado = float(pagado_este_partido)
@@ -833,6 +835,7 @@ def _trigger_telegram_receipt_email(pago, equipo, inscripcion, torneo):
             "torneo": torneo.nombre if torneo else "N/A",
             "sede": sede_nombre.strip(),
             "liga_nombre": torneo.liga.nombre if torneo and getattr(torneo, 'liga', None) else "FutAdmin",
+            "monto": float(pago.monto) if pago.monto else 0.0,
             "monto_abonado": float(pago.monto) if pago.monto else 0.0,
             "tipo": pago.tipo,
             "fecha": _fecha_local.strftime('%d/%m/%Y %H:%M'),

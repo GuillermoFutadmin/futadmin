@@ -1389,15 +1389,24 @@ def handle_pagos():
         ins = Inscripcion.query.get(inscripcion_id)
         torneo = ins.torneo
         
+        # Robustez: Normalizar tipo para búsquedas de totales (Inscripcion vs Inscripción)
+        tipo_norm = nuevo_pago.tipo.replace('ó', 'o') if nuevo_pago.tipo else 'Inscripcion'
+        
         # Calcular saldos actuales
-        pagado_ins = db.session.query(db.func.sum(Pago.monto)).filter_by(inscripcion_id=ins.id, tipo='Inscripcion').scalar() or 0
-        pagado_arb_total = db.session.query(db.func.sum(Pago.monto)).filter_by(inscripcion_id=ins.id, tipo='Arbitraje').scalar() or 0
+        pagado_ins = db.session.query(db.func.sum(Pago.monto)).filter(
+            Pago.inscripcion_id == ins.id, 
+            db.or_(Pago.tipo == 'Inscripcion', Pago.tipo == 'Inscripción')
+        ).scalar() or 0
+        pagado_arb_total = db.session.query(db.func.sum(Pago.monto)).filter(
+            Pago.inscripcion_id == ins.id, 
+            db.or_(Pago.tipo == 'Arbitraje', Pago.tipo == 'Arbitraje/Campo')
+        ).scalar() or 0
         
         # Lógica específica por tipo para el recibo
-        is_arb = nuevo_pago.tipo == 'Arbitraje'
-        monto_referencia = float(ins.monto_pactado_inscripcion)
+        is_arb = tipo_norm == 'Arbitraje'
+        monto_referencia = float(ins.monto_pactado_inscripcion or 0)
         total_acumulado = float(pagado_ins)
-        saldo_movimiento = float(ins.monto_pactado_inscripcion - pagado_ins)
+        saldo_movimiento = max(0, monto_referencia - total_acumulado)
 
         if is_arb:
             monto_referencia = float(torneo.costo_arbitraje or 0)
@@ -1405,7 +1414,7 @@ def handle_pagos():
                 # Pagado específico para este partido
                 pagado_este_partido = db.session.query(db.func.sum(Pago.monto)).filter_by(
                     inscripcion_id=ins.id, 
-                    tipo='Arbitraje', 
+                    tipo=nuevo_pago.tipo, # Usar el tipo original tal cual se guardó para filtrar por partido
                     partido_id=nuevo_pago.partido_id
                 ).scalar() or 0
                 total_acumulado = float(pagado_este_partido)
@@ -1442,6 +1451,7 @@ def handle_pagos():
 
         from datetime import timedelta
         _fecha_local = nuevo_pago.fecha - timedelta(hours=6)
+        _liga_n = torneo.liga.nombre if torneo and torneo.liga else "FutAdmin"
         
         result = {
             "success": True,
@@ -1450,7 +1460,8 @@ def handle_pagos():
             "equipo": ins.equipo.nombre,
             "torneo": torneo.nombre,
             "sede": sede_nombre.strip() if sede_nombre else "Por definir",
-            "liga_nombre": torneo.liga.nombre if torneo and torneo.liga else "FutAdmin",
+            "liga_nombre": _liga_n,
+            "monto": float(nuevo_pago.monto),
             "monto_abonado": float(nuevo_pago.monto),
             "tipo": nuevo_pago.tipo,
             "fecha": _fecha_local.strftime('%d/%m/%Y %H:%M'),
