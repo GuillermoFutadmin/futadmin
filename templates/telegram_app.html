@@ -1225,8 +1225,22 @@
                                 <span class="score" style="font-size: 1rem; min-width: 50px; padding: 4px 8px; flex-shrink:0;">${m.goles_local || 0} - ${m.goles_visitante || 0}</span>
                                 <span class="team-ticker" style="flex:1; font-weight:600; font-size:0.9rem; text-align:right;"><span class="marquee-wrap" style="max-width:100%; float:right;"><span class="marquee-text" data-automarquee="1">${m.equipo_visitante}</span></span></span>
                             </div>
-                            <div style="display:flex; justify-content: space-between; align-items: flex-end; margin-top: 10px;">
-                                <div style="font-size: 0.7rem; color: var(--muted); line-height: 1.3;">📅 ${m.fecha} ${m.hora}<br>👤 ${m.arbitro_nombre || 'P.A.'}</div>
+                            <div style="display:flex; justify-content: space-between; align-items: flex-end; margin-top: 12px;">
+                                <div style="font-size: 0.75rem; color: var(--muted); line-height: 1.6;">
+                                    <div style="display:flex; align-items:center; gap:6px;">
+                                        <span style="font-size: 0.85rem;">📅</span>
+                                        <span style="color:var(--secondary); font-weight:800;">${m.fecha || 'Día pendiente'} · ${m.hora || '--:--'}</span>
+                                    </div>
+                                    <div style="display:flex; align-items:center; gap:6px;">
+                                        <span style="font-size: 0.85rem;">📍</span>
+                                        <span style="color:#fff; font-weight:600;">${m.cancha || 'Sede por asignar'}</span>
+                                    </div>
+                                    ${m.arbitro_nombre ? `
+                                    <div style="display:flex; align-items:center; gap:6px;">
+                                        <span style="font-size: 0.85rem;">👤</span>
+                                        <span style="font-size: 0.7rem;">${m.arbitro_nombre}</span>
+                                    </div>` : ''}
+                                </div>
                                 <div style="display:flex; flex-direction: column; gap: 5px; align-items: flex-end;">
                                     ${drillPurpose === 'matches' && canEdit && isPlayable ? `
                                         <button class="btn-payment" style="background:linear-gradient(135deg, var(--secondary), #059669);" onclick="event.stopPropagation(); openMatchAndCheckIn(${index})">PASE DE LISTA</button>
