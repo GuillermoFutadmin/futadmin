@@ -49,8 +49,46 @@ class FutAdminUI {
         this.initEventListeners();
         this.dashboard.init(); // Cargar selector de ligas desde el inicio
 
+        // Sensor Global del Logo (Pulsación de actividad)
+        this.initLogoStatusSync();
+    }
 
+    /**
+     * Sincronización Global del Logo: Independiente del módulo cargado.
+     * Verifica actividad en vivo (Live o HalfTime) para el semáforo del logo.
+     */
+    initLogoStatusSync() {
+        const update = async () => {
+            try {
+                // Consultamos el endpoint global (torneo_id=0) para el indicador del logo
+                const matches = await Core.fetchAPI('/api/torneos/0/partidos/live');
+                const hasLive = Array.isArray(matches) && matches.length > 0;
+                this.updateSidebarLogoStatus(hasLive);
+            } catch (e) {
+                console.warn("Error en sync de logo:", e);
+                this.updateSidebarLogoStatus(false);
+            }
+        };
 
+        // Ejecución inmediata al entrar
+        update();
+        
+        // Intervalo autónomo cada 30 segundos
+        this.logoSyncInterval = setInterval(update, 30000);
+    }
+
+    updateSidebarLogoStatus(isLive) {
+        const logo = document.querySelector('.sidebar-logo-img');
+        if (!logo) return;
+
+        // Limpiar estados anteriores antes de aplicar el nuevo (Asegura visibilidad del rojo)
+        logo.classList.remove('logo-status-live', 'logo-status-idle');
+        
+        if (isLive) {
+            logo.classList.add('logo-status-live');
+        } else {
+            logo.classList.add('logo-status-idle');
+        }
     }
 
     initEventListeners() {

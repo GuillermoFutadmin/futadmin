@@ -130,29 +130,11 @@ export class DashboardModule {
         }
     }
 
-    updateSidebarLogoStatus(isLive) {
-        const logo = document.querySelector('.sidebar-logo-img');
-        if (!logo) return;
-
-        // Limpiar estados anteriores para evitar conflictos visuales
-        logo.classList.remove('logo-status-live', 'logo-status-idle');
-        
-        if (isLive) {
-            logo.classList.add('logo-status-live');
-        } else {
-            logo.classList.add('logo-status-idle');
-        }
-    }
-
     async fetchAndRenderLiveMatches() {
         const liveContainer = document.getElementById('live-matches-banner-container');
         if (!liveContainer) return;
 
         try {
-            // Actualización Global del Logo (Consulta independiente de la liga seleccionada)
-            const globalLive = await Core.fetchAPI(`/api/torneos/0/partidos/live`);
-            this.updateSidebarLogoStatus(globalLive && globalLive.length > 0);
-
             const torneoId = this.currentLeagueId === 'all' ? 0 : this.currentLeagueId;
             const liveMatches = await Core.fetchAPI(`/api/torneos/${torneoId}/partidos/live`);
 

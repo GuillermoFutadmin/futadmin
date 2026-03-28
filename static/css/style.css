@@ -1,4 +1,4 @@
-:root {
+ï»¿:root {
     --primary: #00ff88;
     --primary-glow: rgba(0, 255, 136, 0.3);
     --secondary: #1a1a1a;
@@ -59,7 +59,7 @@ body {
     width: 100%;
     max-width: 160px;
     height: auto;
-    filter: drop-shadow(0 0 10px var(--primary-glow));
+    /* filter: drop-shadow(0 0 10px var(--primary-glow)); */
     clip-path: circle(41%); /* Tightened to cut off outer bokeh noise */
     mix-blend-mode: screen;
     opacity: 0.9;
@@ -2321,7 +2321,7 @@ textarea.full-textarea:focus {
 .marquee-text {
     display: inline-block;
     white-space: nowrap;
-    /* La animación se activa via JS solo cuando el texto desborda */
+    /* La animaciï¿½n se activa via JS solo cuando el texto desborda */
 }
 .marquee-text.scrolling {
     animation: marquee-scroll var(--marquee-dur, 8s) linear 1.5s infinite;
