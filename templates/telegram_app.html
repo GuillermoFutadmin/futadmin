@@ -781,6 +781,7 @@
                 <div class="group-content">
                     <button class="btn btn-outline" onclick="openPlayerList('Amarilla')" style="border-color: var(--warning); color: var(--warning);">🟨 AMARILLA</button>
                     <button class="btn btn-outline" onclick="openPlayerList('Roja')" style="border-color: var(--error); color: var(--error);">🟥 ROJA</button>
+                    <button class="btn btn-outline" onclick="openPlayerList('Azul')" style="border-color: #3b82f6; color: #3b82f6;">🟦 AZUL</button>
                 </div>
             </div>
 
@@ -819,6 +820,14 @@
             <button class="btn btn-outline" onclick="gameAction('Medio Tiempo')" id="btn-halftime" style="grid-column: 1 / -1; border-color: var(--primary); color: var(--primary); font-weight:800;">⌛ MEDIO TIEMPO</button>
             <button class="btn btn-primary" onclick="gameAction('Reanudación')" id="btn-second-half" style="grid-column: 1 / -1; background: linear-gradient(135deg, var(--secondary), #059669); font-weight:900; height:55px; display:none;">▶️ CONTINUAR JUEGO</button>
             <button class="btn btn-outline" onclick="confirmEndMatch()" id="btn-end" style="grid-column: 1 / -1; border-color: var(--error); color: var(--error); font-weight:800;">🏁 FINALIZAR PARTIDO</button>
+        </div>
+
+        <!-- Banca por Castigo (Sin Bin) (Fase 15) -->
+        <div id="sin-bin-container" style="display: none; margin-top: 20px; padding: 12px; background: rgba(59, 130, 246, 0.1); border: 1px dashed #3b82f6; border-radius: 12px;">
+            <div style="font-size: 0.7rem; font-weight: 800; color: #3b82f6; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px;">⏱ BANCA POR CASTIGO (AZUL)</div>
+            <div id="sin-bin-list">
+                <!-- Players serving blue card time -->
+            </div>
         </div>
 
         <div class="event-log" id="event-log">
@@ -2178,6 +2187,11 @@
                 if (isPenalty) logType = '⚽ GOL (P)';
                 if (pendingEventType === 'Amarilla') logType = '🟨 Tarjeta';
                 if (pendingEventType === 'Roja') logType = '🟥 Tarjeta';
+                if (pendingEventType === 'Azul') {
+                    logType = '🟦 Tarjeta';
+                    // Iniciar cuenta regresiva en Sin Bin (2 min por defecto)
+                    addPlayerToSinBin(pendingEventData.playerId, pendingEventData.playerName, '?', 2);
+                }
 
                 logEvent(logType, pendingEventData.playerName, currentMinute);
             }
@@ -2230,6 +2244,7 @@
             function renderPlayerItem(p, equipoId) {
                 const isPresent = p.presente;
                 const inField = p.en_cancha;
+                const s = p.stats || { amarillas: 0, rojas: 0, azules: 0, ultima: null };
                 
                 // Si estamos en modo alineación, solo mostrar jugadores presentes
                 if (mode === 'alineacion' && !isPresent) return '';
@@ -2246,11 +2261,24 @@
                 }
 
                 return `
-                    <div class="player-item" style="background:${bgColor}" onclick="togglePresence(${p.id}, ${equipoId}, this)">
-                        <span>#${p.numero || '?'} ${p.nombre}</span>
-                        <span class="presence-indicator" style="color: ${ (mode==='alineacion'?inField:isPresent)? 'var(--primary)' : 'var(--muted)'}">
-                            ${statusHtml}
-                        </span>
+                    <div class="player-item" style="background:${bgColor}; border-left: 3px solid ${p.sancionado ? '#ef4444' : 'transparent'}; flex-wrap: wrap;" onclick="togglePresence(${p.id}, ${equipoId}, this)">
+                        <div style="flex: 1; display: flex; align-items: center; min-width: 150px;">
+                            <span style="font-weight:700; margin-right:8px;">#${p.numero || '?'} ${p.nombre}</span>
+                            
+                            <!-- Badges de tarjetas -->
+                            ${s.amarillas > 0 ? `<div class="card-badge badge-yellow">${s.amarillas}</div>` : ''}
+                            ${s.rojas > 0 || p.sancionado ? `<div class="card-badge badge-red">${s.rojas || '!' }</div>` : ''}
+                            ${s.azules > 0 ? `<div class="card-badge badge-blue">${s.azules}</div>` : ''}
+
+                            ${p.sancionado ? `<span class="sancionado-tag">SANCIONADO</span>` : ''}
+                        </div>
+                        
+                        <div style="display: flex; flex-direction: column; align-items: flex-end; justify-content: center;">
+                            <span class="presence-indicator" style="font-size: 0.75rem; color: ${ (mode==='alineacion'?inField:isPresent)? 'var(--primary)' : 'var(--muted)'}">
+                                ${statusHtml}
+                            </span>
+                            ${s.ultima ? `<span style="font-size:0.5rem; color:var(--muted); margin-top:2px;">Últ: ${s.ultima}</span>` : ''}
+                        </div>
                     </div>
                 `;
             }
@@ -4102,6 +4130,59 @@
                 btn.innerText = 'CONFIRMAR CAMBIO';
             }
         }
+
+        // --- SISTEMA DE TARJETA AZUL / SIN BIN (FASE 15) ---
+        let sinBin = []; // { id, name, number, endTime (minute) }
+
+        function updateSinBinUI() {
+            const container = document.getElementById('sin-bin-container');
+            const list = document.getElementById('sin-bin-list');
+            if (!container || !list) return;
+
+            const currentMatchSecs = calcElapsedSeconds();
+
+            // Filtrar expirados
+            sinBin = sinBin.filter(p => (p.endTime * 60) > currentMatchSecs);
+
+            if (sinBin.length === 0) {
+                container.style.display = 'none';
+                return;
+            }
+
+            container.style.display = 'block';
+            list.innerHTML = sinBin.map(p => {
+                const remainingSec = (p.endTime * 60) - currentMatchSecs;
+                const m = Math.floor(remainingSec / 60);
+                const s = Math.floor(remainingSec % 60);
+                return `
+                    <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.05); padding: 8px; border-radius: 6px; margin-bottom: 4px;">
+                        <span style="font-size: 0.8rem; font-weight: 700;">${p.name}</span>
+                        <span style="font-family: monospace; color: #3b82f6; font-weight: 800; font-size: 0.9rem;">
+                            ${m}:${s.toString().padStart(2,'0')}
+                        </span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function addPlayerToSinBin(playerId, playerName, playerNumber, durationMinutes = 2) {
+            const currentMinute = Math.floor(calcElapsedSeconds() / 60);
+            sinBin.push({
+                id: playerId,
+                name: playerName,
+                number: playerNumber,
+                endTime: currentMinute + durationMinutes
+            });
+            updateSinBinUI();
+            if (tg.isVersionAtLeast('6.1')) tg.HapticFeedback.notificationOccurred('warning');
+        }
+
+        // Hook into the existing timer tick
+        setInterval(() => {
+            if (activeMatch && activeMatch.estado === 'Live' && !isTimerPaused) {
+                updateSinBinUI();
+            }
+        }, 1000);
     </script>
     <!-- Modal de Penales -->
     <div id="penalties-modal" class="modal" style="display: none;">

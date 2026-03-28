@@ -541,12 +541,26 @@ def telegram_post_event(id):
         import time as time_module
         now_ms = int(time_module.time() * 1000)
         
+        # --- DOBLE AMARILLA CHECK ---
+        tipo_final = data.get('tipo')
+        if tipo_final == 'Amarilla' and data.get('jugador_id'):
+            # Contar amarillas previas en este partido
+            prev_yellows = EventoPartido.query.filter_by(
+                partido_id=id, 
+                jugador_id=data.get('jugador_id'), 
+                tipo='Amarilla'
+            ).count()
+            if prev_yellows >= 1:
+                # Ya tiene una, esta es la segunda -> ROJA
+                tipo_final = 'Roja'
+                data['nota'] = (data.get('nota') or '') + " (Doble Amarilla)"
+
         nuevo_evento = EventoPartido(
             partido_id=id,
             equipo_id=data.get('equipo_id'),
             jugador_id=data.get('jugador_id'),
             minuto=data.get('minuto'),
-            tipo=data.get('tipo'),
+            tipo=tipo_final,
             periodo=data.get('periodo', partido.periodo_actual or 1),
             nota=data.get('nota'), # Card note
             liga_id=partido.liga_id
@@ -898,30 +912,58 @@ def telegram_match_checkin(id):
 
 @arbitros_bp.route('/api/telegram/match/<int:id>/players', methods=['GET'])
 def telegram_match_players(id):
-    """Devuelve la plantilla de jugadores de ambos equipos para un partido (no requiere sesión)."""
+    """Devuelve la plantilla de jugadores de ambos equipos para un partido con sus estadísticas de tarjetas en el torneo."""
     try:
         partido = Partido.query.get_or_404(id)
         local_players = Jugador.query.filter_by(equipo_id=partido.equipo_local_id).all()
         visitante_players = Jugador.query.filter_by(equipo_id=partido.equipo_visitante_id).all()
 
+        # Obtener asistencias actuales
         asistencias = AsistenciaPartido.query.filter_by(partido_id=id).all()
         asistencia_map = {a.jugador_id: {"presente": a.presente, "en_cancha": a.en_cancha} for a in asistencias}
 
+        # Obtener todas las tarjetas del torneo para estos jugadores
+        # Unimos Partido para filtrar por torneo_id
+        torneo_id = partido.torneo_id
+        all_cards = db.session.query(EventoPartido).join(Partido).filter(
+            Partido.torneo_id == torneo_id,
+            EventoPartido.tipo.in_(['Amarilla', 'Roja', 'Azul'])
+        ).all()
+
+        # Mapear tarjetas por jugador
+        stats_map = {}
+        for card in all_cards:
+            jid = card.jugador_id
+            if jid not in stats_map:
+                stats_map[jid] = {"amarillas": 0, "rojas": 0, "azules": 0, "ultima": None}
+            
+            tipo = card.tipo.lower()
+            if 'amarilla' in tipo: stats_map[jid]["amarillas"] += 1
+            elif 'roja' in tipo: stats_map[jid]["rojas"] += 1
+            elif 'azul' in tipo: stats_map[jid]["azules"] += 1
+            
+            # Guardar la fecha del partido más reciente
+            fecha_str = card.partido.fecha.strftime('%Y-%m-%d') if card.partido.fecha else ""
+            if not stats_map[jid]["ultima"] or fecha_str > stats_map[jid]["ultima"]:
+                stats_map[jid]["ultima"] = fecha_str
+
+        def get_p_data(j):
+            s = stats_map.get(j.id, {"amarillas": 0, "rojas": 0, "azules": 0, "ultima": None})
+            # Lógica simple de sanción: si tuvo roja en el torneo (o acumuló muchas amarillas)
+            # Podríamos refinar esto según las reglas exactas de la liga
+            return {
+                "id": j.id,
+                "nombre": j.nombre,
+                "numero": j.numero,
+                "presente": asistencia_map.get(j.id, {}).get("presente", False),
+                "en_cancha": asistencia_map.get(j.id, {}).get("en_cancha", False),
+                "stats": s,
+                "sancionado": s["rojas"] > 0 # Ejemplo simple
+            }
+
         return jsonify({
-            "local": [{
-                "id": j.id,
-                "nombre": j.nombre,
-                "numero": j.numero,
-                "presente": asistencia_map.get(j.id, {}).get("presente", False),
-                "en_cancha": asistencia_map.get(j.id, {}).get("en_cancha", False)
-            } for j in local_players],
-            "visitante": [{
-                "id": j.id,
-                "nombre": j.nombre,
-                "numero": j.numero,
-                "presente": asistencia_map.get(j.id, {}).get("presente", False),
-                "en_cancha": asistencia_map.get(j.id, {}).get("en_cancha", False)
-            } for j in visitante_players]
+            "local": [get_p_data(j) for j in local_players],
+            "visitante": [get_p_data(j) for j in visitante_players]
         })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -943,7 +985,7 @@ def telegram_match_detalles(id):
                     'minuto': ev.minuto,
                     'periodo': ev.periodo,
                 })
-            elif ev.tipo in ['Amarilla', 'Roja']:
+            elif ev.tipo in ['Amarilla', 'Roja', 'Azul']:
                 tarjetas.append({
                     'jugador': ev.jugador.nombre if ev.jugador else 'Desconocido',
                     'equipo': ev.equipo.nombre if ev.equipo else '',
