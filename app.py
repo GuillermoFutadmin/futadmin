@@ -1672,15 +1672,24 @@ def handle_partido(id):
 
 @app.route('/api/torneos/<int:torneo_id>/partidos/live', methods=['GET'])
 def get_live_matches(torneo_id):
-    """Returns only live matches for a specific tournament or all tournaments if id is 0."""
+    """Returns live matches, ensuring league filtering even if partido.liga_id is null."""
     from sqlalchemy import or_
+    from models import Torneo
+    
     query = Partido.query.filter(Partido.estado.in_(['Live', 'HalfTime']))
-    query = apply_liga_filter(query, Partido)
     
     if torneo_id > 0:
         query = query.filter_by(torneo_id=torneo_id)
-        
+    else:
+        # Consulta global respetando permisos de liga (usando join para seguridad si liga_id es null en partido)
+        l_id = get_liga_id()
+        rol = str(session.get('user_rol') or '').lower()
+        if l_id and rol not in ['admin', 'ejecutivo']:
+            query = query.join(Torneo).filter(or_(Partido.liga_id == l_id, Torneo.liga_id == l_id))
+        # Si es admin, no filtramos más (ve todo el sistema)
+
     partidos = query.all()
+    return jsonify([p.to_dict() for p in partidos])
     return jsonify([p.to_dict() for p in partidos])
 
 def sync_match_goals(partido):
