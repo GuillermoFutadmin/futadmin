@@ -2306,7 +2306,12 @@ def auto_schedule_torneo(torneo_id):
     # 3. Scheduling state - Rescue past matches by starting from today if needed
     from datetime import datetime
     today = datetime.now().date()
-    current_date = max(torneo.fecha_inicio, today) if torneo.fecha_inicio else today
+    # Normalize torneo.fecha_inicio to date() for comparison with today
+    t_start = today
+    if torneo.fecha_inicio:
+        t_start = torneo.fecha_inicio.date() if hasattr(torneo.fecha_inicio, 'date') else torneo.fecha_inicio
+    
+    current_date = max(t_start, today)
     
     # Helper functions
     def get_minutes(time_str):

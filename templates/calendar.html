@@ -2740,20 +2740,37 @@
                 if (t) {
                     // 1. Time prefill (horario_juego format: "HH:MM a HH:MM" or "HH:MM - HH:MM")
                     if (t.horario_juego) {
-                        const sep = t.horario_juego.includes('a') ? 'a' : '-';
-                        const parts = t.horario_juego.split(sep).map(p => p.trim());
-                        if (parts[0] && parts[0].includes(':')) document.getElementById('sched-time-start').value = parts[0];
-                        if (parts[1] && parts[1].includes(':')) document.getElementById('sched-time-end').value = parts[1];
+                        const val = t.horario_juego.toLowerCase();
+                        const sep = val.includes('a') ? 'a' : (val.includes('-') ? '-' : null);
+                        if (sep) {
+                            const parts = val.split(sep).map(p => p.trim());
+                            // Ensure it's in 24h format for the input[type=time]
+                            const to24h = (s) => {
+                                let [h_str, m_str] = s.split(':');
+                                if (!h_str) return '';
+                                let h = parseInt(h_str);
+                                let m = parseInt(m_str || '0');
+                                
+                                if (s.toLowerCase().includes('p') && h < 12) h += 12;
+                                if (s.toLowerCase().includes('a') && h === 12) h = 0;
+                                
+                                return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+                            };
+                            if (parts[0]) document.getElementById('sched-time-start').value = to24h(parts[0]);
+                            if (parts[1]) document.getElementById('sched-time-end').value = to24h(parts[1]);
+                        }
                     }
 
-                    // 2. Days prefill (dias_juego format: "Lu, Ma, Sa...")
+                    // 2. Days prefill (dias_juego format: "Lunes, Martes..." or "Lu, Ma...")
                     if (t.dias_juego) {
-                        const dayMap = { 'Lu': 0, 'Ma': 1, 'Mi': 2, 'Ju': 3, 'Vi': 4, 'Sa': 5, 'Do': 6 };
-                        const selectedDays = t.dias_juego.split(',').map(d => d.trim().substring(0, 2));
+                        const dayNamesOfficial = ['lun', 'mar', 'mie', 'jue', 'vie', 'sab', 'dom'];
+                        const val = t.dias_juego.toLowerCase();
                         
                         document.querySelectorAll('input[name="sched_days"]').forEach(cb => {
-                            const dayId = parseInt(cb.value);
-                            const isMatch = Object.keys(dayMap).some(name => dayMap[name] === dayId && selectedDays.includes(name));
+                            const dayIdx = parseInt(cb.value);
+                            const name = dayNamesOfficial[dayIdx];
+                            // Check for "lun", "lu", "lunes" (contains "lun" or "lu")
+                            const isMatch = val.includes(name) || val.includes(name.substring(0, 2));
                             cb.checked = isMatch;
                         });
                     }
