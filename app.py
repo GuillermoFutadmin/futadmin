@@ -1673,7 +1673,8 @@ def handle_partido(id):
 @app.route('/api/torneos/<int:torneo_id>/partidos/live', methods=['GET'])
 def get_live_matches(torneo_id):
     """Returns only live matches for a specific tournament or all tournaments if id is 0."""
-    query = Partido.query.filter_by(estado='Live')
+    from sqlalchemy import or_
+    query = Partido.query.filter(Partido.estado.in_(['Live', 'HalfTime']))
     query = apply_liga_filter(query, Partido)
     
     if torneo_id > 0:

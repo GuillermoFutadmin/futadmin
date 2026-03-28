@@ -134,11 +134,12 @@ export class DashboardModule {
         const logo = document.querySelector('.sidebar-logo-img');
         if (!logo) return;
 
+        // Limpiar estados anteriores para evitar conflictos visuales
+        logo.classList.remove('logo-status-live', 'logo-status-idle');
+        
         if (isLive) {
-            logo.classList.remove('logo-status-idle');
             logo.classList.add('logo-status-live');
         } else {
-            logo.classList.remove('logo-status-live');
             logo.classList.add('logo-status-idle');
         }
     }
