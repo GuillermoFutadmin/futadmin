@@ -231,11 +231,18 @@ export class DashboardModule {
                                             }
                                         }
 
+                                        const unstyledText = nameContent.replace(/<[^>]*>?/gm, '');
+                                        let finalNameHtml = nameContent;
+                                        if (unstyledText.length > 32) {
+                                            // Usar marquee de HTML clásico, funciona perfectamente para dashboards simples sin meter CSS complejo
+                                            finalNameHtml = `<marquee scrollamount="3" scrolldelay="50" style="vertical-align: middle; padding-top: 1px;">${nameContent}</marquee>`;
+                                        }
+
                                         return `
                                             <div class="event-row-mini">
                                                 <span class="event-min-mini">${e.minuto}'</span>
                                                 <span class="${classType}">${icon}</span>
-                                                <span class="event-name-mini">${nameContent}</span>
+                                                <span class="event-name-mini" style="display: flex; align-items: center; overflow: hidden; white-space: nowrap;">${finalNameHtml}</span>
                                             </div>
                                         `;
                                     }).join('')}
