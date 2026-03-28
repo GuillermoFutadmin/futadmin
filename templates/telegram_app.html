@@ -335,6 +335,36 @@
         .player-item-sub:active { background: rgba(255,255,255,0.1); }
         .player-item-sub.selected { border: 2px solid var(--primary); background: rgba(0, 242, 255, 0.1); }
 
+        /* Badges de tarjetas (Fase 15) */
+        .card-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 18px;
+            height: 22px;
+            border-radius: 2px;
+            font-size: 0.65rem;
+            font-weight: 800;
+            color: black;
+            margin-left: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        .badge-yellow { background: #facc15; }
+        .badge-red { background: #ef4444; color: white; }
+        .badge-blue { background: #3b82f6; color: white; }
+        
+        .sancionado-tag {
+            background: rgba(239, 68, 68, 0.15);
+            color: #ef4444;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.6rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            margin-left: 10px;
+        }
+
         .camera-frame {
             width: 280px;
             height: 350px;
