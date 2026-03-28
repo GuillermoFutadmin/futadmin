@@ -935,17 +935,26 @@ def telegram_match_players(id):
         for card in all_cards:
             jid = card.jugador_id
             if jid not in stats_map:
-                stats_map[jid] = {"amarillas": 0, "rojas": 0, "azules": 0, "ultima": None}
+                stats_map[jid] = {
+                    "amarillas": 0, "rojas": 0, "azules": 0,
+                    "u_amarilla": None, "u_roja": None, "u_azul": None
+                }
             
             tipo = card.tipo.lower()
-            if 'amarilla' in tipo: stats_map[jid]["amarillas"] += 1
-            elif 'roja' in tipo: stats_map[jid]["rojas"] += 1
-            elif 'azul' in tipo: stats_map[jid]["azules"] += 1
-            
-            # Guardar la fecha del partido más reciente
             fecha_str = card.partido.fecha.strftime('%Y-%m-%d') if card.partido.fecha else ""
-            if not stats_map[jid]["ultima"] or fecha_str > stats_map[jid]["ultima"]:
-                stats_map[jid]["ultima"] = fecha_str
+
+            if 'amarilla' in tipo:
+                stats_map[jid]["amarillas"] += 1
+                if not stats_map[jid]["u_amarilla"] or fecha_str > stats_map[jid]["u_amarilla"]:
+                    stats_map[jid]["u_amarilla"] = fecha_str
+            elif 'roja' in tipo:
+                stats_map[jid]["rojas"] += 1
+                if not stats_map[jid]["u_roja"] or fecha_str > stats_map[jid]["u_roja"]:
+                    stats_map[jid]["u_roja"] = fecha_str
+            elif 'azul' in tipo:
+                stats_map[jid]["azules"] += 1
+                if not stats_map[jid]["u_azul"] or fecha_str > stats_map[jid]["u_azul"]:
+                    stats_map[jid]["u_azul"] = fecha_str
 
         def get_p_data(j):
             s = stats_map.get(j.id, {"amarillas": 0, "rojas": 0, "azules": 0, "ultima": None})

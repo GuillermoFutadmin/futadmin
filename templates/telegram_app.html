@@ -2302,10 +2302,29 @@
                         <div style="flex: 1; display: flex; align-items: center; min-width: 150px;">
                             <span style="font-weight:700; margin-right:8px;">#${p.numero || '?'} ${p.nombre}</span>
                             
-                            <!-- Badges de tarjetas -->
-                            ${s.amarillas > 0 ? `<div class="card-badge badge-yellow">${s.amarillas}</div>` : ''}
-                            ${s.rojas > 0 || p.sancionado ? `<div class="card-badge badge-red">${s.rojas || '!' }</div>` : ''}
-                            ${s.azules > 0 ? `<div class="card-badge badge-blue">${s.azules}</div>` : ''}
+                            <!-- Badges de tarjetas con fechas (Fase 16) -->
+                            <div style="display: flex; gap: 6px; align-items: flex-start;">
+                                ${s.amarillas > 0 ? `
+                                    <div style="display: flex; flex-direction: column; align-items: center;">
+                                        <div class="card-badge badge-yellow">${s.amarillas}</div>
+                                        <span style="font-size: 0.45rem; color: var(--muted); margin-top: 2px;">${s.u_amarilla || ''}</span>
+                                    </div>
+                                ` : ''}
+                                
+                                ${s.rojas > 0 || p.sancionado ? `
+                                    <div style="display: flex; flex-direction: column; align-items: center;">
+                                        <div class="card-badge badge-red">${s.rojas || '!'}</div>
+                                        <span style="font-size: 0.45rem; color: #ef4444; margin-top: 2px;">${s.u_roja || ''}</span>
+                                    </div>
+                                ` : ''}
+                                
+                                ${s.azules > 0 ? `
+                                    <div style="display: flex; flex-direction: column; align-items: center;">
+                                        <div class="card-badge badge-blue">${s.azules}</div>
+                                        <span style="font-size: 0.45rem; color: #3b82f6; margin-top: 2px;">${s.u_azul || ''}</span>
+                                    </div>
+                                ` : ''}
+                            </div>
 
                             ${p.sancionado ? `<span class="sancionado-tag">SANCIONADO</span>` : ''}
                         </div>
@@ -2314,7 +2333,6 @@
                             <span class="presence-indicator" style="font-size: 0.75rem; color: ${ (mode==='alineacion'?inField:isPresent)? 'var(--primary)' : 'var(--muted)'}">
                                 ${statusHtml}
                             </span>
-                            ${s.ultima ? `<span style="font-size:0.5rem; color:var(--muted); margin-top:2px;">Últ: ${s.ultima}</span>` : ''}
                         </div>
                     </div>
                 `;
