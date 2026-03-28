@@ -114,12 +114,37 @@
 
                     <div id="mkt-ctrl-rol" style="display: none;">
                         <div class="form-group">
-                            <label>Título de la Jornada</label>
-                            <input type="text" id="mkt-rol-title" value="JORNADA 5 - LIGA MAYOR">
+                            <label>Título de la Cartelera</label>
+                            <input type="text" id="mkt-rol-title" value="PROGRAMACIÓN OFICIAL">
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Día de la Semana</label>
+                                <input type="text" id="mkt-rol-day" value="DOMINGO">
+                            </div>
+                            <div class="form-group">
+                                <label>Fecha (Ej: 29 de Marzo)</label>
+                                <input type="text" id="mkt-rol-date" value="29 DE MARZO, 2026">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Filtrar por Equipo</label>
+                                <select id="mkt-filter-team" class="select-field">
+                                    <option value="">TODOS LOS EQUIPOS</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Formato</label>
+                                <select id="mkt-format" class="select-field">
+                                    <option value="1:1">Cuadrado (Post)</option>
+                                    <option value="16:9">Horizontal (Banner)</option>
+                                </select>
+                            </div>
                         </div>
                         <div class="form-group">
-                            <label>Nota al pie</label>
-                            <input type="text" id="mkt-rol-footer" value="¡No faltes! - FutAdmin">
+                            <label>Nota al pie (Invitación)</label>
+                            <input type="text" id="mkt-rol-footer" value="¡No faltes! - futbol en vivo">
                         </div>
                     </div>
                 </div>
