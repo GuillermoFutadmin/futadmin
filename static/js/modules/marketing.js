@@ -238,7 +238,8 @@ export class MarketingModule {
             searchInput.oninput = (e) => {
                 const term = e.target.value.toLowerCase();
                 const selector = document.getElementById('mkt-data-selector');
-                Array.from(selector.options).forEach(opt => {
+                const options = Array.from(selector.options);
+                options.forEach(opt => {
                     const match = opt.text.toLowerCase().includes(term);
                     opt.style.display = match ? 'block' : 'none';
                 });
@@ -265,30 +266,79 @@ export class MarketingModule {
 
     async handleDataSelection(id) {
         if(!id) return;
-        if(this.activeMode === 'resultado') {
-            const match = this.data.matches.find(m => m.id == id);
-            if(match) {
-                document.getElementById('label-local').innerText = match.equipo_local;
-                document.getElementById('label-visitante').innerText = match.equipo_visitante;
-                document.getElementById('mkt-glocal').value = match.goles_local;
-                document.getElementById('mkt-gvisit').value = match.goles_visitante;
-            }
-        } else if(this.activeMode === 'mvp') {
-            const player = this.data.players.find(p => p.id == id);
-            if(player) {
-                document.getElementById('mkt-mvp-name').value = player.nombre.toUpperCase();
-                document.getElementById('mkt-mvp-team').value = (player.equipo_nombre || 'FUTADMIN').toUpperCase();
-                document.getElementById('mkt-mvp-gp').value = player.partidos_jugados || 1;
-                document.getElementById('mkt-mvp-goals').value = player.goles || 0;
-            }
-        } else if(this.activeMode === 'rol') {
-            try {
+        
+        // MOSTRAR LOADING O FEEDBACK SI ES NECESARIO
+        const selector = document.getElementById('mkt-data-selector');
+        selector.classList.add('loading-pulse');
+
+        try {
+            if(this.activeMode === 'resultado') {
+                const res = await fetch(`/api/partido/${id}/detalles`);
+                const details = await res.json();
+                
+                document.getElementById('label-local').innerText = this.data.matches.find(m => m.id == id)?.equipo_local || 'LOCAL';
+                document.getElementById('label-visitante').innerText = this.data.matches.find(m => m.id == id)?.equipo_visitante || 'VISITA';
+                
+                document.getElementById('mkt-glocal').value = details.goles_local || 0;
+                document.getElementById('mkt-gvisit').value = details.goles_visitante || 0;
+                
+                // GENERAR STRING DE GOLEADORES AUTOMATICAMENTE
+                if(details.goles && details.goles.length > 0) {
+                    const goalMap = {};
+                    details.goles.forEach(g => {
+                        const name = g.jugador || 'Anonimo';
+                        goalMap[name] = (goalMap[name] || 0) + 1;
+                    });
+                    const scorerStr = Object.entries(goalMap).map(([name, count]) => `${name}${count > 1 ? ` (${count})` : ''}`).join(', ');
+                    document.getElementById('mkt-scorers').value = scorerStr;
+                } else {
+                    document.getElementById('mkt-scorers').value = '';
+                }
+
+            } else if(this.activeMode === 'mvp') {
+                const res = await fetch(`/api/jugadores/${id}/stats`);
+                const stats = await res.json();
+                
+                document.getElementById('mkt-mvp-name').value = stats.nombre.toUpperCase();
+                document.getElementById('mkt-mvp-team').value = stats.equipo.toUpperCase();
+                document.getElementById('mkt-mvp-goals').value = stats.total_goles || 0;
+                document.getElementById('mkt-mvp-gp').value = stats.partidos_jugados || 1;
+                document.getElementById('mkt-mvp-rating').value = stats.rating || 9.5;
+
+                // CARGAR FOTO AUTOMÁTICA SI EXISTE
+                if(stats.foto_url) {
+                    const img = new Image();
+                    img.crossOrigin = "anonymous";
+                    img.onload = () => { this.config.dynamicImg = img; this.drawDynamic(); };
+                    img.src = stats.foto_url;
+                } else {
+                    this.config.dynamicImg = null;
+                }
+
+            } else if(this.activeMode === 'rol') {
                 const res = await fetch(`/api/torneos/${id}/partidos`);
                 const data = await res.json();
                 this.data.matches = data.items || data || [];
-            } catch(e) { console.error(e); }
+                
+                // AUTO-LLENAR FECHA DEL PRIMER PARTIDO
+                if(this.data.matches.length > 0) {
+                    const first = this.data.matches[0];
+                    if(first.fecha) {
+                        const dateObj = new Date(first.fecha + 'T12:00:00');
+                        const days = ['DOMINGO', 'LUNES', 'MARTES', 'MIÉRCOLES', 'JUEVES', 'VIERNES', 'SÁBADO'];
+                        const months = ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
+                        
+                        document.getElementById('mkt-rol-day').value = days[dateObj.getDay()];
+                        document.getElementById('mkt-rol-date').value = `${dateObj.getDate()} DE ${months[dateObj.getMonth()]}, ${dateObj.getFullYear()}`;
+                    }
+                }
+            }
+        } catch(e) {
+            console.error("Error fetching automation data:", e);
+        } finally {
+            selector.classList.remove('loading-pulse');
+            this.drawDynamic();
         }
-        this.drawDynamic();
     }
 
     updateConfigFromForm() {
@@ -428,7 +478,7 @@ export class MarketingModule {
 
         // FILTRADO DE PARTIDOS
         let matches = this.data.matches;
-        if(filterTeam) {
+        if(filterTeam && filterTeam !== 'TODOS LOS EQUIPOS!') {
             matches = matches.filter(m => m.equipo_local.includes(filterTeam) || m.equipo_visitante.includes(filterTeam));
         }
         matches = matches.slice(0, 16);
@@ -459,7 +509,7 @@ export class MarketingModule {
             // Sede Info
             ctx.fillStyle = 'rgba(255,255,255,0.4)';
             ctx.font = '500 15px "Inter"'; ctx.textAlign = 'right';
-            ctx.fillText("📍 " + (m.campo || "CANCHA #1"), x + cardW - 25, y + 42);
+            ctx.fillText("📍 " + (m.cancha || "CANCHA #1"), x + cardW - 25, y + 42);
 
             // Time Divider
             this.drawText(ctx, m.hora || "10:00", x + cardW/2, y + 115, '900 55px "Inter"', '#fff');
@@ -505,13 +555,22 @@ export class MarketingModule {
         ctx.fillStyle = grad;
         ctx.fillRect(0, 0, w, h);
         
-        // Grid pattern sutil
-        ctx.strokeStyle = 'rgba(255,255,255,0.015)';
-        ctx.lineWidth = 1;
+        // Grid pattern sutil y pro
+        ctx.strokeStyle = 'rgba(0,255,136,0.04)';
+        ctx.lineWidth = 1.5;
         for(let i=0; i<w; i+=80) {
             ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, h); ctx.stroke();
             ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(w, i); ctx.stroke();
         }
+
+        // Borde interior de estilo 'Broadcast'
+        ctx.strokeStyle = 'rgba(0,0,0,0.6)';
+        ctx.lineWidth = 40;
+        ctx.strokeRect(20, 20, w - 40, h - 40);
+
+        ctx.strokeStyle = '#00ff88';
+        ctx.lineWidth = 4;
+        ctx.strokeRect(40, 40, w - 80, h - 80);
     }
 
     drawCenteredImage(ctx, img, x, y, size) {
@@ -533,6 +592,7 @@ export class MarketingModule {
     }
 
     wrapText(ctx, text, x, y, maxWidth, lineHeight) {
+        if(!text) return;
         const paragraphs = text.split('\n');
         paragraphs.forEach(p => {
             const words = p.split(' ');
@@ -574,7 +634,10 @@ export class MarketingModule {
         ctx.closePath();
     }
 
-    truncate(str, n) { return (str.length > n) ? str.substr(0, n-1) + '...' : str.substring(0, n); }
+    truncate(str, n) { 
+        if(!str) return "";
+        return (str.length > n) ? str.substr(0, n-1) + '...' : str.substring(0, n); 
+    }
 
     clearLogo() { this.config.logoImg = null; this.draw(); }
     clearDynamicImage() { this.config.dynamicImg = null; this.drawDynamic(); }

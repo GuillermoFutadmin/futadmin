@@ -67,100 +67,112 @@
                 </div>
 
                 <!-- BÚSQUEDA Y SELECTOR DE DATOS -->
-                <div id="mkt-data-selector-group" class="form-group" style="display: none; border: 1px solid rgba(255,255,255,0.1); padding: 15px; border-radius: 8px; background: rgba(255,255,255,0.02);">
-                    <label id="mkt-selector-label" style="color: #00ff88; font-weight: bold; margin-bottom: 8px; display: block;">Selecciona los Datos</label>
-                    <input type="text" id="mkt-data-search" placeholder="🔍 Buscar equipo, jugador o liga..." style="margin-bottom: 10px; width: 100%; padding: 10px; background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 6px; color: #fff;">
-                    <select id="mkt-data-selector" class="select-field" style="height: 45px;"></select>
+                <div id="mkt-data-selector-group" class="form-group" style="display: none; border: 1px solid rgba(0,255,136,0.3); padding: 15px; border-radius: 8px; background: rgba(0,255,136,0.05); margin-bottom: 20px;">
+                    <label id="mkt-selector-label" style="color: #00ff88; font-weight: bold; margin-bottom: 8px; display: block;">1. Busca y Selecciona</label>
+                    <input type="text" id="mkt-data-search" placeholder="🔍 Escribe para buscar..." style="margin-bottom: 10px; width: 100%; padding: 12px; background: rgba(0,0,0,0.5); border: 1px solid rgba(0,255,136,0.3); border-radius: 6px; color: #fff; font-size: 1.1em; outline: none;">
+                    <select id="mkt-data-selector" class="select-field" style="height: 50px; font-size: 1.1em; background: rgba(0,0,0,0.5); border: 1px solid rgba(0,255,136,0.3); border-radius: 6px;"></select>
+                    <p style="font-size: 0.8rem; color: #aaa; margin-top: 10px; margin-bottom: 0;">Los datos y la imagen se generarán automáticamente al seleccionar.</p>
                 </div>
 
-                <div id="mkt-controls-dynamic">
-                    <!-- Los inputs específicos se inyectan/muestran aquí -->
-                    <div id="mkt-ctrl-resultado" style="display: none;">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label id="label-local">Goles Local</label>
-                                <input type="number" id="mkt-glocal" value="0">
+                <!-- SECCIÓN AUTOMATIZADA: AJUSTES MANUALES (OCULTOS POR DEFECTO) -->
+                <details style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; margin-bottom: 20px;">
+                    <summary style="padding: 15px; cursor: pointer; font-weight: bold; color: #aaa; outline: none; list-style: none;">
+                        ⚙️ Ajustes Manuales (Opcional)
+                    </summary>
+                    <div style="padding: 15px; border-top: 1px solid rgba(255,255,255,0.1);">
+                        
+                        <!-- CONTROLES RESULTADO -->
+                        <div id="mkt-ctrl-resultado" style="display: none;">
+                            <div class="form-row">
+                                <div class="form-group" style="flex:1;">
+                                    <label id="label-local">Local</label>
+                                    <input type="number" id="mkt-glocal" value="0">
+                                </div>
+                                <div class="form-group" style="flex:1;">
+                                    <label id="label-visitante">Visita</label>
+                                    <input type="number" id="mkt-gvisit" value="0">
+                                </div>
                             </div>
                             <div class="form-group">
-                                <label id="label-visitante">Goles Visita</label>
-                                <input type="number" id="mkt-gvisit" value="0">
+                                <label>Goleadores / Notas</label>
+                                <textarea id="mkt-scorers" rows="2" class="full-textarea" placeholder="Ej. Carlos (2), Juan (1)"></textarea>
                             </div>
                         </div>
-                        <div class="form-group">
-                            <label>Goleadores / Notas</label>
-                            <input type="text" id="mkt-scorers" placeholder="Ej. Goles: Carlos (2), Juan (1)">
-                        </div>
-                    </div>
 
-                    <div id="mkt-ctrl-mvp" style="display: none;">
-                        <div class="form-group">
-                            <label>Nombre del Jugador</label>
-                            <input type="text" id="mkt-mvp-name" placeholder="Ej. CRISTIANO RONALDO">
-                        </div>
-                        <div class="form-group">
-                            <label>Equipo / Escudo</label>
-                            <input type="text" id="mkt-mvp-team" placeholder="Ej. REAL MADRID">
-                        </div>
-                        <div class="form-row">
+                        <!-- CONTROLES MVP -->
+                        <div id="mkt-ctrl-mvp" style="display: none;">
                             <div class="form-group">
-                                <label>Goles (G)</label>
-                                <input type="number" id="mkt-mvp-goals" value="1">
+                                <label>Nombre del Jugador</label>
+                                <input type="text" id="mkt-mvp-name" placeholder="Ej. C. RONALDO">
                             </div>
                             <div class="form-group">
-                                <label>P. Jugados (GP)</label>
-                                <input type="number" id="mkt-mvp-gp" value="1">
+                                <label>Equipo</label>
+                                <input type="text" id="mkt-mvp-team" placeholder="Ej. REAL MADRID">
                             </div>
-                            <div class="form-group">
-                                <label>Rating</label>
-                                <input type="number" id="mkt-mvp-rating" value="9.5" step="0.1">
+                            <div class="form-row">
+                                <div class="form-group" style="flex:1;">
+                                    <label>Goles</label>
+                                    <input type="number" id="mkt-mvp-goals" value="1">
+                                </div>
+                                <div class="form-group" style="flex:1;">
+                                    <label>Partidos (GP)</label>
+                                    <input type="number" id="mkt-mvp-gp" value="1">
+                                </div>
+                                <div class="form-group" style="flex:1;">
+                                    <label>Rating</label>
+                                    <input type="text" id="mkt-mvp-rating" value="9.5">
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <div id="mkt-ctrl-rol" style="display: none;">
-                        <div class="form-group">
-                            <label>Título de la Cartelera</label>
-                            <input type="text" id="mkt-rol-title" value="PROGRAMACIÓN OFICIAL">
-                        </div>
-                        <div class="form-row">
+                        <!-- CONTROLES ROL -->
+                        <div id="mkt-ctrl-rol" style="display: none;">
                             <div class="form-group">
-                                <label>Día de la Semana</label>
-                                <input type="text" id="mkt-rol-day" value="DOMINGO">
+                                <label>Título de Cartelera</label>
+                                <input type="text" id="mkt-rol-title" value="PROGRAMACIÓN OFICIAL">
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group" style="flex:1;">
+                                    <label>Día (DOMINGO)</label>
+                                    <input type="text" id="mkt-rol-day" placeholder="DOMINGO">
+                                </div>
+                                <div class="form-group" style="flex:1;">
+                                    <label>Fecha Larga</label>
+                                    <input type="text" id="mkt-rol-date" placeholder="29 DE MARZO, 2026">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group" style="flex:1;">
+                                    <label>Filtrar Equipo</label>
+                                    <select id="mkt-filter-team" class="select-field">
+                                        <option>TODOS LOS EQUIPOS!</option>
+                                    </select>
+                                </div>
+                                <div class="form-group" style="flex:1;">
+                                    <label>Formato</label>
+                                    <select id="mkt-format" class="select-field">
+                                        <option value="1:1">Cuadrado (Post)</option>
+                                        <option value="16:9">Panorámico (FB/TV)</option>
+                                    </select>
+                                </div>
                             </div>
                             <div class="form-group">
-                                <label>Fecha (Ej: 29 de Marzo)</label>
-                                <input type="text" id="mkt-rol-date" value="29 DE MARZO, 2026">
+                                <label>Nota al pie</label>
+                                <input type="text" id="mkt-rol-footer" value="¡No faltes! - futbol en vivo">
                             </div>
                         </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>Filtrar por Equipo</label>
-                                <select id="mkt-filter-team" class="select-field">
-                                    <option value="">TODOS LOS EQUIPOS</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label>Formato</label>
-                                <select id="mkt-format" class="select-field">
-                                    <option value="1:1">Cuadrado (Post)</option>
-                                    <option value="16:9">Horizontal (Banner)</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label>Nota al pie (Invitación)</label>
-                            <input type="text" id="mkt-rol-footer" value="¡No faltes! - futbol en vivo">
-                        </div>
-                    </div>
-                </div>
 
-                <div class="form-group">
-                    <label>Logo / Imagen Personalizada</label>
-                    <div style="display: flex; gap: 8px; align-items: center;">
-                        <input type="file" id="mkt-image-file" accept="image/*" style="flex: 1; padding: 8px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 6px; color: #fff; cursor: pointer;">
-                        <button class="btn-secondary" onclick="ui.marketing.clearDynamicImage()" title="Quitar imagen">✕</button>
+                        <!-- COMÚN: IMAGEN -->
+                        <div class="form-group" style="margin-top: 15px;">
+                            <label>Forzar Imagen Personalizada</label>
+                            <div style="display: flex; gap: 8px; align-items: center;">
+                                <input type="file" id="mkt-image-file" accept="image/*" style="flex: 1; padding: 8px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 6px; color: #fff; cursor: pointer;">
+                                <button class="btn-secondary" onclick="window.marketing.clearDynamicImage()" title="Limpiar Imagen">✕</button>
+                            </div>
+                        </div>
+
                     </div>
-                </div>
+                </details>
 
                 <div class="form-row">
                     <div class="form-group" style="flex: 1;">
