@@ -1812,6 +1812,7 @@
                         <div style="display:flex; align-items:center; gap:4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
                             ${timeStr} ${label}
                         </div>
+                        ${p.cancha ? `<div style="font-size:0.5rem; opacity:0.6; font-weight:600; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">📍 ${p.cancha.split(' ')[0]}</div>` : ''}
                     </div>`;
                 });
                 return html;
@@ -2366,7 +2367,8 @@
             <div class="score-display">
                 ${score}
                 ${p.fecha ? `<div class="match-time">${formatDateDisplay(p.fecha)}</div>` : '<div class="vs-text">Sin fecha</div>'}
-                ${p.hora ? `<div class="match-time">⏰ ${p.hora}</div>` : ''}
+                ${p.hora ? `<div class="match-time" style="color:var(--primary); font-weight:bold;">⏰ ${p.hora}</div>` : ''}
+                ${p.cancha ? `<div style="margin-top:5px; font-size:0.75rem; background:rgba(255,255,255,0.05); padding:2px 8px; border-radius:10px; color:var(--text); white-space:nowrap;">📍 ${p.cancha}</div>` : ''}
             </div>
 
             <div class="team-cell right">
@@ -2377,7 +2379,6 @@
             <div style="display:flex; flex-direction:column; gap:6px; align-items:flex-end;">
                 ${badgeHtml(p.estado)}
                 ${p.arbitro ? `<div class="referee-tag">🏳 ${p.arbitro}</div>` : ''}
-                ${p.cancha ? `<div class="referee-tag">📍 ${p.cancha}</div>` : ''}
                 ${isAdmin ? `<button class="btn btn-ghost btn-sm" onclick="CalendarApp.openEditModal(${p.id})">✏️ Editar</button>` : ''}
             </div>
         </div>`;
