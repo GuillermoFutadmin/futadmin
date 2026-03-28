@@ -170,13 +170,17 @@
         }
 
         .event-item {
-            background: rgba(255, 255, 255, 0.05);
-            padding: 8px 12px;
-            border-radius: 8px;
-            border-left: 3px solid var(--primary);
+            background: rgba(255, 255, 255, 0.08); /* Más luz para contraste */
+            padding: 10px 14px;
+            border-radius: 12px;
+            border-left: 4px solid var(--primary);
+            border-right: 1px solid rgba(255, 255, 255, 0.05); /* Borde sutil premium */
             animation: slideIn 0.3s ease-out;
             overflow: hidden;
             white-space: nowrap;
+            min-height: 48px; /* Altura mínima de seguridad para evitar recortes */
+            display: flex;
+            align-items: center;
         }
 
         /* ── Marquee / Ticker (estilo noticiero) ─────────────── */
@@ -184,7 +188,6 @@
             display: inline-block;
             max-width: 100%;
             overflow: hidden;
-            vertical-align: bottom;
         }
         .marquee-text {
             display: inline-block;
@@ -2678,14 +2681,14 @@
                 }
             }
 
-            // Estructura Marquee para el log de eventos
+            // Estructura Marquee para el log de eventos con mejor legibilidad
             div.innerHTML = `
-                <div style="display:flex; align-items:center; gap:8px; width:100%; overflow:hidden;">
-                    <span class="event-min" style="flex-shrink:0;"><strong>${min}'</strong></span>
-                    <span class="event-icon" style="flex-shrink:0;">${icon}</span>
+                <div style="display:flex; align-items:center; gap:10px; width:100%; overflow:hidden;">
+                    <span class="event-min" style="flex-shrink:0; font-size: 0.9rem; color: var(--primary);"><strong>${min}'</strong></span>
+                    <span class="event-icon" style="flex-shrink:0; font-size: 1.1rem; line-height: 1;">${icon}</span>
                     <span class="marquee-wrap" style="flex:1; min-width:0;">
-                        <span class="marquee-text" data-automarquee="1">
-                            ${label}${subject ? sep + subject : ''}
+                        <span class="marquee-text" data-automarquee="1" style="font-size: 0.9rem; letter-spacing: 0.3px;">
+                            <strong style="color: #fff;">${label}</strong>${subject ? '<span style="color: rgba(255,255,255,0.7);">' + sep + subject + '</span>' : ''}
                         </span>
                     </span>
                 </div>
