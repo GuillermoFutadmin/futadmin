@@ -612,6 +612,7 @@ def handle_hub_bulk():
                 liga_id=torneo.liga_id
             )
             db.session.add(ins)
+            db.session.flush() # CRITICAL: Flush to allow querying in finance step
 
             for p_idx, j_data in enumerate(jugadores_list):
                 jug = Jugador(
@@ -725,10 +726,18 @@ def handle_hub_bulk():
             if not ins: continue
 
             metodo = f_item.get('metodo', 'Efectivo')
+            pago_ins = None
+            pago_arb = None
             
-            # Montos explícitos (Fase 6: Abonos)
+            # Montos explícitos o Banderas booleanas (Hub V5)
+            # El Hub enviará f_item.get('inscripcion') = True/False
             monto_ins = float(f_item.get('monto_inscripcion', 0))
+            if monto_ins == 0 and f_item.get('inscripcion') is True:
+                monto_ins = float(torneo.costo_inscripcion or 0)
+                
             monto_arb = float(f_item.get('monto_arbitraje', 0))
+            if monto_arb == 0 and f_item.get('arbitraje') is True:
+                monto_arb = float(torneo.costo_arbitraje or 0)
 
             if monto_ins > 0:
                 pago_ins = Pago(
@@ -774,7 +783,7 @@ def handle_hub_bulk():
                 _fecha_local = datetime.utcnow() - timedelta(hours=6)
                 
                 # Para Inscripción
-                if monto_ins > 0 and pago_ins.id:
+                if monto_ins > 0 and pago_ins and pago_ins.id:
                     folio_pago = 'FUT-' + ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
                     pagado_hasta_ahora = db.session.query(db.func.sum(Pago.monto)).filter_by(inscripcion_id=ins.id, tipo='Inscripcion').scalar() or 0
                     result_ins = {
