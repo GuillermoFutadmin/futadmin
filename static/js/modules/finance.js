@@ -136,12 +136,17 @@ export class FinanceModule {
                                         <td style="padding: 8px; text-align: right; color: ${abonadoColor};">$${dp.pagado.toFixed(2)}</td>
                                         <td style="padding: 8px; text-align: right; font-weight: bold; color: ${saldoColor};">$${dp.saldo.toFixed(2)}</td>
                                         <td style="padding: 8px; text-align: center;">
+                                            ${!isPaid ? `
+                                                <button type="button" onclick="event.stopPropagation(); ui.finance.showPagoModal(${ins.id}, '${ins.equipo_nombre}', 'Arbitraje', ${ins.equipo_id}, ${dp.partido_id})" 
+                                                    style="background:none; border:none; color:#00ff88; cursor:pointer; font-size:1.1rem; margin-right:5px;" 
+                                                    title="Pagar esta jornada">💰</button>
+                                            ` : ''}
                                             ${dp.ultimo_pago_id ? `
                                                 <button type="button" onclick="event.stopPropagation(); ui.finance.resendReceipt(${dp.ultimo_pago_id})" 
                                                     style="display: none; background:none; border:none; color:#00ff88; cursor:pointer; font-size:1rem; margin-right:5px;" 
                                                     title="Re-enviar recibo por correo">📩</button>
                                                 <button type="button" onclick="event.stopPropagation(); ui.finance.deletePago(${dp.ultimo_pago_id}, true)" 
-                                                    style="background:none; border:none; color:#ff4d4d; cursor:pointer; font-size:1rem;" 
+                                                    style="background:none; border:none; color:#ff4d4d; cursor:pointer; font-size:1.1rem;" 
                                                     title="Anular pago de esta jornada">🗑️</button>
                                             ` : ''}
                                         </td>
@@ -331,13 +336,72 @@ export class FinanceModule {
 
             const torneoId = document.getElementById('inscripciones-league-filter').value;
 
+            // Desglose por jornada (Portado de loadArbitrajes)
+            let detallesHtml = '';
+            if (ins.detalle_partidos && ins.detalle_partidos.length > 0) {
+                detallesHtml = `
+                <div style="padding: 15px; background: rgba(0,0,0,0.5); border-radius: 8px; margin-top: 5px;">
+                    <h4 style="margin: 0 0 10px 0; font-size: 0.9rem; color: var(--primary);">Desglose por Jornada</h4>
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.8rem;">
+                        <thead>
+                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+                                <th style="padding: 8px; text-align: left; color: #aaa;">Jor</th>
+                                <th style="padding: 8px; text-align: left; color: #aaa;">Rival</th>
+                                <th style="padding: 8px; text-align: left; color: #aaa;">Estado</th>
+                                <th style="padding: 8px; text-align: right; color: #aaa;">Aportación</th>
+                                <th style="padding: 8px; text-align: right; color: #aaa;">Aportado</th>
+                                <th style="padding: 8px; text-align: right; color: #aaa;">Pendiente</th>
+                                <th style="padding: 8px; text-align: center; color: #aaa;">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${ins.detalle_partidos.map(dp => {
+                                const isPaid = dp.saldo <= 0;
+                                const estadoColor = isPaid ? '#00ff88' : (dp.estado === 'Played' ? '#00ff88' : (dp.estado === 'Live' ? '#ffae00' : '#aaa'));
+                                const estadoText = isPaid ? 'Pagado' : (dp.estado === 'Played' || dp.estado === 'Jugado' ? 'Jugado' : (dp.estado === 'Live' || dp.estado === 'En Vivo' ? 'En Vivo' : 'Pendiente'));
+                                const abonadoColor = dp.pagado >= dp.tarifa ? '#00ff88' : (dp.pagado > 0 ? '#ffae00' : '#fff');
+                                const saldoColor = dp.saldo > 0 ? '#ff4d4d' : '#00ff88';
+
+                                return `
+                                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); ${isPaid ? 'opacity: 0.9; background: rgba(0,255,136,0.03);' : ''}">
+                                        <td style="padding: 8px;">J${dp.jornada}</td>
+                                        <td style="padding: 8px; font-weight: bold;">${dp.rival}</td>
+                                        <td style="padding: 8px;"><span style="color: ${estadoColor}; font-size: 0.75rem; border: 1px solid ${estadoColor}; padding: 2px 6px; border-radius: 4px;">${estadoText}</span></td>
+                                        <td style="padding: 8px; text-align: right;">$${dp.tarifa.toFixed(2)}</td>
+                                        <td style="padding: 8px; text-align: right; color: ${abonadoColor};">$${dp.pagado.toFixed(2)}</td>
+                                        <td style="padding: 8px; text-align: right; font-weight: bold; color: ${saldoColor};">$${dp.saldo.toFixed(2)}</td>
+                                        <td style="padding: 8px; text-align: center;">
+                                            ${!isPaid ? `
+                                                <button type="button" onclick="event.stopPropagation(); ui.finance.showPagoModal(${ins.id}, '${ins.equipo_nombre}', 'Arbitraje', ${ins.equipo_id}, ${dp.partido_id})" 
+                                                    style="background:none; border:none; color:#00ff88; cursor:pointer; font-size:1.1rem; margin-right:5px;" 
+                                                    title="Pagar esta jornada">💰</button>
+                                            ` : ''}
+                                            ${dp.ultimo_pago_id ? `
+                                                <button type="button" onclick="event.stopPropagation(); ui.finance.deletePago(${dp.ultimo_pago_id}, true)" 
+                                                    style="background:none; border:none; color:#ff4d4d; cursor:pointer; font-size:1.1rem;" 
+                                                    title="Anular pago de esta jornada">🗑️</button>
+                                            ` : ''}
+                                        </td>
+                                    </tr>`;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>`;
+            } else {
+                detallesHtml = `<div style="padding: 15px; color: #aaa; text-align: center; font-size: 0.8rem;">No hay jornadas programadas para este equipo.</div>`;
+            }
+
             return `
-                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); background: ${index % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)'}; transition: background 0.2s; border-left: 3px solid ${colorSaldo};"
+                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); background: ${index % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)'}; transition: background 0.2s; border-left: 3px solid ${colorSaldo}; cursor: pointer;"
                             onmouseover="this.style.background='rgba(255,255,255,0.06)'"
-                            onmouseout="this.style.background='${index % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)'}'">
+                            onmouseout="this.style.background='${index % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)'}'"
+                            onclick="ui.finance.toggleDetalle('detalles-ins-${ins.id}')">
 
                             <td style="padding: 12px 20px;">
-                                <span style="font-weight: 700; font-size: 0.95rem; color: #fff;">${ins.equipo_nombre}</span>
+                                <span style="font-weight: 700; font-size: 0.95rem; color: #fff; display: flex; align-items: center; gap: 8px;">
+                                    <span id="icon-detalles-ins-${ins.id}" style="font-size: 0.7rem; transition: transform 0.2s;">▶</span>
+                                    ${ins.equipo_nombre}
+                                </span>
                             </td>
                             <td style="padding: 12px 20px;">
                                 <span style="color: #fff; font-size: 0.9rem;">$${ins.monto_pactado.toFixed(2)}</span>
@@ -351,7 +415,7 @@ export class FinanceModule {
                             <td style="padding: 8px 20px; min-width: 150px;">
                                 ${abonosHtml}
                             </td>
-                            <td style="padding: 12px 20px; text-align: right;">
+                            <td style="padding: 12px 20px; text-align: right;" onclick="event.stopPropagation();">
                                 <div style="display: flex; gap: 4px; justify-content: flex-end;">
                                     ${['admin', 'ejecutivo', 'dueño_liga', 'super_arbitro', 'equipo'].includes(window.USER_ROL) ? `
                                         <button onclick="ui.finance.promptEditInscripcion(${ins.id}, '${ins.equipo_nombre}', ${ins.monto_pactado || 0})" class="btn-secondary" style="font-size: 0.7rem; padding: 4px 8px; border-radius: 4px;" title="Editar Donación">✏️</button>
@@ -366,6 +430,11 @@ export class FinanceModule {
                                         </button>
                                     ` : ''}
                                 </div>
+                            </td>
+                        </tr>
+                        <tr id="detalles-ins-${ins.id}" style="display:none; background: rgba(0,0,0,0.2);">
+                            <td colspan="8" style="padding: 10px 20px;">
+                                ${detallesHtml}
                             </td>
                         </tr>
         `}).join('');
@@ -469,7 +538,7 @@ export class FinanceModule {
         }
     }
 
-    async showPagoModal(inscripcionId, equipoNombre, tipoSugerido = 'Inscripcion', equipoId = null) {
+    async showPagoModal(inscripcionId, equipoNombre, tipoSugerido = 'Inscripcion', equipoId = null, partidoId = null) {
         document.getElementById('dash-pago-id').value = inscripcionId;
         document.getElementById('dash-pago-tipo').value = tipoSugerido;
         document.getElementById('dash-pago-equipo-info').innerHTML = `
@@ -515,7 +584,8 @@ export class FinanceModule {
                         const rival = esLocal ? p.equipo_visitante : p.equipo_local;
                         const fecha = p.fecha ? ` | ${p.fecha}` : '';
                         const estado = p.estado === 'Played' ? ' ✓' : '';
-                        selectPartido.innerHTML += `<option value="${p.id}">J${p.jornada} vs ${rival}${fecha}${estado}</option>`;
+                        const isSelected = partidoId && Number(p.id) === Number(partidoId) ? 'selected' : '';
+                        selectPartido.innerHTML += `<option value="${p.id}" ${isSelected}>J${p.jornada} vs ${rival}${fecha}${estado}</option>`;
                     });
                 } else {
                     selectPartido.innerHTML = '<option value="">-- Sin partidos registrados --</option>';

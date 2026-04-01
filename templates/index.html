@@ -1551,7 +1551,7 @@
     <!-- Los modales de entrenamiento han sido movidos a components/entrenamientos.html -->
 
     <!-- Modal: Pagos Masivos (Fase 5) -->
-    <div id="modal-pagos-masivos" class="modal">
+<div id="modal-pagos-masivos" class="modal">
         <div class="modal-content" style="max-width: 900px; height: 80vh; border: 2px solid #fbbf24; border-radius: 16px; overflow: hidden; display: flex; flex-direction: column;">
             <div class="modal-header" style="background: linear-gradient(135deg, #fbbf24, #d97706); padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; border: none;">
                 <h2 style="margin: 0; color: #000; display: flex; align-items: center; gap: 15px; font-weight: 800;">
@@ -1561,27 +1561,72 @@
                 <button class="close-btn" onclick="Core.closeModal('modal-pagos-masivos')" style="color: #000; opacity: 0.8; font-size: 2rem; border: none; background: none;">&times;</button>
             </div>
             
-            <div class="modal-body" style="background: #0f1113; padding: 25px; flex: 1; overflow: hidden; display: flex; flex-direction: column;">
-                <div style="background: rgba(251,191,36,0.05); border-left: 4px solid #fbbf24; padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; flex-shrink: 0;">
-                    <p style="margin:0; font-size: 0.9rem; color: #e2e8f0; line-height: 1.5;">
-                        <strong>Control Centralizado:</strong> Registra rápidamente los pagos de inscripción y arbitraje. Los cambios se sincronizan con los reportes financieros globales.
-                    </p>
+            <div class="modal-body" style="background: #0f1113; padding: 0; flex: 1; overflow: hidden; display: flex;">
+                <!-- Sidebar de Equipos (Pestañas) -->
+                <div id="pmasivos-tabs" class="custom-scrollbar" style="width: 250px; background: rgba(0,0,0,0.3); border-right: 1px solid var(--border); overflow-y: auto; padding: 10px;">
+                    <div style="font-size: 0.7rem; color: #666; text-transform: uppercase; letter-spacing: 1px; margin: 10px 0 15px 15px; font-weight: 800;">Equipos Participantes</div>
+                    <div id="pmasivos-tabs-list" style="display: flex; flex-direction: column; gap: 5px;">
+                        <!-- Generado dinámicamente: Botones de equipos en verde -->
+                    </div>
                 </div>
 
-                <div class="custom-scrollbar" style="flex: 1; overflow-y: auto; border: 1px solid var(--border); border-radius: 12px; background: rgba(0,0,0,0.2); padding: 5px;">
-                    <table style="width: 100%; border-collapse: collapse;">
-                        <thead>
-                            <tr style="color: #666; font-size: 0.75rem; text-transform: uppercase; border-bottom: 1px solid var(--border);">
-                                <th style="text-align: left; padding: 15px;">Equipo</th>
-                                <th style="text-align: center; width: 140px;">Abono Inscripción ($)</th>
-                                <th style="text-align: center; width: 140px;">Abono Arbitraje ($)</th>
-                                <th style="text-align: center; width: 160px;">Método 💳</th>
-                            </tr>
-                        </thead>
-                        <tbody id="pmasivos-body">
-                            <!-- Se genera dinámicamente -->
-                        </tbody>
-                    </table>
+                <!-- Contenido del Equipo Seleccionado -->
+                <div id="pmasivos-content" style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+                    <div id="pmasivos-team-empty" style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text-muted); text-align: center; padding: 40px;">
+                        <span style="font-size: 4rem; opacity: 0.2; margin-bottom: 20px;">⚽</span>
+                        <h3>Selecciona un equipo</h3>
+                        <p>Haz clic en un equipo de la lista de la izquierda para gestionar sus pagos y ver sus próximos enfrentamientos.</p>
+                    </div>
+                    
+                    <div id="pmasivos-team-detail" style="display: none; flex: 1; flex-direction: column; overflow: hidden;">
+                        <!-- Cabecera del Equipo -->
+                        <div style="padding: 20px 30px; background: rgba(255,255,255,0.02); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <h3 id="pmasivos-selected-team-name" style="margin: 0; color: #00ff88; font-size: 1.5rem;">Nombre del Equipo</h3>
+                                <p style="margin: 5px 0 0 0; font-size: 0.8rem; color: #666;">Gestión de abonos y seguimiento de jornadas</p>
+                            </div>
+                            <div style="text-align: right;">
+                                <div style="font-size: 0.7rem; color: #666; text-transform: uppercase;">Método General</div>
+                                <select id="pmasivos-metodo-global" onchange="ui.teams.updateMetodoGlobal(this.value)" 
+                                    style="padding: 5px 10px; background: #1a1c1e; color: #fff; border: 1px solid #333; border-radius: 6px; font-size: 0.8rem; margin-top: 5px; outline: none; cursor: pointer;">
+                                    <option value="Efectivo">💵 Efectivo</option>
+                                    <option value="Transferencia">🏦 Transferencia</option>
+                                    <option value="Tarjeta">💳 Tarjeta</option>
+                                    <option value="Otro">🌀 Otro</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Scrollable Content -->
+                        <div class="custom-scrollbar" style="flex: 1; overflow-y: auto; padding: 25px 30px;">
+                            <!-- Sección: Abono Inscripción -->
+                            <div style="background: rgba(251,191,36,0.03); border: 1px solid rgba(251,191,36,0.1); border-radius: 12px; padding: 20px; margin-bottom: 25px;">
+                                <h4 style="margin: 0 0 15px 0; color: #fbbf24; font-size: 0.9rem; display: flex; align-items: center; gap: 10px;">
+                                    <span>💰</span> ABONO A INSCRIPCIÓN / REGISTRO
+                                </h4>
+                                <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 20px; align-items: center;">
+                                    <div style="position: relative;">
+                                        <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #666;">$</span>
+                                        <input type="number" id="pmasivos-monto-ins" placeholder="0.00" 
+                                            onchange="ui.teams.updateMontoInscripcion(this.value)"
+                                            style="width: 100%; padding: 12px 12px 12px 30px; background: #000; color: #fbbf24; border: 1px solid #333; border-radius: 8px; font-weight: bold; font-size: 1.1rem; outline: none;">
+                                    </div>
+                                    <p style="margin: 0; font-size: 0.85rem; color: #888; border-left: 2px solid rgba(255,255,255,0.05); padding-left: 15px;">
+                                        Aplica este monto al saldo total de inscripción del equipo. Este pago quedará registrado en el historial financiero.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Sección: Enfrentamientos y Arbitraje -->
+                            <h4 style="margin: 0 0 15px 0; color: #00ff88; font-size: 0.9rem; display: flex; align-items: center; gap: 10px;">
+                                <span>📅</span> ENFRENTAMIENTOS Y ARBITRAJE (PAGO POR JORNADA)
+                            </h4>
+                            
+                            <div id="pmasivos-matchups-container">
+                                <!-- Lista de partidos generada dinámicamente -->
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 

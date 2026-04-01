@@ -1115,113 +1115,199 @@ export class TeamsModule {
     }
 
     async loadBulkFinancesPagosMasivos(torneoId) {
-        const body = document.getElementById('pmasivos-body');
-        if (!body) return;
-        body.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:30px; color:var(--text-muted);">Cargando equipos y calendario...</td></tr>';
+        const tabsList = document.getElementById('pmasivos-tabs-list');
+        if (!tabsList) return;
+        tabsList.innerHTML = '<div style="text-align:center; padding:20px; color:#666; font-size:0.8rem;">Cargando...</div>';
         
         try {
-            // 1. Obtener costos base y calendario (Fase 7)
+            // 1. Obtener datos necesarios
             const [torneo, partidosData, equiposData] = await Promise.all([
                 Core.fetchAPI(`/api/torneos/${torneoId}`),
                 Core.fetchAPI(`/api/torneos/${torneoId}/partidos`),
                 Core.fetchAPI(`/api/equipos?torneo_id=${torneoId}`)
             ]);
 
-            const costoIns = torneo.costo_inscripcion || 0;
-            const costoArb = torneo.costo_arbitraje || 0;
-            const existentes = equiposData.items || equiposData;
-            const partidos = Array.isArray(partidosData) ? partidosData : [];
+            this.selectedTorneoData = torneo;
+            this.bulkTeamsData = equiposData.items || equiposData;
+            this.bulkMatchups = Array.isArray(partidosData) ? partidosData : [];
             
-            // Inicializar bulkFinances
-            if (!this.bulkFinances || Array.isArray(this.bulkFinances)) this.bulkFinances = {};
+            // Inicializar estado de finanzas si no existe
+            if (!this.bulkFinances || Array.isArray(this.bulkFinances)) {
+                this.bulkFinances = {};
+            }
 
-            if (existentes.length === 0) {
-                body.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:30px; color:var(--text-muted);">No hay equipos registrados en esta liga.</td></tr>';
+            if (this.bulkTeamsData.length === 0) {
+                tabsList.innerHTML = '<div style="text-align:center; padding:20px; color:#666;">No hay equipos.</div>';
                 return;
             }
 
-            body.innerHTML = existentes.map((e) => {
-                // Buscar Próximo Partido (Fase 7)
-                const proximoJuego = partidos.find(p => 
-                    (p.equipo_local_id == e.id || p.equipo_visitante_id == e.id) && 
-                    p.estado !== 'Played'
-                );
+            this.renderBulkTabs();
+            
+            // Seleccionar el primer equipo por defecto si no hay uno seleccionado
+            if (this.bulkTeamsData.length > 0) {
+                this.selectBulkTeam(this.bulkTeamsData[0].id);
+            }
 
-                let matchLabel = '<span style="color:#666;">Sin juego programado</span>';
-                let p_id = null;
-
-                if (proximoJuego) {
-                    const rival = proximoJuego.equipo_local_id == e.id ? proximoJuego.equipo_visitante : proximoJuego.equipo_local;
-                    matchLabel = `<span style="color:var(--primary); font-weight:bold;">J${proximoJuego.jornada} vs ${rival}</span>`;
-                    p_id = proximoJuego.id;
-                }
-
-                if (!this.bulkFinances[e.id]) {
-                    this.bulkFinances[e.id] = { 
-                        id: e.id, 
-                        monto_inscripcion: 0, 
-                        monto_arbitraje: 0, 
-                        partido_id: p_id,
-                        metodo: 'Efectivo' 
-                    };
-                } else {
-                    // Actualizar el partido_id por si cambió el calendario
-                    this.bulkFinances[e.id].partido_id = p_id;
-                }
-
-                const p = this.bulkFinances[e.id];
-
-                return `
-                    <tr style="border-bottom: 1px solid var(--border); transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.02)'" onmouseout="this.style.background='transparent'">
-                        <td style="padding:15px;">
-                            <div style="font-weight:bold; color:var(--primary); font-size:1rem;">${e.nombre}</div>
-                            <div style="font-size:0.75rem; margin-top:4px;">${matchLabel}</div>
-                        </td>
-                        <td style="text-align:center; padding:10px;">
-                            <div style="position:relative;">
-                                <span style="position:absolute; left:10px; top:50%; transform:translateY(-50%); color:#666; font-size:0.8rem;">$</span>
-                                <input type="number" value="${p.monto_inscripcion || 0}" step="10"
-                                    placeholder="${costoIns}"
-                                    onchange="ui.teams.bulkFinances['${e.id}'].monto_inscripcion = parseFloat(this.value) || 0" 
-                                    style="width:100%; padding:10px 10px 10px 25px; background:#000; color:#fbbf24; border:1px solid #333; border-radius:8px; font-weight:bold; outline:none;">
-                            </div>
-                        </td>
-                        <td style="text-align:center; padding:10px;">
-                            <div style="position:relative;">
-                                <span style="position:absolute; left:10px; top:50%; transform:translateY(-50%); color:#666; font-size:0.8rem;">$</span>
-                                <input type="number" value="${p.monto_arbitraje || 0}" step="10"
-                                    placeholder="${costoArb}"
-                                    onchange="ui.teams.bulkFinances['${e.id}'].monto_arbitraje = parseFloat(this.value) || 0" 
-                                    style="width:100%; padding:10px 10px 10px 25px; background:#000; color:#fbbf24; border:1px solid #333; border-radius:8px; font-weight:bold; outline:none;">
-                            </div>
-                        </td>
-                        <td style="padding:15px;">
-                            <select onchange="ui.teams.bulkFinances['${e.id}'].metodo = this.value" 
-                                style="width:100%; padding:10px; background:#1a1c1e; color:#fff; border:1px solid #333; border-radius:8px; font-size:0.85rem; outline:none; cursor:pointer;">
-                                <option value="Efectivo" ${p.metodo === 'Efectivo' ? 'selected' : ''}>💵 Efectivo</option>
-                                <option value="Transferencia" ${p.metodo === 'Transferencia' ? 'selected' : ''}>🏦 Transferencia</option>
-                                <option value="Tarjeta" ${p.metodo === 'Tarjeta' ? 'selected' : ''}>💳 Tarjeta</option>
-                                <option value="Otro" ${p.metodo === 'Otro' ? 'selected' : ''}>🌀 Otro</option>
-                            </select>
-                        </td>
-                    </tr>
-                `;
-            }).join('');
         } catch (e) {
             console.error(e);
-            body.innerHTML = '<tr><td colspan="4" style="color:#ef4444; text-align:center; padding:20px;">Error al conectar con la base de datos o cargar el calendario.</td></tr>';
+            tabsList.innerHTML = '<div style="color:#ef4444; text-align:center; padding:10px;">Error de carga</div>';
         }
+    }
+
+    renderBulkTabs() {
+        const tabsList = document.getElementById('pmasivos-tabs-list');
+        if (!tabsList) return;
+
+        tabsList.innerHTML = this.bulkTeamsData.map(e => {
+            const isActive = this.selectedBulkTeamId == e.id;
+            return `
+                <button onclick="ui.teams.selectBulkTeam(${e.id})" 
+                    style="width: 100%; padding: 12px 15px; text-align: left; background: ${isActive ? 'rgba(0,255,136,0.1)' : 'transparent'}; 
+                    border: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 12px; transition: all 0.2s;
+                    border-left: 3px solid ${isActive ? '#00ff88' : 'transparent'};">
+                    <div style="width: 8px; height: 8px; border-radius: 50%; background: #00ff88; box-shadow: 0 0 10px rgba(0,255,136,0.5);"></div>
+                    <span style="color: ${isActive ? '#fff' : '#00ff88'}; font-weight: ${isActive ? '800' : '500'}; font-size: 0.9rem;">${e.nombre}</span>
+                </button>
+            `;
+        }).join('');
+    }
+
+    selectBulkTeam(teamId) {
+        this.selectedBulkTeamId = teamId;
+        const team = this.bulkTeamsData.find(e => e.id == teamId);
+        if (!team) return;
+
+        // Actualizar UI activa
+        document.getElementById('pmasivos-team-empty').style.display = 'none';
+        document.getElementById('pmasivos-team-detail').style.display = 'flex';
+        document.getElementById('pmasivos-selected-team-name').innerText = team.nombre;
+        
+        // Inicializar finanzas para este equipo si no existen
+        if (!this.bulkFinances[teamId]) {
+            this.bulkFinances[teamId] = {
+                id: teamId,
+                monto_inscripcion: 0,
+                metodo: document.getElementById('pmasivos-metodo-global')?.value || 'Efectivo',
+                matches: {} // partido_id -> monto
+            };
+        }
+
+        const finance = this.bulkFinances[teamId];
+        
+        // Cargar monto inscripción actual en el input
+        document.getElementById('pmasivos-monto-ins').value = finance.monto_inscripcion || '';
+        
+        // Renderizar enfrentamientos
+        this.renderTeamMatchups(teamId);
+        
+        // Refrescar lista de pestañas para mostrar la activa
+        this.renderBulkTabs();
+    }
+
+    renderTeamMatchups(teamId) {
+        const container = document.getElementById('pmasivos-matchups-container');
+        if (!container) return;
+
+        const teamMatches = this.bulkMatchups.filter(p => 
+            p.equipo_local_id == teamId || p.equipo_visitante_id == teamId
+        ).sort((a, b) => b.jornada - a.jornada); // Mostrar jornadas recientes primero
+
+        if (teamMatches.length === 0) {
+            container.innerHTML = '<div style="text-align:center; padding:40px; color:#666; background:rgba(0,0,0,0.2); border-radius:12px; border: 1px dashed #333;">No se han programado enfrentamientos para este equipo.</div>';
+            return;
+        }
+
+        const costArb = this.selectedTorneoData.costo_arbitraje || 0;
+        const finance = this.bulkFinances[teamId];
+
+        container.innerHTML = teamMatches.map(p => {
+            const rival = p.equipo_local_id == teamId ? p.equipo_visitante : p.equipo_local;
+            const montoActual = finance.matches[p.id] || 0;
+            const isFinished = p.estado === 'Finished' || p.estado === 'Played';
+
+            return `
+                <div style="display: flex; align-items: center; gap: 20px; padding: 15px 20px; background: ${isFinished ? 'rgba(255,255,255,0.02)' : 'rgba(0,255,136,0.02)'}; 
+                    border: 1px solid ${isFinished ? '#222' : 'rgba(0,255,136,0.1)'}; border-radius: 12px; margin-bottom: 12px; transition: transform 0.2s;"
+                    onmouseover="this.style.transform='translateX(5px)'" onmouseout="this.style.transform='translateX(0)'">
+                    
+                    <div style="width: 50px; height: 50px; background: rgba(0,0,0,0.3); border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px solid #333;">
+                        <span style="font-size: 0.6rem; color: #666; font-weight: 800;">JNAL</span>
+                        <span style="font-size: 1.1rem; color: var(--primary); font-weight: 900;">${p.jornada}</span>
+                    </div>
+
+                    <div style="flex: 1;">
+                        <div style="font-weight: 800; color: #fff; font-size: 1rem;">vs ${rival}</div>
+                        <div style="font-size: 0.75rem; color: #666; margin-top: 2px;">
+                            ${p.fecha ? `📅 ${p.fecha}` : 'Sin fecha'} • ${p.hora || 'S/H'} • ${p.cancha || 'S/S'}
+                        </div>
+                    </div>
+
+                    <div style="width: 150px; position: relative;">
+                        <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #666; font-size: 0.8rem;">$</span>
+                        <input type="number" placeholder="${costArb}" value="${montoActual || ''}"
+                            onchange="ui.teams.updateMontoArbitraje(${p.id}, this.value)"
+                            style="width: 100%; padding: 10px 10px 10px 25px; background: #000; color: #00ff88; border: 1px solid #333; border-radius: 8px; font-weight: 800; outline: none; font-size: 0.9rem;">
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    updateMontoInscripcion(val) {
+        if (!this.selectedBulkTeamId) return;
+        this.bulkFinances[this.selectedBulkTeamId].monto_inscripcion = parseFloat(val) || 0;
+    }
+
+    updateMontoArbitraje(partidoId, val) {
+        if (!this.selectedBulkTeamId) return;
+        this.bulkFinances[this.selectedBulkTeamId].matches[partidoId] = parseFloat(val) || 0;
+    }
+
+    updateMetodoGlobal(metodo) {
+        if (!this.selectedBulkTeamId) return;
+        this.bulkFinances[this.selectedBulkTeamId].metodo = metodo;
+        // Opcional: Aplicar a todos los equipos cargados si el usuario lo prefiere, 
+        // pero por ahora lo dejamos por equipo seleccionado.
     }
 
     async savePagosMasivos() {
         let torneoId = document.getElementById('inscripciones-league-filter')?.value;
         if (!torneoId) torneoId = document.getElementById('team-league-filter')?.value;
 
-        const pagos = Object.values(this.bulkFinances || {}).filter(f => 
-            (f.monto_inscripcion > 0) || (f.monto_arbitraje > 0)
-        );
+        // Descomponer el objeto complejo bulkFinances en abonos individuales para el backend
+        const arrayPagos = [];
+        
+        Object.values(this.bulkFinances || {}).forEach(teamFinance => {
+            const teamId = teamFinance.id;
+            const metodo = teamFinance.metodo || 'Efectivo';
 
-        if (pagos.length === 0) {
+            // 1. Abono a Inscripción
+            if (teamFinance.monto_inscripcion > 0) {
+                arrayPagos.push({
+                    id: teamId,
+                    monto_inscripcion: teamFinance.monto_inscripcion,
+                    monto_arbitraje: 0,
+                    metodo: metodo
+                });
+            }
+
+            // 2. Abonos a Arbitraje (por partido)
+            if (teamFinance.matches) {
+                Object.entries(teamFinance.matches).forEach(([matchId, monto]) => {
+                    if (monto > 0) {
+                        arrayPagos.push({
+                            id: teamId,
+                            monto_inscripcion: 0,
+                            monto_arbitraje: monto,
+                            partido_id: parseInt(matchId),
+                            metodo: metodo
+                        });
+                    }
+                });
+            }
+        });
+
+        if (arrayPagos.length === 0) {
             alert('No has ingresado ningún monto de abono para procesar.');
             return;
         }
@@ -1230,11 +1316,11 @@ export class TeamsModule {
             torneo_id: torneoId,
             equipos: [],
             encuentros: [],
-            finanzas: pagos
+            finanzas: arrayPagos
         };
 
         try {
-            Core.showNotification('Procesando abonos masivos...', 'info');
+            Core.showNotification('Procesando abonos en bloque...', 'info');
             const res = await fetch('/api/hub/bulk', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -1245,8 +1331,8 @@ export class TeamsModule {
                 Core.showNotification('¡Abonos registrados exitosamente!', 'success');
                 Core.closeModal('modal-pagos-masivos');
                 
-                // Limpiar temporales
-                this.bulkFinances = {};
+                this.bulkFinances = {}; // Limpiar
+                this.selectedBulkTeamId = null;
 
                 // Recargar vistas financieras
                 if (this.ui.currentView === 'inscripciones') {
@@ -1258,11 +1344,11 @@ export class TeamsModule {
                 this.ui.loadInitialStats(true);
             } else {
                 const data = await res.json();
-                alert('Error al procesar abonos: ' + (data.error || 'Desconocido'));
+                alert('Error: ' + (data.error || 'No se pudieron procesar los abonos.'));
             }
         } catch (e) {
             console.error(e);
-            alert('Error de red al intentar procesar los abonos.');
+            alert('Fallo de red al procesar abonos.');
         }
     }
 }
