@@ -1131,6 +1131,12 @@ export class TeamsModule {
             this.bulkTeamsData = equiposData.items || equiposData;
             this.bulkMatchups = Array.isArray(partidosData) ? partidosData : [];
             
+            // Mostrar Precios del Torneo
+            const priceIns = document.getElementById('pmasivos-price-ins');
+            const priceArb = document.getElementById('pmasivos-price-arb');
+            if (priceIns) priceIns.innerText = `Costo Liga: $${(torneo.costo_inscripcion || 0).toFixed(2)}`;
+            if (priceArb) priceArb.innerText = `Costo Arbitraje: $${(torneo.costo_arbitraje || 0).toFixed(2)}`;
+
             // Inicializar estado de finanzas si no existe
             if (!this.bulkFinances || Array.isArray(this.bulkFinances)) {
                 this.bulkFinances = {};
