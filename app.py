@@ -45,6 +45,15 @@ app.config['SESSION_COOKIE_SAMESITE'] = 'None' # Máxima compatibilidad con Secu
 app.config['SESSION_COOKIE_NAME'] = 'futadmin_session_prod_v2'
 app.config['PERMANENT_SESSION_LIFETIME'] = 86400 * 7 # 7 días
 
+# ── Connection Pool (multi-worker) ──────────────────────────────────────────
+# Con gevent, múltiples greenlets comparten conexiones. pool_size=5 por worker.
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+    'pool_size': 5,
+    'max_overflow': 10,
+    'pool_timeout': 30,
+    'pool_pre_ping': True,  # Reconectar si la conexión está muerta
+}
+
 @app.after_request
 def add_security_headers(response):
     response.headers['Vary'] = 'Cookie'
@@ -162,7 +171,12 @@ LAST_STATS_ERROR = "No errors yet"
 @app.before_request
 def check_login():
     # Rutas que no requieren login
-    public_routes = ['users.login_view', 'users.login', 'users.privacy_view', 'static', 'healthcheck', 'debug_stats', 'diag_db', 'ping', 'get_mail_logs', 'test_receipt_sync', 'diag_resend_pago_receipt']
+    public_routes = [
+        'users.login_view', 'users.login', 'users.privacy_view',
+        'users.registro_view', 'users.registro_publico',  # Registro freemium
+        'static', 'healthcheck', 'debug_stats', 'diag_db', 'ping',
+        'get_mail_logs', 'test_receipt_sync', 'diag_resend_pago_receipt'
+    ]
     if request.endpoint in public_routes or not request.endpoint:
         return
 ...
@@ -762,6 +776,7 @@ def handle_hub_bulk():
                         comentario_arb = f'Abono Arbitraje J{match_obj.jornada} vs {rival} - Liga: {torneo.nombre}'
 
                 pago_arb = Pago(
+                    inscripcion_id=ins.id,
                     torneo_id=torneo_id,
                     partido_id=p_id,
                     monto=monto_arb,

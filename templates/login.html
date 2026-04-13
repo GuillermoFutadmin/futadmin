@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -54,8 +55,15 @@
         }
 
         @keyframes slideUp {
-            from { opacity: 0; transform: translateY(30px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .logo-section {
@@ -71,7 +79,7 @@
             border-radius: 50%;
             object-fit: cover;
             box-shadow: 0 0 25px var(--primary-glow);
-            border: 2px solid rgba(255,255,255,0.05);
+            border: 2px solid rgba(255, 255, 255, 0.05);
         }
 
         h1 {
@@ -162,11 +170,12 @@
         }
     </style>
 </head>
+
 <body>
     <div class="login-container">
         <div class="logo-section">
             <img src="/static/img/logos/futadmin_circle.png" class="logo-img" alt="FutAdmin Logo">
-            <h1>FutAdmin PRO</h1>
+            <h1>FutAdmin</h1>
             <p class="welcome-text">Inicia sesión en tu liga</p>
         </div>
 
@@ -185,15 +194,21 @@
             </div>
             <div class="form-group" style="display: flex; align-items: flex-start; gap: 10px; margin-top: 1rem;">
                 <input type="checkbox" id="accept_privacy" required style="width: auto; margin-top: 4px;">
-                <label for="accept_privacy" style="text-transform: none; font-weight: 400; font-size: 0.8rem; cursor: pointer;">
-                    He leído y acepto el <a href="/privacy" target="_blank" style="color: var(--primary); text-decoration: none;">Aviso de Privacidad</a>
+                <label for="accept_privacy"
+                    style="text-transform: none; font-weight: 400; font-size: 0.8rem; cursor: pointer;">
+                    He leído y acepto el <a href="/privacy" target="_blank"
+                        style="color: var(--primary); text-decoration: none;">Aviso de Privacidad</a>
                 </label>
             </div>
             <button type="submit" class="btn-login">ENTRAR AL SISTEMA</button>
         </form>
 
         <div class="footer">
-            &copy; 2026 Diseñalo. FutAdmin Professional Edition.
+            <a href="/registro"
+                style="color: var(--primary); text-decoration: none; font-weight: 600; display: block; margin-bottom: 0.6rem;">
+                ¿No tienes cuenta? → Regístrate gratis
+            </a>
+            &copy; 2026 Diseñalo. FutAdmin Edition.
         </div>
     </div>
 
@@ -208,10 +223,10 @@
                 const response = await fetch('/api/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        email, 
-                        password, 
-                        accept_privacy: document.getElementById('accept_privacy').checked 
+                    body: JSON.stringify({
+                        email,
+                        password,
+                        accept_privacy: document.getElementById('accept_privacy').checked
                     })
                 });
 
@@ -230,4 +245,5 @@
         });
     </script>
 </body>
+
 </html>
