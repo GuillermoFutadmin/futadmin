@@ -62,13 +62,11 @@ export class SettingsModule {
     updateComboPriceInfo(rol) {
         const info = document.getElementById('combo-price-info');
         if (!info) return;
-        
+
         const details = {
-            'dueño_liga': 'Incluye 1 cancha + 5 ligas y 4 cuentas de acceso. Costo: $350/mes.',
-            'super_arbitro': 'Incluye 1 cancha + 2 ligas y 4 cuentas de acceso. Costo: $150/mes.',
-            'equipo': 'Incluye 1 cancha + 1 liga y 4 cuentas de acceso. Costo: $100/mes.'
+            'dueño_liga': 'Incluye capacidad total para gestionar canchas, torneos y usuarios vinculados.'
         };
-        
+
         info.innerText = details[rol] || 'Selecciona un plan para ver los detalles.';
     }
 
@@ -81,7 +79,7 @@ export class SettingsModule {
         const title = document.getElementById('combo-modal-title');
 
         form.reset();
-        
+
         if (ligaId) {
             // Modo Edición
             const liga = this.ligas.find(l => l.id == ligaId);
@@ -92,10 +90,10 @@ export class SettingsModule {
             if (document.getElementById('combo-subdominio')) document.getElementById('combo-subdominio').value = liga.subdominio || '';
             document.getElementById('combo-color').value = liga.color || '#00ff88';
             document.getElementById('combo-contacto').value = liga.contacto || '';
-            
+
             // Cargar datos del titular
             document.getElementById('combo-owner-nombre').value = liga.nombre; // O el nombre del primer usuario
-            
+
             // Permitir edición de credenciales (Opcional en edición)
             const ownerEmailInput = document.getElementById('combo-owner-email');
             const ownerPassInput = document.getElementById('combo-owner-pass');
@@ -108,10 +106,10 @@ export class SettingsModule {
                 ownerPassInput.required = false;
                 ownerPassInput.placeholder = 'Dejar vacío para no cambiar';
             }
-            
+
             title.innerText = '✏️ Editar Organización';
             submitBtn.innerText = 'Guardar Cambios';
-            
+
             // Ajustar secciones para edición
             if (planSection) planSection.style.display = 'none';
             if (ownerSection) {
@@ -123,7 +121,7 @@ export class SettingsModule {
                 if (ownerHelp) ownerHelp.innerText = 'Si cambias la contraseña, se actualizarán las 4 cuentas vinculadas.';
                 if (ownerNameGroup) ownerNameGroup.style.display = 'none'; // El nombre del titular suele ser el de la liga en el registro auto
             }
-            
+
             // Los campos de owner no son requeridos en edición (para permitir no cambiar pass)
             document.getElementById('combo-owner-nombre').required = false;
             // ownerEmailInput.required is set above
@@ -134,7 +132,7 @@ export class SettingsModule {
             document.getElementById('combo-color').value = '#00ff88';
             title.innerText = '✚ Nuevo Combo / Organización';
             submitBtn.innerText = '✚ Crear Combo';
-            
+
             if (planSection) planSection.style.display = 'block';
             if (ownerSection) {
                 ownerSection.style.display = 'block';
@@ -145,7 +143,7 @@ export class SettingsModule {
                 if (ownerHelp) ownerHelp.innerText = 'Se crearán automáticamente 3 subcuentas extra usando esta misma contraseña.';
                 if (ownerNameGroup) ownerNameGroup.style.display = 'block';
             }
-            
+
             document.getElementById('combo-owner-nombre').value = '';
             document.getElementById('combo-owner-email').value = '';
             document.getElementById('combo-owner-pass').value = '';
@@ -156,7 +154,7 @@ export class SettingsModule {
             document.getElementById('combo-owner-nombre').required = true;
             document.getElementById('combo-owner-email').required = true;
             document.getElementById('combo-owner-pass').required = true;
-            
+
             this.updateComboPriceInfo('dueño_liga'); // Default
         }
 
@@ -197,10 +195,10 @@ export class SettingsModule {
             // Datos extra para edición (opcionales)
             const newEmail = document.getElementById('combo-owner-email').value.trim();
             const newPass = document.getElementById('combo-owner-pass').value.trim();
-            
+
             if (newEmail) data.owner_email = newEmail;
             if (newPass) data.owner_pass = newPass;
-            
+
             // En edición, permitimos actualizar el contacto/email personal
             data.contacto = document.getElementById('combo-contacto').value.trim();
         }
@@ -225,7 +223,7 @@ export class SettingsModule {
                 Core.closeModal('modal-combo');
                 await this.loadLigas();
                 await this.loadUsers();
-                
+
                 if (!isEdit) {
                     // Redigir a pagos de combos solo en creación
                     this.switchTab('payments');
@@ -268,7 +266,7 @@ export class SettingsModule {
     async toggleComboStatus(id, nombre, currentStatus) {
         const action = currentStatus ? 'inhabilitar' : 'reactivar';
         if (!confirm(`¿Deseas ${action} el combo "${nombre}"?\n${currentStatus ? 'Esto desactivará el acceso a todos los usuarios vinculados.' : 'Esto restaurará el acceso a los usuarios vinculados.'}`)) return;
-        
+
         try {
             const res = await Core.fetchAPI(`/api/ligas/${id}`, {
                 method: 'PUT',
@@ -290,10 +288,10 @@ export class SettingsModule {
 
     async printComboTicket(liga, owner, pago, cuentas = []) {
         // Redirigir al nuevo generador profesional PDF
-        await this.downloadComboPaymentPDF(pago.id, { 
-            isActivation: true, 
+        await this.downloadComboPaymentPDF(pago.id, {
+            isActivation: true,
             cuentas: cuentas,
-            ownerRol: owner.owner_rol 
+            ownerRol: owner.owner_rol
         });
     }
 
@@ -309,16 +307,16 @@ export class SettingsModule {
             metodo: 'Ajuste de Plan',
             notas: `Expansión de ${Math.abs(delta)} ${field === 'extra_canchas' ? 'sede(s)' : 'torneo(s)'}.`
         };
-        await this.downloadComboPaymentPDF(null, { 
-            isExpansion: true, 
-            customPago: pagoObj 
+        await this.downloadComboPaymentPDF(null, {
+            isExpansion: true,
+            customPago: pagoObj
         });
     }
 
     async updateLigaExtras(ligaId, field, delta) {
         const cost = field === 'extra_canchas' ? 290 : 85;
         const type = field === 'extra_canchas' ? 'SEDE EXTRA' : 'LIGA/TORNEO EXTRA';
-        
+
         try {
             const res = await Core.fetchAPI('/api/ligas/extras', {
                 method: 'POST',
@@ -411,12 +409,8 @@ export class SettingsModule {
             'admin': 'Administrador',
             'ejecutivo': 'Ejecutivo (Soporte)',
             'dueño_liga': 'Dueño de Liga',
-            'super_arbitro': 'Super Árbitro',
-            'arbitro': 'Árbitro Gral.',
-            'entrenador': 'Entrenador',
-            'equipo': 'Equipo/Jugador',
-            'dueno_cancha': 'Dueño de Sede',
-            'resultados': 'Resultados (Solo Leo)'
+            'arbitro': 'Árbitro General',
+            'resultados': 'Solo Vista'
         };
 
         container.innerHTML = mainUsers.map(u => {
@@ -426,7 +420,7 @@ export class SettingsModule {
             const initial = u.nombre.charAt(0).toUpperCase();
             const icon = roleIcons[u.rol] || '👤';
             const roleName = roleNames[u.rol] || u.rol.toUpperCase();
-            
+
             return `
                 <tr>
                     <td>
@@ -484,7 +478,7 @@ export class SettingsModule {
             btn.style.color = 'var(--text-muted)';
             btn.style.borderBottomColor = 'transparent';
         });
-        
+
         const activeBtn = document.getElementById(`tab-btn-${tabId}`);
         if (activeBtn) {
             activeBtn.classList.add('active');
@@ -496,7 +490,7 @@ export class SettingsModule {
         document.querySelectorAll('.settings-tab-content').forEach(content => {
             content.style.display = 'none';
         });
-        
+
         const activeTab = document.getElementById(`settings-tab-${tabId}`);
         const tabsNav = document.querySelector('.tabs-nav');
         if (activeTab) {
@@ -525,40 +519,40 @@ export class SettingsModule {
         const confirmMsg = isSede && delta > 0
             ? `¿Deseas agregar 1 Sede Extra ($290)?\n✅ Incluye automáticamente 5 Ligas adicionales (combo base).`
             : isSede && delta < 0
-            ? `¿Deseas quitar 1 Sede Extra?\n⚠️ Esto también quitará 5 Ligas del paquete.`
-            : `¿Deseas modificar los espacios extra para esta organización?\nRecuerda que esto afecta la capacidad permitida.`;
+                ? `¿Deseas quitar 1 Sede Extra?\n⚠️ Esto también quitará 5 Ligas del paquete.`
+                : `¿Deseas modificar los espacios extra para esta organización?\nRecuerda que esto afecta la capacidad permitida.`;
 
         if (!confirm(confirmMsg)) return;
-        
+
         const liga = this.ligas.find(l => l.id == ligaId);
         if (!liga) return;
-        
+
         const current = liga[field] || 0;
         const newValue = Math.max(0, current + delta);
-        
+
         try {
             const data = {};
             data[field] = newValue;
-            
+
             const res = await Core.fetchAPI(`/api/ligas/${ligaId}/extras`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
             });
-            
+
             if (res.success) {
                 const notif = isSede && delta > 0
                     ? `✅ Sede extra añadida (+5 Ligas incluidas en el paquete)`
                     : isSede && delta < 0
-                    ? `Sede extra removida (-5 Ligas del paquete)`
-                    : `Expansión de ${field.replace('_', ' ')} exitosa`;
+                        ? `Sede extra removida (-5 Ligas del paquete)`
+                        : `Expansión de ${field.replace('_', ' ')} exitosa`;
                 Core.showNotification(notif);
-                
+
                 // Calcular costo para el ticket (solo si es expansión de sede)
                 if (isSede && delta > 0) {
                     this.printExpansionTicket(res.liga || liga, field, delta, 290);
                 }
-                
+
                 await this.ui.loadInitialStats(); // Actualizar límites globales
                 await this.loadLigas();       // Actualizar datos de ligas
                 this.renderLinkedAccounts();   // Refrescar tarjetas inmediatamente
@@ -578,12 +572,12 @@ export class SettingsModule {
             this.payments = await Core.fetchAPI('/api/combo-pagos');
             this.renderComboPayments();
             this.renderComboStatus();
-            
+
             // Llenar el select de ligas en el modal de pagos si es admin
             const user = JSON.parse(localStorage.getItem('user') || '{}');
             const actions = document.getElementById('combo-payment-actions');
             const select = document.getElementById('settings-pago-liga-id');
-            
+
             if (['admin', 'ejecutivo'].includes(user.rol)) {
                 if (actions) actions.style.display = 'block';
             } else {
@@ -605,8 +599,8 @@ export class SettingsModule {
 
         const searchTerm = document.getElementById('combo-payment-search')?.value.toLowerCase() || '';
 
-        const filtered = this.payments.filter(p => 
-            p.liga_nombre.toLowerCase().includes(searchTerm) || 
+        const filtered = this.payments.filter(p =>
+            p.liga_nombre.toLowerCase().includes(searchTerm) ||
             p.mes_pagado.toLowerCase().includes(searchTerm) ||
             p.metodo.toLowerCase().includes(searchTerm)
         );
@@ -662,13 +656,13 @@ export class SettingsModule {
         const meses = parseInt(document.getElementById('settings-pago-meses').value) || 1;
         const montoInput = document.getElementById('settings-pago-monto');
         const conceptoInput = document.getElementById('settings-pago-mes');
-        
+
         const liga = this.ligas.find(l => l.id == ligaId);
         if (liga) {
             const precioUnitario = liga.monto_total_mensual || liga.monto_mensual || 0;
             const total = precioUnitario * meses;
             montoInput.value = total.toFixed(2);
-            
+
             // Generar concepto automático
             const now = new Date();
             const mesesList = [];
@@ -676,11 +670,11 @@ export class SettingsModule {
                 const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
                 mesesList.push(this.getMesEspanol(d));
             }
-            
+
             if (meses === 1) {
                 conceptoInput.value = mesesList[0];
             } else {
-                conceptoInput.value = `${meses} meses (${mesesList[0]} - ${mesesList[meses-1]})`;
+                conceptoInput.value = `${meses} meses (${mesesList[0]} - ${mesesList[meses - 1]})`;
             }
         }
     }
@@ -704,7 +698,7 @@ export class SettingsModule {
             await Core.loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
-            
+
             const primaryColor = [0, 255, 136]; // FutAdmin Green
             const textColor = [40, 40, 40];
             const secondaryTextColor = [100, 100, 100];
@@ -713,17 +707,17 @@ export class SettingsModule {
             // 1. Cabecera Premium
             doc.setFillColor(30, 30, 30);
             doc.rect(0, 0, 210, 45, 'F');
-            
+
             doc.setTextColor(255, 255, 255);
             doc.setFontSize(26);
             doc.setFont("helvetica", "bold");
             doc.text("FutAdmin PRO", 20, 25);
-            
+
             doc.setFontSize(10);
             doc.setFont("helvetica", "normal");
             doc.text("ESTADO DE CUENTA Y RESUMEN OPERATIVO", 20, 32);
             doc.text(`ORGANIZACIÓN: ${liga.nombre.toUpperCase()}`, 20, 38);
-            
+
             doc.setFontSize(10);
             doc.text(`Generado: ${new Date().toLocaleDateString()}`, 155, 25);
             doc.text(`ID Cliente: ${ligaId}`, 155, 32);
@@ -767,7 +761,7 @@ export class SettingsModule {
 
             doc.setFontSize(10);
             doc.setFont('helvetica', 'bold');
-            
+
             const limitBaseTorneos = ['dueño_liga', 'equipo', 'super_arbitro'].includes(liga.paquete) ? 5 : 2;
             const capSedes = 1 + (liga.extra_canchas || 0);
             const capLigas = limitBaseTorneos + (liga.extra_torneos || 0);
@@ -775,7 +769,7 @@ export class SettingsModule {
             doc.text(`Sedes (${liga.stats?.canchas || 0} de ${capSedes} Permitidas):`, col1, currentY);
             doc.text(`Torneos (${liga.stats?.torneos || 0} de ${capLigas} Permitidos):`, col3, currentY);
             doc.setFont('helvetica', 'normal');
-            
+
             let listY_Sedes = currentY + 6;
             (liga.detalles?.canchas || ["Ninguna registrada"]).forEach(c => {
                 doc.text(`• ${c}`, col1 + 2, listY_Sedes);
@@ -820,9 +814,9 @@ export class SettingsModule {
 
             let expY = currentY + 14;
             doc.setTextColor(...textColor);
-            
+
             const expansions = liga.expansiones || [];
-            
+
             // --- FILA INICIAL: COMBO BASE ---
             doc.setFont('helvetica', 'bold');
             doc.text(liga.fecha_registro || '', 25, expY);
@@ -847,22 +841,22 @@ export class SettingsModule {
                     if (expY > 265) { doc.addPage(); expY = 30; }
                     doc.setFont('helvetica', 'normal');
                     doc.text(e.fecha?.split(' ')[0] || '', 25, expY);
-                    
+
                     let desc = e.tipo === 'extra_canchas' ? 'Sede Extra' : 'Torneo Extra';
                     doc.text(desc, 60, expY);
-                    
+
                     doc.text(`${e.cantidad > 0 ? '+' : ''}${e.cantidad}`, 120, expY);
-                    
+
                     const montoTxt = e.monto_adicional > 0 ? `$${e.monto_adicional.toFixed(2)}` : (e.cantidad < 0 ? '--' : 'Combo');
                     doc.text(montoTxt, 145, expY);
-                    
+
                     doc.setFont('helvetica', 'bold');
                     const statusTxt = e.cantidad > 0 ? 'ACTIVO' : 'BAJA';
                     doc.setTextColor(e.cantidad > 0 ? 0 : 200, e.cantidad > 0 ? 150 : 0, 0);
                     doc.text(statusTxt, 175, expY);
                     doc.setTextColor(...textColor);
                     doc.setFont('helvetica', 'normal');
-                    
+
                     doc.setDrawColor(230, 230, 230);
                     doc.setLineWidth(0.1);
                     doc.line(20, expY + 2, 190, expY + 2);
@@ -892,7 +886,7 @@ export class SettingsModule {
 
             let rowY = currentY + 14;
             doc.setTextColor(...textColor);
-            
+
             const payments = (this.payments || []).filter(p => p.liga_id == ligaId);
             if (payments.length === 0) {
                 doc.setFont('helvetica', 'italic');
@@ -1000,12 +994,12 @@ export class SettingsModule {
             if (result.success || result.id) {
                 Core.showNotification('Aportación registrada correctamente');
                 Core.closeModal('modal-combo-payment');
-                
+
                 await this.loadLigas(); // Recargar para actualizar montos y estatus de pago
                 this.loadComboPayments(); // Recargar historial
                 this.renderComboStatus(); // Actualizar tabla de estatus
                 this.renderLinkedAccounts(); // Actualizar tarjetas (Cuentas Vinculadas)
-                
+
                 // Ofrecer ticket si no es un pago de expansión (que ya tuvo su ticket)
                 // O si el usuario lo desea
                 if ((result.pago || result.id) && confirm('¿Deseas imprimir el Estado de Cuenta profesional?')) {
@@ -1089,8 +1083,8 @@ export class SettingsModule {
             }
         });
 
-        const rolIcon = { 'dueno_cancha': '🏠', 'arbitro': '⚖️', 'dueño_liga': '👑', 'entrenador': '📋', 'super_arbitro': '🚀', 'equipo': '🛡️', 'resultados': '👁️', 'admin': '👨‍💻', 'ejecutivo': '💼' };
-        const rolLabel = { 'dueno_cancha': 'Dueño de Sede', 'arbitro': 'Árbitro Vinculado', 'dueño_liga': 'Dueño de Liga', 'entrenador': 'Entrenador', 'super_arbitro': 'Super Árbitro', 'equipo': 'Equipo / Acceso Gral', 'resultados': 'Solo Vista / Lector', 'admin': 'Administrador', 'ejecutivo': 'Colaborador' };
+        const rolIcon = { 'dueño_liga': '👑', 'arbitro': '⚖️', 'resultados': '👁️', 'admin': '👨‍💻', 'ejecutivo': '💼' };
+        const rolLabel = { 'dueño_liga': 'Dueño de Liga', 'arbitro': 'Árbitro General', 'resultados': 'Solo Vista', 'admin': 'Administrador', 'ejecutivo': 'Colaborador' };
 
         const userCard = (u) => `
             <div style="display:flex; align-items:center; gap:12px; padding:10px 14px; background: rgba(255,255,255,0.03); border-radius:10px; border: 1px solid var(--border); position: relative; overflow: hidden;">
@@ -1145,26 +1139,26 @@ export class SettingsModule {
         }).map(combo => {
             const lid = combo.id;
             const ligaData = lid !== 'global' ? this.ligas.find(l => l.id == lid) : null;
-            
+
             const pacote = ligaData?.paquete || 'equipo';
-            
+
             // El "dueño" o acceso principal depende del paquete/plan
             const duenoLigas = combo.users.filter(u => u.rol === pacote);
-            
+
             // Los demás se reparten en staff o equipos, excluyendo al que ya es dueño/principal
             const staffRoles = ['super_arbitro', 'arbitro', 'entrenador', 'dueno_cancha'];
             const staffUsers = combo.users.filter(u => staffRoles.includes(u.rol) && u.rol !== pacote);
-            
+
             const equipoUsers = combo.users.filter(u => u.rol === 'equipo' && u.rol !== pacote);
             const otherUsers = combo.users.filter(u => u.rol !== pacote && !staffRoles.includes(u.rol) && u.rol !== 'equipo');
 
             const hasDueno = combo.users.some(u => u.rol === pacote);
-            const arbCount = combo.users.filter(u => ['super_arbitro','arbitro'].includes(u.rol)).length;
+            const arbCount = combo.users.filter(u => ['super_arbitro', 'arbitro'].includes(u.rol)).length;
             const hasEquipo = combo.users.some(u => u.rol === 'equipo' || u.rol === 'dueno_cancha');
-            
+
             const hasPayments = ligaData?.has_payments;
             const stats = ligaData?.stats || { usuarios: combo.users.length, canchas: combo.canchas.length, torneos: 0 };
-            
+
             // Límites base según paquete para visualización
             const limitBaseTorneos = pacote === 'dueño_liga' ? 5 : (pacote === 'super_arbitro' ? 2 : 1);
 
@@ -1227,7 +1221,7 @@ export class SettingsModule {
                                 <div style="font-weight: 700;">🏟️ ${stats.canchas} / ${1 + (ligaData?.extra_canchas || 0)}</div>
                                 ${lid !== 'global' ? `
                                 <div style="display: flex; gap: 2px;">
-                                    ${['admin','ejecutivo'].includes(window.USER_ROL) ? `<button onclick="ui.settings.updateLigaExtras(${lid}, 'extra_canchas', -1)" title="Quitar Sede Extra (admin only)" style="width:18px; height:18px; border-radius:4px; border:1px solid #ef444455; background:rgba(239,68,68,0.1); color:#ef4444; cursor:pointer; font-size:0.7rem; display:flex; align-items:center; justify-content:center;">-</button>` : ''}
+                                    ${['admin', 'ejecutivo'].includes(window.USER_ROL) ? `<button onclick="ui.settings.updateLigaExtras(${lid}, 'extra_canchas', -1)" title="Quitar Sede Extra (admin only)" style="width:18px; height:18px; border-radius:4px; border:1px solid #ef444455; background:rgba(239,68,68,0.1); color:#ef4444; cursor:pointer; font-size:0.7rem; display:flex; align-items:center; justify-content:center;">-</button>` : ''}
                                     <button onclick="ui.settings.updateLigaExtras(${lid}, 'extra_canchas', 1)" title="Añadir Sede Extra ($290)" style="width:18px; height:18px; border-radius:4px; border:1px solid var(--primary); background:var(--primary-glow); color:var(--primary); cursor:pointer; font-size:0.7rem; display:flex; align-items:center; justify-content:center; font-weight:bold;">+</button>
                                 </div>` : ''}
                             </div>
@@ -1239,7 +1233,7 @@ export class SettingsModule {
                                 <div style="font-weight: 700;">🥅 ${stats.campos || 0} / ${lid !== 'global' ? ((stats.canchas || 1) + (ligaData?.extra_campos || 0)) : '∞'}</div>
                                 ${lid !== 'global' ? `
                                 <div style="display: flex; gap: 2px;">
-                                    ${['admin','ejecutivo'].includes(window.USER_ROL) ? `<button onclick="ui.settings.updateLigaExtras(${lid}, 'extra_campos', -1)" title="Quitar Capacidad de Cancha (admin only)" style="width:18px; height:18px; border-radius:4px; border:1px solid #ef444455; background:rgba(239,68,68,0.1); color:#ef4444; cursor:pointer; font-size:0.7rem; display:flex; align-items:center; justify-content:center;">-</button>` : ''}
+                                    ${['admin', 'ejecutivo'].includes(window.USER_ROL) ? `<button onclick="ui.settings.updateLigaExtras(${lid}, 'extra_campos', -1)" title="Quitar Capacidad de Cancha (admin only)" style="width:18px; height:18px; border-radius:4px; border:1px solid #ef444455; background:rgba(239,68,68,0.1); color:#ef4444; cursor:pointer; font-size:0.7rem; display:flex; align-items:center; justify-content:center;">-</button>` : ''}
                                     <button onclick="ui.settings.updateLigaExtras(${lid}, 'extra_campos', 1)" title="Añadir Capacidad de Cancha ($0)" style="width:18px; height:18px; border-radius:4px; border:1px solid var(--primary); background:var(--primary-glow); color:var(--primary); cursor:pointer; font-size:0.7rem; display:flex; align-items:center; justify-content:center; font-weight:bold;">+</button>
                                 </div>` : ''}
                             </div>
@@ -1251,7 +1245,7 @@ export class SettingsModule {
                                 <div style="font-weight: 700;">⚽ ${stats.torneos} / ${limitBaseTorneos + (ligaData?.extra_torneos || 0)}</div>
                                 ${lid !== 'global' ? `
                                 <div style="display: flex; gap: 2px;">
-                                    ${['admin','ejecutivo'].includes(window.USER_ROL) ? `<button onclick="ui.settings.updateLigaExtras(${lid}, 'extra_torneos', -1)" title="Quitar Liga Extra (admin only)" style="width:18px; height:18px; border-radius:4px; border:1px solid #ef444455; background:rgba(239,68,68,0.1); color:#ef4444; cursor:pointer; font-size:0.7rem; display:flex; align-items:center; justify-content:center;">-</button>` : ''}
+                                    ${['admin', 'ejecutivo'].includes(window.USER_ROL) ? `<button onclick="ui.settings.updateLigaExtras(${lid}, 'extra_torneos', -1)" title="Quitar Liga Extra (admin only)" style="width:18px; height:18px; border-radius:4px; border:1px solid #ef444455; background:rgba(239,68,68,0.1); color:#ef4444; cursor:pointer; font-size:0.7rem; display:flex; align-items:center; justify-content:center;">-</button>` : ''}
                                     <button onclick="ui.settings.updateLigaExtras(${lid}, 'extra_torneos', 1)" title="Añadir Liga Extra ($85)" style="width:18px; height:18px; border-radius:4px; border:1px solid var(--primary); background:var(--primary-glow); color:var(--primary); cursor:pointer; font-size:0.7rem; display:flex; align-items:center; justify-content:center; font-weight:bold;">+</button>
                                 </div>` : ''}
                             </div>
@@ -1261,25 +1255,25 @@ export class SettingsModule {
                     <!-- Slots de Acceso del Plan - Solo relevantes al paquete -->
                     <div style="padding: 14px 20px; background: rgba(0,0,0,0.15); border-bottom: 1px solid var(--border); display:flex; gap:10px; align-items:stretch;">
                         ${(() => {
-                            const slot = (icon, label, filled, color) => `
-                                <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; padding:8px 4px; border-radius:10px; background:${filled ? color+'18' : 'rgba(255,255,255,0.03)'}; border:1px solid ${filled ? color+'44' : 'var(--border)'}; transition:0.3s;">
+                    const slot = (icon, label, filled, color) => `
+                                <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; padding:8px 4px; border-radius:10px; background:${filled ? color + '18' : 'rgba(255,255,255,0.03)'}; border:1px solid ${filled ? color + '44' : 'var(--border)'}; transition:0.3s;">
                                     <span style="font-size:1.1rem;">${icon}</span>
                                     <span style="font-size:0.55rem; text-transform:uppercase; font-weight:800; color:${filled ? color : 'var(--text-muted)'}; letter-spacing:0.5px; text-align:center; line-height:1.2;">${label}</span>
-                                    <div style="width:6px; height:6px; border-radius:50%; background:${filled ? color : 'rgba(255,255,255,0.15)'}; box-shadow:${filled ? '0 0 6px '+color : 'none'};"></div>
+                                    <div style="width:6px; height:6px; border-radius:50%; background:${filled ? color : 'rgba(255,255,255,0.15)'}; box-shadow:${filled ? '0 0 6px ' + color : 'none'};"></div>
                                 </div>`;
-                            
-                            const slots = [];
-                            // Mostrar exclusivamente la insignia de la cuenta principal del paquete
-                            if (pacote === 'dueño_liga') {
-                                slots.push(slot('👑','Dueño Liga', hasDueno, combo.color));
-                            } else if (pacote === 'super_arbitro') {
-                                slots.push(slot('🚀','Super Árbitro', arbCount >= 1, combo.color));
-                            } else {
-                                slots.push(slot('🛡️','Equipo / Jugador', hasEquipo, combo.color));
-                            }
-                            
-                            return slots.join('');
-                        })()}
+
+                    const slots = [];
+                    // Mostrar exclusivamente la insignia de la cuenta principal del paquete
+                    if (pacote === 'dueño_liga') {
+                        slots.push(slot('👑', 'Dueño Liga', hasDueno, combo.color));
+                    } else if (pacote === 'super_arbitro') {
+                        slots.push(slot('🚀', 'Super Árbitro', arbCount >= 1, combo.color));
+                    } else {
+                        slots.push(slot('🛡️', 'Equipo / Jugador', hasEquipo, combo.color));
+                    }
+
+                    return slots.join('');
+                })()}
                     </div>
 
                     <!-- Toggle button -->
@@ -1387,7 +1381,7 @@ export class SettingsModule {
         document.getElementById('user-id').value = '';
         document.getElementById('user-form').reset();
         document.getElementById('user-activo').checked = true;
-        
+
         if (ligaId !== null && ligaId !== undefined) {
             // El valor 'global' se traduce a "" para el select
             document.getElementById('user-liga-id').value = (ligaId === 'global' || ligaId === '') ? '' : ligaId;
@@ -1428,7 +1422,7 @@ export class SettingsModule {
         // Admin y Ejecutivo suelen ser globales (sin liga específica)
         // Los nuevos roles de gestión y usuarios finales deben estar ligados a una liga
         const rolesConLiga = ['arbitro', 'equipo', 'entrenador', 'dueño_liga', 'super_arbitro', 'resultados'];
-        
+
         if (rolesConLiga.includes(rol)) {
             ligaContainer.style.display = 'block';
         } else {
@@ -1456,7 +1450,7 @@ export class SettingsModule {
         try {
             const method = id ? 'PUT' : 'POST';
             const url = id ? `/api/users/${id}` : '/api/users';
-            
+
             const result = await Core.fetchAPI(url, {
                 method: method,
                 headers: { 'Content-Type': 'application/json' },
@@ -1468,7 +1462,7 @@ export class SettingsModule {
                 Core.closeModal('modal-user');
                 await this.loadUsers();
                 await this.ui.loadInitialStats(); // Refresh limits
-                
+
                 // Refrescar la vista de cuentas vinculadas si estamos en esa pestaña
                 if (document.getElementById('settings-tab-linked').style.display !== 'none') {
                     this.renderLinkedAccounts();
@@ -1546,17 +1540,17 @@ export class SettingsModule {
         // 1. Aplicar Filtros
         let filtered = this.ligas.filter(l => {
             // Filtro por texto
-            const matchesSearch = l.nombre.toLowerCase().includes(searchTerm) || 
-                                 l.paquete.toLowerCase().includes(searchTerm);
+            const matchesSearch = l.nombre.toLowerCase().includes(searchTerm) ||
+                l.paquete.toLowerCase().includes(searchTerm);
             if (!matchesSearch) return false;
 
             // Filtro por estatus
             if (statusFilter === 'all') return true;
-            
+
             const hasPayments = l.ultimo_pago && l.ultimo_pago.mes;
             const mesPagado = hasPayments ? l.ultimo_pago.mes.toLowerCase() : "";
             const isPaid = hasPayments && (
-                mesPagado.includes(currentMonthSp) || 
+                mesPagado.includes(currentMonthSp) ||
                 mesPagado.includes(currentMonthEn) ||
                 mesPagado.includes("marzo")
             );
@@ -1570,7 +1564,7 @@ export class SettingsModule {
         const totalItems = filtered.length;
         const totalPages = Math.ceil(totalItems / limit);
         if (this.statusPage > totalPages && totalPages > 0) this.statusPage = totalPages;
-        
+
         const start = (this.statusPage - 1) * limit;
         const paginated = filtered.slice(start, start + limit);
 
@@ -1585,18 +1579,18 @@ export class SettingsModule {
             // Calcular consumo del mes basado en el vencimiento cumulative
             let consumptionHtml = '';
             let isPaid = false;
-            
+
             if (l.vencimiento) {
                 const vencimientoDate = new Date(l.vencimiento + 'T23:59:59'); // Asegurar fin de día
                 const diffTime = vencimientoDate - now;
                 const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                
+
                 isPaid = diffDays > 0;
-                
+
                 // El porcentaje ahora es sobre un mes (30 días) para la barra visual, 
                 // pero si tiene más de 30 días, se ve llena.
                 const percent = Math.min(Math.max(Math.round(((30 - diffDays) / 30) * 100), 0), 100);
-                
+
                 // Color según urgencia (días restantes)
                 let color = '#22c55e'; // Green
                 if (diffDays <= 0) color = '#f43f5e'; // Red (Vencido)
@@ -1611,7 +1605,7 @@ export class SettingsModule {
                     </div>
                 `;
             }
-            
+
             const isLate = !isPaid;
 
             return `
@@ -1676,12 +1670,12 @@ export class SettingsModule {
 
         this.renderPagination('settings-combo-status-pagination', this.statusPage, totalPages, 'status');
     }
-    
+
     toggleComboDetails(ligaId) {
         const details = document.getElementById(`combo-details-${ligaId}`);
         const arrow = document.getElementById(`combo-arrow-${ligaId}`);
         if (!details) return;
-        
+
         if (details.style.display === 'none') {
             details.style.display = 'block';
             if (arrow) arrow.style.transform = 'rotate(180deg)';
@@ -1699,9 +1693,9 @@ export class SettingsModule {
         const methodFilter = document.getElementById('settings-combo-payments-filter')?.value || 'all';
 
         const filtered = this.payments.filter(p => {
-            const matchesSearch = p.liga_nombre.toLowerCase().includes(searchTerm) || 
-                                p.mes_pagado.toLowerCase().includes(searchTerm) ||
-                                p.metodo.toLowerCase().includes(searchTerm);
+            const matchesSearch = p.liga_nombre.toLowerCase().includes(searchTerm) ||
+                p.mes_pagado.toLowerCase().includes(searchTerm) ||
+                p.metodo.toLowerCase().includes(searchTerm);
             const matchesMethod = methodFilter === 'all' || p.metodo === methodFilter;
             return matchesSearch && matchesMethod;
         });
@@ -1793,7 +1787,7 @@ export class SettingsModule {
         // Identificar qué tabla refrescar basándose en el tab activo o el ID del select que disparó
         // Como ambos llaman a la misma función, refrescamos ambos o el que esté visible
         const activeTab = document.querySelector('.settings-tab-content:not([style*="display: none"])');
-        
+
         if (activeTab && activeTab.id === 'settings-tab-payments') {
             // Estamos en la pestaña de pagos, pero dentro del mismo tab están ambas tablas
             // Generalmente, el usuario cambia el de la tabla que está viendo
@@ -1872,7 +1866,7 @@ export class SettingsModule {
 
             await Core.fetchAPI(`/api/combo-pagos/${pagoId}`, { method: 'DELETE' });
             Core.showNotification('Aportación eliminada correctamente');
-            
+
             await this.loadLigas();
             this.renderComboStatus();
             this.renderComboPayments();
@@ -1889,7 +1883,7 @@ export class SettingsModule {
         if (!pago) return;
 
         Core.showNotification('Generando comprobante profesional...', 'info');
-        
+
         try {
             await Core.loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
             const { jsPDF } = window.jspdf;
@@ -1904,20 +1898,20 @@ export class SettingsModule {
             // 1. Cabecera Premium
             doc.setFillColor(30, 30, 30);
             doc.rect(0, 0, 210, 45, 'F');
-            
+
             doc.setTextColor(255, 255, 255);
             doc.setFontSize(26);
             doc.setFont("helvetica", "bold");
             doc.text("FutAdmin PRO", 20, 25);
-            
+
             doc.setFontSize(10);
             doc.setFont("helvetica", "normal");
             doc.text("SISTEMA DE GESTIÓN DEPORTIVA INTEGRAL", 20, 32);
-            
-            const title = options.isActivation ? "ACTA DE ACTIVACIÓN DE SERVICIOS" : 
-                         (options.isExpansion ? "COMPROBANTE DE EXPANSIÓN" : "COMPROBANTE OFICIAL DE APORTACIÓN");
+
+            const title = options.isActivation ? "ACTA DE ACTIVACIÓN DE SERVICIOS" :
+                (options.isExpansion ? "COMPROBANTE DE EXPANSIÓN" : "COMPROBANTE OFICIAL DE APORTACIÓN");
             doc.text(title, 20, 38);
-            
+
             doc.setFontSize(12);
             doc.text(`Folio: #CP-${pago.id.toString().padStart(5, '0')}`, 155, 25);
             doc.setFontSize(10);
@@ -2003,7 +1997,7 @@ export class SettingsModule {
             doc.text("Accesos Habilitados:", 25, currentY + 10);
             doc.setFont("helvetica", "normal");
             doc.setFontSize(10);
-            
+
             if (options.cuentas && options.cuentas.length > 0) {
                 options.cuentas.forEach((c, i) => {
                     doc.text(`${c.rol.toUpperCase()}: ${c.email}`, 25, currentY + 18 + (i * 8));
@@ -2029,7 +2023,7 @@ export class SettingsModule {
             if (currentY > 210) {
                 doc.addPage();
                 currentY = 25; // Reiniciar Y en nueva página
-                
+
                 // Opcional: Mini cabecera en pág 2
                 doc.setFillColor(30, 30, 30);
                 doc.rect(0, 0, 210, 15, 'F');
@@ -2052,7 +2046,7 @@ export class SettingsModule {
                 "• POLÍTICA DE CANCELACIÓN: El servicio puede darse de baja en cualquier momento notificando a soporte técnico. Los pagos realizados por periodos ya iniciados o activaciones no son reembolsables.",
                 "• CREDENCIALES: Se recomienda encarecidamente cambiar la contraseña inicial tras el primer ingreso para garantizar la integridad de su información."
             ];
-            
+
             legalText.forEach((line) => {
                 const splitLine = doc.splitTextToSize(line, 170);
                 if (currentY + (splitLine.length * 5) > 280) {
@@ -2069,8 +2063,8 @@ export class SettingsModule {
             doc.setFont("helvetica", "bold");
             doc.text("WWW.FUTADMIN.COM.MX - EL CONTROL TOTAL DE TU LIGA", 105, 285, { align: "center" });
 
-            const fileName = options.isActivation ? `Acta_Activacion_${pago.liga_nombre.replace(/\s+/g, '_')}.pdf` : 
-                             `Recibo_FutAdmin_${pago.liga_nombre.replace(/\s+/g, '_')}_${pago.mes_pagado.replace(/\s+/g, '_')}.pdf`;
+            const fileName = options.isActivation ? `Acta_Activacion_${pago.liga_nombre.replace(/\s+/g, '_')}.pdf` :
+                `Recibo_FutAdmin_${pago.liga_nombre.replace(/\s+/g, '_')}_${pago.mes_pagado.replace(/\s+/g, '_')}.pdf`;
             doc.save(fileName);
             Core.showNotification('Documento profesional generado');
         } catch (error) {

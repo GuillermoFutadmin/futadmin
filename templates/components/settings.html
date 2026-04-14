@@ -433,33 +433,20 @@
             <div class="card"
                 style="padding: 1.5rem; border: 1px solid var(--border); border-radius: 12px; background: rgba(255,255,255,0.02); height: 100%;">
                 <span class="badge badge-dueño_liga">DUEÑO DE LIGA</span>
-                <p style="margin-top: 1rem; font-size: 0.85rem; line-height: 1.4;">Acceso a inscripciones y pagos de sus
-                    ligas. Capacidad de agregar 1 cancha y 5 ligas. <strong>$350/mes</strong></p>
-            </div>
-            <div class="card"
-                style="padding: 1.5rem; border: 1px solid var(--border); border-radius: 12px; background: rgba(255,255,255,0.02); height: 100%;">
-                <span class="badge badge-super_arbitro">SUPER ÁRBITRO</span>
-                <p style="margin-top: 1rem; font-size: 0.85rem; line-height: 1.4;">Acceso a inscripciones y pagos.
-                    Edición de canchas, ligas, equipos y jugadores. Agregar 1 cancha y 2 ligas.
-                    <strong>$150/mes</strong></p>
-            </div>
-            <div class="card"
-                style="padding: 1.5rem; border: 1px solid var(--border); border-radius: 12px; background: rgba(255,255,255,0.02); height: 100%;">
-                <span class="badge badge-equipo">EQUIPO / JUGADOR</span>
-                <p style="margin-top: 1rem; font-size: 0.85rem; line-height: 1.4;">Acceso a inscripciones y pagos.
-                    Edición de información general. Agregar 1 cancha y 1 liga. <strong>$100/mes</strong></p>
+                <p style="margin-top: 1rem; font-size: 0.85rem; line-height: 1.4;">Acceso completo a su organización.
+                    Capacidad de gestionar canchas, torneos y usuarios vinculados.</p>
             </div>
             <div class="card"
                 style="padding: 1.5rem; border: 1px solid var(--border); border-radius: 12px; background: rgba(255,255,255,0.02); height: 100%;">
                 <span class="badge badge-arbitro">ÁRBITRO GENERAL</span>
-                <p style="margin-top: 1rem; font-size: 0.85rem; line-height: 1.4;">Solo lectura en web. Inicio de
-                    partidos y captura de anotaciones vía App Telegram.</p>
+                <p style="margin-top: 1rem; font-size: 0.85rem; line-height: 1.4;">Gestión operativa de partidos. Inicio
+                    de encuentros y captura de anotaciones vía App Telegram.</p>
             </div>
             <div class="card"
                 style="padding: 1.5rem; border: 1px solid var(--border); border-radius: 12px; background: rgba(255,255,255,0.02); height: 100%;">
                 <span class="badge" style="background: #444; color: #fff;">SOLO VISTA</span>
-                <p style="margin-top: 1rem; font-size: 0.85rem; line-height: 1.4;">Acceso restringido para
-                    participantes. Permite ver calendarios, tablas y resultados sin capacidad de edición.</p>
+                <p style="margin-top: 1rem; font-size: 0.85rem; line-height: 1.4;">Acceso restringido para participantes
+                    y visoría. Permite ver calendarios, tablas y resultados sin capacidad de edición.</p>
             </div>
         </div>
 
@@ -494,13 +481,10 @@
                             </optgroup>
                             <optgroup label="Administración">
                                 <option value="dueño_liga">👑 Dueño de Liga</option>
-                                <option value="super_arbitro">🚀 Super Árbitro</option>
                                 <option value="arbitro">⚖️ Árbitro General</option>
-                                <option value="entrenador">📋 Entrenador</option>
-                                <option value="equipo">🛡️ Equipo / Jugador</option>
                             </optgroup>
                             <optgroup label="Usuarios Finales">
-                                <option value="resultados">👁️ SOLO VISTA / Participante</option>
+                                <option value="resultados">👁️ SOLO VISTA</option>
                             </optgroup>
                         </select>
                     </div>
@@ -553,12 +537,10 @@
                     <div class="form-group">
                         <label for="combo-owner-rol">Paquete del Combo</label>
                         <select id="combo-owner-rol" required onchange="ui.settings.updateComboPriceInfo(this.value)">
-                            <option value="dueño_liga">🏆 Plan Dueño de Liga ($350/mes)</option>
-                            <option value="super_arbitro">🚀 Plan Super Árbitro ($150/mes)</option>
-                            <option value="equipo">🛡️ Plan Equipo / Jugador ($100/mes)</option>
+                            <option value="dueño_liga">👑 Plan Dueño de Liga (Gratis)</option>
                         </select>
                         <p id="combo-price-info" class="text-muted" style="font-size: 0.8rem; margin-top: 8px;">Incluye
-                            1 cancha + 5 ligas y 4 cuentas de acceso.</p>
+                            capacidad total para gestionar canchas, torneos y usuarios vinculados.</p>
                     </div>
                 </div>
 

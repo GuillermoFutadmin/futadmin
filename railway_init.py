@@ -49,6 +49,25 @@ def init():
                 print(f"Aviso: Flask-Migrate no disponible o falló: {migrate_e}")
                 db.create_all()
 
+            # 2.5 Migración de Roles Masiva
+            print("Paso 2.5: Migrando roles obsoletos...")
+            rol_mapping = {
+                'super_arbitro': 'dueño_liga',
+                'entrenador': 'resultados',
+                'equipo': 'resultados',
+                'dueno_cancha': 'dueño_liga'
+            }
+            for old_rol, new_rol in rol_mapping.items():
+                try:
+                    count = Usuario.query.filter_by(rol=old_rol).count()
+                    if count > 0:
+                        Usuario.query.filter_by(rol=old_rol).update({Usuario.rol: new_rol})
+                        db.session.commit()
+                        print(f"Éxito: Migrados {count} usuarios de '{old_rol}' a '{new_rol}'.")
+                except Exception as rol_e:
+                    db.session.rollback()
+                    print(f"Aviso: Error migrando rol {old_rol}: {rol_e}")
+
             # 3. Verificar y crear administradores
             for admin_email in ['admin@futadmin.com']:
                 admin = Usuario.query.filter_by(email=admin_email).first()
