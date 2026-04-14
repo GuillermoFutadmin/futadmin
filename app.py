@@ -237,8 +237,8 @@ def check_login():
 
     # Permitir si el usuario está en sesión
     if 'user_id' not in session:
-        # Exenciones para la App de Telegram (tienen su propia auth)
-        if request.path in ['/telegram_app', '/telegram'] or request.path.startswith('/api/telegram/'):
+        # Exenciones para la App de Telegram y Reparación de Emergencia
+        if request.path in ['/telegram_app', '/telegram', '/api/admin/force-sync-db'] or request.path.startswith('/api/telegram/'):
             return
 
         print(f"DEBUG AUTH: 401 en {request.path} - Session: {list(session.keys())}")
