@@ -604,50 +604,83 @@ def registro_view():
     return render_template('registro.html')
 
 
+def generate_unique_subdomain(name):
+    """Genera un slug único para el subdominio de la liga."""
+    import re, unicodedata
+    if not name: return None
+    # Quitar acentos y caracteres especiales
+    slug = unicodedata.normalize('NFKD', name).encode('ascii', 'ignore').decode('ascii')
+    slug = re.sub(r'[^a-z0-9]+', '-', slug.lower()).strip('-')
+    
+    if not slug: slug = "liga"
+    
+    base_slug = slug[:40]
+    final_slug = base_slug
+    counter = 1
+    # Búsqueda de disponibilidad
+    while Liga.query.filter_by(subdominio=final_slug).first():
+        suffix = f"-{counter}"
+        final_slug = base_slug[:(40-len(suffix))] + suffix
+        counter += 1
+    return final_slug
+
+
 @users_bp.route('/api/registro', methods=['POST'])
 def registro_publico():
     """
-    Registro público gratuito.
-    Crea una Liga + 4 cuentas de acceso automáticamente.
-    Sin costo, sin PagoCombo.
+    Registro público gratuito refinado.
+    Crea una Liga + 4 cuentas de acceso.
+    Realiza AUTO-LOGIN automático tras el éxito.
     """
     data = request.json or {}
 
-    # ── Validaciones básicas ──────────────────────────────────────────────────
+    # Honeypot check (campo oculto que no debería estar lleno)
+    if data.get('website_url'):
+        return jsonify({'success': False, 'error': 'Bot detected'}), 400
+
+    # ── Validaciones ──────────────────────────────────────────────────────────
     nombre_liga   = (data.get('nombre_liga') or '').strip()
     nombre_admin  = (data.get('nombre_admin') or '').strip()
     email         = (data.get('email') or '').strip().lower()
     password      = data.get('password') or ''
+    telefono      = (data.get('telefono') or '').strip()
+    municipio     = (data.get('municipio') or '').strip()
+    estado        = (data.get('estado') or '').strip()
 
-    if not nombre_liga:
-        return jsonify({'success': False, 'error': 'El nombre de la liga es obligatorio'}), 400
-    if not nombre_admin:
-        return jsonify({'success': False, 'error': 'Tu nombre es obligatorio'}), 400
-    if not email or '@' not in email:
-        return jsonify({'success': False, 'error': 'Correo electrónico inválido'}), 400
+    if not all([nombre_liga, nombre_admin, email, password]):
+        return jsonify({'success': False, 'error': 'Campos básicos obligatorios omitidos'}), 400
+    
     if len(password) < 8:
         return jsonify({'success': False, 'error': 'La contraseña debe tener al menos 8 caracteres'}), 400
 
     if Usuario.query.filter_by(email=email).first():
-        return jsonify({'success': False, 'error': f'El correo {email} ya tiene una cuenta registrada'}), 400
+        return jsonify({'success': False, 'error': f'El correo {email} ya está registrado'}), 400
 
     try:
-        # ── 1. Crear Liga (gratis) ────────────────────────────────────────────
+        # ── 1. Generar Subdominio ─────────────────────────────────────────────
+        subdominio = generate_unique_subdomain(nombre_liga)
+
+        # ── 2. Crear Liga ─────────────────────────────────────────────────────
         nueva_liga = Liga(
             nombre=nombre_liga,
+            subdominio=subdominio,
             color='#00ff88',
             tipo_cliente='dueño_liga',
-            contacto=email,
+            contacto=telefono if telefono else email,
             monto_mensual=0.0,
             activa=True
         )
+        # Guardar ubicación en notas o campos extras si no existen campos dedicados
+        # (Asumiendo que Liga puede manejar esto o se agrega a contacto)
+        if municipio or estado:
+            ubicacion = f"{municipio}, {estado}".strip(", ")
+            nueva_liga.contacto = f"{nueva_liga.contacto} | {ubicacion}"
+
         db.session.add(nueva_liga)
-        db.session.flush()  # Obtener ID antes de crear usuarios
+        db.session.flush()
 
-        # ── 2. Contraseña hasheada (compartida entre las 4 cuentas) ───────────
+        # ── 3. Contraseña y Propietario ───────────────────────────────────────
         hashed_pw = bcrypt.generate_password_hash(password).decode('utf-8')
-
-        # ── 3. Cuenta principal: Administrador de Liga (dueño_liga) ──────────
         owner = Usuario(
             nombre=nombre_admin,
             email=email,
@@ -658,21 +691,17 @@ def registro_publico():
         )
         db.session.add(owner)
 
-        # ── 4. Subcuentas automáticas ─────────────────────────────────────────
+        # ── 4. Generar Subcuentas ─────────────────────────────────────────────
         liga_clean = re.sub(r'[^a-zA-Z0-9]', '', nombre_liga).lower()[:20]
         domain = 'futadmin.com'
-
         subcuentas_cfg = [
             (f'arbitro_a_{liga_clean}', f'Árbitro A — {nombre_liga}', 'arbitro',    'Local'),
             (f'arbitro_b_{liga_clean}', f'Árbitro B — {nombre_liga}', 'arbitro',    'Local'),
             (f'lector_{liga_clean}',    f'Lector — {nombre_liga}',    'resultados', None),
         ]
 
-        cuentas_resultado = [{'email': email, 'rol': 'dueño_liga', 'nombre': nombre_admin}]
-
         for prefijo, sub_nombre, sub_rol, sub_nivel in subcuentas_cfg:
             sub_email = f'{prefijo}@{domain}'
-            # Evitar colisión de email si ya existe
             if Usuario.query.filter_by(email=sub_email).first():
                 sub_email = f'{prefijo}_{uuid.uuid4().hex[:4]}@{domain}'
 
@@ -685,33 +714,31 @@ def registro_publico():
                 activo=True
             )
             db.session.add(sub_user)
-            cuentas_resultado.append({'email': sub_email, 'rol': sub_rol, 'nombre': sub_nombre})
-
-            # Sincronizar árbitros en la tabla arbitros
             if sub_rol == 'arbitro':
                 from models import Arbitro
-                sub_arbitro = Arbitro(
-                    nombre=sub_nombre,
-                    email=sub_email,
-                    password=password,
-                    liga_id=nueva_liga.id,
-                    activo=True,
-                    nivel=sub_nivel or 'Local'
+                sub_arb = Arbitro(
+                    nombre=sub_nombre, email=sub_email, password=password,
+                    liga_id=nueva_liga.id, activo=True, nivel=sub_nivel or 'Local'
                 )
-                db.session.add(sub_arbitro)
+                db.session.add(sub_arb)
 
         db.session.commit()
 
+        # ── 5. AUTO-LOGIN ─────────────────────────────────────────────────────
+        session.clear() # Limpiar cualquier sesión previa
+        session['user_id']   = owner.id
+        session['user_name'] = owner.nombre
+        session['user_rol']  = owner.rol
+        session['liga_id']   = nueva_liga.id
+        session.permanent    = True
+
         return jsonify({
             'success': True,
-            'liga': {'id': nueva_liga.id, 'nombre': nueva_liga.nombre},
-            'password_comun': password,   # Se muestra UNA SOLA VEZ en el frontend
-            'cuentas': cuentas_resultado,
-            'msg': f'¡Liga "{nombre_liga}" creada! Se generaron {len(cuentas_resultado)} cuentas de acceso.'
+            'redirect_url': '/',
+            'msg': f'¡Bienvenido {nombre_admin}! Tu liga "{nombre_liga}" ha sido creada.'
         }), 201
 
     except Exception as e:
         db.session.rollback()
-        import traceback
-        traceback.print_exc()
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': f'Ocurrió un error al crear la liga: {str(e)}'}), 500
+

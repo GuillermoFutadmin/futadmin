@@ -179,7 +179,18 @@ def check_login():
     ]
     if request.endpoint in public_routes or not request.endpoint:
         return
-...
+
+    # Permitir si el usuario está en sesión
+    if 'user_id' not in session:
+        # Exenciones para la App de Telegram (tienen su propia auth)
+        if request.path in ['/telegram_app', '/telegram'] or request.path.startswith('/api/telegram/'):
+            return
+
+        print(f"DEBUG AUTH: 401 en {request.path} - Session: {list(session.keys())}")
+        if request.path.startswith('/api/'):
+            return jsonify({"error": "No autenticado"}), 401
+        return redirect(url_for('users.login_view'))
+
 @app.route('/api/diag/resend/<int:id>', methods=['GET'])
 @talisman(force_https=False)
 def diag_resend_pago_receipt(id):
@@ -199,17 +210,6 @@ def diag_resend_pago_receipt(id):
     except Exception as e:
         import traceback
         return jsonify({"success": False, "error": str(e), "trace": traceback.format_exc()}), 500
-    
-    # Permitir si el usuario está en sesión
-    if 'user_id' not in session:
-        # Exenciones para la App de Telegram (tienen su propia auth)
-        if request.path in ['/telegram_app', '/telegram'] or request.path.startswith('/api/telegram/'):
-            return
-
-        print(f"DEBUG AUTH: 401 en {request.path} - Session: {list(session.keys())}")
-        if request.path.startswith('/api/'):
-            return jsonify({"error": "No autenticado"}), 401
-        return redirect(url_for('users.login_view'))
 
 @app.errorhandler(Exception)
 def handle_exception(e):

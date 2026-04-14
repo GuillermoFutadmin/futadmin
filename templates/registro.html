@@ -21,7 +21,6 @@
             --text-muted: #94a3b8;
             --border: rgba(255, 255, 255, 0.1);
             --error: #ef4444;
-            --success-bg: rgba(0, 255, 136, 0.08);
         }
 
         * {
@@ -39,23 +38,26 @@
             align-items: center;
             justify-content: center;
             padding: 2rem 1rem;
+            overflow-x: hidden;
         }
 
         .card {
             width: 100%;
-            max-width: 440px;
+            max-width: 460px;
             background: var(--bg-card);
-            border-radius: 24px;
+            border-radius: 28px;
             border: 1px solid var(--border);
-            box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.6);
-            padding: 2.5rem 2rem;
-            animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.7);
+            padding: 2.5rem 2.2rem;
+            position: relative;
+            overflow: hidden;
+            animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         @keyframes slideUp {
             from {
                 opacity: 0;
-                transform: translateY(28px);
+                transform: translateY(40px);
             }
 
             to {
@@ -70,304 +72,223 @@
         }
 
         .logo-img {
-            width: 90px;
-            height: 90px;
+            width: 80px;
+            height: 80px;
             border-radius: 50%;
-            object-fit: cover;
             box-shadow: 0 0 30px var(--primary-glow);
-            border: 2px solid rgba(0, 255, 136, 0.2);
             margin-bottom: 1rem;
         }
 
         h1 {
-            font-size: 1.7rem;
-            font-weight: 700;
-            letter-spacing: -0.02em;
-        }
-
-        .subtitle {
-            color: var(--text-muted);
-            font-size: 0.9rem;
-            margin-top: 0.3rem;
+            font-size: 1.8rem;
+            font-weight: 800;
+            letter-spacing: -0.03em;
         }
 
         .badge-free {
             display: inline-block;
-            background: linear-gradient(135deg, var(--primary), #00cc6e);
-            color: #0f172a;
-            font-size: 0.72rem;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            padding: 3px 10px;
-            border-radius: 20px;
-            margin-top: 0.6rem;
+            background: rgba(0, 255, 136, 0.1);
+            color: var(--primary);
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 4px 12px;
+            border-radius: 30px;
+            margin-top: 0.5rem;
+            border: 1px solid rgba(0, 255, 136, 0.2);
         }
 
+        /* ── Steps Control ─────────────────────────────────────────────────── */
+        .step-container {
+            display: none;
+        }
+
+        .step-container.active {
+            display: block;
+            animation: fadeIn 0.4s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateX(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .progress-bar {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 2.5rem;
+            justify-content: center;
+        }
+
+        .progress-dot {
+            width: 30px;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .progress-dot.active {
+            background: var(--primary);
+            box-shadow: 0 0 10px var(--primary-glow);
+        }
+
+        /* ── Form Groups ──────────────────────────────────────────────────── */
         .form-group {
             margin-bottom: 1.2rem;
         }
 
         label {
             display: block;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             font-weight: 600;
             color: var(--text-muted);
-            margin-bottom: 0.4rem;
+            margin-bottom: 0.5rem;
             text-transform: uppercase;
-            letter-spacing: 0.06em;
+            letter-spacing: 0.08em;
         }
 
-        input[type="text"],
-        input[type="email"],
-        input[type="password"] {
+        input {
             width: 100%;
-            padding: 0.8rem 1rem;
-            background: rgba(15, 23, 42, 0.7);
+            padding: 0.9rem 1.1rem;
+            background: rgba(15, 23, 42, 0.6);
             border: 1px solid var(--border);
-            border-radius: 12px;
+            border-radius: 14px;
             color: white;
-            font-size: 0.97rem;
-            transition: all 0.25s ease;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
         }
 
         input:focus {
             outline: none;
             border-color: var(--primary);
-            box-shadow: 0 0 0 3px var(--primary-glow);
+            box-shadow: 0 0 0 4px var(--primary-glow);
+            background: rgba(15, 23, 42, 0.8);
         }
 
-        .btn-register {
-            width: 100%;
-            padding: 0.95rem;
-            background: linear-gradient(135deg, var(--primary), #00cc6e);
-            border: none;
-            border-radius: 12px;
-            color: #0f172a;
-            font-size: 1rem;
-            font-weight: 800;
-            cursor: pointer;
-            margin-top: 0.5rem;
-            transition: all 0.25s ease;
-            box-shadow: 0 8px 20px -5px rgba(0, 255, 136, 0.3);
-            letter-spacing: 0.03em;
-        }
-
-        .btn-register:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 16px 30px -8px rgba(0, 255, 136, 0.4);
-        }
-
-        .btn-register:active {
-            transform: translateY(0);
-        }
-
-        .btn-register:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .alert {
-            padding: 0.75rem 1rem;
-            border-radius: 10px;
-            font-size: 0.85rem;
-            margin-bottom: 1.2rem;
-            display: none;
-        }
-
-        .alert-error {
-            background: rgba(239, 68, 68, 0.12);
-            color: var(--error);
-            border: 1px solid rgba(239, 68, 68, 0.2);
-        }
-
-        .alert-success {
-            background: var(--success-bg);
-            color: var(--primary);
-            border: 1px solid rgba(0, 255, 136, 0.2);
-        }
-
-        .privacy-row {
+        .btn-row {
             display: flex;
-            align-items: flex-start;
-            gap: 10px;
-            margin: 0.8rem 0 1rem;
+            gap: 12px;
+            margin-top: 2rem;
         }
 
-        .privacy-row input[type="checkbox"] {
-            width: auto;
-            margin-top: 3px;
-            accent-color: var(--primary);
-        }
-
-        .privacy-row label {
-            text-transform: none;
-            font-weight: 400;
-            font-size: 0.8rem;
+        .btn {
+            flex: 1;
+            padding: 1rem;
+            border-radius: 14px;
+            font-size: 0.95rem;
+            font-weight: 700;
             cursor: pointer;
-            color: var(--text-muted);
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
 
-        .privacy-row a {
-            color: var(--primary);
-            text-decoration: none;
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), #00cc6e);
+            color: #0f172a;
+            box-shadow: 0 10px 20px -5px rgba(0, 255, 136, 0.3);
         }
 
-        .footer-link {
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 30px -8px rgba(0, 255, 136, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-main);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .form-footer {
             text-align: center;
             margin-top: 1.5rem;
-            font-size: 0.82rem;
+            font-size: 0.85rem;
             color: var(--text-muted);
         }
 
-        .footer-link a {
+        .form-footer a {
             color: var(--primary);
             text-decoration: none;
             font-weight: 600;
         }
 
-        /* ── Panel de Cuentas Creadas ─────────────────────────────────────── */
-        .cuentas-panel {
+        /* ── Alert ─────────────────────────────────────────────────────────── */
+        #alert-box {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            color: var(--error);
+            padding: 0.8rem 1rem;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            margin-bottom: 1.5rem;
             display: none;
-            animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* ── Success ───────────────────────────────────────────────────────── */
+        .success-overlay {
+            position: absolute;
+            inset: 0;
+            background: var(--bg-card);
+            z-index: 10;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            text-align: center;
         }
 
         .success-icon {
-            text-align: center;
-            font-size: 3rem;
-            margin-bottom: 0.5rem;
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            animation: bounceIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
-        .cuentas-panel h2 {
-            text-align: center;
-            font-size: 1.3rem;
-            font-weight: 700;
-            color: var(--primary);
-            margin-bottom: 0.3rem;
+        @keyframes bounceIn {
+            from {
+                opacity: 0;
+                transform: scale(0.3);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
         }
 
-        .cuentas-panel .hint {
-            text-align: center;
-            font-size: 0.8rem;
-            color: var(--text-muted);
-            margin-bottom: 1.5rem;
-        }
-
-        .password-banner {
-            background: rgba(0, 255, 136, 0.1);
-            border: 1px solid rgba(0, 255, 136, 0.3);
-            border-radius: 12px;
-            padding: 0.8rem 1rem;
-            text-align: center;
-            margin-bottom: 1.2rem;
-        }
-
-        .password-banner .pw-label {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.06em;
-        }
-
-        .password-banner .pw-value {
-            font-size: 1.3rem;
-            font-weight: 700;
-            color: var(--primary);
-            letter-spacing: 0.05em;
-            margin-top: 0.2rem;
-        }
-
-        .cuenta-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: rgba(15, 23, 42, 0.5);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            padding: 0.7rem 0.9rem;
-            margin-bottom: 0.6rem;
-        }
-
-        .cuenta-item .ci-email {
-            font-size: 0.85rem;
-            font-weight: 600;
-            word-break: break-all;
-        }
-
-        .cuenta-item .ci-rol {
-            font-size: 0.72rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            padding: 3px 8px;
-            border-radius: 6px;
-            white-space: nowrap;
-            margin-left: 6px;
-        }
-
-        .rol-dueno {
-            background: rgba(0, 255, 136, 0.15);
-            color: var(--primary);
-        }
-
-        .rol-arbitro {
-            background: rgba(59, 130, 246, 0.15);
-            color: #60a5fa;
-        }
-
-        .rol-lector {
-            background: rgba(148, 163, 184, 0.1);
-            color: #94a3b8;
-        }
-
-        .btn-copy-all {
-            width: 100%;
-            padding: 0.8rem;
-            background: rgba(0, 255, 136, 0.1);
-            border: 1px solid rgba(0, 255, 136, 0.3);
-            border-radius: 12px;
-            color: var(--primary);
-            font-size: 0.9rem;
-            font-weight: 700;
-            cursor: pointer;
-            margin-top: 0.6rem;
-            transition: all 0.2s;
-        }
-
-        .btn-copy-all:hover {
-            background: rgba(0, 255, 136, 0.2);
-        }
-
-        .btn-go-login {
-            display: block;
-            width: 100%;
-            text-align: center;
-            margin-top: 1rem;
-            padding: 0.9rem;
-            background: linear-gradient(135deg, var(--primary), #00cc6e);
-            border-radius: 12px;
-            color: #0f172a;
-            font-weight: 800;
-            text-decoration: none;
-            font-size: 0.95rem;
-            transition: all 0.2s;
-        }
-
-        .btn-go-login:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px -5px rgba(0, 255, 136, 0.35);
+        /* ── Honeypot ──────────────────────────────────────────────────────── */
+        .hp-field {
+            display: none !important;
         }
 
         .spinner {
-            display: inline-block;
-            width: 18px;
-            height: 18px;
-            border: 2px solid rgba(15, 23, 42, 0.3);
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(0, 0, 0, 0.1);
             border-top-color: #0f172a;
             border-radius: 50%;
-            animation: spin 0.7s linear infinite;
-            vertical-align: middle;
-            margin-right: 6px;
+            animation: spin 0.8s linear infinite;
         }
 
         @keyframes spin {
@@ -380,156 +301,164 @@
 
 <body>
     <div class="card">
+        <div class="logo-section">
+            <img src="/static/img/logos/futadmin_circle.png" class="logo-img" alt="Logo">
+            <h1>FutAdmin</h1>
+            <span class="badge-free">Nueva Liga 100% Gratis</span>
+        </div>
 
-        <!-- ── Formulario de Registro ─────────────────────────────────────── -->
-        <div id="form-section">
-            <div class="logo-section">
-                <img src="/static/img/logos/futadmin_circle.png" class="logo-img" alt="FutAdmin Logo">
-                <h1>FutAdmin</h1>
-                <p class="subtitle">Gestiona tu liga de fútbol</p>
-                <span class="badge-free">✦ 100% Gratis</span>
+        <div class="progress-bar">
+            <div class="progress-dot active" id="dot-1"></div>
+            <div class="progress-dot" id="dot-2"></div>
+            <div class="progress-dot" id="dot-3"></div>
+        </div>
+
+        <div id="alert-box"></div>
+
+        <form id="reg-form">
+            <!-- Honeypot -->
+            <input type="text" name="website_url" class="hp-field">
+
+            <!-- STEP 1: LIGA -->
+            <div class="step-container active" id="step-1">
+                <div class="form-group">
+                    <label>Nombre de tu Liga</label>
+                    <input type="text" id="nombre_liga" placeholder="Ej: Liga Premier Tijuana" required>
+                </div>
+                <div class="form-group">
+                    <label>Municipio</label>
+                    <input type="text" id="municipio" placeholder="Ej: Tijuana" required>
+                </div>
+                <div class="form-group">
+                    <label>Estado</label>
+                    <input type="text" id="estado" placeholder="Ej: Baja California" required>
+                </div>
+                <div class="btn-row">
+                    <button type="button" class="btn btn-primary" onclick="nextStep(2)">Siguiente →</button>
+                </div>
             </div>
 
-            <div id="error-box" class="alert alert-error"></div>
+            <!-- STEP 2: ADMIN -->
+            <div class="step-container" id="step-2">
+                <div class="form-group">
+                    <label>Tu Nombre Completo</label>
+                    <input type="text" id="nombre_admin" placeholder="Ej: Juan Pérez" required>
+                </div>
+                <div class="form-group">
+                    <label>Correo Electrónico</label>
+                    <input type="email" id="email" placeholder="admin@ejemplo.com" required>
+                </div>
+                <div class="form-group">
+                    <label>Teléfono / WhatsApp</label>
+                    <input type="text" id="telefono" placeholder="Ej: 664 123 4567" required>
+                </div>
+                <div class="btn-row">
+                    <button type="button" class="btn btn-secondary" onclick="nextStep(1)">Atrás</button>
+                    <button type="button" class="btn btn-primary" onclick="nextStep(3)">Siguiente →</button>
+                </div>
+            </div>
 
-            <form id="registro-form">
+            <!-- STEP 3: SECURITY -->
+            <div class="step-container" id="step-3">
                 <div class="form-group">
-                    <label for="nombre_liga">Nombre de tu Liga</label>
-                    <input type="text" id="nombre_liga" required placeholder="Ej: Liga Municipal Tijuana"
-                        autocomplete="organization">
+                    <label>Crea tu Contraseña</label>
+                    <input type="password" id="password" placeholder="Mínimo 8 caracteres" required minlength="8">
                 </div>
-                <div class="form-group">
-                    <label for="nombre_admin">Tu Nombre (Administrador)</label>
-                    <input type="text" id="nombre_admin" required placeholder="Ej: Juan Pérez" autocomplete="name">
-                </div>
-                <div class="form-group">
-                    <label for="email">Correo Electrónico</label>
-                    <input type="email" id="email" required placeholder="admin@ejemplo.com" autocomplete="email">
-                </div>
-                <div class="form-group">
-                    <label for="password">Contraseña (mín. 8 caracteres)</label>
-                    <input type="password" id="password" required minlength="8" placeholder="••••••••"
-                        autocomplete="new-password">
-                </div>
-
-                <div class="privacy-row">
-                    <input type="checkbox" id="accept_privacy" required>
-                    <label for="accept_privacy">
-                        He leído y acepto el <a href="/privacy" target="_blank">Aviso de Privacidad</a>
+                <div class="form-group" style="display: flex; gap: 10px; align-items: flex-start; margin-top: 1rem;">
+                    <input type="checkbox" id="privacy" required style="width: 20px; height: 20px; margin-top: 2px;">
+                    <label for="privacy" style="text-transform: none; font-weight: 400; cursor: pointer;">
+                        Acepto el <a href="/privacy" target="_blank"
+                            style="color: var(--primary); text-decoration: none;">Aviso de Privacidad</a>
                     </label>
                 </div>
-
-                <button type="submit" class="btn-register" id="btn-submit">
-                    CREAR MI LIGA GRATIS
-                </button>
-            </form>
-
-            <div class="footer-link">
-                ¿Ya tienes cuenta? <a href="/login">Inicia sesión</a>
+                <div class="btn-row">
+                    <button type="button" class="btn btn-secondary" onclick="nextStep(2)">Atrás</button>
+                    <button type="submit" class="btn btn-primary" id="btn-submit">FINALIZAR REGISTRO</button>
+                </div>
             </div>
+        </form>
+
+        <div class="form-footer" id="login-link">
+            ¿Ya tienes cuenta? <a href="/login">Inicia sesión aquí</a>
         </div>
 
-        <!-- ── Panel de Cuentas Generadas ───────────────────────────────── -->
-        <div id="cuentas-panel" class="cuentas-panel">
-            <div class="success-icon">🎉</div>
-            <h2 id="liga-nombre-ok"></h2>
-            <p class="hint">Guarda estas credenciales — se muestran una sola vez.</p>
-
-            <div class="password-banner">
-                <div class="pw-label">Contraseña de todas las cuentas</div>
-                <div class="pw-value" id="pw-display"></div>
-            </div>
-
-            <div id="cuentas-lista"></div>
-
-            <button class="btn-copy-all" id="btn-copy">📋 Copiar todas las cuentas</button>
-
-            <a href="/login" class="btn-go-login">ENTRAR AL SISTEMA →</a>
+        <!-- Success Overlay -->
+        <div class="success-overlay" id="success-overlay">
+            <div class="success-icon">🏟️</div>
+            <h2>¡Todo listo!</h2>
+            <p style="color: var(--text-muted); margin-top: 10px;">Tu plataforma está configurada.<br>Entrando al
+                sistema...</p>
         </div>
-
     </div>
 
     <script>
-        const form = document.getElementById('registro-form');
-        const errBox = document.getElementById('error-box');
-        const btnSub = document.getElementById('btn-submit');
+        let currentStep = 1;
 
-        const ROL_LABELS = {
-            'dueño_liga': ['👑 Administrador', 'rol-dueno'],
-            'arbitro': ['⚽ Árbitro', 'rol-arbitro'],
-            'resultados': ['👁  Solo Vista', 'rol-lector'],
-        };
+        function nextStep(step) {
+            // Validaciones simples antes de pasar
+            if (step > currentStep) {
+                const inputs = document.getElementById(`step-${currentStep}`).querySelectorAll('input');
+                let valid = true;
+                inputs.forEach(i => { if (!i.checkValidity()) { i.reportValidity(); valid = false; } });
+                if (!valid) return;
+            }
 
-        form.addEventListener('submit', async (e) => {
+            document.querySelectorAll('.step-container').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.progress-dot').forEach(d => d.classList.remove('active'));
+
+            document.getElementById(`step-${step}`).classList.add('active');
+            for (let i = 1; i <= step; i++) {
+                document.getElementById(`dot-${i}`).classList.add('active');
+            }
+            currentStep = step;
+        }
+
+        document.getElementById('reg-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            errBox.style.display = 'none';
-            btnSub.disabled = true;
-            btnSub.innerHTML = '<span class="spinner"></span>Creando liga...';
+            const btn = document.getElementById('btn-submit');
+            const alertBox = document.getElementById('alert-box');
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span> Creando liga...';
+            alertBox.style.display = 'none';
 
             const payload = {
-                nombre_liga: document.getElementById('nombre_liga').value.trim(),
-                nombre_admin: document.getElementById('nombre_admin').value.trim(),
-                email: document.getElementById('email').value.trim().toLowerCase(),
+                nombre_liga: document.getElementById('nombre_liga').value,
+                municipio: document.getElementById('municipio').value,
+                estado: document.getElementById('estado').value,
+                nombre_admin: document.getElementById('nombre_admin').value,
+                email: document.getElementById('email').value,
+                telefono: document.getElementById('telefono').value,
                 password: document.getElementById('password').value,
+                website_url: document.querySelector('input[name="website_url"]').value
             };
 
             try {
                 const res = await fetch('/api/registro', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload),
+                    body: JSON.stringify(payload)
                 });
                 const data = await res.json();
 
                 if (data.success) {
-                    mostrarCuentas(data);
+                    document.getElementById('success-overlay').style.display = 'flex';
+                    setTimeout(() => {
+                        window.location.href = data.redirect_url || '/';
+                    }, 2000);
                 } else {
-                    errBox.innerText = data.error || 'Error al registrar';
-                    errBox.style.display = 'block';
-                    btnSub.disabled = false;
-                    btnSub.innerHTML = 'CREAR MI LIGA GRATIS';
+                    alertBox.innerText = data.error || 'Ocurrió un error inesperado';
+                    alertBox.style.display = 'block';
+                    btn.disabled = false;
+                    btn.innerHTML = 'FINALIZAR REGISTRO';
                 }
             } catch (err) {
-                errBox.innerText = 'Error de conexión. Intenta de nuevo.';
-                errBox.style.display = 'block';
-                btnSub.disabled = false;
-                btnSub.innerHTML = 'CREAR MI LIGA GRATIS';
+                alertBox.innerText = 'Error de conexión. Intenta de nuevo.';
+                alertBox.style.display = 'block';
+                btn.disabled = false;
+                btn.innerHTML = 'FINALIZAR REGISTRO';
             }
         });
-
-        function mostrarCuentas(data) {
-            // Ocultar formulario
-            document.getElementById('form-section').style.display = 'none';
-
-            // Rellenar panel
-            document.getElementById('liga-nombre-ok').innerText = `¡Liga "${data.liga.nombre}" creada!`;
-            document.getElementById('pw-display').innerText = data.password_comun;
-
-            const lista = document.getElementById('cuentas-lista');
-            lista.innerHTML = '';
-            data.cuentas.forEach(c => {
-                const [label, cls] = ROL_LABELS[c.rol] || ['Usuario', 'rol-lector'];
-                lista.innerHTML += `
-                    <div class="cuenta-item">
-                        <span class="ci-email">${c.email}</span>
-                        <span class="ci-rol ${cls}">${label}</span>
-                    </div>`;
-            });
-
-            document.getElementById('cuentas-panel').style.display = 'block';
-
-            // Copiar al portapapeles
-            document.getElementById('btn-copy').addEventListener('click', () => {
-                const pw = data.password_comun;
-                const texto = data.cuentas.map(c => {
-                    const [label] = ROL_LABELS[c.rol] || ['Usuario'];
-                    return `${label}: ${c.email} | Contraseña: ${pw}`;
-                }).join('\n');
-                navigator.clipboard.writeText(texto).then(() => {
-                    document.getElementById('btn-copy').innerText = '✅ ¡Copiado al portapapeles!';
-                });
-            });
-        }
     </script>
 </body>
 
