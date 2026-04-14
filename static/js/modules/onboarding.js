@@ -64,7 +64,7 @@ export class OnboardingModule {
                     }
                 },
                 {
-                    element: 'span[onclick*="ui.switchView(\\'canchas\\'"]',
+                    element: `span[onclick*="ui.switchView('canchas'"]`,
                     popover: {
                         title: 'Paso 2: Registra tus Sedes',
                         description: 'Lo primero es agregar físicamente las sedes o canchas donde se jugarán los partidos de tu liga.',
@@ -72,7 +72,7 @@ export class OnboardingModule {
                     }
                 },
                 {
-                    element: 'li[onclick*="ui.switchView(\\'torneos\\', \\'torneos - lista\\'"]',
+                    element: `li[onclick*="ui.switchView('torneos', 'torneos-lista'"]`,
                     popover: {
                         title: 'Paso 3: Crea el Torneo',
                         description: 'Una vez tengas la sede, entra aquí para configurar las reglas, costos y nombre de tu torneo (Liguilla, Eliminatoria, etc).',
@@ -80,7 +80,7 @@ export class OnboardingModule {
                     }
                 },
                 {
-                    element: 'li[onclick*="ui.switchView(\\'torneos\\', \\'equipos\\'"]',
+                    element: `li[onclick*="ui.switchView('torneos', 'equipos'"]`,
                     popover: {
                         title: 'Paso 4: Equipos y Jugadores',
                         description: '¡Ahora ingresa los equipos! Puedes hacerlo manual o importando un Excel para ser más rápido.',
