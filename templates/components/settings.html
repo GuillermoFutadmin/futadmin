@@ -136,226 +136,253 @@
                 </div>
             </div>
         </div>
-    </div>
-    {% endif %}
 
-    <!-- Pestaña: Resumenes (Analytics) -->
-    <div id="settings-tab-resumenes" class="settings-tab-content animate-in slideInRight" style="display: none;">
-        <div class="resumen-container">
-            <!-- Header Supervisor -->
-            <div class="resumen-header">
-                <div class="resumen-header-info">
-                    <h3>📁 Exportación y Auditoría</h3>
-                    <p class="text-muted" style="font-size: 0.85rem;">Descarga de bases de datos y control de
-                        operaciones diarias.</p>
-                </div>
-                <div class="resumen-header-actions">
-                    <button class="btn-dashboard btn-secondary-light"
-                        onclick="alert('Funcionalidad de exportación en desarrollo')">
-                        <span>📤</span> Universo Operativo
-                    </button>
-                </div>
+        <!-- Tabla de Nuevas Ligas (Auditoría Rápida) -->
+        <div class="card"
+            style="background: rgba(255,255,255,0.02); border: 1px solid var(--border); padding: 1.5rem; border-radius: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h4 style="margin: 0; color: #fff; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px;">
+                    📡 Últimas Ligas Registradas</h4>
+                <span id="total-ligas-badge" class="badge"
+                    style="background: rgba(0,255,136,0.1); color: var(--primary);">0 Ligas</span>
             </div>
-
-            <!-- Fila de Métricas Rápidas (TOP) 8 horizontal -->
-            <div class="resumen-top-grid">
-                <div class="dash-card-top card-blue" onclick="ui.analytics.showReport('partidos')">
-                    <div class="icon-circle">📅</div>
-                    <span class="card-title">Partidos Hoy</span>
-                    <div class="card-value" id="resumen-partidos-hoy">0</div>
-                    <span class="card-subtext">Para hoy</span>
-                </div>
-                <div class="dash-card-top card-dark-blue" onclick="ui.analytics.showReport('jugadores')">
-                    <div class="icon-circle">👥</div>
-                    <span class="card-title">Jugadores</span>
-                    <div class="card-value" id="resumen-total-jugadores">--</div>
-                    <span class="card-subtext">Registrados</span>
-                </div>
-                <div class="dash-card-top card-pink" onclick="ui.analytics.showReport('entrenamientos')">
-                    <div class="icon-circle">🏃</div>
-                    <span class="card-title">Entrenamientos</span>
-                    <div class="card-value" id="resumen-total-entrenamientos">--</div>
-                    <span class="card-subtext">Esta semana</span>
-                </div>
-                <div class="dash-card-top card-orange" onclick="ui.analytics.showReport('arbitros')">
-                    <div class="icon-circle">⚖️</div>
-                    <span class="card-title">Árbitros</span>
-                    <div class="card-value" id="resumen-total-arbitros">--</div>
-                    <span class="card-subtext">Registrados</span>
-                </div>
-                <div class="dash-card-top card-green" onclick="ui.analytics.showReport('equipos')">
-                    <div class="icon-circle">🛡️</div>
-                    <span class="card-title">Equipos</span>
-                    <div class="card-value" id="resumen-total-equipos">--</div>
-                    <span class="card-subtext">Activos</span>
-                </div>
-                <div class="dash-card-top card-purple" onclick="ui.analytics.showReport('torneos')">
-                    <div class="icon-circle">🏆</div>
-                    <span class="card-title">Torneos</span>
-                    <div class="card-value" id="resumen-total-torneos">--</div>
-                    <span class="card-subtext">Activos</span>
-                </div>
-                <div class="dash-card-top card-red">
-                    <div class="icon-circle">📈</div>
-                    <span class="card-title">Crecimiento</span>
-                    <div class="card-value" id="resumen-alertas-pago">--</div>
-                    <span class="card-subtext">Ligas Nuevas</span>
-                </div>
-                <div class="dash-card-top card-teal">
-                    <div class="icon-circle">⚙️</div>
-                    <span class="card-title">Versión App</span>
-                    <div class="card-value">2.6</div>
-                    <span class="card-subtext">Freemium Core</span>
-                </div>
-            </div>
-
-            <!-- Layout Principal (Grilla Secundaria + Detalle) -->
-            <div class="resumen-main-columns">
-                <!-- Grilla Secundaria de Gestión -->
-                <div class="resumen-secondary-grid">
-                    <div class="dash-card-side border-green" style="cursor: pointer;"
-                        onclick="ui.analytics.showReport('sedes')">
-                        <span class="badge-ver">Ver</span>
-                        <p class="side-title">Sedes Activas</p>
-                        <div class="side-value" id="resumen-total-canchas">--</div>
-                        <p class="side-subinfo" id="resumen-canchas-info">Instalaciones operativas</p>
-                    </div>
-                    <div class="dash-card-side border-indigo" style="cursor: pointer;"
-                        onclick="ui.analytics.showReport('combos')">
-                        <span class="badge-ver">Ver</span>
-                        <p class="side-title">Ligas Pro</p>
-                        <div class="side-value" id="resumen-total-combos">--</div>
-                        <p class="side-subinfo" id="resumen-combos-impacto">--</p>
-                    </div>
-                    <div class="dash-card-side border-yellow">
-                        <span class="badge-ver" style="background: var(--primary); color: #000;">FREE</span>
-                        <p class="side-title">Suscripción</p>
-                        <div class="side-value">$0.00</div>
-                        <p class="side-subinfo">Acceso Gratuito</p>
-                    </div>
-                </div>
-
-                <!-- Área Central de Detalle -->
-                <div class="resumen-main-area" id="resumen-detail-pane" style="min-height: 400px;">
-                    <div class="empty-state-icon">📊</div>
-                    <div class="empty-state-title">Selecciona un reporte</div>
-                    <div class="empty-state-text">Nivele estratégico: Haz clic en cualquier tarjeta de arriba para ver
-                        el detalle.</div>
-                </div>
+            <div class="premium-table-container">
+                <table class="premium-table" style="font-size: 0.85rem;">
+                    <thead>
+                        <tr>
+                            <th>Liga / Ubicación</th>
+                            <th>Contacto / Admin</th>
+                            <th>Subdominio</th>
+                            <th>Registro</th>
+                            <th style="text-align: right;">Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody id="stats-ligas-recientes-list">
+                        <!-- Llenado via JS -->
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
+</div>
+{% endif %}
 
-    <!-- Pestaña: Privacidad y Términos -->
-    <div id="settings-tab-privacidad" class="settings-tab-content animate-in slideInRight" style="display: none;">
-        <div class="action-bar"
-            style="background: rgba(255,255,255,0.03); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-            <div>
-                <h3 style="margin: 0;">🔐 Marco Legal y Políticas</h3>
-                <p class="text-muted" style="margin-top: 5px; font-size: 0.9rem;">Configura los avisos legales que se
-                    muestran en el inicio de sesión y perfiles.</p>
+<!-- Pestaña: Resumenes (Analytics) -->
+<div id="settings-tab-resumenes" class="settings-tab-content animate-in slideInRight" style="display: none;">
+    <div class="resumen-container">
+        <!-- Header Supervisor -->
+        <div class="resumen-header">
+            <div class="resumen-header-info">
+                <h3>📁 Exportación y Auditoría</h3>
+                <p class="text-muted" style="font-size: 0.85rem;">Descarga de bases de datos y control de
+                    operaciones diarias.</p>
             </div>
-            <div style="display: flex; gap: 10px;">
-                <button class="btn-secondary" onclick="ui.privacy.fillDefaultTemplate()"
-                    style="display: flex; align-items: center; gap: 8px;">
-                    🪄 Autollenar Borrador
-                </button>
-                <button id="btn-save-privacy" class="btn-primary" onclick="ui.privacy.savePrivacyPolicy()"
-                    style="white-space: nowrap;">
-                    💾 Guardar Cambios
+            <div class="resumen-header-actions">
+                <button class="btn-dashboard btn-secondary-light"
+                    onclick="alert('Funcionalidad de exportación en desarrollo')">
+                    <span>📤</span> Universo Operativo
                 </button>
             </div>
         </div>
 
-        <!-- Navegación Interna de Privacidad -->
-        <div class="tabs-nav-internal"
-            style="display: flex; gap: 8px; margin-bottom: 1.5rem; background: rgba(0,0,0,0.2); padding: 5px; border-radius: 12px; border: 1px solid var(--border);">
-            <button class="privacy-tab-btn active" id="priv-tab-policy"
-                onclick="ui.privacy.switchPrivacyTab('privacy_policy')"
-                style="flex: 1; padding: 10px; border: none; background: var(--primary); color: #000; font-weight: 700; border-radius: 8px; cursor: pointer; transition: 0.3s;">📄
-                Aviso Privacidad</button>
-            <button class="privacy-tab-btn" id="priv-tab-minors"
-                onclick="ui.privacy.switchPrivacyTab('minors_photo_policy')"
-                style="flex: 1; padding: 10px; border: none; background: transparent; color: var(--text-muted); font-weight: 600; border-radius: 8px; cursor: pointer; transition: 0.3s;">🔞
-                Fotos Menores</button>
-            <button class="privacy-tab-btn" id="priv-tab-terms"
-                onclick="ui.privacy.switchPrivacyTab('terms_conditions')"
-                style="flex: 1; padding: 10px; border: none; background: transparent; color: var(--text-muted); font-weight: 600; border-radius: 8px; cursor: pointer; transition: 0.3s;">⚖️
-                Términos y Cond.</button>
-            <button class="privacy-tab-btn" id="priv-tab-scope" onclick="ui.privacy.switchPrivacyTab('app_scope')"
-                style="flex: 1; padding: 10px; border: none; background: transparent; color: var(--text-muted); font-weight: 600; border-radius: 8px; cursor: pointer; transition: 0.3s;">🎯
-                Alcance de App</button>
+        <!-- Fila de Métricas Rápidas (TOP) 8 horizontal -->
+        <div class="resumen-top-grid">
+            <div class="dash-card-top card-blue" onclick="ui.analytics.showReport('partidos')">
+                <div class="icon-circle">📅</div>
+                <span class="card-title">Partidos Hoy</span>
+                <div class="card-value" id="resumen-partidos-hoy">0</div>
+                <span class="card-subtext">Para hoy</span>
+            </div>
+            <div class="dash-card-top card-dark-blue" onclick="ui.analytics.showReport('jugadores')">
+                <div class="icon-circle">👥</div>
+                <span class="card-title">Jugadores</span>
+                <div class="card-value" id="resumen-total-jugadores">--</div>
+                <span class="card-subtext">Registrados</span>
+            </div>
+            <div class="dash-card-top card-pink" onclick="ui.analytics.showReport('entrenamientos')">
+                <div class="icon-circle">🏃</div>
+                <span class="card-title">Entrenamientos</span>
+                <div class="card-value" id="resumen-total-entrenamientos">--</div>
+                <span class="card-subtext">Esta semana</span>
+            </div>
+            <div class="dash-card-top card-orange" onclick="ui.analytics.showReport('arbitros')">
+                <div class="icon-circle">⚖️</div>
+                <span class="card-title">Árbitros</span>
+                <div class="card-value" id="resumen-total-arbitros">--</div>
+                <span class="card-subtext">Registrados</span>
+            </div>
+            <div class="dash-card-top card-green" onclick="ui.analytics.showReport('equipos')">
+                <div class="icon-circle">🛡️</div>
+                <span class="card-title">Equipos</span>
+                <div class="card-value" id="resumen-total-equipos">--</div>
+                <span class="card-subtext">Activos</span>
+            </div>
+            <div class="dash-card-top card-purple" onclick="ui.analytics.showReport('torneos')">
+                <div class="icon-circle">🏆</div>
+                <span class="card-title">Torneos</span>
+                <div class="card-value" id="resumen-total-torneos">--</div>
+                <span class="card-subtext">Activos</span>
+            </div>
+            <div class="dash-card-top card-red">
+                <div class="icon-circle">📈</div>
+                <span class="card-title">Crecimiento</span>
+                <div class="card-value" id="resumen-alertas-pago">--</div>
+                <span class="card-subtext">Ligas Nuevas</span>
+            </div>
+            <div class="dash-card-top card-teal">
+                <div class="icon-circle">⚙️</div>
+                <span class="card-title">Versión App</span>
+                <div class="card-value">2.6</div>
+                <span class="card-subtext">Freemium Core</span>
+            </div>
         </div>
 
-        <div class="privacy-editor-card"
-            style="background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 20px; padding: 2rem; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
-            <div
-                style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 10px; color: var(--primary); font-weight: bold;">
-                <span id="privacy-editor-title">📝 Editando: Aviso de Privacidad</span>
-                <div style="flex: 1; height: 1px; background: linear-gradient(to right, var(--primary), transparent);">
+        <!-- Layout Principal (Grilla Secundaria + Detalle) -->
+        <div class="resumen-main-columns">
+            <!-- Grilla Secundaria de Gestión -->
+            <div class="resumen-secondary-grid">
+                <div class="dash-card-side border-green" style="cursor: pointer;"
+                    onclick="ui.analytics.showReport('sedes')">
+                    <span class="badge-ver">Ver</span>
+                    <p class="side-title">Sedes Activas</p>
+                    <div class="side-value" id="resumen-total-canchas">--</div>
+                    <p class="side-subinfo" id="resumen-canchas-info">Instalaciones operativas</p>
+                </div>
+                <div class="dash-card-side border-indigo" style="cursor: pointer;"
+                    onclick="ui.analytics.showReport('combos')">
+                    <span class="badge-ver">Ver</span>
+                    <p class="side-title">Ligas Pro</p>
+                    <div class="side-value" id="resumen-total-combos">--</div>
+                    <p class="side-subinfo" id="resumen-combos-impacto">--</p>
+                </div>
+                <div class="dash-card-side border-yellow">
+                    <span class="badge-ver" style="background: var(--primary); color: #000;">FREE</span>
+                    <p class="side-title">Suscripción</p>
+                    <div class="side-value">$0.00</div>
+                    <p class="side-subinfo">Acceso Gratuito</p>
                 </div>
             </div>
 
-            <textarea id="privacy-content-editor"
-                style="width: 100%; min-height: 480px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 1.5rem; color: #fff; font-family: 'Inter', sans-serif; line-height: 1.6; resize: vertical; outline: none; transition: 0.3s;"
-                placeholder="Cargando contenido..."></textarea>
-
-            <div
-                style="margin-top: 1rem; font-size: 0.8rem; color: var(--text-muted); display: flex; align-items: center; gap: 8px;">
-                <span>💡 Tip: Usa el botón "Autollenar Borrador" para generar un texto base legalmente sólido y luego
-                    ajústalo a tu liga.</span>
+            <!-- Área Central de Detalle -->
+            <div class="resumen-main-area" id="resumen-detail-pane" style="min-height: 400px;">
+                <div class="empty-state-icon">📊</div>
+                <div class="empty-state-title">Selecciona un reporte</div>
+                <div class="empty-state-text">Nivele estratégico: Haz clic en cualquier tarjeta de arriba para ver
+                    el detalle.</div>
             </div>
         </div>
     </div>
+</div>
 
-
-    <!-- Modal de Aportación eliminado en Freemium -->
-
-    <!-- Pestaña: Roles -->
-    <div id="settings-tab-roles" class="settings-tab-content" style="display: none;">
-
-        <div class="action-bar"
-            style="background: rgba(255,255,255,0.03); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 2rem;">
-            <h3 style="margin: 0;">Permisos por Rol</h3>
-            <p class="text-muted" style="margin-top: 5px; font-size: 0.9rem;">Referencia de capacidades según el perfil
-                asignado.</p>
+<!-- Pestaña: Privacidad y Términos -->
+<div id="settings-tab-privacidad" class="settings-tab-content animate-in slideInRight" style="display: none;">
+    <div class="action-bar"
+        style="background: rgba(255,255,255,0.03); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <div>
+            <h3 style="margin: 0;">🔐 Marco Legal y Políticas</h3>
+            <p class="text-muted" style="margin-top: 5px; font-size: 0.9rem;">Configura los avisos legales que se
+                muestran en el inicio de sesión y perfiles.</p>
         </div>
-
-        <div class="roles-grid"
-            style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem;">
-            <div class="card"
-                style="padding: 1.5rem; border: 1px solid var(--border); border-radius: 12px; background: rgba(255,255,255,0.02); height: 100%;">
-                <span class="badge badge-admin">ADMIN</span>
-                <p style="margin-top: 1rem; font-size: 0.85rem; line-height: 1.4;">Control total del sistema. Gestión
-                    global de infraestructura y cuentas maestras.</p>
-            </div>
-            <div class="card"
-                style="padding: 1.5rem; border: 1px solid var(--border); border-radius: 12px; background: rgba(255,255,255,0.02); height: 100%;">
-                <span class="badge badge-ejecutivo">EJECUTIVO</span>
-                <p style="margin-top: 1rem; font-size: 0.85rem; line-height: 1.4;">Atención técnica y soporte. Creación
-                    de nuevas ligas y gestión de clientes.</p>
-            </div>
-            <div class="card"
-                style="padding: 1.5rem; border: 1px solid var(--border); border-radius: 12px; background: rgba(255,255,255,0.02); height: 100%;">
-                <span class="badge badge-dueño_liga">DUEÑO DE LIGA</span>
-                <p style="margin-top: 1rem; font-size: 0.85rem; line-height: 1.4;">Acceso completo a su organización.
-                    Capacidad de gestionar canchas, torneos y usuarios vinculados.</p>
-            </div>
-            <div class="card"
-                style="padding: 1.5rem; border: 1px solid var(--border); border-radius: 12px; background: rgba(255,255,255,0.02); height: 100%;">
-                <span class="badge badge-arbitro">ÁRBITRO GENERAL</span>
-                <p style="margin-top: 1rem; font-size: 0.85rem; line-height: 1.4;">Gestión operativa de partidos. Inicio
-                    de encuentros y captura de anotaciones vía App Telegram.</p>
-            </div>
-            <div class="card"
-                style="padding: 1.5rem; border: 1px solid var(--border); border-radius: 12px; background: rgba(255,255,255,0.02); height: 100%;">
-                <span class="badge" style="background: #444; color: #fff;">SOLO VISTA</span>
-                <p style="margin-top: 1rem; font-size: 0.85rem; line-height: 1.4;">Acceso restringido para participantes
-                    y visoría. Permite ver calendarios, tablas y resultados sin capacidad de edición.</p>
-            </div>
+        <div style="display: flex; gap: 10px;">
+            <button class="btn-secondary" onclick="ui.privacy.fillDefaultTemplate()"
+                style="display: flex; align-items: center; gap: 8px;">
+                🪄 Autollenar Borrador
+            </button>
+            <button id="btn-save-privacy" class="btn-primary" onclick="ui.privacy.savePrivacyPolicy()"
+                style="white-space: nowrap;">
+                💾 Guardar Cambios
+            </button>
         </div>
-
     </div>
+
+    <!-- Navegación Interna de Privacidad -->
+    <div class="tabs-nav-internal"
+        style="display: flex; gap: 8px; margin-bottom: 1.5rem; background: rgba(0,0,0,0.2); padding: 5px; border-radius: 12px; border: 1px solid var(--border);">
+        <button class="privacy-tab-btn active" id="priv-tab-policy"
+            onclick="ui.privacy.switchPrivacyTab('privacy_policy')"
+            style="flex: 1; padding: 10px; border: none; background: var(--primary); color: #000; font-weight: 700; border-radius: 8px; cursor: pointer; transition: 0.3s;">📄
+            Aviso Privacidad</button>
+        <button class="privacy-tab-btn" id="priv-tab-minors"
+            onclick="ui.privacy.switchPrivacyTab('minors_photo_policy')"
+            style="flex: 1; padding: 10px; border: none; background: transparent; color: var(--text-muted); font-weight: 600; border-radius: 8px; cursor: pointer; transition: 0.3s;">🔞
+            Fotos Menores</button>
+        <button class="privacy-tab-btn" id="priv-tab-terms" onclick="ui.privacy.switchPrivacyTab('terms_conditions')"
+            style="flex: 1; padding: 10px; border: none; background: transparent; color: var(--text-muted); font-weight: 600; border-radius: 8px; cursor: pointer; transition: 0.3s;">⚖️
+            Términos y Cond.</button>
+        <button class="privacy-tab-btn" id="priv-tab-scope" onclick="ui.privacy.switchPrivacyTab('app_scope')"
+            style="flex: 1; padding: 10px; border: none; background: transparent; color: var(--text-muted); font-weight: 600; border-radius: 8px; cursor: pointer; transition: 0.3s;">🎯
+            Alcance de App</button>
+    </div>
+
+    <div class="privacy-editor-card"
+        style="background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 20px; padding: 2rem; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+        <div
+            style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 10px; color: var(--primary); font-weight: bold;">
+            <span id="privacy-editor-title">📝 Editando: Aviso de Privacidad</span>
+            <div style="flex: 1; height: 1px; background: linear-gradient(to right, var(--primary), transparent);">
+            </div>
+        </div>
+
+        <textarea id="privacy-content-editor"
+            style="width: 100%; min-height: 480px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 1.5rem; color: #fff; font-family: 'Inter', sans-serif; line-height: 1.6; resize: vertical; outline: none; transition: 0.3s;"
+            placeholder="Cargando contenido..."></textarea>
+
+        <div
+            style="margin-top: 1rem; font-size: 0.8rem; color: var(--text-muted); display: flex; align-items: center; gap: 8px;">
+            <span>💡 Tip: Usa el botón "Autollenar Borrador" para generar un texto base legalmente sólido y luego
+                ajústalo a tu liga.</span>
+        </div>
+    </div>
+</div>
+
+
+<!-- Modal de Aportación eliminado en Freemium -->
+
+<!-- Pestaña: Roles -->
+<div id="settings-tab-roles" class="settings-tab-content" style="display: none;">
+
+    <div class="action-bar"
+        style="background: rgba(255,255,255,0.03); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 2rem;">
+        <h3 style="margin: 0;">Permisos por Rol</h3>
+        <p class="text-muted" style="margin-top: 5px; font-size: 0.9rem;">Referencia de capacidades según el perfil
+            asignado.</p>
+    </div>
+
+    <div class="roles-grid"
+        style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem;">
+        <div class="card"
+            style="padding: 1.5rem; border: 1px solid var(--border); border-radius: 12px; background: rgba(255,255,255,0.02); height: 100%;">
+            <span class="badge badge-admin">ADMIN</span>
+            <p style="margin-top: 1rem; font-size: 0.85rem; line-height: 1.4;">Control total del sistema. Gestión
+                global de infraestructura y cuentas maestras.</p>
+        </div>
+        <div class="card"
+            style="padding: 1.5rem; border: 1px solid var(--border); border-radius: 12px; background: rgba(255,255,255,0.02); height: 100%;">
+            <span class="badge badge-ejecutivo">EJECUTIVO</span>
+            <p style="margin-top: 1rem; font-size: 0.85rem; line-height: 1.4;">Atención técnica y soporte. Creación
+                de nuevas ligas y gestión de clientes.</p>
+        </div>
+        <div class="card"
+            style="padding: 1.5rem; border: 1px solid var(--border); border-radius: 12px; background: rgba(255,255,255,0.02); height: 100%;">
+            <span class="badge badge-dueño_liga">DUEÑO DE LIGA</span>
+            <p style="margin-top: 1rem; font-size: 0.85rem; line-height: 1.4;">Acceso completo a su organización.
+                Capacidad de gestionar canchas, torneos y usuarios vinculados.</p>
+        </div>
+        <div class="card"
+            style="padding: 1.5rem; border: 1px solid var(--border); border-radius: 12px; background: rgba(255,255,255,0.02); height: 100%;">
+            <span class="badge badge-arbitro">ÁRBITRO GENERAL</span>
+            <p style="margin-top: 1rem; font-size: 0.85rem; line-height: 1.4;">Gestión operativa de partidos. Inicio
+                de encuentros y captura de anotaciones vía App Telegram.</p>
+        </div>
+        <div class="card"
+            style="padding: 1.5rem; border: 1px solid var(--border); border-radius: 12px; background: rgba(255,255,255,0.02); height: 100%;">
+            <span class="badge" style="background: #444; color: #fff;">SOLO VISTA</span>
+            <p style="margin-top: 1rem; font-size: 0.85rem; line-height: 1.4;">Acceso restringido para participantes
+                y visoría. Permite ver calendarios, tablas y resultados sin capacidad de edición.</p>
+        </div>
+    </div>
+
+</div>
 </div>
 
 <!-- Modal para Usuario -->

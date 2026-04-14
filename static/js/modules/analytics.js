@@ -1038,73 +1038,97 @@ export class AnalyticsModule {
         if (!container) return;
 
         try {
-            // Mostrar loaders en los contenedores específicos
+            // Mostrar loaders en los contenedores específicos con diseño premium
             const innerGrowth = document.getElementById('stats-growth-chart');
             const innerGeo = document.getElementById('stats-geo-list');
             const innerRoles = document.getElementById('stats-roles-list');
             const innerTable = document.getElementById('stats-ligas-recientes-list');
 
-            if (innerGrowth) innerGrowth.innerHTML = '<div class="spinner-sm"></div>';
-            if (innerGeo) innerGeo.innerHTML = '<div class="spinner-sm"></div>';
-            if (innerRoles) innerRoles.innerHTML = '<div class="spinner-sm"></div>';
-            if (innerTable) innerTable.innerHTML = '<tr><td colspan="5" style="text-align:center;">Cargando inteligencia...</td></tr>';
+            const loaderHtml = `
+                <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; width:100%; gap:12px; padding:2rem;">
+                    <div class="spinner-sm" style="border-top-color:var(--primary);"></div>
+                    <span style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px;">Analizando Datos...</span>
+                </div>`;
 
-            const stats = await Core.fetchAPI('/api/admin/dashboard-stats?start_date=2020-01-01&end_date=' + new Date().toISOString().split('T')[0]);
-            const ligasResponse = await Core.fetchAPI('/api/admin/ligas?limit=10');
+            if (innerGrowth) innerGrowth.innerHTML = loaderHtml;
+            if (innerGeo) innerGeo.innerHTML = loaderHtml;
+            if (innerRoles) innerRoles.innerHTML = loaderHtml;
+            if (innerTable) innerTable.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:3rem;"><div class="spinner-sm" style="margin:0 auto 1rem;"></div> Procesando inteligencia...</td></tr>';
+
+            // Fetch data
+            const [stats, ligasResponse] = await Promise.all([
+                Core.fetchAPI('/api/admin/dashboard-stats?start_date=2020-01-01&end_date=' + new Date().toISOString().split('T')[0]),
+                Core.fetchAPI('/api/admin/ligas?limit=10')
+            ]);
+
             const ligas = ligasResponse.items || ligasResponse || [];
 
             this.renderGlobalStats(stats, ligas);
         } catch (error) {
             console.error("Error al cargar estadísticas globales:", error);
+            const containers = ['stats-growth-chart', 'stats-geo-list', 'stats-roles-list'];
+            containers.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.innerHTML = `<div style="color:#ef4444; font-size:0.8rem; text-align:center; padding:1rem;">⚠️ Error de conexión</div>`;
+            });
         }
     }
 
     renderGlobalStats(stats, ligas) {
-        // 1. Crecimiento Mensual (Barras CSS)
+        // 1. Crecimiento Mensual (Barras CSS con animación)
         const growthContainer = document.getElementById('stats-growth-chart');
-        if (growthContainer && stats.ligas_por_mes) {
-            const maxCount = Math.max(...stats.ligas_por_mes.map(m => m.count), 1);
-            growthContainer.innerHTML = stats.ligas_por_mes.map(m => `
-                <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px;">
-                    <div style="font-size: 0.65rem; font-weight: 800; color: var(--primary);">${m.count}</div>
-                    <div style="width: 100%; height: ${(m.count / maxCount) * 150}px; background: linear-gradient(to top, var(--primary), #00d1ff); border-radius: 4px 4px 0 0;"></div>
-                    <div style="font-size: 0.6rem; color: var(--text-muted); writing-mode: vertical-lr; transform: rotate(180deg); margin-top: 5px; height: 30px;">${m.label}</div>
-                </div>
-            `).join('');
+        if (growthContainer) {
+            const data = stats.ligas_por_mes || [];
+            if (data.length === 0) {
+                growthContainer.innerHTML = `<div style="width:100%; text-align:center; color:var(--text-muted); font-size:0.8rem; padding:2rem;">Progreso inicial (Esperando registros)</div>`;
+            } else {
+                const maxCount = Math.max(...data.map(m => m.count), 1);
+                growthContainer.innerHTML = data.map((m, idx) => `
+                    <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; animation: slideUp 0.5s ease-out ${idx * 0.1}s both;">
+                        <div style="font-size: 0.65rem; font-weight: 800; color: var(--primary);">${m.count}</div>
+                        <div style="width: 100%; height: ${(m.count / maxCount) * 150}px; min-height: 4px; background: linear-gradient(to top, var(--primary), #00d1ff); border-radius: 6px 6px 0 0; box-shadow: 0 4px 15px rgba(0,255,136,0.2);"></div>
+                        <div style="font-size: 0.6rem; color: var(--text-muted); writing-mode: vertical-lr; transform: rotate(180deg); margin-top: 5px; height: 35px; white-space:nowrap;">${m.label}</div>
+                    </div>
+                `).join('');
+            }
         }
 
         // 2. Top Regiones
         const geoContainer = document.getElementById('stats-geo-list');
-        if (geoContainer && stats.ligas_por_state || stats.ligas_por_estado) {
+        if (geoContainer) {
             const states = stats.ligas_por_estado || [];
-            const total = states.reduce((acc, curr) => acc + curr.count, 0);
-            geoContainer.innerHTML = states.map(e => `
-                <div style="display: flex; flex-direction: column; gap: 4px;">
-                    <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
-                        <span style="font-weight: 600;">${e.estado}</span>
-                        <span style="color: var(--text-muted); font-size: 0.7rem;">${e.count} ligas</span>
+            if (states.length === 0) {
+                geoContainer.innerHTML = '<p class="text-muted" style="font-size: 0.8rem; text-align: center; padding:1rem;">Sin datos geográficos disponibles</p>';
+            } else {
+                const total = states.reduce((acc, curr) => acc + curr.count, 0);
+                geoContainer.innerHTML = states.map((e, idx) => `
+                    <div style="display: flex; flex-direction: column; gap: 6px; animation: fadeInRight 0.4s ease-out ${idx * 0.1}s both;">
+                        <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+                            <span style="font-weight: 600; color:#fff;">${e.estado}</span>
+                            <span style="color: var(--primary); font-size: 0.75rem; font-weight:700;">${e.count} ligas</span>
+                        </div>
+                        <div style="width: 100%; height: 8px; background: rgba(255,255,255,0.05); border-radius: 4px; overflow: hidden; border:1px solid rgba(255,255,255,0.05);">
+                            <div style="width: ${(e.count / (total || 1)) * 100}%; height: 100%; background: linear-gradient(90deg, #3b82f6, #60a5fa); border-radius: 4px; box-shadow: 0 0 10px rgba(59,130,246,0.3);"></div>
+                        </div>
                     </div>
-                    <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.05); border-radius: 3px; overflow: hidden;">
-                        <div style="width: ${(e.count / (total || 1)) * 100}%; height: 100%; background: #3b82f6; border-radius: 3px;"></div>
-                    </div>
-                </div>
-            `).join('') || '<p class="text-muted" style="font-size: 0.8rem; text-align: center;">Sin datos geográficos</p>';
+                `).join('');
+            }
         }
 
         // 3. Usuarios por Rol
         const rolesContainer = document.getElementById('stats-roles-list');
         if (rolesContainer && stats.usuarios_por_rol) {
             const roles = [
-                { id: 'admin_liga', label: 'Dueños', color: '#00ff88', icon: '👑' },
+                { id: 'admin_liga', label: 'Líderes', color: '#00ff88', icon: '👑' },
                 { id: 'arbitro', label: 'Árbitros', color: '#ef4444', icon: '⚖️' },
                 { id: 'visor', label: 'Lectores', color: '#3b82f6', icon: '👁️' },
                 { id: 'jugador', label: 'Jugadores', color: '#eab308', icon: '⚽' }
             ];
-            rolesContainer.innerHTML = roles.map(r => `
-                <div style="background: rgba(255,255,255,0.03); padding: 10px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.05); text-align: center;">
-                    <div style="font-size: 0.9rem; margin-bottom: 2px;">${r.icon}</div>
-                    <div style="font-size: 1.1rem; font-weight: 800; color: ${r.color};">${stats.usuarios_por_rol[r.id] || 0}</div>
-                    <div style="font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase;">${r.label}</div>
+            rolesContainer.innerHTML = roles.map((r, idx) => `
+                <div style="background: rgba(255,255,255,0.03); padding: 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); text-align: center; animation: zoomIn 0.3s ease-out ${idx * 0.1}s both;">
+                    <div style="font-size: 1.1rem; margin-bottom: 4px;">${r.icon}</div>
+                    <div style="font-size: 1.25rem; font-weight: 900; color: ${r.color}; text-shadow: 0 0 10px ${r.color}33;">${stats.usuarios_por_rol[r.id] || 0}</div>
+                    <div style="font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; letter-spacing:1px; font-weight:600;">${r.label}</div>
                 </div>
             `).join('');
         }
@@ -1113,24 +1137,29 @@ export class AnalyticsModule {
         const ligasTable = document.getElementById('stats-ligas-recientes-list');
         if (ligasTable) {
             const totalBadge = document.getElementById('total-ligas-badge');
-            if (totalBadge) totalBadge.innerText = `${ligas.length} Ligas Recientes`;
-            ligasTable.innerHTML = ligas.map(l => `
-                <tr>
-                    <td>
-                        <div style="font-weight: 700;">${l.nombre}</div>
-                        <div style="font-size: 0.7rem; color: var(--text-muted);">${l.municipio || '—'}, ${l.estado || '—'}</div>
-                    </td>
-                    <td>
-                        <div style="font-size: 0.85rem;">${l.contacto || '—'}</div>
-                        <div style="font-size: 0.7rem; opacity: 0.6;">Admin: ${l.owner_email || '—'}</div>
-                    </td>
-                    <td><code style="color: var(--primary); font-size: 0.75rem;">${l.subdominio}.futadmin.com</code></td>
-                    <td style="font-size: 0.8rem; color: var(--text-muted);">${l.fecha_registro || '—'}</td>
-                    <td style="text-align: right;">
-                        <span class="status-pill active" style="font-size: 0.6rem;">ACTIVA</span>
-                    </td>
-                </tr>
-            `).join('') || '<tr><td colspan="5" style="text-align:center; padding: 2rem; opacity: 0.5;">No hay registros recientes</td></tr>';
+            if (totalBadge) totalBadge.innerText = `${ligas.length} Explorando`;
+
+            if (ligas.length === 0) {
+                ligasTable.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 3rem; opacity: 0.5;">No hay registros recientes</td></tr>';
+            } else {
+                ligasTable.innerHTML = ligas.map(l => `
+                    <tr class="fade-in">
+                        <td>
+                            <div style="font-weight: 700; color:#fff;">${l.nombre}</div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">${l.municipio || '—'}, ${l.estado || '—'}</div>
+                        </td>
+                        <td>
+                            <div style="font-size: 0.85rem; color:rgba(255,255,255,0.9);">${l.contacto || '—'}</div>
+                            <div style="font-size: 0.7rem; color:var(--primary); opacity: 0.8;">Admin: ${l.owner_email || '—'}</div>
+                        </td>
+                        <td><code style="background:rgba(0,255,136,0.05); padding:2px 6px; border-radius:4px; color: var(--primary); font-size: 0.75rem;">${l.subdominio}.futadmin.mx</code></td>
+                        <td style="font-size: 0.8rem; color: var(--text-muted);">${l.fecha_registro ? new Date(l.fecha_registro).toLocaleDateString() : '—'}</td>
+                        <td style="text-align: right;">
+                            <span class="status-pill active" style="font-size: 0.6rem; letter-spacing:1px; font-weight:800; padding:4px 8px;">LISTA</span>
+                        </td>
+                    </tr>
+                `).join('');
+            }
         }
     }
 }
