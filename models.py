@@ -239,7 +239,8 @@ class Torneo(db.Model):
             # Para evitar N+1 en canchas por cada torneo, si self.cancha existe, podríamos cachearlo 
             # o simplemente usar un valor por defecto si no es crítico en tiempo real.
         except Exception as e:
-            print(f"Error in Torneo.to_dict for ID {self.id}: {e}")
+            import traceback
+            print(f"ERROR: Torneo.to_dict failed for ID {self.id}: {e}\n{traceback.format_exc()}")
 
         return {
             "id": self.id,
@@ -554,47 +555,52 @@ class Partido(db.Model):
     arbitro = db.relationship('Arbitro', backref=db.backref('partidos_rel', lazy=True), lazy=True)
 
     def to_dict(self):
-        t = self.torneo
-        # Obtener eventos relevantes (Goles y Tarjetas)
-        eventos = [e.to_dict() for e in self.eventos_rel]
-        
-        return {
-            "id": self.id,
-            "liga_id": self.liga_id,
-            "torneo_id": self.torneo_id,
-            "torneo_name": t.nombre if t else "",
-            "jornada": self.jornada,
-            "equipo_local_id": self.equipo_local_id,
-            "equipo_visitante_id": self.equipo_visitante_id,
-            "equipo_local": self.equipo_local.nombre if self.equipo_local else "—",
-            "equipo_visitante": self.equipo_visitante.nombre if self.equipo_visitante else "—",
-            "equipo_local_escudo": self.equipo_local.escudo_url if self.equipo_local else "",
-            "equipo_visitante_escudo": self.equipo_visitante.escudo_url if self.equipo_visitante else "",
-            "arbitro_id": self.arbitro_id,
-            "arbitro": self.arbitro.nombre if self.arbitro else "",
-            "arbitro_nombre": self.arbitro.nombre if self.arbitro else "POR ASIGNAR",
-            "fecha": self.fecha.strftime('%Y-%m-%d') if self.fecha else "",
-            "hora": self.hora or "",
-            "cancha": self.cancha or "",
-            "goles_local": self.goles_local if self.goles_local is not None else 0,
-            "goles_visitante": self.goles_visitante if self.goles_visitante is not None else 0,
-            "estado": self.estado or "Scheduled",
-            "fase": self.fase or "Regular",
-            "penales_local": self.penales_local,
-            "penales_visitante": self.penales_visitante,
-            "ganador_id": self.ganador_id,
-            # Torneo timing settings
-            "duracion_tiempo": t.duracion_tiempo if t else 20,
-            "descanso": t.descanso if t else 10,
-            "num_tiempos": t.num_tiempos if t else 2,
-            "costo_arbitraje": t.costo_arbitraje if t else 0,
-            # Server-side timer
-            "timer_started_at": self.timer_started_at,
-            "tiempo_corrido_segundos": self.tiempo_corrido_segundos or 0,
-            "periodo_actual": self.periodo_actual or 1,
-            "fecha_inicio_efectiva": self.fecha_inicio_efectiva.strftime('%Y-%m-%d %H:%M') if self.fecha_inicio_efectiva else None,
-            "eventos": eventos
-        }
+        try:
+            t = self.torneo
+            # Obtener eventos relevantes (Goles y Tarjetas)
+            eventos = [e.to_dict() for e in self.eventos_rel]
+            
+            return {
+                "id": self.id,
+                "liga_id": self.liga_id,
+                "torneo_id": self.torneo_id,
+                "torneo_name": t.nombre if t else "",
+                "jornada": self.jornada,
+                "equipo_local_id": self.equipo_local_id,
+                "equipo_visitante_id": self.equipo_visitante_id,
+                "equipo_local": self.equipo_local.nombre if self.equipo_local else "—",
+                "equipo_visitante": self.equipo_visitante.nombre if self.equipo_visitante else "—",
+                "equipo_local_escudo": self.equipo_local.escudo_url if self.equipo_local else "",
+                "equipo_visitante_escudo": self.equipo_visitante.escudo_url if self.equipo_visitante else "",
+                "arbitro_id": self.arbitro_id,
+                "arbitro": self.arbitro.nombre if self.arbitro else "",
+                "arbitro_nombre": self.arbitro.nombre if self.arbitro else "POR ASIGNAR",
+                "fecha": self.fecha.strftime('%Y-%m-%d') if self.fecha else "",
+                "hora": self.hora or "",
+                "cancha": self.cancha or "",
+                "goles_local": self.goles_local if self.goles_local is not None else 0,
+                "goles_visitante": self.goles_visitante if self.goles_visitante is not None else 0,
+                "estado": self.estado or "Scheduled",
+                "fase": self.fase or "Regular",
+                "penales_local": self.penales_local,
+                "penales_visitante": self.penales_visitante,
+                "ganador_id": self.ganador_id,
+                # Torneo timing settings
+                "duracion_tiempo": t.duracion_tiempo if t else 20,
+                "descanso": t.descanso if t else 10,
+                "num_tiempos": t.num_tiempos if t else 2,
+                "costo_arbitraje": t.costo_arbitraje if t else 0,
+                # Server-side timer
+                "timer_started_at": self.timer_started_at,
+                "tiempo_corrido_segundos": self.tiempo_corrido_segundos or 0,
+                "periodo_actual": self.periodo_actual or 1,
+                "fecha_inicio_efectiva": self.fecha_inicio_efectiva.strftime('%Y-%m-%d %H:%M') if self.fecha_inicio_efectiva else None,
+                "eventos": eventos
+            }
+        except Exception as e:
+            import traceback
+            print(f"ERROR: Partido.to_dict for ID {self.id}: {e}\n{traceback.format_exc()}")
+            return {"id": self.id, "error": "Serialization failed", "details": str(e), "state": "error"}
 
 
 class Arbitro(db.Model):
@@ -615,22 +621,27 @@ class Arbitro(db.Model):
     cancha_rel = db.relationship('Cancha', backref='arbitros_rel', lazy=True)
 
     def to_dict(self):
-        tiene_usuario = Usuario.query.filter_by(email=self.email).first() is not None if self.email else False
-        return {
-            "id": self.id,
-            "nombre": self.nombre,
-            "email": self.email or "",
-            "telefono": self.telefono or "",
-            "nivel": self.nivel or "",
-            "foto_url": self.foto_url or "",
-            "activo": self.activo,
-            "telegram_id": self.telegram_id,
-            "password": self.password or "",
-            "liga_id": self.liga_id,
-            "liga_nombre": self.liga.nombre if self.liga else "Independiente",
-            "liga_color": self.liga.color if self.liga else "#00ff88",
-            "tiene_usuario": tiene_usuario
-        }
+        try:
+            tiene_usuario = Usuario.query.filter_by(email=self.email).first() is not None if self.email else False
+            return {
+                "id": self.id,
+                "nombre": self.nombre,
+                "email": self.email or "",
+                "telefono": self.telefono or "",
+                "nivel": self.nivel or "",
+                "foto_url": self.foto_url or "",
+                "activo": self.activo,
+                "telegram_id": self.telegram_id,
+                "password": self.password or "",
+                "liga_id": self.liga_id,
+                "liga_nombre": self.liga.nombre if self.liga else "Independiente",
+                "liga_color": self.liga.color if self.liga else "#00ff88",
+                "tiene_usuario": tiene_usuario
+            }
+        except Exception as e:
+            import traceback
+            print(f"ERROR: Arbitro.to_dict for ID {self.id}: {e}\n{traceback.format_exc()}")
+            return {"id": self.id, "error": "Serialization failed", "details": str(e)}
 
 class EventoPartido(db.Model):
     __tablename__ = 'eventos_partido'

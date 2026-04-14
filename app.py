@@ -3238,10 +3238,10 @@ def get_torneo_standings(id):
             "escudo_url": eq.escudo_url,
             "pj": 0, 
             "g": 0, "e": 0, "p": 0,
-            "gf": eq.goles_f_legacy or 0, 
-            "gc": eq.goles_c_legacy or 0, 
+            "gf": getattr(eq, 'goles_f_legacy', 0) or 0, 
+            "gc": getattr(eq, 'goles_c_legacy', 0) or 0, 
             "dg": 0, 
-            "pts": eq.puntos_legacy or 0,
+            "pts": getattr(eq, 'puntos_legacy', 0) or 0,
             "recent": [] # Last 5 results
         }
     
