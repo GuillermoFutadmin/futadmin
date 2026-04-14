@@ -28,7 +28,7 @@ export class PrivacyModule {
             this.contents.minors_photo_policy = data.minors_photo_policy || '';
             this.contents.terms_conditions = data.terms_conditions || '';
             this.contents.app_scope = data.app_scope || '';
-            
+
             this.updateEditor();
         } catch (error) {
             console.error('Error loading policies:', error);
@@ -70,50 +70,50 @@ export class PrivacyModule {
 
     fillDefaultTemplate() {
         const templates = {
-            privacy_policy: `AVISO DE PRIVACIDAD INTEGRAL - PLATAFORMA FUTADMIN PRO
-VERSIÓN: 2.0 - MARZO 2024
+            privacy_policy: `AVISO DE PRIVACIDAD INTEGRAL - PLATAFORMA FUTADMIN PRO (MODELO DE SOFTWARE LIBRE DE COSTO)
+VERSIÓN: 3.0 - ABRIL 2026
 
-1. IDENTIDAD Y DOMICILIO DEL RESPONSABLE
-El uso y protección de sus datos personales es una prioridad. El Administrador de la Liga en conjunto con FutAdmin Pro, en su carácter de encargado del tratamiento, se comprometen a salvaguardar la información recabada.
+1. SEPARACIÓN DE RESPONSABILIDADES (IMPORTANTE)
+Para garantizar la transparencia en el tratamiento de la información, se establecen dos figuras legales distintas:
+A) EL RESPONSABLE (Dueño/Organizador de la Liga): Es la persona física o moral que administra la liga. Es el único responsable legal de obtener el consentimiento expreso de los jugadores, entrenadores y árbitros antes de recabar e ingresar sus datos al sistema.
+B) EL ENCARGADO (FutAdmin Pro): Actúa exclusivamente como proveedor de infraestructura tecnológica (Software as a Service) bajo un modelo de uso libre de costo. FutAdmin provee la base de datos y la interfaz, pero no decide qué datos se capturan ni audita el origen del consentimiento.
 
-2. DATOS PERSONALES QUE SERÁN SOMETIDOS A TRATAMIENTO
-Para el funcionamiento óptimo de la gestión deportiva, se recabarán los siguientes datos:
+2. IDENTIDAD Y DOMICILIO DEL RESPONSABLE
+Los datos personales recabados en este portal deportivo son administrados y tratados por el Dueño o Administrador de su respectiva liga local. Para cualquier queja o solicitud de derechos ARCO, el usuario debe dirigirse directamente con la administración de su liga.
+
+3. DATOS PERSONALES QUE SERÁN SOMETIDOS A TRATAMIENTO
+El sistema tecnológico está diseñado para almacenar:
 - Identificación: Nombre completo, fotografía digitalizada, edad, fecha de nacimiento y género.
-- Contacto: Correo electrónico, número de teléfono celular (opcional) y domicilio de equipo.
+- Contacto: Correo electrónico, número de teléfono celular (opcional).
 - Deportivos: Posición de juego, historial de goles, tarjetas, minutos jugados y equipos previos.
-- Financieros: Registros de aportaciones, abonos de arbitraje y cuotas de inscripción.
+- Financieros/Administrativos: Registros de cuotas internas de la liga (FutAdmin no procesa tarjetas de crédito ni retiene estos fondos).
 
-3. FINALIDADES PRIMARIAS DEL TRATAMIENTO
-Los datos personales serán utilizados para:
+4. FINALIDADES PRIMARIAS DEL TRATAMIENTO
+La plataforma tecnológica procesa esta información exclusivamente para:
 - Registro y validación de identidad en la cédula arbitral digital.
-- Generación de estadísticas de juego en tiempo real y tablas de goleadores.
-- Control administrativo de estados de cuenta por equipo y jugador.
-- Notificaciones vía Telegram sobre programación de partidos y cambios de horario.
-- Creación de fichas digitales para prevenir la suplantación de identidad (cachirules).
+- Generación automatizada de estadísticas de juego, tablas de posiciones y goleo.
+- Creación de fichas digitales para prevenir la suplantación de identidad en partidos.
+- Notificaciones automatizadas del calendario de juegos.
 
-4. FINALIDADES SECUNDARIAS
-No utilizaremos su información para fines mercadotécnicos, publicitarios o de prospección comercial externa. FutAdmin NO vende, ni alquila, ni comercializa su base de datos con terceros ajenos a la operación de la liga.
+5. FINALIDADES SECUNDARIAS Y PRIVACIDAD TOTAL
+FutAdmin Pro, en su calidad de proveedor de software Freemium, garantiza que:
+- NO vendemos, alquilamos ni comercializamos su base de datos con terceros (marcas, anunciantes o agencias).
+- NO realizamos minería de datos para perfilamiento publicitario externo.
+- Los datos se limitan estrictamente al ecosistema de la liga a la que pertenece el jugador.
 
-5. TRANSFERENCIA DE DATOS
-Sus datos pueden ser compartidos con:
-- El Cuerpo Arbitral: Para validar la elegibilidad antes de cada encuentro.
-- Delegados de Equipo: Únicamente nombres y fotos para revisión de alineaciones contrarias.
-- Proveedores de Infraestructura (Cloud): Únicamente para fines de almacenamiento seguro.
+6. TRANSFERENCIA DE DATOS
+La información técnica solo puede ser visualizada por:
+- El Cuerpo Arbitral de la liga: Para validar la elegibilidad antes de cada encuentro.
+- Proveedores de Infraestructura en la Nube (Cloud Computing): Bajo protocolos de cifrado y exclusivamente para fines de alojamiento y continuidad del servicio.
 
-6. SEGURIDAD DE LA INFORMACIÓN
-Implementamos medidas de seguridad técnicas y administrativas, incluyendo protocolos HTTPS, cifrado de contraseñas y backups diarios en bases de datos relacionales seguras.
+7. SEGURIDAD DE LA INFORMACIÓN Y LIMITACIÓN DE DAÑOS
+FutAdmin implementa medidas de seguridad técnicas y de cifrado de contraseñas. Sin embargo, al ser un software de uso colaborativo y gratuito (Freemium), FutAdmin queda exonerado de responsabilidad legal frente a vulneraciones causadas por la negligencia de los Organizadores (ej. compartir contraseñas o usar equipos públicos sin cerrar sesión).
 
-7. DERECHOS ARCO (Acceso, Rectificación, Cancelación y Oposición)
-Usted tiene derecho a conocer qué datos tenemos y para qué los utilizamos. Para ejercer estos derechos, debe contactar primeramente al Dueño/Administrador de su liga local. En caso de no recibir respuesta, puede contactar al soporte técnico de FutAdmin.
+8. DERECHOS ARCO (Acceso, Rectificación, Cancelación y Oposición)
+El jugador tiene control sobre su participación. Para eliminar su perfil o fotografías, debe contactar al Administrador de su liga ("El Responsable"), quien cuenta con las herramientas en la plataforma para borrar los datos de forma permanente e inmediata.
 
-8. USO DE COOKIES Y TECNOLOGÍAS DE RASTREO
-Utilizamos cookies esenciales para mantener las sesiones de usuario activas y optimizar la navegación. No se utilizan para rastreo de actividad fuera de la plataforma.
-
-9. MODIFICACIONES AL AVISO
-Cualquier cambio a este aviso será notificado en la pantalla de inicio de sesión de la plataforma.
-
-10. ACEPTACIÓN DE LOS TÉRMINOS
-Al registrarse o permitir su registro en esta plataforma, usted acepta el tratamiento de sus datos conforme a los términos aquí descritos.`,
+9. ACEPTACIÓN DE LOS TÉRMINOS
+Al registrarse, ya sea de forma autónoma o permitiendo que el Administrador de su liga lo registre, usted acepta que el Organizador cuenta con su consentimiento para el manejo de su imagen y datos conforme a los límites de esta plataforma.`,
 
             minors_photo_policy: `POLÍTICA DE PROTECCIÓN DE DATOS E IMAGEN DE MENORES DE EDAD
 PROTOCOLOS DE SEGURIDAD Y CONSENTIMIENTO
