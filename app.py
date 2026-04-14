@@ -155,6 +155,46 @@ csrf.exempt(users_bp)
 csrf.exempt(arbitros_bp)
 csrf.exempt(anonymize_bp)
 
+@app.route('/api/admin/high-standards-health')
+def high_standards_health():
+    """Diagnóstico exhaustivo de integridad de esquema y flujo."""
+    try:
+        from sqlalchemy import inspect
+        inspector = inspect(db.engine)
+        tables = ['usuarios', 'ligas', 'torneos', 'canchas', 'equipos', 'partidos', 'arbitros']
+        report = {}
+        
+        for table in tables:
+            columns = [c['name'] for c in inspector.get_columns(table)]
+            report[table] = {
+                "status": "Healthy" if len(columns) > 0 else "Not Found",
+                "columns": columns
+            }
+            
+        # Verificar columnas críticas de la migración
+        migration_check = {
+            "torneos.archived": "archived" in report['torneos']['columns'],
+            "torneos.formato": "formato" in report['torneos']['columns'],
+            "equipos.puntos_legacy": "puntos_legacy" in report['equipos']['columns'],
+            "partidos.timer_started_at": "timer_started_at" in report['partidos']['columns'],
+            "arbitros.email": "email" in report['arbitros']['columns']
+        }
+        
+        return jsonify({
+            "report": report,
+            "migration_check": migration_check,
+            "last_stats_error": LAST_STATS_ERROR,
+            "platform_status": "Operational" if all(migration_check.values()) else "Incomplete Schema"
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/admin/stitch-flow')
+@app.route('/admin/stich-flow')
+def stich_flow_view():
+    """Vista visual de alta resolución para el usuario."""
+    return render_template('admin/stich_flow.html')
+
 @app.route('/api/upload', methods=['POST'])
 @csrf.exempt
 def api_upload():
@@ -187,7 +227,8 @@ def check_login():
         'users.login_view', 'users.login', 'users.privacy_view',
         'users.registro_view', 'users.registro_publico',  # Registro freemium
         'static', 'healthcheck', 'debug_stats', 'diag_db', 'ping',
-        'get_mail_logs', 'test_receipt_sync', 'diag_resend_pago_receipt'
+        'get_mail_logs', 'test_receipt_sync', 'diag_resend_pago_receipt',
+        'high_standards_health', 'stich_flow_view'
     ]
     if request.endpoint in public_routes or not request.endpoint:
         return
@@ -273,45 +314,6 @@ def diag_db():
     except Exception as e:
         import traceback
         return jsonify({"error": str(e), "trace": traceback.format_exc()}), 500
-
-@app.route('/api/admin/high-standards-health')
-def high_standards_health():
-    """Diagnóstico exhaustivo de integridad de esquema y flujo."""
-    try:
-        from sqlalchemy import inspect
-        inspector = inspect(db.engine)
-        tables = ['usuarios', 'ligas', 'torneos', 'canchas', 'equipos', 'partidos', 'arbitros']
-        report = {}
-        
-        for table in tables:
-            columns = [c['name'] for c in inspector.get_columns(table)]
-            report[table] = {
-                "status": "Healthy" if len(columns) > 0 else "Not Found",
-                "columns": columns
-            }
-            
-        # Verificar columnas críticas de la migración
-        migration_check = {
-            "torneos.archived": "archived" in report['torneos']['columns'],
-            "torneos.formato": "formato" in report['torneos']['columns'],
-            "equipos.puntos_legacy": "puntos_legacy" in report['equipos']['columns'],
-            "partidos.timer_started_at": "timer_started_at" in report['partidos']['columns'],
-            "arbitros.email": "email" in report['arbitros']['columns']
-        }
-        
-        return jsonify({
-            "report": report,
-            "migration_check": migration_check,
-            "last_stats_error": LAST_STATS_ERROR,
-            "platform_status": "Operational" if all(migration_check.values()) else "Incomplete Schema"
-        })
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-@app.route('/admin/stich-flow')
-def stich_flow_view():
-    """Vista visual de alta resolución para el usuario."""
-    return render_template('admin/stich_flow.html')
 
 @app.route('/api/all_equipos', methods=['GET'])
 def get_all_equipos():
