@@ -2,8 +2,8 @@
 builder = "NIXPACKS"
 
 [deploy]
-startCommand = "gunicorn app:app --workers 2 --bind 0.0.0.0:$PORT --timeout 120"
-healthcheckPath = "/ping"
+startCommand = "python railway_init.py && gunicorn app:app --workers 4 --worker-class gevent --bind 0.0.0.0:$PORT --timeout 120"
+healthcheckPath = "/health"
 healthcheckTimeout = 100
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 10
