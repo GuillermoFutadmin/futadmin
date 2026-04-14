@@ -38,10 +38,16 @@ def init():
                 "ALTER TABLE equipos ADD COLUMN IF NOT EXISTS puntos_legacy INTEGER DEFAULT 0;",
                 "ALTER TABLE equipos ADD COLUMN IF NOT EXISTS goles_f_legacy INTEGER DEFAULT 0;",
                 "ALTER TABLE equipos ADD COLUMN IF NOT EXISTS goles_c_legacy INTEGER DEFAULT 0;",
-                "ALTER TABLE partidos ADD COLUMN IF NOT EXISTS video_url VARCHAR(255);",
-                "ALTER TABLE partidos ADD COLUMN IF NOT EXISTS transmision_url VARCHAR(255);",
-                "ALTER TABLE partidos ADD COLUMN IF NOT EXISTS timer_started_at BIGINT;",
-                "ALTER TABLE partidos ADD COLUMN IF NOT EXISTS fecha_inicio_efectiva TIMESTAMP;",
+                "ALTER TABLE equipos ADD COLUMN IF NOT EXISTS amarillas_legacy INTEGER DEFAULT 0;",
+                "ALTER TABLE equipos ADD COLUMN IF NOT EXISTS rojas_legacy INTEGER DEFAULT 0;",
+                "ALTER TABLE equipos ADD COLUMN IF NOT EXISTS saldo_arbitraje_legacy FLOAT DEFAULT 0.0;",
+                "ALTER TABLE partidos ADD COLUMN IF NOT EXISTS timer_started_at TIMESTAMP;",
+                "ALTER TABLE partidos ADD COLUMN IF NOT EXISTS tiempo_corrido_segundos INTEGER DEFAULT 0;",
+                "ALTER TABLE partidos ADD COLUMN IF NOT EXISTS periodo_actual INTEGER DEFAULT 1;",
+                "ALTER TABLE partidos ADD COLUMN IF NOT EXISTS video_url VARCHAR(500);",
+                "ALTER TABLE partidos ADD COLUMN IF NOT EXISTS transmision_url VARCHAR(500);",
+                "ALTER TABLE ligas ADD COLUMN IF NOT EXISTS municipio VARCHAR(100);",
+                "ALTER TABLE ligas ADD COLUMN IF NOT EXISTS estado VARCHAR(100);",
                 "ALTER TABLE asistencias_partido ADD COLUMN IF NOT EXISTS en_cancha BOOLEAN DEFAULT FALSE;"
             ]
             

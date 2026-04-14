@@ -177,7 +177,9 @@ def high_standards_health():
             "torneos.formato": "formato" in report['torneos']['columns'],
             "equipos.puntos_legacy": "puntos_legacy" in report['equipos']['columns'],
             "partidos.timer_started_at": "timer_started_at" in report['partidos']['columns'],
-            "arbitros.email": "email" in report['arbitros']['columns']
+            "arbitros.email": "email" in report['arbitros']['columns'],
+            "ligas.municipio": "municipio" in report['ligas']['columns'],
+            "ligas.estado": "estado" in report['ligas']['columns']
         }
         
         return jsonify({

@@ -40,7 +40,7 @@ export class SettingsModule {
         }
         const editPaymentForm = document.getElementById('edit-combo-payment-form');
         if (editPaymentForm) {
-            editPaymentForm.onsubmit = (e) => this.handleEditComboPaymentSubmit(e);
+            editPaymentForm.onsubmit = (e) => { e.preventDefault(); console.log('Pagos deshabilitados en Freemium'); };
         }
     }
 
@@ -78,6 +78,7 @@ export class SettingsModule {
         const submitBtn = document.getElementById('combo-submit-btn');
         const title = document.getElementById('combo-modal-title');
 
+        if (!form) return;
         form.reset();
 
         if (ligaId) {
@@ -91,71 +92,18 @@ export class SettingsModule {
             document.getElementById('combo-color').value = liga.color || '#00ff88';
             document.getElementById('combo-contacto').value = liga.contacto || '';
 
-            // Cargar datos del titular
-            document.getElementById('combo-owner-nombre').value = liga.nombre; // O el nombre del primer usuario
-
-            // Permitir edición de credenciales (Opcional en edición)
-            const ownerEmailInput = document.getElementById('combo-owner-email');
-            const ownerPassInput = document.getElementById('combo-owner-pass');
-            if (ownerEmailInput) {
-                ownerEmailInput.value = liga.owner_email || '';
-                ownerEmailInput.required = false;
-            }
-            if (ownerPassInput) {
-                ownerPassInput.value = ''; // No mostrar contraseña actual
-                ownerPassInput.required = false;
-                ownerPassInput.placeholder = 'Dejar vacío para no cambiar';
-            }
-
             title.innerText = '✏️ Editar Organización';
             submitBtn.innerText = 'Guardar Cambios';
 
-            // Ajustar secciones para edición
             if (planSection) planSection.style.display = 'none';
-            if (ownerSection) {
-                ownerSection.style.display = 'block';
-                const ownerTitle = document.getElementById('combo-owner-title');
-                const ownerHelp = document.getElementById('combo-owner-help');
-                const ownerNameGroup = document.getElementById('combo-owner-name-group');
-                if (ownerTitle) ownerTitle.innerText = 'Credenciales de Acceso Principal';
-                if (ownerHelp) ownerHelp.innerText = 'Si cambias la contraseña, se actualizarán las 4 cuentas vinculadas.';
-                if (ownerNameGroup) ownerNameGroup.style.display = 'none'; // El nombre del titular suele ser el de la liga en el registro auto
-            }
-
-            // Los campos de owner no son requeridos en edición (para permitir no cambiar pass)
-            document.getElementById('combo-owner-nombre').required = false;
-            // ownerEmailInput.required is set above
-            // ownerPassInput.required is set above
         } else {
             // Modo Creación
             idInput.value = '';
             document.getElementById('combo-color').value = '#00ff88';
-            title.innerText = '✚ Nuevo Combo / Organización';
-            submitBtn.innerText = '✚ Crear Combo';
+            title.innerText = '✚ Nueva Organización (Free)';
+            submitBtn.innerText = '✚ Crear Organización';
 
             if (planSection) planSection.style.display = 'block';
-            if (ownerSection) {
-                ownerSection.style.display = 'block';
-                const ownerTitle = document.getElementById('combo-owner-title');
-                const ownerHelp = document.getElementById('combo-owner-help');
-                const ownerNameGroup = document.getElementById('combo-owner-name-group');
-                if (ownerTitle) ownerTitle.innerText = 'Cuenta del Responsable Titular';
-                if (ownerHelp) ownerHelp.innerText = 'Se crearán automáticamente 3 subcuentas extra usando esta misma contraseña.';
-                if (ownerNameGroup) ownerNameGroup.style.display = 'block';
-            }
-
-            document.getElementById('combo-owner-nombre').value = '';
-            document.getElementById('combo-owner-email').value = '';
-            document.getElementById('combo-owner-pass').value = '';
-            document.getElementById('combo-owner-pass').placeholder = 'Mínimo 6 caracteres';
-            document.getElementById('combo-contacto').value = '';
-            if (document.getElementById('combo-subdominio')) document.getElementById('combo-subdominio').value = '';
-
-            document.getElementById('combo-owner-nombre').required = true;
-            document.getElementById('combo-owner-email').required = true;
-            document.getElementById('combo-owner-pass').required = true;
-
-            this.updateComboPriceInfo('dueño_liga'); // Default
         }
 
         Core.openModal('modal-combo');
