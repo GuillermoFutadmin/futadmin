@@ -59,6 +59,18 @@ def add_security_headers(response):
     response.headers['Vary'] = 'Cookie'
     return response
 
+@app.errorhandler(Exception)
+def handle_exception(e):
+    import traceback
+    print("!!! ERROR 500 DETECTADO !!!")
+    print(traceback.format_exc())
+    # Opcional: devolver el error en el JSON si estamos en modo debug o para esta fase
+    return jsonify({
+        "success": False,
+        "error": str(e),
+        "trace": traceback.format_exc()
+    }), 500
+
 app.config['UPLOAD_FOLDER'] = os.path.join(BASE_DIR, 'static', 'uploads')
 # Forzar ruta absoluta en Railway para persistencia real
 if os.getenv('RAILWAY_ENVIRONMENT'):
