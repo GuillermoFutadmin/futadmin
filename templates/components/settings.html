@@ -63,20 +63,17 @@
 
             <!-- Nuevos Filtros de Búsqueda -->
             <div style="display: flex; gap: 10px; flex: 1; justify-content: center; min-width: 300px;">
-                <input type="text" id="linked-filter-org" placeholder="🔍 Org / Plan..."
+                <input type="text" id="linked-filter-org" placeholder="🔍 Nombre de Org..."
                     oninput="ui.settings.renderLinkedAccounts()"
-                    style="flex: 1; padding: 8px 12px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 8px; color: #fff; font-size: 0.85rem;">
-                <input type="text" id="linked-filter-owner" placeholder="👤 Dueño..."
+                    style="flex: 1; padding: 10px 14px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 12px; color: #fff; font-size: 0.85rem;">
+                <input type="text" id="linked-filter-owner" placeholder="👤 Dueño / Admin..."
                     oninput="ui.settings.renderLinkedAccounts()"
-                    style="flex: 1; padding: 8px 12px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 8px; color: #fff; font-size: 0.85rem;">
-                <input type="text" id="linked-filter-venue" placeholder="🏟️ Sede..."
-                    oninput="ui.settings.renderLinkedAccounts()"
-                    style="flex: 1; padding: 8px 12px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 8px; color: #fff; font-size: 0.85rem;">
+                    style="flex: 1; padding: 10px 14px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 12px; color: #fff; font-size: 0.85rem;">
             </div>
 
             <button id="btn-nuevo-combo" class="btn-primary" onclick="ui.settings.showComboModal()"
-                style="white-space: nowrap;">
-                ✚ Nuevo Combo
+                style="white-space: nowrap; background: linear-gradient(135deg, var(--primary), #00d1ff); border: none; box-shadow: 0 4px 15px rgba(0,255,136,0.2);">
+                ✚ Nueva Organización
             </button>
         </div>
         <div id="settings-linked-container"

@@ -167,7 +167,7 @@ export class SettingsModule {
             });
 
             if (res.success || res.id) {
-                Core.showNotification(`Combo "${data.nombre}" ${isEdit ? 'actualizado' : 'creado'} correctamente`);
+                Core.showNotification(`Organización "${data.nombre}" ${isEdit ? 'actualizada' : 'creada'} correctamente`);
                 Core.closeModal('modal-combo');
                 await this.loadLigas();
                 await this.loadUsers();
@@ -178,7 +178,7 @@ export class SettingsModule {
 
                     // Opcional: Ticket
                     setTimeout(() => {
-                        if (confirm('Combo Creado. ¿Deseas imprimir el ticket con todas las credenciales y accesos?')) {
+                        if (confirm('Organización Creada. ¿Deseas imprimir el ticket con todas las credenciales y accesos?')) {
                             this.printComboTicket(res.liga, data, res.pago, res.cuentas);
                         }
                     }, 500);
@@ -196,11 +196,11 @@ export class SettingsModule {
     }
 
     async deleteCombo(id, nombre) {
-        if (!confirm(`¿Estás seguro de que deseas eliminar el combo "${nombre}"?\nEsta acción eliminará la liga, sus canchas y usuarios asociados.`)) return;
+        if (!confirm(`¿Estás seguro de que deseas eliminar la organización "${nombre}"?\nEsta acción eliminará la liga, sus canchas y usuarios asociados.`)) return;
         try {
             const res = await Core.fetchAPI(`/api/ligas/${id}`, { method: 'DELETE' });
             if (res.success) {
-                Core.showNotification(`Combo "${nombre}" eliminado`);
+                Core.showNotification(`Organización "${nombre}" eliminada`);
                 await this.loadLigas();
                 await this.loadUsers();
                 this.renderLinkedAccounts();
@@ -213,7 +213,7 @@ export class SettingsModule {
 
     async toggleComboStatus(id, nombre, currentStatus) {
         const action = currentStatus ? 'inhabilitar' : 'reactivar';
-        if (!confirm(`¿Deseas ${action} el combo "${nombre}"?\n${currentStatus ? 'Esto desactivará el acceso a todos los usuarios vinculados.' : 'Esto restaurará el acceso a los usuarios vinculados.'}`)) return;
+        if (!confirm(`¿Deseas ${action} la organización "${nombre}"?\n${currentStatus ? 'Esto desactivará el acceso a todos los usuarios vinculados.' : 'Esto restaurará el acceso a los usuarios vinculados.'}`)) return;
 
         try {
             const res = await Core.fetchAPI(`/api/ligas/${id}`, {
@@ -223,14 +223,14 @@ export class SettingsModule {
             });
 
             if (res.id) {
-                Core.showNotification(`Combo "${nombre}" ${currentStatus ? 'inhabilitado' : 'reactivado'}`);
+                Core.showNotification(`Organización "${nombre}" ${currentStatus ? 'inhabilitada' : 'reactivada'}`);
                 await this.loadLigas();
                 await this.loadUsers();
                 this.renderLinkedAccounts();
             }
         } catch (err) {
             console.error(err);
-            alert('Error al cambiar estatus del combo');
+            alert('Error al cambiar estatus');
         }
     }
 
