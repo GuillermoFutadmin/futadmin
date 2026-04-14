@@ -18,6 +18,7 @@ import { PrivacyModule } from './modules/privacy.js?v=51';
 import { DashboardMap } from './modules/dashboard_map.js?v=51';
 import { MarketingModule } from './modules/marketing.js?v=63';
 import { Perfil } from './modules/perfil.js?v=60';
+import { OnboardingModule } from './modules/onboarding.js?v=1';
 
 class FutAdminUI {
     constructor() {
@@ -46,6 +47,8 @@ class FutAdminUI {
         this.perfil = Perfil;
         this.perfil.init();
 
+        this.onboarding = new OnboardingModule();
+
         this.initEventListeners();
         this.dashboard.init(); // Cargar selector de ligas desde el inicio
 
@@ -64,7 +67,7 @@ class FutAdminUI {
                 const matches = await Core.fetchAPI('/api/torneos/0/partidos/live');
                 const liveList = Array.isArray(matches) ? matches : (matches.items || []);
                 const hasLive = liveList.length > 0;
-                
+
                 this.updateSidebarLogoStatus(hasLive);
             } catch (e) {
                 console.warn("Error en sync de logo:", e);
@@ -74,7 +77,7 @@ class FutAdminUI {
 
         // Ejecución inmediata al entrar
         update();
-        
+
         // Intervalo autónomo cada 30 segundos
         this.logoSyncInterval = setInterval(update, 30000);
     }
@@ -85,7 +88,7 @@ class FutAdminUI {
 
         // Limpiar estados anteriores antes de aplicar el nuevo
         container.classList.remove('logo-status-live', 'logo-status-idle');
-        
+
         if (isLive) {
             container.classList.add('logo-status-live');
         } else {
@@ -257,7 +260,7 @@ class FutAdminUI {
         this._statsPromise = (async () => {
             try {
                 const data = await Core.fetchAPI('/api/stats');
-                
+
                 // Guardar límites globales para control de UI
                 window.FutAdminLimits = data.limits || {};
                 window.FutAdminCounts = data.current_counts || {};
@@ -272,7 +275,7 @@ class FutAdminUI {
                         trainItem.style.display = 'none';
                     }
                 }
-                
+
                 // Disparar evento para que los módulos actualicen su UI si dependen de los límites
                 document.dispatchEvent(new CustomEvent('futadmin:limitsLoaded'));
 
@@ -335,8 +338,8 @@ class FutAdminUI {
                 }
 
                 return data;
-            } catch (error) { 
-                console.error('Error stats:', error); 
+            } catch (error) {
+                console.error('Error stats:', error);
                 this._statsPromise = null; // Permitir reintento
                 throw error;
             }

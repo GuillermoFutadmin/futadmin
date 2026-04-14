@@ -9,6 +9,10 @@
     <link rel="icon" type="image/png" href="/static/img/logos/futadmin_circle_transp.png">
     <link rel="manifest" href="/static/manifest.json">
     <link rel="apple-touch-icon" href="/static/img/logos/futadmin_circle_transp.png">
+
+    <!-- Driver.js Onboarding CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@1.3.1/dist/driver.css" />
+
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -218,6 +222,10 @@
                         or 'Invitado') | upper }}</div>
                     <div style="display: flex; gap: 5px; align-items: center;">
                         {% if user_rol.lower() not in ['resultados', 'espectador', 'visor'] %}
+                        <button class="btn-help" onclick="ui.onboarding.startTour()"
+                            title="Ver Tutorial de Configuración"
+                            style="background: rgba(0,255,136,0.1); color: var(--primary); border: 1px solid rgba(0,255,136,0.3); padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; cursor: pointer;">🛟
+                            AYUDA</button>
                         <button class="btn-perfil" onclick="ui.perfil.openModal()"
                             style="background: rgba(255,255,255,0.05); color: white; border: 1px solid rgba(255,255,255,0.1); padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; cursor: pointer;">⚙️
                             PERFIL</button>
@@ -1790,6 +1798,9 @@
 
     <input type="file" id="global-file-upload" style="display: none;" accept="image/*"
         onchange="Core.handleGlobalFileUpload(event)">
+
+    <!-- Driver.js Onboarding Script -->
+    <script src="https://cdn.jsdelivr.net/npm/driver.js@1.3.1/dist/driver.js.iife.js"></script>
 
     <script src="/static/libs/leaflet/leaflet.js" defer></script>
 
