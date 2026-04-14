@@ -359,15 +359,17 @@
                 document.getElementById('platform-status').innerText = "ERROR API";
                 document.getElementById('platform-status').style.color = "var(--danger)";
             }
-            async function clearError() {
-                if (!confirm("¿Deseas limpiar el registro de errores del servidor?")) return;
-                try {
-                    await fetch('/api/admin/clear-error');
-                    loadHealth();
-                } catch (e) { alert("Error al limpiar"); }
-            }
+        }
 
-            window.onload = loadHealth;
+        async function clearError() {
+            if (!confirm("¿Deseas limpiar el registro de errores del servidor?")) return;
+            try {
+                await fetch('/api/admin/clear-error');
+                loadHealth();
+            } catch (e) { alert("Error al limpiar"); }
+        }
+
+        window.onload = loadHealth;
     </script>
 </body>
 
