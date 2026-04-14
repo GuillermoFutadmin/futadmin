@@ -317,6 +317,27 @@ def diag_db():
         import traceback
         return jsonify({"error": str(e), "trace": traceback.format_exc()}), 500
 
+@app.route('/api/admin/force-sync-db')
+def force_sync_db():
+    """Ejecuta alteraciones de tabla críticas en caliente."""
+    try:
+        queries = [
+            "ALTER TABLE ligas ADD COLUMN IF NOT EXISTS municipio VARCHAR(100);",
+            "ALTER TABLE ligas ADD COLUMN IF NOT EXISTS estado VARCHAR(100);"
+        ]
+        results = []
+        for q in queries:
+            try:
+                db.session.execute(db.text(q))
+                db.session.commit()
+                results.append(f"Success: {q}")
+            except Exception as inner:
+                db.session.rollback()
+                results.append(f"Fail: {q} -> {str(inner)}")
+        return jsonify({"results": results})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @app.route('/api/all_equipos', methods=['GET'])
 def get_all_equipos():
     query = Equipo.query
