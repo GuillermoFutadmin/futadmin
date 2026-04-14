@@ -33,11 +33,15 @@ def init():
                 "ALTER TABLE canchas ADD COLUMN IF NOT EXISTS limite_campos INTEGER DEFAULT 1;",
                 "ALTER TABLE arbitros ADD COLUMN IF NOT EXISTS email VARCHAR(120) UNIQUE;",
                 "ALTER TABLE arbitros ADD COLUMN IF NOT EXISTS telegram_id VARCHAR(50) UNIQUE;",
-                "ALTER TABLE arbitros ADD COLUMN IF NOT EXISTS foto_url VARCHAR(255);",
-                "ALTER TABLE arbitros ADD COLUMN IF NOT EXISTS password VARCHAR(100);",
-                "ALTER TABLE arbitros ADD COLUMN IF NOT EXISTS cancha_id INTEGER;",
                 "ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS privacy_accepted BOOLEAN DEFAULT FALSE;",
                 "ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS privacy_accepted_at TIMESTAMP;",
+                "ALTER TABLE equipos ADD COLUMN IF NOT EXISTS puntos_legacy INTEGER DEFAULT 0;",
+                "ALTER TABLE equipos ADD COLUMN IF NOT EXISTS goles_f_legacy INTEGER DEFAULT 0;",
+                "ALTER TABLE equipos ADD COLUMN IF NOT EXISTS goles_c_legacy INTEGER DEFAULT 0;",
+                "ALTER TABLE partidos ADD COLUMN IF NOT EXISTS video_url VARCHAR(255);",
+                "ALTER TABLE partidos ADD COLUMN IF NOT EXISTS transmision_url VARCHAR(255);",
+                "ALTER TABLE partidos ADD COLUMN IF NOT EXISTS timer_started_at BIGINT;",
+                "ALTER TABLE partidos ADD COLUMN IF NOT EXISTS fecha_inicio_efectiva TIMESTAMP;",
                 "ALTER TABLE asistencias_partido ADD COLUMN IF NOT EXISTS en_cancha BOOLEAN DEFAULT FALSE;"
             ]
             
