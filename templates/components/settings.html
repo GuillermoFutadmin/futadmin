@@ -53,26 +53,26 @@
     <!-- Pestaña: Cuentas Vinculadas -->
     <div id="settings-tab-linked" class="settings-tab-content"
         style="display: {% if user_rol.lower() != 'admin' %}block{% else %}none{% endif %};">
-        <div class="action-bar"
-            style="background: rgba(255,255,255,0.03); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 2rem; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 1rem;">
-            <div>
-                <h3 style="margin: 0;">Accesos por Organización</h3>
-                <p class="text-muted" style="margin-top: 5px; font-size: 0.9rem;">Organización de cuentas por Sedes
-                    (Canchas) y Torneos (Ligas).</p>
+        <div class="action-bar-responsive"
+            style="background: rgba(255,255,255,0.03); padding: 1.5rem; border-radius: 16px; border: 1px solid var(--border); margin-bottom: 2rem; display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 1.5rem;">
+            <div style="min-width: 200px;">
+                <h3 style="margin: 0; font-size: 1.1rem;">Accesos por Organización</h3>
+                <p class="text-muted" style="margin-top: 5px; font-size: 0.8rem; line-height: 1.4;">Gestión de sedes,
+                    canchas y torneos.</p>
             </div>
 
             <!-- Nuevos Filtros de Búsqueda -->
-            <div style="display: flex; gap: 10px; flex: 1; justify-content: center; min-width: 300px;">
-                <input type="text" id="linked-filter-org" placeholder="🔍 Nombre de Org..."
+            <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap; justify-content: flex-end;">
+                <input type="text" id="linked-filter-org" placeholder="🔍 Nombre Org..."
                     oninput="ui.settings.renderLinkedAccounts()"
-                    style="flex: 1; padding: 10px 14px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 12px; color: #fff; font-size: 0.85rem;">
-                <input type="text" id="linked-filter-owner" placeholder="👤 Dueño / Admin..."
+                    style="width: 180px; padding: 10px 14px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 12px; color: #fff; font-size: 0.85rem;">
+                <input type="text" id="linked-filter-owner" placeholder="👤 Dueño..."
                     oninput="ui.settings.renderLinkedAccounts()"
-                    style="flex: 1; padding: 10px 14px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 12px; color: #fff; font-size: 0.85rem;">
+                    style="width: 180px; padding: 10px 14px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 12px; color: #fff; font-size: 0.85rem;">
             </div>
 
             <button id="btn-nuevo-combo" class="btn-primary" onclick="ui.settings.showComboModal()"
-                style="white-space: nowrap; background: linear-gradient(135deg, var(--primary), #00d1ff); border: none; box-shadow: 0 4px 15px rgba(0,255,136,0.2);">
+                style="white-space: nowrap; height: 45px; background: linear-gradient(135deg, var(--primary), #00d1ff); border: none; box-shadow: 0 4px 15px rgba(0,255,136,0.2);">
                 ✚ Nueva Organización
             </button>
         </div>
@@ -85,19 +85,17 @@
     <!-- Pestaña: Inteligencia Global (Solo Admin) -->
     {% if user_rol.lower() == 'admin' %}
     <div id="settings-tab-payments" class="settings-tab-content animate-in slideInRight" style="display: none;">
-        <div class="action-bar"
-            style="background: rgba(255,255,255,0.03); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 2rem;">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%;">
-                <div>
-                    <h3 style="margin: 0;">📊 Inteligencia y Estadísticas Globales</h3>
-                    <p class="text-muted" style="margin-top: 5px; font-size: 0.9rem;">Monitoreo en tiempo real del
-                        crecimiento de la red FutAdmin.</p>
-                </div>
-                <button class="btn-primary" onclick="ui.analytics.loadGlobalStats()"
-                    style="background: rgba(0,255,136,0.1); color: var(--primary); border: 1px solid rgba(0,255,136,0.3);">
-                    🔄 Refrescar Datos
-                </button>
+        <div class="action-bar-responsive"
+            style="background: rgba(255,255,255,0.03); padding: 1.5rem; border-radius: 16px; border: 1px solid var(--border); margin-bottom: 2rem; display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 1rem;">
+            <div>
+                <h3 style="margin: 0; font-size: 1.1rem;">📊 Inteligencia y Estadísticas Globales</h3>
+                <p class="text-muted" style="margin-top: 5px; font-size: 0.85rem;">Monitoreo en tiempo real del
+                    crecimiento de la red FutAdmin.</p>
             </div>
+            <button class="btn-primary" onclick="ui.analytics.loadGlobalStats()"
+                style="background: rgba(0,255,136,0.1); color: var(--primary); border: 1px solid rgba(0,255,136,0.3); height: 45px; white-space: nowrap;">
+                🔄 Refrescar Datos
+            </button>
         </div>
 
         <!-- Dashboard de Estadísticas -->
