@@ -230,7 +230,7 @@ def check_login():
         'users.registro_view', 'users.registro_publico',  # Registro freemium
         'static', 'healthcheck', 'debug_stats', 'diag_db', 'ping',
         'get_mail_logs', 'test_receipt_sync', 'diag_resend_pago_receipt',
-        'high_standards_health', 'stich_flow_view'
+        'high_standards_health', 'stich_flow_view', 'force_sync_db'
     ]
     if request.endpoint in public_routes or not request.endpoint:
         return
