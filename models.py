@@ -18,6 +18,8 @@ class Liga(db.Model):
     tipo_cliente = db.Column(db.String(50)) # 'Dueño de Cancha', 'Árbitro/AC', 'Equipo'
     subdominio = db.Column(db.String(50), unique=True, nullable=True)
     contacto = db.Column(db.String(100))
+    municipio = db.Column(db.String(100)) # Ciudad / Municipio
+    estado = db.Column(db.String(100))    # Estado / Provincia
     activa = db.Column(db.Boolean, default=True)
     fecha_registro = db.Column(db.DateTime, default=datetime.utcnow)
     color = db.Column(db.String(20), default='#00ff88')

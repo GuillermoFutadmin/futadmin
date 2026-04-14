@@ -4442,6 +4442,38 @@ def get_dashboard_stats():
             import traceback
             print(f"Error calculando vencimientos dashboard optimizado: {e_venc}\n{traceback.format_exc()}")
 
+        # 7. Estadísticas de Crecimiento (Ligas por Mes)
+        ligas_stats = []
+        try:
+            from sqlalchemy import extract
+            growth = db.session.query(
+                extract('year', Liga.fecha_registro).label('year'),
+                extract('month', Liga.fecha_registro).label('month'),
+                db.func.count(Liga.id)
+            ).group_by('year', 'month').order_by('year', 'month').all()
+            
+            meses_nombres = {1:'Ene', 2:'Feb', 3:'Mar', 4:'Abr', 5:'May', 6:'Jun', 7:'Jul', 8:'Ago', 9:'Sep', 10:'Oct', 11:'Nov', 12:'Dic'}
+            for y, m, count in growth:
+                ligas_stats.append({
+                    "label": f"{meses_nombres.get(int(m), m)} {int(y)}",
+                    "count": count
+                })
+        except: pass
+
+        # 8. Usuarios por Rol
+        roles_stats = {}
+        try:
+            roles_query = db.session.query(Usuario.rol, db.func.count(Usuario.id)).group_by(Usuario.rol).all()
+            roles_stats = {r: c for r, c in roles_query}
+        except: pass
+
+        # 9. Ligas por Estado
+        estados_stats = []
+        try:
+            estados_query = db.session.query(Liga.estado, db.func.count(Liga.id)).filter(Liga.estado != None).group_by(Liga.estado).order_by(db.func.count(Liga.id).desc()).limit(5).all()
+            estados_stats = [{"estado": e or "N/A", "count": c} for e, c in estados_query]
+        except: pass
+
         return jsonify({
             "partidos_hoy": partidos_rango,
             "jugadores": jugadores,
@@ -4451,6 +4483,9 @@ def get_dashboard_stats():
             "torneos": torneos_count,
             "arbitros": arbitros_count,
             "vencimientos_combos": vencimientos_count,
+            "ligas_por_mes": ligas_stats,
+            "usuarios_por_rol": roles_stats,
+            "ligas_por_estado": estados_stats,
             "periodo": {
                 "inicio": start_date.strftime('%Y-%m-%d'),
                 "fin": end_date.strftime('%Y-%m-%d')

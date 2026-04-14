@@ -1,12 +1,19 @@
 <!-- Módulo: Ajustes del Sistema (Roles y Permisos) -->
 <div id="view-ajustes" class="sub-view view-container" style="display: none;">
     <!-- Navegación de Subpestañas -->
-    <div class="tabs-nav" style="display: flex; gap: 1rem; margin-bottom: 2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">
+    <div class="tabs-nav"
+        style="display: flex; gap: 1rem; margin-bottom: 2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">
         {% if user_rol.lower() == 'admin' %}
-        <button class="tab-btn active" onclick="ui.settings.switchTab('users')" id="tab-btn-users" style="background: none; border: none; color: var(--text); padding: 0.5rem 1rem; cursor: pointer; border-bottom: 2px solid var(--primary); transition: all 0.3s;">Usuarios</button>
+        <button class="tab-btn active" onclick="ui.settings.switchTab('users')" id="tab-btn-users"
+            style="background: none; border: none; color: var(--text); padding: 0.5rem 1rem; cursor: pointer; border-bottom: 2px solid var(--primary); transition: all 0.3s;">Usuarios</button>
         {% endif %}
-        <button class="tab-btn {% if user_rol.lower() != 'admin' %}active{% endif %}" onclick="ui.settings.switchTab('linked')" id="tab-btn-linked" style="background: none; border: none; color: {% if user_rol.lower() != 'admin' %}var(--text){% else %}var(--text-muted){% endif %}; padding: 0.5rem 1rem; cursor: pointer; border-bottom: 2px solid {% if user_rol.lower() != 'admin' %}var(--primary){% else %}transparent{% endif %}; transition: all 0.3s;">Cuentas Vinculadas</button>
-        <button class="tab-btn" onclick="ui.settings.switchTab('roles')" id="tab-btn-roles" style="background: none; border: none; color: var(--text-muted); padding: 0.5rem 1rem; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.3s;">Roles y Permisos</button>
+        <button class="tab-btn {% if user_rol.lower() != 'admin' %}active{% endif %}"
+            onclick="ui.settings.switchTab('linked')" id="tab-btn-linked"
+            style="background: none; border: none; color: {% if user_rol.lower() != 'admin' %}var(--text){% else %}var(--text-muted){% endif %}; padding: 0.5rem 1rem; cursor: pointer; border-bottom: 2px solid {% if user_rol.lower() != 'admin' %}var(--primary){% else %}transparent{% endif %}; transition: all 0.3s;">Cuentas
+            Vinculadas</button>
+        <button class="tab-btn" onclick="ui.settings.switchTab('roles')" id="tab-btn-roles"
+            style="background: none; border: none; color: var(--text-muted); padding: 0.5rem 1rem; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.3s;">Roles
+            y Permisos</button>
     </div>
 
 
@@ -17,9 +24,11 @@
             style="background: rgba(255,255,255,0.03); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center;">
             <div>
                 <h3 style="margin: 0;">Gestión de Usuarios</h3>
-                <p class="text-muted" style="margin-top: 5px; font-size: 0.9rem;">Controla quién tiene acceso a la plataforma.</p>
+                <p class="text-muted" style="margin-top: 5px; font-size: 0.9rem;">Controla quién tiene acceso a la
+                    plataforma.</p>
             </div>
-            <button id="btn-nuevo-usuario" class="btn-primary" onclick="ui.settings.showUserModal()">+ Nuevo Usuario</button>
+            <button id="btn-nuevo-usuario" class="btn-primary" onclick="ui.settings.showUserModal()">+ Nuevo
+                Usuario</button>
         </div>
 
         <div class="premium-table-container fade-in-up">
@@ -42,140 +51,124 @@
     {% endif %}
 
     <!-- Pestaña: Cuentas Vinculadas -->
-    <div id="settings-tab-linked" class="settings-tab-content" style="display: {% if user_rol.lower() != 'admin' %}block{% else %}none{% endif %};">
-        <div class="action-bar" style="background: rgba(255,255,255,0.03); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 2rem; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 1rem;">
+    <div id="settings-tab-linked" class="settings-tab-content"
+        style="display: {% if user_rol.lower() != 'admin' %}block{% else %}none{% endif %};">
+        <div class="action-bar"
+            style="background: rgba(255,255,255,0.03); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 2rem; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 1rem;">
             <div>
                 <h3 style="margin: 0;">Accesos por Organización</h3>
-                <p class="text-muted" style="margin-top: 5px; font-size: 0.9rem;">Organización de cuentas por Sedes (Canchas) y Torneos (Ligas).</p>
+                <p class="text-muted" style="margin-top: 5px; font-size: 0.9rem;">Organización de cuentas por Sedes
+                    (Canchas) y Torneos (Ligas).</p>
             </div>
-            
+
             <!-- Nuevos Filtros de Búsqueda -->
             <div style="display: flex; gap: 10px; flex: 1; justify-content: center; min-width: 300px;">
-                <input type="text" id="linked-filter-org" placeholder="🔍 Org / Plan..." 
+                <input type="text" id="linked-filter-org" placeholder="🔍 Org / Plan..."
                     oninput="ui.settings.renderLinkedAccounts()"
                     style="flex: 1; padding: 8px 12px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 8px; color: #fff; font-size: 0.85rem;">
-                <input type="text" id="linked-filter-owner" placeholder="👤 Dueño..." 
+                <input type="text" id="linked-filter-owner" placeholder="👤 Dueño..."
                     oninput="ui.settings.renderLinkedAccounts()"
                     style="flex: 1; padding: 8px 12px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 8px; color: #fff; font-size: 0.85rem;">
-                <input type="text" id="linked-filter-venue" placeholder="🏟️ Sede..." 
+                <input type="text" id="linked-filter-venue" placeholder="🏟️ Sede..."
                     oninput="ui.settings.renderLinkedAccounts()"
                     style="flex: 1; padding: 8px 12px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 8px; color: #fff; font-size: 0.85rem;">
             </div>
 
-            <button id="btn-nuevo-combo" class="btn-primary" onclick="ui.settings.showComboModal()" style="white-space: nowrap;">
+            <button id="btn-nuevo-combo" class="btn-primary" onclick="ui.settings.showComboModal()"
+                style="white-space: nowrap;">
                 ✚ Nuevo Combo
             </button>
         </div>
-        <div id="settings-linked-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 1.5rem;">
+        <div id="settings-linked-container"
+            style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 1.5rem;">
             <!-- Cargado via JS -->
         </div>
     </div>
-    
-    <!-- Pestaña: Aportaciones de Combos -->
+
+    <!-- Pestaña: Estadísticas Globales (Antes Aportaciones) -->
     <div id="settings-tab-payments" class="settings-tab-content animate-in slideInRight" style="display: none;">
-        <div class="action-bar" style="background: rgba(255,255,255,0.03); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 2rem; display: flex; flex-direction: column; gap: 15px;">
+        <div class="action-bar"
+            style="background: rgba(255,255,255,0.03); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 2rem;">
             <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%;">
                 <div>
-                    <h3 style="margin: 0;">Resumen de Suscripciones y Cobros</h3>
-                    <p class="text-muted" style="margin-top: 5px; font-size: 0.9rem;">Estado actual de cuentas maestras y montos mensuales.</p>
+                    <h3 style="margin: 0;">📊 Inteligencia y Estadísticas Globales</h3>
+                    <p class="text-muted" style="margin-top: 5px; font-size: 0.9rem;">Monitoreo en tiempo real del
+                        crecimiento de la red FutAdmin.</p>
                 </div>
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <select id="settings-combo-status-filter" class="nav-select" 
-                        style="min-width: 160px; background: rgba(0,255,136,0.1); border-color: rgba(0,255,136,0.3); color: #00ff88; font-size: 0.8rem; height: 32px;"
-                        onchange="ui.settings.renderComboStatus()">
-                        <option value="all" selected>🔍 Todos los Estatus</option>
-                        <option value="pending">⏳ Pendientes</option>
-                        <option value="settled">✅ Al Corriente</option>
-                    </select>
-                    <select id="settings-combo-status-limit" class="nav-select" 
-                        style="min-width: 100px; background: rgba(255,255,255,0.05); border-color: var(--border); font-size: 0.8rem; height: 32px;"
-                        onchange="ui.settings.updateItemsPerPage(this.value)">
-                        <option value="5">Ver 5</option>
-                        <option value="10" selected>Ver 10</option>
-                        <option value="20">Ver 20</option>
-                        <option value="50">Ver 50</option>
-                    </select>
-                </div>
-            </div>
-            
-            <div id="combo-payment-actions" style="display: flex; gap: 10px; align-items: center; justify-content: flex-end; width: 100%;">
-                <input type="text" id="combo-status-search" placeholder="🔍 Buscar organización por nombre o plan..." 
-                    style="background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 20px; padding: 6px 15px 6px 35px; color: var(--text); font-size: 0.85rem; width: 350px;"
-                    onkeyup="ui.settings.renderComboStatus()">
-                
-                <button id="btn-nuevo-pago-combo" class="btn-primary" onclick="ui.settings.showComboPaymentModal()" style="white-space: nowrap;">
-                    ✚ Registrar Aportación
+                <button class="btn-primary" onclick="ui.analytics.loadGlobalStats()"
+                    style="background: rgba(0,255,136,0.1); color: var(--primary); border: 1px solid rgba(0,255,136,0.3);">
+                    🔄 Refrescar Datos
                 </button>
             </div>
         </div>
 
-        <div class="premium-table-container fade-in-up" style="margin-bottom: 3rem;">
-            <table class="premium-table">
-                <thead>
-                    <tr>
-                        <th>Organización / Combo</th>
-                        <th>Plan / Paquete</th>
-                        <th>Costo Mensual</th>
-                        <th>Última Aportación</th>
-                        <th>Estatus</th>
-                        <th style="text-align: right;">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody id="settings-combo-status-list">
-                    <!-- Cargado via JS -->
-                </tbody>
-            </table>
-        </div>
-        <div id="settings-combo-status-pagination" class="pagination-container" style="margin-top: -2rem; margin-bottom: 3rem;"></div>
+        <!-- Dashboard de Estadísticas -->
+        <div id="global-stats-dashboard">
+            <div
+                style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+                <!-- Card: Crecimiento Mensual -->
+                <div class="card"
+                    style="background: rgba(255,255,255,0.02); border: 1px solid var(--border); padding: 1.5rem; border-radius: 16px;">
+                    <h4
+                        style="margin-bottom: 1rem; color: var(--primary); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px;">
+                        📈 Crecimiento de Ligas</h4>
+                    <div id="stats-growth-chart"
+                        style="min-height: 200px; display: flex; align-items: flex-end; gap: 10px; padding-bottom: 20px;">
+                        <!-- Renderizado via JS -->
+                    </div>
+                    <p class="text-muted" style="font-size: 0.75rem; text-align: center;">Nuevos registros históricos
+                        por mes</p>
+                </div>
 
-        <div class="action-bar" style="background: rgba(255,255,255,0.03); padding: 1rem 1.5rem; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
-            <h4 style="margin: 0;">Historial de Transacciones</h4>
-            <div style="display: flex; gap: 10px; align-items: center;">
-                <select id="settings-combo-payments-filter" class="nav-select" 
-                    style="min-width: 150px; background: rgba(0,255,136,0.1); border-color: rgba(0,255,136,0.3); color: #00ff88; height: 32px; font-size: 0.8rem;"
-                    onchange="ui.settings.renderComboPayments()">
-                    <option value="all" selected>🔍 Todos los Métodos</option>
-                    <option value="Transferencia">🏦 Transferencia</option>
-                    <option value="Efectivo">💵 Efectivo</option>
-                    <option value="Tarjeta">💳 Tarjeta</option>
-                </select>
-                <select id="settings-combo-payments-limit" class="nav-select" 
-                    style="min-width: 80px; background: var(--bg-card); border-color: var(--border); height: 32px; font-size: 0.8rem;"
-                    onchange="ui.settings.updateItemsPerPage(this.value)">
-                    <option value="5">5 / pág</option>
-                    <option value="10" selected>10 / pág</option>
-                    <option value="20">20 / pág</option>
-                    <option value="50">50 / pág</option>
-                </select>
-                <div style="position: relative; width: 250px;">
-                    <input type="text" id="combo-payment-search" placeholder="🔍 Buscar aportación..." 
-                        style="width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 20px; padding: 6px 15px 6px 35px; color: var(--text); font-size: 0.85rem;"
-                        onkeyup="ui.settings.renderComboPayments()">
-                    <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); opacity: 0.4; font-size: 0.9rem;"></span>
+                <!-- Card: Distribución Geográfica -->
+                <div class="card"
+                    style="background: rgba(255,255,255,0.02); border: 1px solid var(--border); padding: 1.5rem; border-radius: 16px;">
+                    <h4
+                        style="margin-bottom: 1rem; color: #3b82f6; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px;">
+                        📍 Top Regiones (Estado)</h4>
+                    <div id="stats-geo-list" style="display: flex; flex-direction: column; gap: 12px;">
+                        <!-- Renderizado via JS -->
+                    </div>
+                </div>
+
+                <!-- Card: Usuarios por Rol -->
+                <div class="card"
+                    style="background: rgba(255,255,255,0.02); border: 1px solid var(--border); padding: 1.5rem; border-radius: 16px;">
+                    <h4
+                        style="margin-bottom: 1rem; color: #a855f7; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px;">
+                        👥 Ecosistema de Usuarios</h4>
+                    <div id="stats-roles-list" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <!-- Renderizado via JS -->
+                    </div>
                 </div>
             </div>
+
+            <!-- Tabla de Ligas Recientes -->
+            <div class="premium-table-container fade-in-up">
+                <div
+                    style="padding: 1rem 1.5rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+                    <h4 style="margin: 0; font-size: 0.95rem;">Ligas Recientemente Registradas</h4>
+                    <span id="total-ligas-badge" class="badge" style="background: var(--primary); color: #000;">--
+                        Ligas</span>
+                </div>
+                <table class="premium-table">
+                    <thead>
+                        <tr>
+                            <th>Organización / Ubicación</th>
+                            <th>Contacto / Admin</th>
+                            <th>Subdominio</th>
+                            <th>Registro</th>
+                            <th style="text-align: right;">Estatus</th>
+                        </tr>
+                    </thead>
+                    <tbody id="stats-ligas-recientes-list">
+                        <!-- Cargado via JS -->
+                    </tbody>
+                </table>
+            </div>
         </div>
-        
-        <div class="premium-table-container fade-in-up">
-            <table class="premium-table">
-                <thead>
-                    <tr>
-                        <th>Fecha</th>
-                        <th>Combo / Organización</th>
-                        <th>Mes Aportado</th>
-                        <th>Monto</th>
-                        <th>Método</th>
-                        <th>Acción</th>
-                    </tr>
-                </thead>
-                <tbody id="settings-combo-payments-list">
-                    <!-- Cargado via JS -->
-                </tbody>
-            </table>
-        </div>
-        <div id="settings-combo-payments-pagination" class="pagination-container" style="margin-top: 1rem;"></div>
     </div>
-    
+
     <!-- Pestaña: Resumenes (Analytics) -->
     <div id="settings-tab-resumenes" class="settings-tab-content animate-in slideInRight" style="display: none;">
         <div class="resumen-container">
@@ -183,10 +176,12 @@
             <div class="resumen-header">
                 <div class="resumen-header-info">
                     <h3>📁 Exportación y Auditoría</h3>
-                    <p class="text-muted" style="font-size: 0.85rem;">Descarga de bases de datos y control de operaciones diarias.</p>
+                    <p class="text-muted" style="font-size: 0.85rem;">Descarga de bases de datos y control de
+                        operaciones diarias.</p>
                 </div>
                 <div class="resumen-header-actions">
-                    <button class="btn-dashboard btn-secondary-light" onclick="alert('Funcionalidad de exportación en desarrollo')">
+                    <button class="btn-dashboard btn-secondary-light"
+                        onclick="alert('Funcionalidad de exportación en desarrollo')">
                         <span>📤</span> Universo Operativo
                     </button>
                 </div>
@@ -248,25 +243,29 @@
             <div class="resumen-main-columns">
                 <!-- Grilla Secundaria de Gestión -->
                 <div class="resumen-secondary-grid">
-                    <div class="dash-card-side border-green" style="cursor: pointer;" onclick="ui.analytics.showReport('sedes')">
+                    <div class="dash-card-side border-green" style="cursor: pointer;"
+                        onclick="ui.analytics.showReport('sedes')">
                         <span class="badge-ver">Ver</span>
                         <p class="side-title">Sedes Activas</p>
                         <div class="side-value" id="resumen-total-canchas">--</div>
                         <p class="side-subinfo" id="resumen-canchas-info">Instalaciones operativas</p>
                     </div>
-                    <div class="dash-card-side border-indigo" style="cursor: pointer;" onclick="ui.analytics.showReport('combos')">
+                    <div class="dash-card-side border-indigo" style="cursor: pointer;"
+                        onclick="ui.analytics.showReport('combos')">
                         <span class="badge-ver">Ver</span>
                         <p class="side-title">Combos Activos</p>
                         <div class="side-value" id="resumen-total-combos">--</div>
                         <p class="side-subinfo" id="resumen-combos-impacto">--</p>
                     </div>
-                    <div class="dash-card-side border-yellow" style="cursor: pointer;" onclick="ui.analytics.showReport('ingresos', 'operativo')">
+                    <div class="dash-card-side border-yellow" style="cursor: pointer;"
+                        onclick="ui.analytics.showReport('ingresos', 'operativo')">
                         <span class="badge-ver">Ver</span>
                         <p class="side-title">Ingresos Ligas (Operativo)</p>
                         <div class="side-value" id="resumen-ingresos-mensuales">--</div>
                         <p class="side-subinfo" id="resumen-ingresos-subinfo">Acumulado mensual</p>
                     </div>
-                    <div class="dash-card-side border-teal" style="cursor: pointer;" onclick="ui.analytics.showReport('corte', 'administrativo')">
+                    <div class="dash-card-side border-teal" style="cursor: pointer;"
+                        onclick="ui.analytics.showReport('corte', 'administrativo')">
                         <span class="badge-ver">Ver</span>
                         <p class="side-title">Aportaciones Combos (Admin)</p>
                         <div class="side-value" id="resumen-corte-diario">$0.00</div>
@@ -278,7 +277,8 @@
                 <div class="resumen-main-area" id="resumen-detail-pane" style="min-height: 400px;">
                     <div class="empty-state-icon">📊</div>
                     <div class="empty-state-title">Selecciona un reporte</div>
-                    <div class="empty-state-text">Nivele estratégico: Haz clic en cualquier tarjeta de arriba para ver el detalle.</div>
+                    <div class="empty-state-text">Nivele estratégico: Haz clic en cualquier tarjeta de arriba para ver
+                        el detalle.</div>
                 </div>
             </div>
         </div>
@@ -286,41 +286,62 @@
 
     <!-- Pestaña: Privacidad y Términos -->
     <div id="settings-tab-privacidad" class="settings-tab-content animate-in slideInRight" style="display: none;">
-        <div class="action-bar" style="background: rgba(255,255,255,0.03); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <div class="action-bar"
+            style="background: rgba(255,255,255,0.03); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
             <div>
                 <h3 style="margin: 0;">🔐 Marco Legal y Políticas</h3>
-                <p class="text-muted" style="margin-top: 5px; font-size: 0.9rem;">Configura los avisos legales que se muestran en el inicio de sesión y perfiles.</p>
+                <p class="text-muted" style="margin-top: 5px; font-size: 0.9rem;">Configura los avisos legales que se
+                    muestran en el inicio de sesión y perfiles.</p>
             </div>
             <div style="display: flex; gap: 10px;">
-                <button class="btn-secondary" onclick="ui.privacy.fillDefaultTemplate()" style="display: flex; align-items: center; gap: 8px;">
+                <button class="btn-secondary" onclick="ui.privacy.fillDefaultTemplate()"
+                    style="display: flex; align-items: center; gap: 8px;">
                     🪄 Autollenar Borrador
                 </button>
-                <button id="btn-save-privacy" class="btn-primary" onclick="ui.privacy.savePrivacyPolicy()" style="white-space: nowrap;">
+                <button id="btn-save-privacy" class="btn-primary" onclick="ui.privacy.savePrivacyPolicy()"
+                    style="white-space: nowrap;">
                     💾 Guardar Cambios
                 </button>
             </div>
         </div>
 
         <!-- Navegación Interna de Privacidad -->
-        <div class="tabs-nav-internal" style="display: flex; gap: 8px; margin-bottom: 1.5rem; background: rgba(0,0,0,0.2); padding: 5px; border-radius: 12px; border: 1px solid var(--border);">
-            <button class="privacy-tab-btn active" id="priv-tab-policy" onclick="ui.privacy.switchPrivacyTab('privacy_policy')" style="flex: 1; padding: 10px; border: none; background: var(--primary); color: #000; font-weight: 700; border-radius: 8px; cursor: pointer; transition: 0.3s;">📄 Aviso Privacidad</button>
-            <button class="privacy-tab-btn" id="priv-tab-minors" onclick="ui.privacy.switchPrivacyTab('minors_photo_policy')" style="flex: 1; padding: 10px; border: none; background: transparent; color: var(--text-muted); font-weight: 600; border-radius: 8px; cursor: pointer; transition: 0.3s;">🔞 Fotos Menores</button>
-            <button class="privacy-tab-btn" id="priv-tab-terms" onclick="ui.privacy.switchPrivacyTab('terms_conditions')" style="flex: 1; padding: 10px; border: none; background: transparent; color: var(--text-muted); font-weight: 600; border-radius: 8px; cursor: pointer; transition: 0.3s;">⚖️ Términos y Cond.</button>
-            <button class="privacy-tab-btn" id="priv-tab-scope" onclick="ui.privacy.switchPrivacyTab('app_scope')" style="flex: 1; padding: 10px; border: none; background: transparent; color: var(--text-muted); font-weight: 600; border-radius: 8px; cursor: pointer; transition: 0.3s;">🎯 Alcance de App</button>
+        <div class="tabs-nav-internal"
+            style="display: flex; gap: 8px; margin-bottom: 1.5rem; background: rgba(0,0,0,0.2); padding: 5px; border-radius: 12px; border: 1px solid var(--border);">
+            <button class="privacy-tab-btn active" id="priv-tab-policy"
+                onclick="ui.privacy.switchPrivacyTab('privacy_policy')"
+                style="flex: 1; padding: 10px; border: none; background: var(--primary); color: #000; font-weight: 700; border-radius: 8px; cursor: pointer; transition: 0.3s;">📄
+                Aviso Privacidad</button>
+            <button class="privacy-tab-btn" id="priv-tab-minors"
+                onclick="ui.privacy.switchPrivacyTab('minors_photo_policy')"
+                style="flex: 1; padding: 10px; border: none; background: transparent; color: var(--text-muted); font-weight: 600; border-radius: 8px; cursor: pointer; transition: 0.3s;">🔞
+                Fotos Menores</button>
+            <button class="privacy-tab-btn" id="priv-tab-terms"
+                onclick="ui.privacy.switchPrivacyTab('terms_conditions')"
+                style="flex: 1; padding: 10px; border: none; background: transparent; color: var(--text-muted); font-weight: 600; border-radius: 8px; cursor: pointer; transition: 0.3s;">⚖️
+                Términos y Cond.</button>
+            <button class="privacy-tab-btn" id="priv-tab-scope" onclick="ui.privacy.switchPrivacyTab('app_scope')"
+                style="flex: 1; padding: 10px; border: none; background: transparent; color: var(--text-muted); font-weight: 600; border-radius: 8px; cursor: pointer; transition: 0.3s;">🎯
+                Alcance de App</button>
         </div>
 
-        <div class="privacy-editor-card" style="background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 20px; padding: 2rem; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
-            <div style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 10px; color: var(--primary); font-weight: bold;">
+        <div class="privacy-editor-card"
+            style="background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 20px; padding: 2rem; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+            <div
+                style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 10px; color: var(--primary); font-weight: bold;">
                 <span id="privacy-editor-title">📝 Editando: Aviso de Privacidad</span>
-                <div style="flex: 1; height: 1px; background: linear-gradient(to right, var(--primary), transparent);"></div>
+                <div style="flex: 1; height: 1px; background: linear-gradient(to right, var(--primary), transparent);">
+                </div>
             </div>
-            
-            <textarea id="privacy-content-editor" 
+
+            <textarea id="privacy-content-editor"
                 style="width: 100%; min-height: 480px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 1.5rem; color: #fff; font-family: 'Inter', sans-serif; line-height: 1.6; resize: vertical; outline: none; transition: 0.3s;"
                 placeholder="Cargando contenido..."></textarea>
-            
-            <div style="margin-top: 1rem; font-size: 0.8rem; color: var(--text-muted); display: flex; align-items: center; gap: 8px;">
-                <span>💡 Tip: Usa el botón "Autollenar Borrador" para generar un texto base legalmente sólido y luego ajústalo a tu liga.</span>
+
+            <div
+                style="margin-top: 1rem; font-size: 0.8rem; color: var(--text-muted); display: flex; align-items: center; gap: 8px;">
+                <span>💡 Tip: Usa el botón "Autollenar Borrador" para generar un texto base legalmente sólido y luego
+                    ajústalo a tu liga.</span>
             </div>
         </div>
     </div>
@@ -345,7 +366,8 @@
                     <div class="form-row">
                         <div class="form-group" style="flex: 0.5;">
                             <label for="settings-pago-meses">Meses a Pagar</label>
-                            <input type="number" id="settings-pago-meses" value="1" min="1" step="1" oninput="ui.settings.updateComboPaymentTotal()" required>
+                            <input type="number" id="settings-pago-meses" value="1" min="1" step="1"
+                                oninput="ui.settings.updateComboPaymentTotal()" required>
                         </div>
                         <div class="form-group">
                             <label for="settings-pago-monto">Monto Total ($)</label>
@@ -375,7 +397,8 @@
                         <textarea id="settings-pago-notas" placeholder="Detalles adicionales..."></textarea>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn-secondary" onclick="Core.closeModal('modal-combo-payment')">Cancelar</button>
+                        <button type="button" class="btn-secondary"
+                            onclick="Core.closeModal('modal-combo-payment')">Cancelar</button>
                         <button type="submit" class="btn-primary" style="flex: 1;">Guardar Aportación</button>
                     </div>
                 </form>
@@ -386,39 +409,57 @@
     <!-- Pestaña: Roles -->
     <div id="settings-tab-roles" class="settings-tab-content" style="display: none;">
 
-        <div class="action-bar" style="background: rgba(255,255,255,0.03); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 2rem;">
+        <div class="action-bar"
+            style="background: rgba(255,255,255,0.03); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 2rem;">
             <h3 style="margin: 0;">Permisos por Rol</h3>
-            <p class="text-muted" style="margin-top: 5px; font-size: 0.9rem;">Referencia de capacidades según el perfil asignado.</p>
+            <p class="text-muted" style="margin-top: 5px; font-size: 0.9rem;">Referencia de capacidades según el perfil
+                asignado.</p>
         </div>
-        
-        <div class="roles-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem;">
-            <div class="card" style="padding: 1.5rem; border: 1px solid var(--border); border-radius: 12px; background: rgba(255,255,255,0.02); height: 100%;">
+
+        <div class="roles-grid"
+            style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem;">
+            <div class="card"
+                style="padding: 1.5rem; border: 1px solid var(--border); border-radius: 12px; background: rgba(255,255,255,0.02); height: 100%;">
                 <span class="badge badge-admin">ADMIN</span>
-                <p style="margin-top: 1rem; font-size: 0.85rem; line-height: 1.4;">Control total del sistema. Gestión global de infraestructura y cuentas maestras.</p>
+                <p style="margin-top: 1rem; font-size: 0.85rem; line-height: 1.4;">Control total del sistema. Gestión
+                    global de infraestructura y cuentas maestras.</p>
             </div>
-            <div class="card" style="padding: 1.5rem; border: 1px solid var(--border); border-radius: 12px; background: rgba(255,255,255,0.02); height: 100%;">
+            <div class="card"
+                style="padding: 1.5rem; border: 1px solid var(--border); border-radius: 12px; background: rgba(255,255,255,0.02); height: 100%;">
                 <span class="badge badge-ejecutivo">EJECUTIVO</span>
-                <p style="margin-top: 1rem; font-size: 0.85rem; line-height: 1.4;">Atención técnica y soporte. Creación de nuevas ligas y gestión de clientes.</p>
+                <p style="margin-top: 1rem; font-size: 0.85rem; line-height: 1.4;">Atención técnica y soporte. Creación
+                    de nuevas ligas y gestión de clientes.</p>
             </div>
-            <div class="card" style="padding: 1.5rem; border: 1px solid var(--border); border-radius: 12px; background: rgba(255,255,255,0.02); height: 100%;">
+            <div class="card"
+                style="padding: 1.5rem; border: 1px solid var(--border); border-radius: 12px; background: rgba(255,255,255,0.02); height: 100%;">
                 <span class="badge badge-dueño_liga">DUEÑO DE LIGA</span>
-                <p style="margin-top: 1rem; font-size: 0.85rem; line-height: 1.4;">Acceso a inscripciones y pagos de sus ligas. Capacidad de agregar 1 cancha y 5 ligas. <strong>$350/mes</strong></p>
+                <p style="margin-top: 1rem; font-size: 0.85rem; line-height: 1.4;">Acceso a inscripciones y pagos de sus
+                    ligas. Capacidad de agregar 1 cancha y 5 ligas. <strong>$350/mes</strong></p>
             </div>
-            <div class="card" style="padding: 1.5rem; border: 1px solid var(--border); border-radius: 12px; background: rgba(255,255,255,0.02); height: 100%;">
+            <div class="card"
+                style="padding: 1.5rem; border: 1px solid var(--border); border-radius: 12px; background: rgba(255,255,255,0.02); height: 100%;">
                 <span class="badge badge-super_arbitro">SUPER ÁRBITRO</span>
-                <p style="margin-top: 1rem; font-size: 0.85rem; line-height: 1.4;">Acceso a inscripciones y pagos. Edición de canchas, ligas, equipos y jugadores. Agregar 1 cancha y 2 ligas. <strong>$150/mes</strong></p>
+                <p style="margin-top: 1rem; font-size: 0.85rem; line-height: 1.4;">Acceso a inscripciones y pagos.
+                    Edición de canchas, ligas, equipos y jugadores. Agregar 1 cancha y 2 ligas.
+                    <strong>$150/mes</strong></p>
             </div>
-            <div class="card" style="padding: 1.5rem; border: 1px solid var(--border); border-radius: 12px; background: rgba(255,255,255,0.02); height: 100%;">
+            <div class="card"
+                style="padding: 1.5rem; border: 1px solid var(--border); border-radius: 12px; background: rgba(255,255,255,0.02); height: 100%;">
                 <span class="badge badge-equipo">EQUIPO / JUGADOR</span>
-                <p style="margin-top: 1rem; font-size: 0.85rem; line-height: 1.4;">Acceso a inscripciones y pagos. Edición de información general. Agregar 1 cancha y 1 liga. <strong>$100/mes</strong></p>
+                <p style="margin-top: 1rem; font-size: 0.85rem; line-height: 1.4;">Acceso a inscripciones y pagos.
+                    Edición de información general. Agregar 1 cancha y 1 liga. <strong>$100/mes</strong></p>
             </div>
-            <div class="card" style="padding: 1.5rem; border: 1px solid var(--border); border-radius: 12px; background: rgba(255,255,255,0.02); height: 100%;">
+            <div class="card"
+                style="padding: 1.5rem; border: 1px solid var(--border); border-radius: 12px; background: rgba(255,255,255,0.02); height: 100%;">
                 <span class="badge badge-arbitro">ÁRBITRO GENERAL</span>
-                <p style="margin-top: 1rem; font-size: 0.85rem; line-height: 1.4;">Solo lectura en web. Inicio de partidos y captura de anotaciones vía App Telegram.</p>
+                <p style="margin-top: 1rem; font-size: 0.85rem; line-height: 1.4;">Solo lectura en web. Inicio de
+                    partidos y captura de anotaciones vía App Telegram.</p>
             </div>
-            <div class="card" style="padding: 1.5rem; border: 1px solid var(--border); border-radius: 12px; background: rgba(255,255,255,0.02); height: 100%;">
+            <div class="card"
+                style="padding: 1.5rem; border: 1px solid var(--border); border-radius: 12px; background: rgba(255,255,255,0.02); height: 100%;">
                 <span class="badge" style="background: #444; color: #fff;">SOLO VISTA</span>
-                <p style="margin-top: 1rem; font-size: 0.85rem; line-height: 1.4;">Acceso restringido para participantes. Permite ver calendarios, tablas y resultados sin capacidad de edición.</p>
+                <p style="margin-top: 1rem; font-size: 0.85rem; line-height: 1.4;">Acceso restringido para
+                    participantes. Permite ver calendarios, tablas y resultados sin capacidad de edición.</p>
             </div>
         </div>
 
@@ -473,7 +514,8 @@
                 <div class="form-group">
                     <label for="user-password">Contraseña</label>
                     <input type="password" id="user-password" placeholder="Mínimo 6 caracteres">
-                    <p class="text-muted" style="font-size: 0.75rem; margin-top: 5px;">Dejar vacío para mantener la contraseña actual (si estás editando).</p>
+                    <p class="text-muted" style="font-size: 0.75rem; margin-top: 5px;">Dejar vacío para mantener la
+                        contraseña actual (si estás editando).</p>
                 </div>
                 <div class="form-group">
                     <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
@@ -482,7 +524,8 @@
                     </label>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn-secondary" onclick="Core.closeModal('modal-user')">Cancelar</button>
+                    <button type="button" class="btn-secondary"
+                        onclick="Core.closeModal('modal-user')">Cancelar</button>
                     <button type="submit" class="btn-primary" style="flex: 1;">Guardar Usuario</button>
                 </div>
             </form>
@@ -502,8 +545,11 @@
                 <input type="hidden" id="combo-liga-id">
 
                 <!-- Selección de Plan / Paquete -->
-                <div id="combo-section-plan" style="background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 12px; padding: 1rem; margin-bottom: 1.2rem;">
-                    <p style="font-size: 0.7rem; text-transform: uppercase; font-weight: 800; color: var(--text-muted); letter-spacing: 1px; margin-bottom: 1rem;">Selecciona el Plan</p>
+                <div id="combo-section-plan"
+                    style="background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 12px; padding: 1rem; margin-bottom: 1.2rem;">
+                    <p
+                        style="font-size: 0.7rem; text-transform: uppercase; font-weight: 800; color: var(--text-muted); letter-spacing: 1px; margin-bottom: 1rem;">
+                        Selecciona el Plan</p>
                     <div class="form-group">
                         <label for="combo-owner-rol">Paquete del Combo</label>
                         <select id="combo-owner-rol" required onchange="ui.settings.updateComboPriceInfo(this.value)">
@@ -511,13 +557,17 @@
                             <option value="super_arbitro">🚀 Plan Super Árbitro ($150/mes)</option>
                             <option value="equipo">🛡️ Plan Equipo / Jugador ($100/mes)</option>
                         </select>
-                        <p id="combo-price-info" class="text-muted" style="font-size: 0.8rem; margin-top: 8px;">Incluye 1 cancha + 5 ligas y 4 cuentas de acceso.</p>
+                        <p id="combo-price-info" class="text-muted" style="font-size: 0.8rem; margin-top: 8px;">Incluye
+                            1 cancha + 5 ligas y 4 cuentas de acceso.</p>
                     </div>
                 </div>
 
                 <!-- Datos de la Organización -->
-                <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 12px; padding: 1rem; margin-bottom: 1.2rem;">
-                    <p style="font-size: 0.7rem; text-transform: uppercase; font-weight: 800; color: var(--text-muted); letter-spacing: 1px; margin-bottom: 1rem;">Datos de la Organización</p>
+                <div
+                    style="background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 12px; padding: 1rem; margin-bottom: 1.2rem;">
+                    <p
+                        style="font-size: 0.7rem; text-transform: uppercase; font-weight: 800; color: var(--text-muted); letter-spacing: 1px; margin-bottom: 1rem;">
+                        Datos de la Organización</p>
                     <div class="form-row">
                         <div class="form-group" style="flex: 1;">
                             <label for="combo-nombre">Nombre de la Organización / Liga</label>
@@ -529,7 +579,8 @@
                         </div>
                         <div class="form-group" style="flex: 0 0 80px;">
                             <label for="combo-color">Color</label>
-                            <input type="color" id="combo-color" value="#00ff88" style="height: 42px; width: 100%; border-radius: 8px; cursor: pointer;">
+                            <input type="color" id="combo-color" value="#00ff88"
+                                style="height: 42px; width: 100%; border-radius: 8px; cursor: pointer;">
                         </div>
                     </div>
                     <div class="form-group">
@@ -539,11 +590,15 @@
                 </div>
 
                 <!-- Cuenta del Responsable Titular -->
-                <div id="combo-section-owner" style="background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 12px; padding: 1rem; margin-bottom: 1.2rem;">
-                    <p id="combo-owner-title" style="font-size: 0.7rem; text-transform: uppercase; font-weight: 800; color: var(--text-muted); letter-spacing: 1px; margin-bottom: 1rem;">Cuenta del Responsable Titular</p>
+                <div id="combo-section-owner"
+                    style="background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 12px; padding: 1rem; margin-bottom: 1.2rem;">
+                    <p id="combo-owner-title"
+                        style="font-size: 0.7rem; text-transform: uppercase; font-weight: 800; color: var(--text-muted); letter-spacing: 1px; margin-bottom: 1rem;">
+                        Cuenta del Responsable Titular</p>
                     <div id="combo-owner-name-group" class="form-group">
                         <label for="combo-owner-nombre">Nombre del Titular</label>
-                        <input type="text" id="combo-owner-nombre" required placeholder="Nombre completo del responsable">
+                        <input type="text" id="combo-owner-nombre" required
+                            placeholder="Nombre completo del responsable">
                     </div>
                     <div class="form-row">
                         <div class="form-group" style="flex:1;">
@@ -555,13 +610,16 @@
                             <input type="text" id="combo-owner-pass" required placeholder="Mínimo 6 caracteres">
                         </div>
                     </div>
-                    <p id="combo-owner-help" class="text-muted" style="font-size: 0.75rem; margin-top: 5px;">Se crearán automáticamente 3 subcuentas extra usando esta misma contraseña.</p>
+                    <p id="combo-owner-help" class="text-muted" style="font-size: 0.75rem; margin-top: 5px;">Se crearán
+                        automáticamente 3 subcuentas extra usando esta misma contraseña.</p>
                 </div>
 
 
                 <div class="modal-footer">
-                    <button type="button" class="btn-secondary" onclick="Core.closeModal('modal-combo')">Cancelar</button>
-                    <button type="submit" id="combo-submit-btn" class="btn-primary" style="flex: 1;">✚ Crear Combo</button>
+                    <button type="button" class="btn-secondary"
+                        onclick="Core.closeModal('modal-combo')">Cancelar</button>
+                    <button type="submit" id="combo-submit-btn" class="btn-primary" style="flex: 1;">✚ Crear
+                        Combo</button>
                 </div>
             </form>
         </div>
@@ -615,7 +673,8 @@
                     <textarea id="edit-pago-notas"></textarea>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn-secondary" onclick="Core.closeModal('modal-edit-combo_payment')">Cancelar</button>
+                    <button type="button" class="btn-secondary"
+                        onclick="Core.closeModal('modal-edit-combo_payment')">Cancelar</button>
                     <button type="submit" class="btn-primary" style="flex: 1;">Actualizar Aportación</button>
                 </div>
             </form>

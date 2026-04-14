@@ -13,7 +13,7 @@ export class AnalyticsModule {
         await this.ui.settings.loadLigas();
 
         const ligas = this.ui.settings.ligas || [];
-        
+
         // Cargar estadísticas detalladas
         try {
             // Sincronizar con filtros si están definidos
@@ -44,15 +44,15 @@ export class AnalyticsModule {
                 'resumen-total-torneos': stats?.torneos ?? 0,
                 'resumen-total-arbitros': stats?.arbitros ?? 0,
                 'resumen-vencimientos-combos': stats?.vencimientos_combos ?? 0,
-                
+
                 // Card: Ingresos Ligas (Operativo) - Acumulado del Mes
-                'resumen-ingresos-mensuales': corte?.total_operativo ? `$${corte.total_operativo.toLocaleString('es-MX', {minimumFractionDigits: 2})}` : '$0.00',
+                'resumen-ingresos-mensuales': corte?.total_operativo ? `$${corte.total_operativo.toLocaleString('es-MX', { minimumFractionDigits: 2 })}` : '$0.00',
                 'resumen-ingresos-subinfo': 'Acumulado mensual (Ligas)',
-                
+
                 // Card: Aportaciones Combos (Admin) - Hoy vs Mes
                 // Mostramos el administrativo de HOY como principal, y el del MES en la subinfo
-                'resumen-corte-diario': corteHoy?.total_administrativo ? `$${corteHoy.total_administrativo.toLocaleString('es-MX', {minimumFractionDigits: 2})}` : '$0.00',
-                'resumen-corte-subinfo': `$${(corte?.total_administrativo || 0).toLocaleString('es-MX', {minimumFractionDigits: 2})} acumulado este mes`
+                'resumen-corte-diario': corteHoy?.total_administrativo ? `$${corteHoy.total_administrativo.toLocaleString('es-MX', { minimumFractionDigits: 2 })}` : '$0.00',
+                'resumen-corte-subinfo': `$${(corte?.total_administrativo || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })} acumulado este mes`
             };
 
             for (const [id, value] of Object.entries(elements)) {
@@ -68,7 +68,7 @@ export class AnalyticsModule {
         } catch (error) {
             console.error('Error al renderizar resúmenes:', error);
         }
-    
+
         // Calcular canchas y métricas de combos
         let totalCanchas = 0;
         ligas.forEach(l => {
@@ -78,11 +78,11 @@ export class AnalyticsModule {
 
         const totalCombos = ligas.length;
         const totalSedes = ligas.length;
-        
+
         // Actualizar valores de impacto y conteo
         this.setVal('resumen-total-combos', totalCombos);
-        this.setVal('resumen-total-canchas', totalSedes); 
-        this.setVal('resumen-canchas-info', `${totalCanchas} instalaciones operativas`); 
+        this.setVal('resumen-total-canchas', totalSedes);
+        this.setVal('resumen-canchas-info', `${totalCanchas} instalaciones operativas`);
         this.setVal('resumen-combos-impacto', `${totalCombos} organizaciones activas`);
     }
 
@@ -96,7 +96,7 @@ export class AnalyticsModule {
         try {
             const params = `?start_date=${this._reportStartDate || ''}&end_date=${this._reportEndDate || ''}`;
             data = await Core.fetchAPI('/api/corte-diario' + params);
-            this._lastCorte = data; 
+            this._lastCorte = data;
         } catch (error) {
             console.error('Error al obtener corte diario para reporte:', error);
             data = this._lastCorte || { total_dia: 0, transacciones: { administrativas: [], operativas: [] } };
@@ -121,7 +121,7 @@ export class AnalyticsModule {
         }
 
         const fecha_str = (data.start_date === data.end_date) ? data.start_date : `${data.start_date} al ${data.end_date}`;
-        
+
         const renderTransactionRows = (list) => {
             if (!list || list.length === 0) return '<tr><td colspan="3" style="padding: 15px; text-align: center; color: #64748b; font-style: italic;">Sin movimientos registrados</td></tr>';
             return list.map(item => `
@@ -131,7 +131,7 @@ export class AnalyticsModule {
                         <div style="font-size: 0.75rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">${item.tipo}</div>
                     </td>
                     <td style="padding: 12px 0; font-size: 0.85rem; color: #475569;">${item.metodo}</td>
-                    <td style="padding: 12px 0; text-align: right; font-weight: 700; color: #0f172a;">$${item.monto.toLocaleString('es-MX', {minimumFractionDigits:2})}</td>
+                    <td style="padding: 12px 0; text-align: right; font-weight: 700; color: #0f172a;">$${item.monto.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</td>
                 </tr>
             `).join('');
         };
@@ -173,7 +173,7 @@ export class AnalyticsModule {
         </div>
         <div class="report-info">
             <h2>${reportTitle}</h2>
-            <p>EMITIDO: ${new Date().toLocaleDateString('es-MX', {day:'2-digit', month:'long', year:'numeric'})}</p>
+            <p>EMITIDO: ${new Date().toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' })}</p>
         </div>
     </div>
 
@@ -193,7 +193,7 @@ export class AnalyticsModule {
     ${operativas.length > 0 ? `
     <div class="section-title">
         <span>Ingresos Operativos (Inscripciones / Arbitrajes / Rentas)</span>
-        <span>$${(data.total_operativo || 0).toLocaleString('es-MX', {minimumFractionDigits:2})}</span>
+        <span>$${(data.total_operativo || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}</span>
     </div>
     <table>
         <thead>
@@ -209,7 +209,7 @@ export class AnalyticsModule {
     ${administrativas.length > 0 ? `
     <div class="section-title" style="margin-top: 40px;">
         <span>Ingresos Administrativos (Suscripciones de Combos)</span>
-        <span>$${(data.total_administrativo || 0).toLocaleString('es-MX', {minimumFractionDigits:2})}</span>
+        <span>$${(data.total_administrativo || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}</span>
     </div>
     <table>
         <thead>
@@ -318,7 +318,7 @@ export class AnalyticsModule {
 
         try {
             const params = `?start_date=${this._reportStartDate}&end_date=${this._reportEndDate}&page=${page}`;
-            
+
             if (type === 'sedes') {
                 const data = await Core.fetchAPI('/api/admin/dashboard-stats' + params);
                 this.renderSedesReport(pane, data);
@@ -339,7 +339,7 @@ export class AnalyticsModule {
                     '📅 Partidos del Periodo',
                     '#6366f1',
                     list.length === 0 ? '<tr><td colspan="4" style="padding:1rem;text-align:center;opacity:0.5;">Sin partidos programados en este rango</td></tr>' :
-                    list.map(p => `<tr>
+                        list.map(p => `<tr>
                         <td>${p.torneo_name || p.liga_nombre || '—'}</td>
                         <td style="font-weight:700;">${p.equipo_local || '—'} <span style="opacity:0.5;font-weight:400;">vs</span> ${p.equipo_visitante || '—'}</td>
                         <td>${p.fecha || '—'} ${p.hora || ''}</td>
@@ -356,7 +356,7 @@ export class AnalyticsModule {
                     '🛡️ Jugadores Registrados',
                     '#3b82f6',
                     list.length === 0 ? '<tr><td colspan="3" style="padding:1rem;text-align:center;opacity:0.5;">Sin jugadores registrados</td></tr>' :
-                    list.map(j => `<tr>
+                        list.map(j => `<tr>
                         <td style="font-weight:700;">${j.nombre || '—'}</td>
                         <td>
                             <div style="cursor:pointer; color:var(--primary); font-weight:600;"
@@ -379,7 +379,7 @@ export class AnalyticsModule {
                     '🏃 Entrenamientos Activos',
                     '#ec4899',
                     list.length === 0 ? '<tr><td colspan="3" style="padding:1rem;text-align:center;opacity:0.5;">Sin grupos de entrenamiento activos</td></tr>' :
-                    list.map(g => `<tr>
+                        list.map(g => `<tr>
                         <td>${g.nombre || '—'}</td>
                         <td>${g.cancha || '—'}</td>
                         <td>${g.alumnos_count ?? '0'} alumnos</td>
@@ -395,7 +395,7 @@ export class AnalyticsModule {
                     '⚖️ Cuerpo Arbitral',
                     '#f97316',
                     list.length === 0 ? '<tr><td colspan="3" style="padding:1rem;text-align:center;opacity:0.5;">Sin árbitros registrados</td></tr>' :
-                    list.map(a => `<tr>
+                        list.map(a => `<tr>
                         <td style="font-weight:700;">${a.nombre || '—'}</td>
                         <td>${a.email || a.telefono || '—'}</td>
                         <td><span class="badge" style="background:#f9731622;color:#f97316;">${a.nivel || 'Local'}</span></td>
@@ -406,7 +406,7 @@ export class AnalyticsModule {
             } else if (type === 'alertas') {
                 const data = await Core.fetchAPI('/api/admin/payment-alerts');
                 const operative = data?.operative || [];
-                
+
                 let rows = '';
                 if (operative.length === 0) {
                     rows = '<tr><td colspan="4" style="padding:2rem;text-align:center;opacity:0.5;">Sin alertas de pago operativas 🎉</td></tr>';
@@ -427,7 +427,7 @@ export class AnalyticsModule {
                         <div style="font-size:0.75rem; color:var(--primary); font-weight:600;">${o.liga_email || ''}</div>
                         <div style="font-size:0.75rem; color:var(--primary); font-weight:600;">${o.liga_telefono || ''}</div>
                     </td>
-                    <td style="color:#f59e0b; font-weight:800;">$${(o.saldo_pendiente||0).toLocaleString('es-MX')}</td>
+                    <td style="color:#f59e0b; font-weight:800;">$${(o.saldo_pendiente || 0).toLocaleString('es-MX')}</td>
                     <td><span class="badge-status warning">Pendiente</span></td>
                 </tr>`).join('');
 
@@ -446,7 +446,7 @@ export class AnalyticsModule {
                     '🛡️ Equipos Activos (Identidad Única)',
                     '#22c55e',
                     list.length === 0 ? '<tr><td colspan="4" style="padding:1rem;text-align:center;opacity:0.5;">Sin equipos registrados</td></tr>' :
-                    list.map(e => `<tr>
+                        list.map(e => `<tr>
                         <td>
                             <div style="font-weight:700; cursor:pointer; color:var(--primary);" 
                                  onmouseover="ui.analytics.showTeamStats(this, ${e.id})"
@@ -466,7 +466,7 @@ export class AnalyticsModule {
                 const data = await Core.fetchAPI('/api/admin/payment-alerts');
                 const subscription = data?.subscription || [];
                 const upcoming = data?.upcoming || [];
-                
+
                 let rows = '';
                 if (subscription.length === 0 && upcoming.length === 0) {
                     rows = '<tr><td colspan="4" style="padding:2rem;text-align:center;opacity:0.5;">Sin suscripciones por vencer próximamente 🎉</td></tr>';
@@ -484,7 +484,7 @@ export class AnalyticsModule {
                             <div style="font-size:0.85rem;">${s.email || ''}</div>
                             <div style="font-size:0.85rem; font-weight:600;">${s.telefono || ''}</div>
                         </td>
-                        <td style="color:#ef4444; font-weight:800;">$${(s.saldo_pendiente||s.monto||0).toLocaleString('es-MX')}</td>
+                        <td style="color:#ef4444; font-weight:800;">$${(s.saldo_pendiente || s.monto || 0).toLocaleString('es-MX')}</td>
                         <td><span class="badge-status error">Venció: ${s.vencimiento}</span></td>
                     </tr>`).join('');
                 }
@@ -501,7 +501,7 @@ export class AnalyticsModule {
                             <div style="font-size:0.85rem;">${v.email || ''}</div>
                             <div style="font-size:0.85rem; font-weight:600;">${v.telefono || ''}</div>
                         </td>
-                        <td style="color:#14b8a6; font-weight:800;">$${(v.monto||0).toLocaleString('es-MX')}</td>
+                        <td style="color:#14b8a6; font-weight:800;">$${(v.monto || 0).toLocaleString('es-MX')}</td>
                         <td><span class="badge-status warning">Faltan ${v.dias_restantes} días</span></td>
                     </tr>`).join('');
                 }
@@ -521,7 +521,7 @@ export class AnalyticsModule {
                     '🏆 Torneos y Competiciones',
                     '#a855f7',
                     list.length === 0 ? '<tr><td colspan="3" style="padding:1rem;text-align:center;opacity:0.5;">Sin torneos activos</td></tr>' :
-                    list.map(t => `<tr>
+                        list.map(t => `<tr>
                         <td>${t.nombre || '—'}</td>
                         <td>${t.liga_nombre || '—'}</td>
                         <td><span style="font-weight:700; color:var(--primary);">${t.equipos_count ?? '0'}</span> equipos / <span style="opacity:0.7;">${t.jugadores_count ?? '0'} jug.</span></td>
@@ -536,7 +536,7 @@ export class AnalyticsModule {
                     '⚽ Ligas y Organizaciones',
                     '#14b8a6',
                     list.length === 0 ? '<tr><td colspan="3" style="padding:1rem;text-align:center;opacity:0.5;">Sin ligas operativas</td></tr>' :
-                    list.map(l => `<tr>
+                        list.map(l => `<tr>
                         <td>${l.nombre || '—'}</td>
                         <td>${l.paquete || 'Básico'}</td>
                         <td>${l.canchas_count ?? '0'} locales</td>
@@ -699,14 +699,14 @@ export class AnalyticsModule {
             trans = [...(data.transacciones?.administrativas || []), ...(data.transacciones?.operativas || [])];
             displayTotal = data.total_dia;
         }
-        
+
         container.innerHTML = `
             <div class="fade-in" style="width: 100%; padding: 1rem;">
                 ${this.renderReportHeader(reportTitle, '💰', accentColor)}
                 
                 <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 15px; padding: 1.5rem; margin-bottom: 1.5rem; text-align: center;">
                     <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; font-weight: 800; letter-spacing: 1.5px; margin-bottom: 5px;">Total ${filter === 'all' ? 'Integral' : filter}</div>
-                    <div style="font-size: clamp(1.8rem, 8vw, 2.8rem); font-weight: 900; color: #fff; word-break: break-all;">$${(displayTotal || 0).toLocaleString('es-MX', {minimumFractionDigits:2})}</div>
+                    <div style="font-size: clamp(1.8rem, 8vw, 2.8rem); font-weight: 900; color: #fff; word-break: break-all;">$${(displayTotal || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}</div>
                 </div>
 
                 <div class="premium-table-container">
@@ -731,7 +731,7 @@ export class AnalyticsModule {
                                     </td>
                                     <td style="font-weight: 800; color: #fff; text-align:right;">$${parseFloat(item.monto || 0).toFixed(2)}</td>
                                 </tr>
-                            `).sort((a,b) => b.monto - a.monto).join('') || '<tr><td colspan="4" style="text-align: center; padding: 2rem;">Sin transacciones en este período.</td></tr>'}
+                            `).sort((a, b) => b.monto - a.monto).join('') || '<tr><td colspan="4" style="text-align: center; padding: 2rem;">Sin transacciones en este período.</td></tr>'}
                         </tbody>
                     </table>
                 </div>
@@ -759,7 +759,7 @@ export class AnalyticsModule {
             trans = [...(data.transacciones?.administrativas || []), ...(data.transacciones?.operativas || [])];
             displayTotal = data.total_dia;
         }
-        
+
         this._lastCorte = data; // Guardar para impresión
 
         container.innerHTML = `
@@ -768,7 +768,7 @@ export class AnalyticsModule {
                 
                 <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 15px; padding: 2rem; margin-bottom: 2rem; text-align: center;">
                     <div style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; font-weight: 800; letter-spacing: 1.5px; margin-bottom: 10px;">Balance ${filter === 'all' ? 'Total' : filter}</div>
-                    <div style="font-size: clamp(2rem, 10vw, 3.5rem); font-weight: 900; color: #fff; letter-spacing: -2px; word-break: break-all;">$${(displayTotal || 0).toLocaleString('es-MX', {minimumFractionDigits:2})}</div>
+                    <div style="font-size: clamp(2rem, 10vw, 3.5rem); font-weight: 900; color: #fff; letter-spacing: -2px; word-break: break-all;">$${(displayTotal || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}</div>
                 </div>
 
                 <div class="premium-table-container">
@@ -847,11 +847,11 @@ export class AnalyticsModule {
         if (!table) return;
         const searchTerm = query.toLowerCase();
         const rows = table.querySelectorAll('tbody tr');
-        
+
         rows.forEach(row => {
             // No filtrar los encabezados internos (th)
             if (row.querySelector('th')) return;
-            
+
             const text = row.innerText.toLowerCase();
             row.style.display = text.includes(searchTerm) ? '' : 'none';
         });
@@ -859,7 +859,7 @@ export class AnalyticsModule {
 
     async showTeamStats(element, teamId, forceSticky = false) {
         this.hideTeamStats();
-        
+
         // Crear tooltip
         const tooltip = document.createElement('div');
         tooltip.id = 'team-stats-tooltip';
@@ -874,26 +874,26 @@ export class AnalyticsModule {
         tooltip.style.boxShadow = '0 20px 50px rgba(0,0,0,0.5), 0 0 20px rgba(0,255,136,0.1)';
         tooltip.style.width = '300px';
         tooltip.style.pointerEvents = forceSticky ? 'all' : 'none';
-        
+
         const rect = element.getBoundingClientRect();
         const tooltipWidth = 300;
         let left = rect.right + 20;
-        
+
         // Si no cabe a la derecha, mostrar a la izquierda
         if (left + tooltipWidth > window.innerWidth) {
             left = rect.left - tooltipWidth - 20;
         }
-        
+
         // Posicionamiento vertical con protección de bordes
         let top = rect.top - 50;
         const tooltipHeight = 350; // Estimado para equipos
         if (top + tooltipHeight > window.innerHeight) {
             top = window.innerHeight - tooltipHeight - 20;
         }
-        
+
         tooltip.style.left = `${Math.max(10, left)}px`;
         tooltip.style.top = `${Math.max(10, top)}px`;
-        
+
         tooltip.innerHTML = `<div style="text-align:center; padding:1rem;"><div class="spinner-sm"></div> Cargando estadísticas...</div>`;
         document.body.appendChild(tooltip);
 
@@ -951,7 +951,7 @@ export class AnalyticsModule {
 
     async showPlayerStats(element, playerId) {
         this.hideTeamStats(); // Reutilizar el mismo contenedor de tooltip
-        
+
         const tooltip = document.createElement('div');
         tooltip.id = 'team-stats-tooltip'; // Reutilizar ID para consistencia CSS
         tooltip.className = 'premium-tooltip fade-in';
@@ -965,7 +965,7 @@ export class AnalyticsModule {
         tooltip.style.boxShadow = '0 25px 50px rgba(0,0,0,0.6), 0 0 30px rgba(0,255,136,0.05)';
         tooltip.style.width = '280px';
         tooltip.style.pointerEvents = 'none';
-        
+
         const rect = element.getBoundingClientRect();
         const tooltipWidth = 280;
         let left = rect.right + 20;
@@ -984,7 +984,7 @@ export class AnalyticsModule {
 
         tooltip.style.left = `${Math.max(10, left)}px`;
         tooltip.style.top = `${Math.max(10, top)}px`;
-        
+
         tooltip.innerHTML = `<div style="text-align:center; padding:1rem;"><div class="spinner-sm"></div> Cargando perfil...</div>`;
         document.body.appendChild(tooltip);
 
@@ -1031,6 +1031,106 @@ export class AnalyticsModule {
             `;
         } catch (e) {
             tooltip.innerHTML = `<div style="color:#ef4444; font-size:0.8rem; text-align:center; padding:1rem;">Error al cargar perfil.</div>`;
+        }
+    }
+    async loadGlobalStats() {
+        const container = document.getElementById('global-stats-dashboard');
+        if (!container) return;
+
+        try {
+            // Mostrar loaders en los contenedores específicos
+            const innerGrowth = document.getElementById('stats-growth-chart');
+            const innerGeo = document.getElementById('stats-geo-list');
+            const innerRoles = document.getElementById('stats-roles-list');
+            const innerTable = document.getElementById('stats-ligas-recientes-list');
+
+            if (innerGrowth) innerGrowth.innerHTML = '<div class="spinner-sm"></div>';
+            if (innerGeo) innerGeo.innerHTML = '<div class="spinner-sm"></div>';
+            if (innerRoles) innerRoles.innerHTML = '<div class="spinner-sm"></div>';
+            if (innerTable) innerTable.innerHTML = '<tr><td colspan="5" style="text-align:center;">Cargando inteligencia...</td></tr>';
+
+            const stats = await Core.fetchAPI('/api/admin/dashboard-stats?start_date=2020-01-01&end_date=' + new Date().toISOString().split('T')[0]);
+            const ligasResponse = await Core.fetchAPI('/api/admin/ligas?limit=10');
+            const ligas = ligasResponse.items || ligasResponse || [];
+
+            this.renderGlobalStats(stats, ligas);
+        } catch (error) {
+            console.error("Error al cargar estadísticas globales:", error);
+        }
+    }
+
+    renderGlobalStats(stats, ligas) {
+        // 1. Crecimiento Mensual (Barras CSS)
+        const growthContainer = document.getElementById('stats-growth-chart');
+        if (growthContainer && stats.ligas_por_mes) {
+            const maxCount = Math.max(...stats.ligas_por_mes.map(m => m.count), 1);
+            growthContainer.innerHTML = stats.ligas_por_mes.map(m => `
+                <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                    <div style="font-size: 0.65rem; font-weight: 800; color: var(--primary);">${m.count}</div>
+                    <div style="width: 100%; height: ${(m.count / maxCount) * 150}px; background: linear-gradient(to top, var(--primary), #00d1ff); border-radius: 4px 4px 0 0;"></div>
+                    <div style="font-size: 0.6rem; color: var(--text-muted); writing-mode: vertical-lr; transform: rotate(180deg); margin-top: 5px; height: 30px;">${m.label}</div>
+                </div>
+            `).join('');
+        }
+
+        // 2. Top Regiones
+        const geoContainer = document.getElementById('stats-geo-list');
+        if (geoContainer && stats.ligas_por_state || stats.ligas_por_estado) {
+            const states = stats.ligas_por_estado || [];
+            const total = states.reduce((acc, curr) => acc + curr.count, 0);
+            geoContainer.innerHTML = states.map(e => `
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+                        <span style="font-weight: 600;">${e.estado}</span>
+                        <span style="color: var(--text-muted); font-size: 0.7rem;">${e.count} ligas</span>
+                    </div>
+                    <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.05); border-radius: 3px; overflow: hidden;">
+                        <div style="width: ${(e.count / (total || 1)) * 100}%; height: 100%; background: #3b82f6; border-radius: 3px;"></div>
+                    </div>
+                </div>
+            `).join('') || '<p class="text-muted" style="font-size: 0.8rem; text-align: center;">Sin datos geográficos</p>';
+        }
+
+        // 3. Usuarios por Rol
+        const rolesContainer = document.getElementById('stats-roles-list');
+        if (rolesContainer && stats.usuarios_por_rol) {
+            const roles = [
+                { id: 'admin_liga', label: 'Dueños', color: '#00ff88', icon: '👑' },
+                { id: 'arbitro', label: 'Árbitros', color: '#ef4444', icon: '⚖️' },
+                { id: 'visor', label: 'Lectores', color: '#3b82f6', icon: '👁️' },
+                { id: 'jugador', label: 'Jugadores', color: '#eab308', icon: '⚽' }
+            ];
+            rolesContainer.innerHTML = roles.map(r => `
+                <div style="background: rgba(255,255,255,0.03); padding: 10px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.05); text-align: center;">
+                    <div style="font-size: 0.9rem; margin-bottom: 2px;">${r.icon}</div>
+                    <div style="font-size: 1.1rem; font-weight: 800; color: ${r.color};">${stats.usuarios_por_rol[r.id] || 0}</div>
+                    <div style="font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase;">${r.label}</div>
+                </div>
+            `).join('');
+        }
+
+        // 4. Ligas Recientes
+        const ligasTable = document.getElementById('stats-ligas-recientes-list');
+        if (ligasTable) {
+            const totalBadge = document.getElementById('total-ligas-badge');
+            if (totalBadge) totalBadge.innerText = `${ligas.length} Ligas Recientes`;
+            ligasTable.innerHTML = ligas.map(l => `
+                <tr>
+                    <td>
+                        <div style="font-weight: 700;">${l.nombre}</div>
+                        <div style="font-size: 0.7rem; color: var(--text-muted);">${l.municipio || '—'}, ${l.estado || '—'}</div>
+                    </td>
+                    <td>
+                        <div style="font-size: 0.85rem;">${l.contacto || '—'}</div>
+                        <div style="font-size: 0.7rem; opacity: 0.6;">Admin: ${l.owner_email || '—'}</div>
+                    </td>
+                    <td><code style="color: var(--primary); font-size: 0.75rem;">${l.subdominio}.futadmin.com</code></td>
+                    <td style="font-size: 0.8rem; color: var(--text-muted);">${l.fecha_registro || '—'}</td>
+                    <td style="text-align: right;">
+                        <span class="status-pill active" style="font-size: 0.6rem;">ACTIVA</span>
+                    </td>
+                </tr>
+            `).join('') || '<tr><td colspan="5" style="text-align:center; padding: 2rem; opacity: 0.5;">No hay registros recientes</td></tr>';
         }
     }
 }

@@ -667,6 +667,8 @@ def registro_publico():
             color='#00ff88',
             tipo_cliente='dueño_liga',
             contacto=telefono if telefono else email,
+            municipio=municipio,
+            estado=estado,
             monto_mensual=0.0,
             activa=True
         )
