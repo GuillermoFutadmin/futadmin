@@ -15,19 +15,9 @@ def init():
             manual_queries = [
                 "ALTER TABLE jugadores ADD COLUMN IF NOT EXISTS fecha_nacimiento DATE;",
                 "ALTER TABLE alumnos_entrenamiento ADD COLUMN IF NOT EXISTS fecha_nacimiento DATE;",
-                "ALTER TABLE torneos ADD COLUMN IF NOT EXISTS archived BOOLEAN DEFAULT FALSE;",
-                "ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS telegram_id VARCHAR(50) UNIQUE;",
-                "ALTER TABLE equipos ADD COLUMN IF NOT EXISTS puntos_legacy INTEGER DEFAULT 0;",
-                "ALTER TABLE equipos ADD COLUMN IF NOT EXISTS goles_f_legacy INTEGER DEFAULT 0;",
-                "ALTER TABLE equipos ADD COLUMN IF NOT EXISTS goles_c_legacy INTEGER DEFAULT 0;",
-                "ALTER TABLE equipos ADD COLUMN IF NOT EXISTS amarillas_legacy INTEGER DEFAULT 0;",
-                "ALTER TABLE equipos ADD COLUMN IF NOT EXISTS rojas_legacy INTEGER DEFAULT 0;",
-                "ALTER TABLE jugadores ADD COLUMN IF NOT EXISTS goles_legacy INTEGER DEFAULT 0;",
-                "ALTER TABLE jugadores ADD COLUMN IF NOT EXISTS amarillas_legacy INTEGER DEFAULT 0;",
-                "ALTER TABLE jugadores ADD COLUMN IF NOT EXISTS rojas_legacy INTEGER DEFAULT 0;",
-                "ALTER TABLE equipos ADD COLUMN IF NOT EXISTS saldo_arbitraje_legacy FLOAT DEFAULT 0.0;",
-                "ALTER TABLE pagos ADD COLUMN IF NOT EXISTS comprobante_url VARCHAR(255);",
-                "ALTER TABLE partidos ADD COLUMN IF NOT EXISTS fecha_inicio_efectiva TIMESTAMP;",
+                "ALTER TABLE torneos ADD COLUMN IF NOT EXISTS formato VARCHAR(50) DEFAULT 'Liga';",
+                "ALTER TABLE torneos ADD COLUMN IF NOT EXISTS jugadores_totales INTEGER DEFAULT 15;",
+                "ALTER TABLE torneos ADD COLUMN IF NOT EXISTS jugadores_campo INTEGER DEFAULT 7;",
                 "ALTER TABLE asistencias_partido ADD COLUMN IF NOT EXISTS en_cancha BOOLEAN DEFAULT FALSE;"
             ]
             
