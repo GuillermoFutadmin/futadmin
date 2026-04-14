@@ -230,7 +230,7 @@ def check_login():
         'users.registro_view', 'users.registro_publico',  # Registro freemium
         'static', 'healthcheck', 'debug_stats', 'diag_db', 'ping',
         'get_mail_logs', 'test_receipt_sync', 'diag_resend_pago_receipt',
-        'high_standards_health', 'stich_flow_view'
+        'high_standards_health', 'stich_flow_view', 'clear_stats_error'
     ]
     if request.endpoint in public_routes or not request.endpoint:
         return
@@ -317,6 +317,13 @@ def diag_db():
         import traceback
         return jsonify({"error": str(e), "trace": traceback.format_exc()}), 500
 
+
+@app.route('/api/admin/clear-error')
+def clear_stats_error():
+    """Limpia el log de errores globales de serialización."""
+    global LAST_STATS_ERROR
+    LAST_STATS_ERROR = "No errors yet"
+    return jsonify({"success": True})
 
 @app.route('/api/all_equipos', methods=['GET'])
 def get_all_equipos():
