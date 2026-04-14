@@ -657,14 +657,22 @@ def registro_publico():
         return jsonify({'success': False, 'error': f'El correo {email} ya está registrado'}), 400
 
     try:
-        # ── 1. Generar Subdominio ─────────────────────────────────────────────
+        # ── 1. Generar Subdominio y Color ─────────────────────────────────────
         subdominio = generate_unique_subdomain(nombre_liga)
+        
+        import random
+        vibrant_colors = [
+            '#00ff88', '#00d1ff', '#ff007a', '#7a00ff', '#ff8800', 
+            '#ffcc00', '#00ffcc', '#ff00ff', '#88ff00', '#0088ff',
+            '#ff4444', '#44ff44', '#4444ff', '#ffff44', '#ff44ff'
+        ]
+        color_random = random.choice(vibrant_colors)
 
         # ── 2. Crear Liga ─────────────────────────────────────────────────────
         nueva_liga = Liga(
             nombre=nombre_liga,
             subdominio=subdominio,
-            color='#00ff88',
+            color=color_random,
             tipo_cliente='dueño_liga',
             contacto=telefono if telefono else email,
             municipio=municipio,

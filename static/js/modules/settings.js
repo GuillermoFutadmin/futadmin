@@ -99,7 +99,7 @@ export class SettingsModule {
         } else {
             // Modo Creación
             idInput.value = '';
-            document.getElementById('combo-color').value = '#00ff88';
+            document.getElementById('combo-color').value = this.getRandomVibrantColor();
             title.innerText = '✚ Nueva Organización (Free)';
             submitBtn.innerText = '✚ Crear Organización';
 
