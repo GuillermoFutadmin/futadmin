@@ -15,13 +15,24 @@ def paginate_query(query, renderer=None):
     pagination = query.paginate(page=page, per_page=per_page, error_out=False)
     
     items = pagination.items
-    if renderer:
-        items = [renderer(item) for item in items]
-    else:
-        items = [item.to_dict() for item in items]
-        
+    processed_items = []
+    for item in items:
+        try:
+            if renderer:
+                processed_items.append(renderer(item))
+            else:
+                processed_items.append(item.to_dict())
+        except Exception as e:
+            import traceback
+            print(f"Error serializing item {getattr(item, 'id', '?')}: {e}")
+            processed_items.append({
+                "id": getattr(item, 'id', None),
+                "error": "Serialization failed",
+                "details": str(e)
+            })
+            
     return jsonify({
-        'items': items,
+        'items': processed_items,
         'pagination': {
             'page': pagination.page,
             'per_page': pagination.per_page,
