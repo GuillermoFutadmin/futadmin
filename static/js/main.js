@@ -216,6 +216,7 @@ class FutAdminUI {
             }
         }
         else if (viewId === 'pagos-academia') this.pagosAcademia.init();
+        else if (viewId === 'marketing') this.marketing.init();
         else if (viewId === 'canchas') {
             await this.canchas.loadCanchas();
         }
