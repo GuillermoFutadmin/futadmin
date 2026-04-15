@@ -1058,7 +1058,7 @@ export class AnalyticsModule {
             // Fetch data
             const [stats, ligasResponse] = await Promise.all([
                 Core.fetchAPI('/api/admin/dashboard-stats?start_date=2020-01-01&end_date=' + new Date().toISOString().split('T')[0]),
-                Core.fetchAPI('/api/admin/ligas?limit=10')
+                Core.fetchAPI('/api/ligas?limit=10')
             ]);
 
             const ligas = ligasResponse.items || ligasResponse || [];
