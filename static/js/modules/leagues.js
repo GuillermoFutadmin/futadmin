@@ -494,6 +494,7 @@ export class LeaguesModule {
 
     renderLeagues(torneos) {
         const container = document.getElementById('leagues-container');
+        console.log(`[Leagues] renderLeagues called for ${torneos.length} torneos. Container:`, container);
         if (torneos.length === 0) {
             container.innerHTML = '<p>No hay ligas configuradas aún. ¡Crea la primera!</p>';
             return;
