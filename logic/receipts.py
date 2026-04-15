@@ -10,7 +10,15 @@ from reportlab.lib.units import inch
 from reportlab.lib import colors
 import base64
 import requests
-import threading
+import redis
+from rq import Queue
+
+# Configuración de Cola de Tareas (RQ) para "partir servidores"
+redis_url = os.getenv('REDIS_URL')
+q = None
+if redis_url:
+    conn = redis.from_url(redis_url)
+    q = Queue('high', connection=conn) # Prioridad alta para recibos
 
 RESEND_API_URL = "https://api.resend.com/emails"
 FUTADMIN_LOGO_URL = "https://futadmin.com.mx/static/img/logos/futadmin_circle.png"
@@ -699,71 +707,64 @@ def _send_via_smtp(to_email, subject, body, attachment_path, sender_email):
         return False
 
 
-def trigger_receipt_email_async(ticket_data, recipient_email, recipient_name="Administrador"):
-    """Helper para generar PDF y enviar correo de recibo en un hilo separado (no bloqueante)."""
-    def internal_worker(data, email, name):
-        _log_mail(f"THREAD START: Preparando envío para {email} (Folio: {data.get('folio')})")
+def internal_receipt_worker(data, email, name):
+    """Procesador real del recibo (usado por hilos o RQ)."""
+    _log_mail(f"WORKER START: Preparando envío para {email} (Folio: {data.get('folio')})")
+    try:
+        import os, tempfile
+        from datetime import timedelta, datetime
+        
+        # 1. Asegurar fecha local si no viene (Tijuana -7)
+        if not data.get('fecha'):
+            from datetime import datetime, timedelta
+            data['fecha'] = (datetime.utcnow() - timedelta(hours=6)).strftime('%d/%m/%Y %H:%M')
+
+        # 2. Directorio temporal
+        temp_dir = tempfile.gettempdir()
+        filename = f"recibo_{data.get('folio', 'pago')}.pdf"
+        pdf_path = os.path.join(temp_dir, filename)
+
+        # 3. Generar PDF
+        generate_receipt_pdf(data, pdf_path)
+        
+        # 4. Asunto según contexto
+        is_futadmin = data.get('is_futadmin', False)
+        liga_n = data.get('liga_nombre', 'FutAdmin')
+        subject = f"Comprobante de Pago - FutAdmin - {liga_n}" if is_futadmin else f"Recibo de Pago - {liga_n} - {data.get('equipo', 'Equipo')}"
+
+        # 5. Cuerpo HTML
+        body = build_receipt_email_html(
+            nombre=name, liga_nombre=liga_n, equipo=data.get('equipo', ''),
+            torneo=data.get('torneo', ''), tipo=data.get('tipo', 'Abono'),
+            monto_abonado=float(data.get('monto_abonado', 0)),
+            monto_pactado=float(data.get('monto_pactado', 0)),
+            total_pagado=float(data.get('total_pagado', 0)),
+            saldo_pendiente=float(data.get('saldo_pendiente', 0)),
+            metodo=data.get('metodo', 'Efectivo'), folio=data.get('folio', 'N/A'),
+            fecha=data.get('fecha'), partido=data.get('partido'),
+            is_futadmin=is_futadmin, tournament_details=data
+        )
+
+        # 6. Enviar
+        send_receipt_email(email, subject, body, pdf_path)
+        
+        # 7. Limpieza
+        if os.path.exists(pdf_path):
+            os.remove(pdf_path)
+    except Exception as e:
+        msg = f"Error en worker de recibo: {e}"
+        print(msg)
         try:
-            import os, tempfile
-            from datetime import timedelta, datetime
-            
-            # 1. Asegurar fecha local si no viene (Tijuana -7)
-            # Generar fecha local para el recibo (Offset de 6 horas para México)
-            if not data.get('fecha'):
-                from datetime import datetime, timedelta
-                data['fecha'] = (datetime.utcnow() - timedelta(hours=6)).strftime('%d/%m/%Y %H:%M')
+            log_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "mail_debug.log")
+            with open(log_path, "a", encoding="utf-8") as f:
+                f.write(f"[{datetime.now()}] WORKER ERROR: {msg}\n")
+        except: pass
 
-            # 2. Directorio temporal
-            temp_dir = tempfile.gettempdir()
-            filename = f"recibo_{data.get('folio', 'pago')}.pdf"
-            pdf_path = os.path.join(temp_dir, filename)
 
-            # 3. Generar PDF
-            generate_receipt_pdf(data, pdf_path)
-            
-            # 4. Asunto según contexto
-            is_futadmin = data.get('is_futadmin', False)
-            liga_n = data.get('liga_nombre', 'FutAdmin')
-            if is_futadmin:
-                subject = f"Comprobante de Pago - FutAdmin - {liga_n}"
-            else:
-                subject = f"Recibo de Pago - {liga_n} - {data.get('equipo', 'Equipo')}"
-
-            # 5. Cuerpo HTML
-            body = build_receipt_email_html(
-                nombre=name,
-                liga_nombre=liga_n,
-                equipo=data.get('equipo', ''),
-                torneo=data.get('torneo', ''),
-                tipo=data.get('tipo', 'Abono'),
-                monto_abonado=float(data.get('monto_abonado', 0)),
-                monto_pactado=float(data.get('monto_pactado', 0)),
-                total_pagado=float(data.get('total_pagado', 0)),
-                saldo_pendiente=float(data.get('saldo_pendiente', 0)),
-                metodo=data.get('metodo', 'Efectivo'),
-                folio=data.get('folio', 'N/A'),
-                fecha=data.get('fecha'),
-                partido=data.get('partido'),
-                is_futadmin=is_futadmin,
-                tournament_details=data # Pasar todo el dict para extraer detalles extra
-            )
-
-            # 6. Enviar vía Resend (o fallback SMTP interno)
-            send_receipt_email(email, subject, body, pdf_path)
-            
-            # 7. Limpieza
-            if os.path.exists(pdf_path):
-                os.remove(pdf_path)
-        except Exception as e:
-            msg = f"Error asíncrono en envío de recibo (logic_async): {e}"
-            print(msg)
-            # Log to file for production visibility
-            try:
-                log_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "mail_debug.log")
-                with open(log_path, "a", encoding="utf-8") as f:
-                    from datetime import datetime
-                    f.write(f"[{datetime.now()}] THREAD ERROR: {msg}\n")
-            except:
-                pass
-
-    threading.Thread(target=internal_worker, args=(ticket_data, recipient_email, recipient_name), daemon=True).start()
+def trigger_receipt_email_async(ticket_data, recipient_email, recipient_name="Administrador"):
+    """Helper para generar PDF y enviar correo de recibo de forma asíncrona."""
+    if q:
+        q.enqueue(internal_receipt_worker, ticket_data, recipient_email, recipient_name)
+    else:
+        import threading
+        threading.Thread(target=internal_receipt_worker, args=(ticket_data, recipient_email, recipient_name), daemon=True).start()

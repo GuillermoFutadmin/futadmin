@@ -251,7 +251,7 @@
 
                         subgraph "Frontend Engine (React-Like)"
                         W1 & W2 & W3 & W4 -- "Load View" --> M[main.js Orquestador]
-                        M -- "Dispatch 'view-change'" --> BUS{{⚡ EVENT BUS GLOBAL}}
+                        M -- "Dispatch 'view-change'" --> BUS(EVENT BUS GLOBAL)
                         BUS -- "Reactive Load" --> MODS[14+ Data Modules]
                         end
 

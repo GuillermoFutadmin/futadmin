@@ -10,6 +10,8 @@ from flask_talisman import Talisman
 from werkzeug.middleware.proxy_fix import ProxyFix
 import os, secrets, uuid, math, requests
 from PIL import Image
+from flask_session import Session
+import redis
 
 # Cargar variables de entorno desde .env
 load_dotenv()
@@ -22,10 +24,19 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 app = Flask(__name__, static_folder=os.path.join(BASE_DIR, 'static'))
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1, x_prefix=1)
 # IMPORTANTE: El Secret Key DEBE ser el mismo para todos los workers
-app.config['SECRET_KEY'] = os.getenv('FLASK_SECRET_KEY')
-if not app.config['SECRET_KEY']:
-    print("ADVERTENCIA CRÍTICA: FLASK_SECRET_KEY no detectada. Usando llave volátil (esto romperá sesiones en Railway).")
-    app.config['SECRET_KEY'] = 'dev-key-fallback-replace-me'
+app.config['SECRET_KEY'] = os.getenv('FLASK_SECRET_KEY') or 'dev-key-fallback-replace-me'
+
+# ── Configuración de Sesiones en Redis (para miles de usuarios) ──────────────
+redis_url = os.getenv('REDIS_URL')
+if redis_url:
+    app.config['SESSION_TYPE'] = 'redis'
+    app.config['SESSION_PERMANENT'] = True
+    app.config['SESSION_USE_SIGNER'] = True
+    app.config['SESSION_REDIS'] = redis.from_url(redis_url)
+    Session(app)
+    print("SISTEMA: Sesiones centralizadas en Redis activadas.")
+else:
+    print("ADVERTENCIA: REDIS_URL no detectada. Usando sesiones locales por cookie.")
 
 db_url = os.getenv('DATABASE_URL') or os.getenv('SQLALCHEMY_DATABASE_URI') or 'sqlite:///futadmin.db'
 if db_url.startswith("postgres://"):
@@ -140,6 +151,38 @@ from routes.anonymize import anonymize_bp
 db.init_app(app)
 bcrypt.init_app(app)
 csrf = CSRFProtect(app)
+
+@app.context_processor
+def inject_branding():
+    """Inyecta el perfil de la liga (logo, color, nombre) en todas las plantillas."""
+    liga_id = session.get('liga_id')
+    host = request.host.split(':')[0] # Quitar puerto si existe
+    
+    current_liga = None
+    
+    # 1. Intentar detectar por subdominio (ej: mi-liga.futadmin.com)
+    if not liga_id and 'futadmin.com' in host and not host.startswith('www'):
+        subdominio = host.split('.')[0]
+        current_liga = Liga.query.filter_by(subdominio=subdominio).first()
+        if current_liga:
+            # Solo guardamos el id si no había uno para no sobreescribir sesiones maestras
+            # Pero para el branding lo usamos
+            pass 
+
+    # 2. Si no hay subdominio o falló, usar el de la sesión
+    if not current_liga and liga_id:
+        current_liga = Liga.query.get(liga_id)
+        
+    # Valores por defecto para branding global
+    branding = {
+        'nombre': current_liga.nombre if current_liga else 'FutAdmin',
+        'color': current_liga.color if (current_liga and current_liga.color) else '#00ff88',
+        'logo': current_liga.logo_url if (current_liga and current_liga.logo_url) else url_for('static', filename='img/logos/futadmin_circle.png'),
+        'subdominio': current_liga.subdominio if current_liga else None,
+        'is_custom': current_liga is not None
+    }
+    
+    return dict(branding=branding)
 
 # Registrar Blueprints
 app.register_blueprint(entrenamientos_bp, url_prefix='/api/entrenamientos')

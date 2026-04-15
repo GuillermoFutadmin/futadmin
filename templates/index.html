@@ -5,10 +5,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/static/libs/leaflet/leaflet.css">
-    <title>futadmin- Administra TU liga 🫵</title>
-    <link rel="icon" type="image/png" href="/static/img/logos/futadmin_circle_transp.png">
+    <title>{{ branding.nombre }} - Dashboard</title>
+    <link rel="icon" type="image/png" href="{{ branding.logo }}">
     <link rel="manifest" href="/static/manifest.json">
-    <link rel="apple-touch-icon" href="/static/img/logos/futadmin_circle_transp.png">
+    <link rel="apple-touch-icon" href="{{ branding.logo }}">
 
     <!-- Driver.js Onboarding CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@1.3.1/dist/driver.css" />
@@ -20,12 +20,32 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#0a0f14">
+    <meta name="theme-color" content="{{ branding.color }}">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <script>
         window.USER_ROL = "{{ user_rol.lower() or 'invitado' }}";
+        window.BRANDING_COLOR = "{{ branding.color }}";
     </script>
     <style>
+        :root {
+            --primary: {
+                    {
+                    branding.color
+                }
+            }
+
+            ;
+
+            --primary-glow: {
+                    {
+                    branding.color
+                }
+            }
+
+            4D;
+            /* 30% alpha */
+        }
+
         .premium-tooltip {
             pointer-events: none;
             transition: opacity 0.3s ease, transform 0.3s ease;
@@ -188,7 +208,7 @@
                     <a href="/logout" class="sidebar-logout-btn">🚪 Cerrar Sesión</a>
                 </div>
                 <div class="sidebar-logo-container">
-                    <img src="/static/img/logos/futadmin_circle.png" class="sidebar-logo-img" alt="FutAdmin Logo">
+                    <img src="{{ branding.logo }}" class="sidebar-logo-img" alt="{{ branding.nombre }} Logo">
                 </div>
             </div>
         </aside>

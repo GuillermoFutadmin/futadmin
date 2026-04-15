@@ -15,8 +15,22 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;900&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary: #00ff88;
-            --primary-glow: rgba(0, 255, 136, 0.3);
+            --primary: {
+                    {
+                    branding.color
+                }
+            }
+
+            ;
+
+            --primary-glow: {
+                    {
+                    branding.color
+                }
+            }
+
+            4D;
+            /* 30% alpha */
             --bg-dark: #0f172a;
             --bg-card: #1e293b;
             --text-main: #f8fafc;
@@ -174,9 +188,10 @@
 <body>
     <div class="login-container">
         <div class="logo-section">
-            <img src="/static/img/logos/futadmin_circle.png" class="logo-img" alt="FutAdmin Logo">
-            <h1>FutAdmin</h1>
-            <p class="welcome-text">Inicia sesión en tu liga</p>
+            <img src="{{ branding.logo }}" class="logo-img" alt="{{ branding.nombre }} Logo">
+            <h1>{{ branding.nombre }}</h1>
+            <p class="welcome-text">{% if branding.is_custom %}Panel Oficial de la Liga{% else %}Inicia sesión en tu
+                liga{% endif %}</p>
         </div>
 
         <div id="error-box" class="error-message">
