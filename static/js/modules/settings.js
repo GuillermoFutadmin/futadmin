@@ -99,14 +99,55 @@ export class SettingsModule {
         } else {
             // Modo Creación
             idInput.value = '';
-            document.getElementById('combo-color').value = this.getRandomVibrantColor();
-            title.innerText = '✚ Nueva Organización (Free)';
-            submitBtn.innerText = '✚ Crear Organización';
+            document.getElementById('combo-color').value = this.getUniqueColor();
+            title.innerText = '➕ Nueva Organización';
+            submitBtn.innerText = '➕ Crear Organización';
 
             if (planSection) planSection.style.display = 'block';
         }
 
         Core.openModal('modal-combo');
+    }
+
+    /**
+     * Genera un color HSL vibrante que aún no esté en uso por ninguna liga registrada.
+     * Se basa en la paleta de colores con hue separados en 30° para mayor contraste visual.
+     */
+    getUniqueColor() {
+        const usedColors = (this.ligas || [])
+            .map(l => l.color ? l.color.toLowerCase() : '')
+            .filter(Boolean);
+
+        // Paleta base de 12 colores bien espaciados en HSL
+        const palette = [
+            '#00ff88', '#00c6ff', '#ff6b35', '#a855f7', '#fbbf24',
+            '#ec4899', '#22d3ee', '#f87171', '#34d399', '#818cf8',
+            '#fb923c', '#4ade80'
+        ];
+
+        // Buscar el primero que no esté demasiado cerca de los ya usados
+        const hexToH = hex => {
+            const r = parseInt(hex.slice(1, 3), 16) / 255,
+                g = parseInt(hex.slice(3, 5), 16) / 255,
+                b = parseInt(hex.slice(5, 7), 16) / 255;
+            const max = Math.max(r, g, b), min = Math.min(r, g, b);
+            let h = 0;
+            if (max !== min) {
+                if (max === r) h = ((g - b) / (max - min) + 6) % 6;
+                else if (max === g) h = (b - r) / (max - min) + 2;
+                else h = (r - g) / (max - min) + 4;
+            }
+            return h * 60;
+        };
+        const usedHues = usedColors.map(c => { try { return hexToH(c); } catch { return -1; } });
+
+        for (const candidate of palette) {
+            const h = hexToH(candidate);
+            const tooClose = usedHues.some(uh => Math.abs(uh - h) < 25 || Math.abs(uh - h) > 335);
+            if (!tooClose) return candidate;
+        }
+        // Fallback: color HSL completamente aleatorio si todos son demasiado similares
+        return `hsl(${Math.floor(Math.random() * 360)}, 90%, 55%)`;
     }
 
     // Alias para ser consistente con otras entidades

@@ -448,7 +448,7 @@
 <div id="modal-combo" class="modal">
     <div class="modal-content" style="max-width: 560px;">
         <div class="modal-header">
-            <h3 id="combo-modal-title">✚ Nuevo Combo / Organización</h3>
+            <h3 id="combo-modal-title">➕ Nueva Organización</h3>
             <button class="close-btn" onclick="Core.closeModal('modal-combo')">&times;</button>
         </div>
         <div class="modal-body">
@@ -462,9 +462,9 @@
                         style="font-size: 0.7rem; text-transform: uppercase; font-weight: 800; color: var(--text-muted); letter-spacing: 1px; margin-bottom: 1rem;">
                         Selecciona el Plan</p>
                     <div class="form-group">
-                        <label for="combo-owner-rol">Paquete del Combo</label>
+                        <label for="combo-owner-rol">Tipo de Organización</label>
                         <select id="combo-owner-rol" required onchange="ui.settings.updateComboPriceInfo(this.value)">
-                            <option value="dueño_liga">👑 Plan Dueño de Liga (Gratis)</option>
+                            <option value="dueño_liga">👑 Plan Organización (Gratis)</option>
                         </select>
                         <p id="combo-price-info" class="text-muted" style="font-size: 0.8rem; margin-top: 8px;">Incluye
                             capacidad total para gestionar canchas, torneos y usuarios vinculados.</p>
@@ -527,7 +527,7 @@
                 <div class="modal-footer">
                     <button type="button" class="btn-secondary"
                         onclick="Core.closeModal('modal-combo')">Cancelar</button>
-                    <button type="submit" id="combo-submit-btn" class="btn-primary" style="flex: 1;">✚ Crear
-                        Combo</button>
+                    <button type="submit" id="combo-submit-btn" class="btn-primary" style="flex: 1;">➕ Crear
+                        Organización</button>
                 </div>
                 <!-- Modal de Editar Aportación eliminado en Freemium -->
