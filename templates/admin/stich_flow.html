@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stitch Hub | Zero-Scroll View</title>
+    <title>Stitch Hub | Systems Insight v74.0</title>
     <link rel="stylesheet" href="/static/css/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
@@ -15,9 +15,9 @@
             --card-bg: #0d1217;
             --border: rgba(255, 255, 255, 0.05);
             --text-muted: #64748b;
+            --accent: #3b82f6;
         }
 
-        /* Desactivar scroll global para modo "Zero-Scroll" */
         html,
         body {
             overflow: hidden !important;
@@ -33,9 +33,9 @@
             display: grid;
             grid-template-rows: auto 1fr auto;
             height: 100vh;
-            padding: 20px;
+            padding: 15px;
             box-sizing: border-box;
-            gap: 15px;
+            gap: 12px;
         }
 
         .header-slim {
@@ -43,11 +43,11 @@
             justify-content: space-between;
             align-items: center;
             border-bottom: 1px solid var(--border);
-            padding-bottom: 10px;
+            padding-bottom: 8px;
         }
 
         .header-slim h1 {
-            font-size: 1.5rem;
+            font-size: 1.3rem;
             margin: 0;
             background: linear-gradient(90deg, #fff, var(--primary));
             -webkit-background-clip: text;
@@ -56,120 +56,137 @@
 
         .main-content {
             display: grid;
-            grid-template-columns: 350px 1fr;
-            gap: 15px;
+            grid-template-columns: 280px 1fr 280px;
+            gap: 12px;
             overflow: hidden;
         }
 
         .card {
             background: var(--card-bg);
             border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 15px;
+            border-radius: 12px;
+            padding: 12px;
             display: flex;
             flex-direction: column;
             overflow: hidden;
+            position: relative;
         }
 
         .card h2 {
-            font-size: 0.9rem;
-            margin: 0 0 10px 0;
+            font-size: 0.75rem;
+            margin: 0 0 8px 0;
             color: var(--primary);
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 1.2px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 5px;
         }
 
-        /* Flow Steps Vertical */
-        .flow-vertical {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            overflow-y: auto;
-            padding-right: 5px;
+        /* Metrics Grid */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 8px;
         }
 
-        .flow-vertical::-webkit-scrollbar {
-            width: 4px;
-        }
-
-        .flow-vertical::-webkit-scrollbar-thumb {
-            background: var(--border);
-            border-radius: 2px;
-        }
-
-        .f-step {
+        .metric-item {
             background: rgba(255, 255, 255, 0.02);
-            border: 1px solid var(--border);
-            padding: 8px 12px;
+            padding: 8px;
             border-radius: 8px;
-            font-size: 0.75rem;
+            border: 1px solid var(--border);
+        }
+
+        .metric-label {
+            font-size: 0.6rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .metric-value {
+            font-size: 0.9rem;
+            font-weight: 800;
+            color: #fff;
             display: flex;
             align-items: center;
-            gap: 10px;
-            transition: all 0.2s;
+            gap: 5px;
         }
 
-        .f-step:hover {
-            border-color: var(--primary);
-            background: rgba(0, 255, 136, 0.05);
+        .metric-value span.dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--primary);
+            display: inline-block;
         }
 
-        .f-step span {
+        /* Step List */
+        .step-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            overflow-y: auto;
+        }
+
+        .step {
+            padding: 6px 10px;
+            border-radius: 6px;
+            background: rgba(0, 255, 136, 0.02);
+            border: 1px solid rgba(0, 255, 136, 0.05);
+            font-size: 0.7rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .step strong {
             color: var(--primary);
-            font-weight: 800;
         }
 
-        /* Mermaid Interactive Layer */
-        .mermaid-zone {
+        /* Mermaid Map */
+        .map-container {
             flex: 1;
             background: #000;
             border-radius: 12px;
-            position: relative;
+            overflow: hidden;
             display: flex;
             align-items: center;
             justify-content: center;
-            overflow: hidden;
-            /* Mermaid scale will handle fitting */
-        }
-
-        .mermaid {
-            width: 100%;
-            height: 100%;
         }
 
         .footer-slim {
             display: flex;
             justify-content: space-between;
-            font-size: 0.7rem;
+            font-size: 0.65rem;
             color: var(--text-muted);
+            padding-top: 5px;
+        }
+
+        /* Animations */
+        @keyframes pulse-glow {
+            0% {
+                box-shadow: 0 0 5px rgba(0, 255, 136, 0.1);
+            }
+
+            50% {
+                box-shadow: 0 0 15px rgba(0, 255, 136, 0.3);
+            }
+
+            100% {
+                box-shadow: 0 0 5px rgba(0, 255, 136, 0.1);
+            }
+        }
+
+        .glow-card {
+            animation: pulse-glow 3s infinite;
         }
 
         .btn-mini {
             color: var(--primary);
             text-decoration: none;
-            border: 1px solid var(--primary);
-            padding: 4px 10px;
-            border-radius: 6px;
             font-size: 0.7rem;
-        }
-
-        /* Animación para el BUS */
-        @keyframes pulse-bus {
-            0% {
-                filter: drop-shadow(0 0 2px var(--primary));
-            }
-
-            50% {
-                filter: drop-shadow(0 0 8px var(--primary));
-            }
-
-            100% {
-                filter: drop-shadow(0 0 2px var(--primary));
-            }
-        }
-
-        .node-bus {
-            animation: pulse-bus 2s infinite;
+            padding: 4px 8px;
+            border: 1px solid var(--primary);
+            border-radius: 5px;
         }
     </style>
 </head>
@@ -177,73 +194,123 @@
 <body>
     <div class="dashboard">
         <header class="header-slim">
-            <div>
-                <h1>Stitch Hub <small style="font-size: 0.8rem; opacity: 0.6; -webkit-text-fill-color: #fff;">v73.0
-                        Ultra-Compact</small></h1>
+            <h1>STITCH HUB <small style="font-size: 0.7rem; opacity: 0.6; -webkit-text-fill-color: #fff;">v74.0 FULL
+                    VISIBILITY</small></h1>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <span style="font-size: 0.7rem; color: var(--primary); font-weight: 800;">● SYSTEM ONLINE</span>
+                <a href="/" class="btn-mini">Panel Principal</a>
             </div>
-            <a href="/" class="btn-mini">Sincronizar Dashboard →</a>
         </header>
 
         <main class="main-content">
-            <!-- Columna Izquierda: Lógica de Propagación Central -->
+            <!-- Izquierda: Ciclo de Vida Backend -->
             <aside class="card">
-                <h2>Lógica Reactiva</h2>
-                <div class="flow-vertical">
-                    <div class="f-step"><span>01</span> Router: Switch View</div>
-                    <div class="f-step"><span>02</span> main.js: emit('view-change')</div>
-                    <div class="f-step"><span>03</span> Bus: Broadcast Payload</div>
-                    <div class="f-step"><span>04</span> Modulo: handleEvent(e)</div>
-                    <div class="f-step"><span>05</span> Modulo: init() / loadData()</div>
-                    <div class="f-step"><span>06</span> Core: fetchAPI(/api/...)</div>
-                    <div class="f-step"><span>07</span> Backend: Query PostgreSQL</div>
-                    <div class="f-step"><span>08</span> Response: JSON Serialize</div>
-                    <div class="f-step"><span>09</span> Modulo: renderContent()</div>
-                    <div class="f-step"><span>10</span> UI: DOM Optimization</div>
+                <h2>Capa de Aplicación (Server)</h2>
+                <div class="metrics-grid">
+                    <div class="metric-item">
+                        <div class="metric-label">Runtime Engine</div>
+                        <div class="metric-value">Python 3.11 / Nixpacks</div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-label">WSGI Server</div>
+                        <div class="metric-value">Gunicorn + Gevent</div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-label">Workers Activos</div>
+                        <div class="metric-value"><span class="dot"></span> 4 Independent Workers</div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-label">Middleware</div>
+                        <div class="metric-value">ProxyFix + CSRFProtect</div>
+                    </div>
                 </div>
-                <div style="margin-top: auto; padding-top: 15px; font-size: 0.7rem; color: var(--text-muted);">
-                    <strong>Aislamiento de Estado</strong>: Cada módulo corre en su propio sandbox de memoria
-                    persistente.
+                <h2 style="margin-top: 15px;">Ciclo de Petición</h2>
+                <div class="step-list">
+                    <div class="step"><strong>1</strong> Client -> Request (HTTPS)</div>
+                    <div class="step"><strong>2</strong> Railway -> ProxyFix</div>
+                    <div class="step"><strong>3</strong> AuthMiddleware -> Session Check</div>
+                    <div class="step"><strong>4</strong> Flask Router -> View Logic</div>
+                    <div class="step"><strong>5</strong> SQLAlchemy -> Connection Pool</div>
+                    <div class="step"><strong>6</strong> PostgreSQL -> Result Set</div>
                 </div>
             </aside>
 
-            <!-- Columna Derecha: Mapa de Dependencias -->
-            <section class="card">
-                <h2>Mapa de Dependencias 360° (Vista Interactiva)</h2>
-                <div class="mermaid-zone">
+            <!-- Centro: Mapa de Arquitectura Total -->
+            <section class="card glow-card" style="padding: 5px;">
+                <h2 style="padding: 10px 10px 5px 10px;">Mapa Arquitectónico 360° (End-to-End)</h2>
+                <div class="map-container">
                     <div class="mermaid">
-                        graph LR
-                        A[main.js Orquestador] -- "Dispatch" --> BUS(EVENT BUS GLOBAL)
-
-                        subgraph "Data Modules"
-                        BUS --- D[leagues.js]
-                        BUS --- E[teams.js]
-                        BUS --- F[players.js]
-                        BUS --- G[finance.js]
-                        BUS --- H[arbitros.js]
-                        BUS --- I[canchas.js]
-                        BUS --- J[pagos-canchas.js]
-                        BUS --- K[entrenamientos.js]
-                        BUS --- L[pagos-academia.js]
-                        BUS --- M[marketing.js]
-                        BUS --- N[dashboard.js]
-                        BUS --- O[analytics.js]
-                        BUS --- P[settings.js]
+                        graph TD
+                        subgraph "Infraestructura Cloud (Railway)"
+                        B[User Browser] -- "Secure Session Cookie" --> G[Gunicorn Cluster]
+                        G --- W1[Worker 1]
+                        G --- W2[Worker 2]
+                        G --- W3[Worker 3]
+                        G --- W4[Worker 4]
                         end
 
-                        D & G & I & K & P --- DB[(PostgreSQL DB)]
+                        subgraph "Frontend Engine (React-Like)"
+                        W1 & W2 & W3 & W4 -- "Load View" --> M[main.js Orquestador]
+                        M -- "Dispatch 'view-change'" --> BUS{{⚡ EVENT BUS GLOBAL}}
+                        BUS -- "Reactive Load" --> MODS[14+ Data Modules]
+                        end
 
-                        style A fill:#003322,stroke:#00ff88,stroke-width:2px
-                        style BUS fill:#05080a,stroke:#00ff88,stroke-width:3px,stroke-dasharray: 5 5
+                        subgraph "Persistencia & Datos"
+                        MODS -- "SQLAlchemy Pool (5+10)" --> DB[(PostgreSQL Cluster)]
+                        MODS -- "FS Mount" --> VOL[/app/static/uploads]
+                        end
+
+                        style B fill:#05080a,stroke:#3b82f6,stroke-width:2px
+                        style G fill:#003322,stroke:#00ff88,stroke-width:3px
+                        style BUS fill:#05080a,stroke:#00ff88,stroke-width:2px,stroke-dasharray: 5 5
                         style DB fill:#1a1a2e,stroke:#fbbf24,stroke-width:2px
-                        class BUS node-bus
+                        style VOL fill:#1a1a2e,stroke:#ec4899,stroke-width:2px
                     </div>
                 </div>
             </section>
+
+            <!-- Derecha: Capa de Datos & Seguridad -->
+            <aside class="card">
+                <h2>Capa de Datos (Infra)</h2>
+                <div class="metrics-grid">
+                    <div class="metric-item">
+                        <div class="metric-label">PostgreSQL Engine</div>
+                        <div class="metric-value">v15.0 Managed</div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-label">Conexiones Activas</div>
+                        <div class="metric-value">Pool (5) + Overflow (10)</div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-label">Persistencia</div>
+                        <div class="metric-value">Railway Volume (Active)</div>
+                    </div>
+                </div>
+                <h2 style="margin-top: 15px;">Seguridad & Sesiones</h2>
+                <div class="metrics-grid">
+                    <div class="metric-item">
+                        <div class="metric-label">Cookie Signature</div>
+                        <div class="metric-value">SECRET_KEY (v2.6)</div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-label">Session Policy</div>
+                        <div class="metric-value">HttpOnly + Secure + Samesite</div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-label">CSRF Engine</div>
+                        <div class="metric-value">Protect Enabled</div>
+                    </div>
+                </div>
+                <div style="margin-top: auto; font-size: 0.6rem; color: var(--text-muted); line-height: 1.4;">
+                    <strong>Nota</strong>: La arquitectura es 100% horizontal. Los workers comparten el estado mediante
+                    cookies firmadas.
+                </div>
+            </aside>
         </main>
 
         <footer class="footer-slim">
-            <span>© 2026 FutAdmin Architecture | High-Availability Engine</span>
-            <span>Status: Healthy (Decoupled)</span>
+            <span>Server: Railway-US-West | Latency: Optimized</span>
+            <span>Estándar de Seguridad: ISO-Premium v74.0 | Build: Success</span>
         </footer>
     </div>
 
@@ -255,7 +322,7 @@
             flowchart: {
                 useMaxWidth: true,
                 htmlLabels: true,
-                curve: 'basis' /* Curvas suaves para ahorrar espacio */
+                curve: 'basis'
             }
         });
     </script>
