@@ -17,6 +17,26 @@
             --text-muted: #94a3b8;
         }
 
+        /* Custom Premium Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            border: 2px solid var(--bg);
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary);
+        }
+
         body {
             background-color: var(--bg);
             color: #fff;
@@ -100,13 +120,23 @@
             background: rgba(0, 255, 136, 0.05);
         }
 
-        .mermaid {
+        /* Mermaid Wrapper for Scrolling */
+        .mermaid-wrapper {
             background: rgba(0, 0, 0, 0.2) !important;
-            padding: 20px;
+            padding: 30px;
             border-radius: 16px;
             min-height: 600px;
+            overflow-x: auto;
+            overflow-y: hidden;
+            border: 1px solid var(--border);
             display: flex;
-            justify-content: center;
+            justify-content: flex-start;
+        }
+
+        .mermaid {
+            background: transparent !important;
+            flex-shrink: 0;
+            /* Important to avoid collapsing */
         }
 
         .warning-note {
@@ -154,7 +184,7 @@
     <div class="container">
         <div class="header">
             <h1>Panorama Stitch Flow</h1>
-            <p>Arquitectura de Propagación de Datos Total | v71.2 Pro+</p>
+            <p>Arquitectura de Propagación de Datos Total | v71.3 Ultra-View</p>
         </div>
 
         <div class="grid">
@@ -224,33 +254,35 @@
             </div>
 
             <div class="card full-width">
-                <h2><span>🔗</span> Mapa de Dependencias 360° (Full Panorama)</h2>
-                <div class="mermaid">
-                    graph LR
-                    A[index.html] --> B[main.js Orquestador]
-                    B --> C[core.js Utility]
+                <h2><span>🔗</span> Mapa de Dependencias 360° (Usa la barra para explorar)</h2>
+                <div class="mermaid-wrapper">
+                    <div class="mermaid">
+                        graph LR
+                        A[index.html] --> B[main.js Orquestador]
+                        B --> C[core.js Utility]
 
-                    B --> D[leagues.js]
-                    B --> E[teams.js]
-                    B --> F[players.js]
-                    B --> G[finance.js]
-                    B --> H[arbitros.js]
-                    B --> I[canchas.js]
-                    B --> J[pagos-canchas.js]
-                    B --> K[entrenamientos.js]
-                    B --> L[pagos-academia.js]
-                    B --> M[marketing.js]
-                    B --> N[dashboard_map.js]
-                    B --> O[analytics.js]
-                    B --> P[settings.js]
-                    B --> Q[onboarding.js]
+                        B --> D[leagues.js]
+                        B --> E[teams.js]
+                        B --> F[players.js]
+                        B --> G[finance.js]
+                        B --> H[arbitros.js]
+                        B --> I[canchas.js]
+                        B --> J[pagos-canchas.js]
+                        B --> K[entrenamientos.js]
+                        B --> L[pagos-academia.js]
+                        B --> M[marketing.js]
+                        B --> N[dashboard_map.js]
+                        B --> O[analytics.js]
+                        B --> P[settings.js]
+                        B --> Q[onboarding.js]
 
-                    C -.-> R((API Railway))
-                    R -.-> S[(PostgreSQL DB)]
+                        C -.-> R((API Railway))
+                        R -.-> S[(PostgreSQL DB)]
 
-                    style B fill:#003322,stroke:#00ff88,stroke-width:4px
-                    style R fill:#1a1a2e,stroke:#3b82f6,stroke-width:3px
-                    style S fill:#1a1a2e,stroke:#fbbf24,stroke-width:2px
+                        style B fill:#003322,stroke:#00ff88,stroke-width:4px
+                        style R fill:#1a1a2e,stroke:#3b82f6,stroke-width:3px
+                        style S fill:#1a1a2e,stroke:#fbbf24,stroke-width:2px
+                    </div>
                 </div>
             </div>
         </div>
