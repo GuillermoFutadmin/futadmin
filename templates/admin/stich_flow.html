@@ -191,6 +191,40 @@
             border: 1px solid var(--primary);
             border-radius: 5px;
         }
+
+        /* Highlight Animations */
+        @keyframes highlight-neon {
+            0% {
+                filter: drop-shadow(0 0 2px var(--primary));
+                stroke-width: 2px;
+            }
+
+            50% {
+                filter: drop-shadow(0 0 15px var(--primary));
+                stroke-width: 5px;
+            }
+
+            100% {
+                filter: drop-shadow(0 0 2px var(--primary));
+                stroke-width: 2px;
+            }
+        }
+
+        .node-highlight rect,
+        .node-highlight circle,
+        .node-highlight polygon,
+        .node-highlight path {
+            animation: highlight-neon 1s infinite !important;
+            stroke: var(--primary) !important;
+            transition: all 0.3s ease;
+        }
+
+        .step:hover,
+        .metrics-grid:hover,
+        .card:hover {
+            border-color: var(--primary);
+            box-shadow: 0 0 10px rgba(0, 255, 136, 0.1);
+        }
     </style>
 </head>
 
@@ -207,7 +241,7 @@
 
         <main class="main-content">
             <!-- Izquierda: Ciclo de Vida Backend -->
-            <aside class="card">
+            <aside class="card" onclick="highlightGroup(['G', 'W1', 'W2', 'W3', 'W4'])" style="cursor: pointer;">
                 <h2>Capa de Aplicación (Server)</h2>
                 <div class="metrics-grid">
                     <div class="metric-item">
@@ -229,12 +263,23 @@
                 </div>
                 <h2 style="margin-top: 15px;">Ciclo de Petición</h2>
                 <div class="step-list">
-                    <div class="step"><strong>1</strong> Client -> Request (HTTPS)</div>
-                    <div class="step"><strong>2</strong> Railway -> ProxyFix</div>
-                    <div class="step"><strong>3</strong> AuthMiddleware -> Session Check</div>
-                    <div class="step"><strong>4</strong> Flask Router -> View Logic</div>
-                    <div class="step"><strong>5</strong> SQLAlchemy -> Connection Pool</div>
-                    <div class="step"><strong>6</strong> PostgreSQL -> Result Set</div>
+                    <div class="step" onclick="event.stopPropagation(); highlightGroup(['B'])" style="cursor: pointer;">
+                        <strong>1</strong> Client -> Request (HTTPS)
+                    </div>
+                    <div class="step" onclick="event.stopPropagation(); highlightGroup(['G'])" style="cursor: pointer;">
+                        <strong>2</strong> Railway -> ProxyFix
+                    </div>
+                    <div class="step" onclick="event.stopPropagation(); highlightGroup(['G'])" style="cursor: pointer;">
+                        <strong>3</strong> AuthMiddleware -> Session Check
+                    </div>
+                    <div class="step" onclick="event.stopPropagation(); highlightGroup(['M'])" style="cursor: pointer;">
+                        <strong>4</strong> Flask Router -> View Logic
+                    </div>
+                    <div class="step"
+                        onclick="event.stopPropagation(); highlightGroup(['LIG', 'TEA', 'PLA', 'FIN', 'ARB', 'CAN', 'SET', 'DASH'])"
+                        style="cursor: pointer;"><strong>5</strong> SQLAlchemy -> Connection Pool</div>
+                    <div class="step" onclick="event.stopPropagation(); highlightGroup(['DB'])"
+                        style="cursor: pointer;"><strong>6</strong> PostgreSQL -> Result Set</div>
                 </div>
             </aside>
 
@@ -283,7 +328,7 @@
             </section>
 
             <!-- Derecha: Capa de Datos & Seguridad -->
-            <aside class="card">
+            <aside class="card" onclick="highlightGroup(['DB', 'VOL'])" style="cursor: pointer;">
                 <h2>Capa de Datos (Infra)</h2>
                 <div class="metrics-grid">
                     <div class="metric-item">
@@ -300,7 +345,8 @@
                     </div>
                 </div>
                 <h2 style="margin-top: 15px;">Seguridad & Sesiones</h2>
-                <div class="metrics-grid">
+                <div class="metrics-grid" onclick="event.stopPropagation(); highlightGroup(['B', 'G'])"
+                    style="cursor: pointer;">
                     <div class="metric-item">
                         <div class="metric-label">Cookie Signature</div>
                         <div class="metric-value">SECRET_KEY (v2.6)</div>
@@ -338,6 +384,33 @@
                 curve: 'basis'
             }
         });
+
+        function highlightGroup(nodeIds) {
+            // Limpiar highlight anterior
+            document.querySelectorAll('.node-highlight').forEach(el => el.classList.remove('node-highlight'));
+
+            nodeIds.forEach(id => {
+                // Mermaid transforma IDs. Buscamos elementos que contengan el ID o el ID exacto
+                // Normalmente los IDs de Mermaid en el SVG terminan con el ID que definimos o son el ID exacto
+                const elements = document.querySelectorAll(`[id^="${id}-"], [id="${id}"], .node[id*="-${id}-"]`);
+                elements.forEach(el => {
+                    el.classList.add('node-highlight');
+                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                });
+
+                // Si no se encuentra por ID, intentar por clase de nodo ( Mermaid suele usar clases)
+                const byClass = document.querySelectorAll(`.node.${id}`);
+                byClass.forEach(el => {
+                    el.classList.add('node-highlight');
+                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                });
+            });
+
+            // Auto-limpiar después de 5 segundos
+            setTimeout(() => {
+                document.querySelectorAll('.node-highlight').forEach(el => el.classList.remove('node-highlight'));
+            }, 5000);
+        }
     </script>
 </body>
 
