@@ -4,6 +4,16 @@ export class LeaguesModule {
     constructor(ui) {
         this.ui = ui;
         document.addEventListener('futadmin:limitsLoaded', () => this.checkLimits());
+
+        // Escuchar cambios de vista para auto-inicializarse
+        window.addEventListener('futadmin:view-change', (e) => {
+            const { viewId, tabId } = e.detail;
+            if (viewId === 'torneos') {
+                this.ui.switchTorneosTab(tabId || 'torneos-lista');
+            } else if (viewId === 'archivo') {
+                this.loadArchivedLeagues();
+            }
+        });
     }
 
     async showLeagueModal() {
@@ -26,7 +36,7 @@ export class LeaguesModule {
         this.switchModalTab('general');
         this.currentEditingArbitroId = null;
         await this.loadOfficialReferees();
-        
+
         // Auto-seleccionar la sede filtrada en el dashboard
         const venueFilter = document.getElementById('league-venue-filter');
         const selectedVenue = venueFilter ? venueFilter.value : null;
@@ -58,7 +68,7 @@ export class LeaguesModule {
         if (!select || !this.cachedArbitros) return;
 
         select.innerHTML = '<option value="">-- Sin Árbitro Asignado --</option>';
-        
+
         let filteredRefs = this.cachedArbitros;
         if (ligaId) {
             filteredRefs = this.cachedArbitros.filter(a => String(a.liga_id) === String(ligaId));
@@ -108,10 +118,10 @@ export class LeaguesModule {
                     // Pintar la sede
                     e.target.style.borderColor = color;
                     e.target.style.boxShadow = color !== 'var(--border)' ? `0 0 8px ${color}60` : 'none';
-                    
+
                     // Pintar el campo de árbitro igual que la sede para consistencia
                     const arbitroSelect = document.getElementById('league-arbitro-id');
-                    if(arbitroSelect) {
+                    if (arbitroSelect) {
                         arbitroSelect.style.borderColor = color;
                         arbitroSelect.style.boxShadow = color !== 'var(--border)' ? `0 0 8px ${color}60` : 'none';
                     }
@@ -122,7 +132,7 @@ export class LeaguesModule {
                 });
                 select.dataset.colorListener = 'true';
             }
-            
+
             // Aplicar el color y filtro inicialmente a la sede pre-seleccionada
             select.dispatchEvent(new Event('change'));
 
@@ -396,7 +406,7 @@ export class LeaguesModule {
             const response = await Core.fetchAPI('/api/torneos?per_page=1000');
             const torneos = response.items || response;
             this.pagination = response.pagination || null;
-            
+
             // Poblar filtro de sedes si está vacío (excluyendo la opción por defecto)
             const venueFilter = document.getElementById('league-venue-filter');
             if (venueFilter && venueFilter.options.length <= 1) {
@@ -432,7 +442,7 @@ export class LeaguesModule {
     checkLimits() {
         const btn = document.getElementById('btn-nueva-liga');
         if (!btn) return;
-        
+
         const userRol = (window.USER_ROL || '').toLowerCase();
         // Si el usuario es de solo vista o árbitro, ocultar botón siempre
         if (userRol === 'resultados' || userRol === 'arbitro' || userRol === 'solo vista') {
@@ -441,7 +451,7 @@ export class LeaguesModule {
         }
 
         if (!window.FutAdminLimits || !window.FutAdminCounts) return;
-        
+
         const limit_torneos = window.FutAdminLimits.torneos;
         const limit_per_cancha = window.FutAdminLimits.torneos_per_cancha;
         let final_limit = undefined;
@@ -453,18 +463,18 @@ export class LeaguesModule {
             final_limit = canchas * limit_per_cancha;
             if (final_limit === 0) final_limit = limit_per_cancha;
         }
-        
+
         const count = window.FutAdminCounts.torneos || 0;
         console.log(`[Limits] Torneos: ${count}/${final_limit} (Rol: ${userRol})`);
-        
+
         // Actualizar contadores visuales
         const counterMain = document.getElementById('league-counter-main');
         const counterModal = document.getElementById('league-counter-modal');
         const isAdmin = userRol === 'admin' || userRol === 'ejecutivo';
         const displayLimit = isAdmin ? '∞' : final_limit;
-        
+
         const counterText = final_limit !== undefined ? `${count} / ${displayLimit}` : `${count}`;
-        
+
         if (counterMain) counterMain.innerText = counterText;
         if (counterModal) counterModal.innerText = counterText;
 
@@ -582,7 +592,7 @@ export class LeaguesModule {
 
     async changePage(page) {
         if (page < 1 || (this.pagination && page > this.pagination.total_pages)) return;
-        
+
         // Cargar torneos con el parámetro de página
         const container = document.getElementById('leagues-container');
         if (!container) return;
@@ -592,11 +602,11 @@ export class LeaguesModule {
             const response = await Core.fetchAPI(`/api/torneos?page=${page}`);
             const torneos = response.items || response;
             this.pagination = response.pagination || null;
-            
+
             // Re-aplicar filtros si es necesario
             const venueFilter = document.getElementById('league-venue-filter');
             const selectedVenue = venueFilter ? venueFilter.value : '';
-            
+
             let filtered = torneos;
             if (selectedVenue) {
                 filtered = torneos.filter(t => t.cancha && t.cancha.trim() === selectedVenue.trim());
@@ -784,16 +794,16 @@ export class LeaguesModule {
             // --- HEADER ---
             doc.setFillColor(30, 30, 30);
             doc.rect(0, 0, 210, 45, 'F');
-            
+
             doc.setTextColor(255, 255, 255);
             doc.setFontSize(24);
             doc.setFont("helvetica", "bold");
             doc.text("FUTADMIN PRO", margin, 25);
-            
+
             doc.setFontSize(10);
             doc.setTextColor(...primaryColor);
             doc.text("REPORTE HISTÓRICO DE TORNEO", margin, 35);
-            
+
             doc.setTextColor(150, 150, 150);
             const dateStr = new Date().toLocaleDateString();
             doc.text(`Generado el: ${dateStr}`, 150, 35);
@@ -943,7 +953,7 @@ export class LeaguesModule {
                 });
                 y += 10;
             }
-            
+
             // FOOTER
             doc.setFontSize(8);
             doc.setTextColor(150, 150, 150);

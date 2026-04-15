@@ -5,8 +5,14 @@ const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 
 class PagosAcademiaModule {
-    constructor() {
+    constructor(ui) {
+        this.ui = ui;
         this.resumenData = null;
+
+        // Desacoplamiento v72.0: Auto-inicialización vía eventos
+        window.addEventListener('futadmin:view-change', (e) => {
+            if (e.detail.viewId === 'pagos-academia') this.init();
+        });
     }
 
     async init() {

@@ -11,6 +11,11 @@ export class DashboardModule {
         this.leagueData = null;
         this._matchDetailsCache = {}; // cache: partido_id -> detail data
         this.liveInterval = null;
+
+        // Desacoplamiento v72.0: Auto-inicialización vía eventos
+        window.addEventListener('futadmin:view-change', (e) => {
+            if (e.detail.viewId === 'resumen') this.init();
+        });
     }
 
     async init() {
@@ -45,7 +50,7 @@ export class DashboardModule {
         this.currentLeagueId = select.value;
 
         const tabsNav = document.querySelector('.dashboard-tabs');
-        
+
         if (this.currentLeagueId === 'all') {
             if (tabsNav) tabsNav.style.setProperty('display', 'none', 'important');
             this.leagueData = null;
@@ -156,15 +161,15 @@ export class DashboardModule {
 
             liveContainer.style.display = 'flex';
             liveContainer.style.justifyContent = liveMatches.length === 1 ? 'center' : 'flex-start';
-            
+
             liveContainer.innerHTML = `
                 <div class="live-scroll-wrapper">
                     ${liveMatches.map(m => {
-                        const minute = getMatchMinute(m);
-                        const eventosArr = m.eventos || [];
-                        const goalsCount = eventosArr.filter(e => e.tipo === 'Gol').length;
-                        
-                        return `
+                const minute = getMatchMinute(m);
+                const eventosArr = m.eventos || [];
+                const goalsCount = eventosArr.filter(e => e.tipo === 'Gol').length;
+
+                return `
                         <div class="live-match-card-mini pulse-border">
                             <div class="live-header-row">
                                 <div class="live-indicator-tag">
@@ -204,55 +209,55 @@ export class DashboardModule {
                                 
                                 <div class="live-events-list">
                                     ${eventosArr.sort((a, b) => {
-                                        if (b.minuto !== a.minuto) return b.minuto - a.minuto;
-                                        return b.id - a.id; 
-                                    }).map(e => {
-                                        const tipoLow = (e.tipo || '').toLowerCase();
-                                        let icon = '⚽';
-                                        let classType = 'event-icon-goal-white';
-                                        if (tipoLow.includes('amarilla') || tipoLow.includes('yellow')) {
-                                            icon = '🟨'; classType = 'event-icon-yellow';
-                                        } else if (tipoLow.includes('roja') || tipoLow.includes('red')) {
-                                            icon = '🟥'; classType = 'event-icon-red';
-                                        } else if (tipoLow.includes('azul') || tipoLow.includes('blue')) {
-                                            icon = '🟦'; classType = 'event-icon-blue';
-                                        }
-                                        let nameContent = "";
-                                        if (['inicio', 'fin', 'medio tiempo', 'reanudación'].includes(tipoLow) || tipoLow.includes('reanudaci')) {
-                                            nameContent = e.tipo; // Solo texto del estado
-                                        } else {
-                                            let playerText = e.jugador_nombre && e.jugador_nombre !== "NN" ? e.jugador_nombre : "Desconocido";
-                                            let numText = e.jugador_numero && e.jugador_numero !== "?" ? `<b>#${e.jugador_numero}</b> ` : "";
-                                            let equipoText = (e.equipo_nombre && e.equipo_nombre !== "—") ? ` <small style="opacity:0.7;">(${e.equipo_nombre})</small>` : "";
-                                            
-                                            if (tipoLow.includes("cambio")) {
-                                                playerText = e.nota || "Sustitución";
-                                                nameContent = `${playerText}${equipoText}`;
-                                            } else {
-                                                nameContent = `${numText}${playerText}${equipoText}`;
-                                                if (e.nota) nameContent += ` <small style="opacity:0.7;">- ${e.nota}</small>`;
-                                            }
-                                        }
+                    if (b.minuto !== a.minuto) return b.minuto - a.minuto;
+                    return b.id - a.id;
+                }).map(e => {
+                    const tipoLow = (e.tipo || '').toLowerCase();
+                    let icon = '⚽';
+                    let classType = 'event-icon-goal-white';
+                    if (tipoLow.includes('amarilla') || tipoLow.includes('yellow')) {
+                        icon = '🟨'; classType = 'event-icon-yellow';
+                    } else if (tipoLow.includes('roja') || tipoLow.includes('red')) {
+                        icon = '🟥'; classType = 'event-icon-red';
+                    } else if (tipoLow.includes('azul') || tipoLow.includes('blue')) {
+                        icon = '🟦'; classType = 'event-icon-blue';
+                    }
+                    let nameContent = "";
+                    if (['inicio', 'fin', 'medio tiempo', 'reanudación'].includes(tipoLow) || tipoLow.includes('reanudaci')) {
+                        nameContent = e.tipo; // Solo texto del estado
+                    } else {
+                        let playerText = e.jugador_nombre && e.jugador_nombre !== "NN" ? e.jugador_nombre : "Desconocido";
+                        let numText = e.jugador_numero && e.jugador_numero !== "?" ? `<b>#${e.jugador_numero}</b> ` : "";
+                        let equipoText = (e.equipo_nombre && e.equipo_nombre !== "—") ? ` <small style="opacity:0.7;">(${e.equipo_nombre})</small>` : "";
 
-                                        const finalNameHtml = `<span class="marquee-wrap"><span class="marquee-text">${nameContent}</span></span>`;
+                        if (tipoLow.includes("cambio")) {
+                            playerText = e.nota || "Sustitución";
+                            nameContent = `${playerText}${equipoText}`;
+                        } else {
+                            nameContent = `${numText}${playerText}${equipoText}`;
+                            if (e.nota) nameContent += ` <small style="opacity:0.7;">- ${e.nota}</small>`;
+                        }
+                    }
 
-                                        return `
+                    const finalNameHtml = `<span class="marquee-wrap"><span class="marquee-text">${nameContent}</span></span>`;
+
+                    return `
                                             <div class="event-row-mini">
                                                 <span class="event-min-mini">${e.minuto}'</span>
                                                 <span class="${classType}">${icon}</span>
                                                 <span class="event-name-mini" style="display: flex; align-items: center; overflow: hidden; white-space: nowrap;">${finalNameHtml}</span>
                                             </div>
                                         `;
-                                    }).join('')}
+                }).join('')}
                                     ${eventosArr.length === 0 ? '<div class="no-events-label">Sin eventos</div>' : ''}
                                 </div>
                             </div>
                         </div>
                         `;
-                    }).join('')}
+            }).join('')}
                 </div>
             `;
-            
+
             // Activar marquees dinámicos
             this.activateMarqueeIfNeeded(liveContainer);
 
@@ -279,7 +284,7 @@ export class DashboardModule {
                 if (textWidth > wrapWidth) {
                     const offset = -((textWidth - wrapWidth) + 20); // 20px de margen extra
                     const duration = Math.max(4, Math.floor(textWidth / 30)); // 30px per sec
-                    
+
                     span.style.setProperty('--marquee-offset', `${offset}px`);
                     span.style.setProperty('--marquee-dur', `${duration}s`);
                     span.classList.add('scrolling');
@@ -563,7 +568,7 @@ export class DashboardModule {
             if (filterContainer) {
                 if (filterContainer.dataset.league !== this.currentLeagueId) {
                     filterContainer.dataset.league = this.currentLeagueId;
-                    const sortedJ = Object.keys(jornadas).sort((a,b) => b - a);
+                    const sortedJ = Object.keys(jornadas).sort((a, b) => b - a);
                     let filterHtml = '';
                     sortedJ.forEach(j => {
                         const isChecked = (parseInt(j) === maxJornada) ? 'checked' : '';
@@ -588,18 +593,18 @@ export class DashboardModule {
     renderFilteredSchedule() {
         const container = document.getElementById('league-schedule-container');
         if (!container) return;
-        
+
         const filterBoxes = document.querySelectorAll('.jornada-dashboard-checkbox:checked');
         const selectedJornadas = Array.from(filterBoxes).map(cb => Number(cb.value));
 
         const data = this._scheduleData || [];
-        
+
         const jornadas = {};
         data.forEach(p => {
             if (!jornadas[p.jornada]) jornadas[p.jornada] = [];
             jornadas[p.jornada].push(p);
         });
-        
+
         const isKnockout = this.leagueData?.formato === 'Eliminación Directa';
         const isLeague = !isKnockout;
         const maxJornada = Math.max(...Object.keys(jornadas).map(Number), 0);

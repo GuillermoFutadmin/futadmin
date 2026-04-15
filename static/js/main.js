@@ -199,34 +199,15 @@ class FutAdminUI {
         };
         document.getElementById('current-view-title').innerText = titleMap[viewId] || 'FutAdmin';
 
-        // Cargar datos del módulo
-        if (viewId === 'torneos') this.switchTorneosTab(tabId || 'torneos-lista');
-        else if (viewId === 'inscripciones') this.finance.populateInscripcionLeagueSelect();
-        else if (viewId === 'arbitrajes') this.finance.populateArbitrajeLeagueSelect();
-        else if (viewId === 'arbitros') this.arbitros.loadArbitros();
-        else if (viewId === 'resumen') this.dashboard.init();
-        else if (viewId === 'entrenamientos') {
-            document.querySelectorAll('#view-entrenamientos .tab-content').forEach(c => c.style.display = 'none');
-            const target = document.getElementById(`entrenamientos-${tabId || 'grupos'}`);
-            if (target) {
-                target.style.display = 'block';
-                if ((tabId || 'grupos') === 'grupos') this.entrenamientos.loadGrupos();
-            }
-        }
-        else if (viewId === 'pagos-academia') this.pagosAcademia.init();
-        else if (viewId === 'marketing') this.marketing.init();
-        else if (viewId === 'canchas') {
-            await this.canchas.loadCanchas();
-        }
-        else if (viewId === 'campos') {
-            await this.canchas.loadCampos();
-        }
-        else if (viewId === 'pagos-canchas') this.pagosCanchas.loadEstadosCuenta();
-        else if (viewId === 'archivo') this.leagues.loadArchivedLeagues();
-        else if (viewId === 'ajustes') {
-            this.settings.init();
-            if (tabId) this.settings.switchTab(tabId);
-        }
+        document.getElementById('current-view-title').innerText = titleMap[viewId] || 'FutAdmin';
+
+        // DESACOPLAMIENTO V72.0: Emitir evento global para que los módulos se auto-inicialicen
+        window.dispatchEvent(new CustomEvent('futadmin:view-change', {
+            detail: { viewId, tabId }
+        }));
+
+        // NOTA: Los llamados directos (this.finance.loadX, etc.) se han movido a los propios módulos
+        // para desahogar main.js y permitir escalabilidad infinita.
     }
 
     switchTorneosTab(tabId) {

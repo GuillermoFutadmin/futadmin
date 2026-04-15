@@ -14,6 +14,15 @@ export class SettingsModule {
         this.statusLimit = 10;
         this.paymentsLimit = 10;
         document.addEventListener('futadmin:limitsLoaded', () => this.checkLimits());
+
+        // Desacoplamiento v72.0: Auto-inicialización vía eventos
+        window.addEventListener('futadmin:view-change', (e) => {
+            const { viewId, tabId } = e.detail;
+            if (viewId === 'ajustes') {
+                this.init();
+                if (tabId) this.switchTab(tabId);
+            }
+        });
     }
 
     async init() {

@@ -28,6 +28,11 @@ export class MarketingModule {
             players: [],
             leagues: []
         };
+
+        // Desacoplamiento v72.0: Auto-inicialización vía eventos
+        window.addEventListener('futadmin:view-change', (e) => {
+            if (e.detail.viewId === 'marketing') this.init();
+        });
     }
 
     /**

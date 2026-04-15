@@ -28,7 +28,6 @@
         /* Custom Premium Scrollbar - GLOBAL & VISIBLE */
         ::-webkit-scrollbar {
             width: 14px;
-            /* Más ancha para visibilidad */
             height: 14px;
         }
 
@@ -55,7 +54,6 @@
             padding: 40px;
             line-height: 1.6;
             display: block !important;
-            /* Salir del modo flex si existe */
         }
 
         .container {
@@ -141,13 +139,13 @@
 
         .mermaid {
             background: transparent !important;
-            min-width: 1200px;
+            min-width: 1300px;
             display: block;
         }
 
         .warning-note {
-            background: rgba(251, 191, 36, 0.05);
-            border: 1px solid rgba(251, 191, 36, 0.2);
+            background: rgba(0, 255, 136, 0.03);
+            border: 1px solid rgba(0, 255, 136, 0.15);
             padding: 24px;
             border-radius: 16px;
             margin-top: 30px;
@@ -155,7 +153,7 @@
 
         .warning-note h4 {
             margin: 0 0 12px 0;
-            color: #fbbf24;
+            color: var(--primary);
             font-size: 1.2rem;
         }
 
@@ -172,78 +170,76 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>Panorama Stitch Flow</h1>
-            <p>Arquitectura de Propagación de Datos Total | v71.5 Pro+ Ultra-View++</p>
+            <h1>Panorama Stitch Flow [DESACOPLADO]</h1>
+            <p>Arquitectura de Eventos Globales | v72.0 Pro+ Decentralized</p>
         </div>
 
         <div class="grid">
             <div class="card full-width">
-                <h2><span>🟢</span> Flujo de Datos Freemium (Propagación In-Stream)</h2>
+                <h2><span>🟢</span> Flujo de Propagación Desahogado (Event-Driven)</h2>
                 <div class="flow-container">
-                    <div class="flow-step active">Registro Usuario</div>
+                    <div class="flow-step">main.js (Switch View)</div>
                     <div class="flow-arrow">➜</div>
-                    <div class="flow-step">Auto-gen (Ligas/Cuentas)</div>
+                    <div class="flow-step active">Emit 'view-change' [Bus]</div>
+                    <div class="flow-arrow" style="color:var(--primary)">≋</div>
+                    <div class="flow-step">Modulo [Listener]</div>
                     <div class="flow-arrow">➜</div>
-                    <div class="flow-step active">Access Control</div>
+                    <div class="flow-step active">Auto-init loadData()</div>
                     <div class="flow-arrow">➜</div>
-                    <div class="flow-step">Torneo Composition</div>
+                    <div class="flow-step">DB Railway API</div>
                     <div class="flow-arrow">➜</div>
-                    <div class="flow-step active">DB Persistence</div>
-                    <div class="flow-arrow">➜</div>
-                    <div class="flow-step">Serialization Hub</div>
-                    <div class="flow-arrow">➜</div>
-                    <div class="flow-step active">Stitch Visual Engine</div>
-                    <div class="flow-arrow">➜</div>
-                    <div class="flow-step">Renderización UI</div>
+                    <div class="flow-step active">Renderizado Autónomo</div>
                 </div>
             </div>
 
             <div class="card full-width">
-                <h2><span>🔗</span> Mapa de Dependencias 360° (Usa la barra de la horilla para bajar)</h2>
+                <h2><span>🔗</span> Nuevo Panorama de Dependencias (Event Bus Integration)</h2>
                 <div class="mermaid-wrapper">
                     <div class="mermaid">
-                        graph LR
-                        A[index.html] --> B[main.js Orquestador]
-                        B --> C[core.js Utility]
+                        graph TD
+                        A[main.js Orquestador] -- "1. Dispatch Event" --> BUS{{"⚡ EVENT BUS"}}
 
-                        B --> D[leagues.js]
-                        B --> E[teams.js]
-                        B --> F[players.js]
-                        B --> G[finance.js]
-                        B --> H[arbitros.js]
-                        B --> I[canchas.js]
-                        B --> J[pagos-canchas.js]
-                        B --> K[entrenamientos.js]
-                        B --> L[pagos-academia.js]
-                        B --> M[marketing.js]
-                        B --> N[dashboard_map.js]
-                        B --> O[analytics.js]
-                        B --> P[settings.js]
-                        B --> Q[onboarding.js]
+                        BUS -- "2. Listen" --> D[leagues.js]
+                        BUS -- "2. Listen" --> E[teams.js]
+                        BUS -- "2. Listen" --> F[players.js]
+                        BUS -- "2. Listen" --> G[finance.js]
+                        BUS -- "2. Listen" --> H[arbitros.js]
+                        BUS -- "2. Listen" --> I[canchas.js]
+                        BUS -- "2. Listen" --> J[pagos-canchas.js]
+                        BUS -- "2. Listen" --> K[entrenamientos.js]
+                        BUS -- "2. Listen" --> L[pagos-academia.js]
+                        BUS -- "2. Listen" --> M[marketing.js]
+                        BUS -- "2. Listen" --> N[dashboard.js]
+                        BUS -- "2. Listen" --> O[analytics.js]
+                        BUS -- "2. Listen" --> P[settings.js]
 
-                        C -.-> R((API Railway))
-                        R -.-> S[(PostgreSQL DB)]
+                        D --> DB[(PostgreSQL)]
+                        G --> DB
+                        I --> DB
+                        K --> DB
+                        P --> DB
 
-                        style B fill:#003322,stroke:#00ff88,stroke-width:4px
-                        style R fill:#1a1a2e,stroke:#3b82f6,stroke-width:3px
-                        style S fill:#1a1a2e,stroke:#fbbf24,stroke-width:2px
+                        style A fill:#003322,stroke:#00ff88,stroke-width:4px
+                        style BUS fill:#1a1a2e,stroke:#00ff88,stroke-width:3px,stroke-dasharray: 5 5
+                        style DB fill:#1a1a2e,stroke:#fbbf24,stroke-width:2px
                     </div>
                 </div>
             </div>
         </div>
 
         <div class="warning-note">
-            <h4>🚀 Estrategia de Escalabilidad (main.js Decoupling)</h4>
+            <h4>✅ Éxito: Panorama Desahogado (v72.0)</h4>
             <p style="font-size: 0.95rem; margin: 0;">
-                El crecimiento de <strong>main.js</strong> como "Punto de Falla Único" se mitigará mediante:
+                Hemos eliminado el "Cuello de Botella" central.
                 <br><br>
-                1. <strong>Event Bus</strong>: Migrar de llamadas directas a un sistema de publicación/suscripción.
+                1. <strong>Independencia Total</strong>: `main.js` ya no necesita conocer qué datos carga cada módulo.
+                Solo anuncia el cambio de vista.
                 <br>
-                2. <strong>Dynamic Imports</strong>: Los módulos solo se cargarán cuando el usuario navegue a su sección
-                respectiva.
+                2. <strong>Reducción de Código</strong>: Se eliminaron más de 30 líneas de lógica condicional del
+                orquestador.
                 <br>
-                3. <strong>State Isolation</strong>: Cada módulo gestionará su propio estado de datos, independizando la
-                UI central de la lógica de negocio.
+                3. <strong>Mantenibilidad</strong>: Agregar un nuevo módulo ahora solo requiere registrar el listener en
+                su propio archivo, sin tocar el núcleo del sistema.
             </p>
         </div>
 

@@ -5,6 +5,13 @@ export class FinanceModule {
         this.ui = ui;
         this.allInscripciones = [];
         this.allArbitrajes = [];
+
+        // Desacoplamiento v72.0: Auto-inicialización vía eventos
+        window.addEventListener('futadmin:view-change', (e) => {
+            const { viewId } = e.detail;
+            if (viewId === 'inscripciones') this.populateInscripcionLeagueSelect();
+            else if (viewId === 'arbitrajes') this.populateArbitrajeLeagueSelect();
+        });
     }
 
     async populateInscripcionLeagueSelect() {
@@ -319,7 +326,7 @@ export class FinanceModule {
                         </thead>
                         <tbody>
                   `;
-            html += filtered.map((ins, index) => {
+        html += filtered.map((ins, index) => {
             const colorSaldo = ins.saldo_inscripcion > 0 ? '#ffae00' : '#00ff88';
 
             let abonosHtml = '<span style="font-size: 0.7rem; color: var(--text-muted); font-style: italic;">Sin donaciones</span>';
@@ -356,13 +363,13 @@ export class FinanceModule {
                         </thead>
                         <tbody>
                             ${ins.detalle_partidos.map(dp => {
-                                const isPaid = dp.saldo <= 0;
-                                const estadoColor = isPaid ? '#00ff88' : (dp.estado === 'Played' ? '#00ff88' : (dp.estado === 'Live' ? '#ffae00' : '#aaa'));
-                                const estadoText = isPaid ? 'Pagado' : (dp.estado === 'Played' || dp.estado === 'Jugado' ? 'Jugado' : (dp.estado === 'Live' || dp.estado === 'En Vivo' ? 'En Vivo' : 'Pendiente'));
-                                const abonadoColor = dp.pagado >= dp.tarifa ? '#00ff88' : (dp.pagado > 0 ? '#ffae00' : '#fff');
-                                const saldoColor = dp.saldo > 0 ? '#ff4d4d' : '#00ff88';
+                    const isPaid = dp.saldo <= 0;
+                    const estadoColor = isPaid ? '#00ff88' : (dp.estado === 'Played' ? '#00ff88' : (dp.estado === 'Live' ? '#ffae00' : '#aaa'));
+                    const estadoText = isPaid ? 'Pagado' : (dp.estado === 'Played' || dp.estado === 'Jugado' ? 'Jugado' : (dp.estado === 'Live' || dp.estado === 'En Vivo' ? 'En Vivo' : 'Pendiente'));
+                    const abonadoColor = dp.pagado >= dp.tarifa ? '#00ff88' : (dp.pagado > 0 ? '#ffae00' : '#fff');
+                    const saldoColor = dp.saldo > 0 ? '#ff4d4d' : '#00ff88';
 
-                                return `
+                    return `
                                     <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); ${isPaid ? 'opacity: 0.9; background: rgba(0,255,136,0.03);' : ''}">
                                         <td style="padding: 8px;">J${dp.jornada}</td>
                                         <td style="padding: 8px; font-weight: bold;">${dp.rival}</td>
@@ -383,7 +390,7 @@ export class FinanceModule {
                                             ` : ''}
                                         </td>
                                     </tr>`;
-                            }).join('')}
+                }).join('')}
                         </tbody>
                     </table>
                 </div>`;
@@ -576,7 +583,7 @@ export class FinanceModule {
                 // Notar: /api/partidos usa paginación, por lo que los resultados están en response.items
                 const response = await Core.fetchAPI(`/api/partidos?equipo_id=${equipoId}&solo_pendientes=1&per_page=100`);
                 const matches = (response && response.items) ? response.items : (Array.isArray(response) ? response : []);
-                
+
                 selectPartido.innerHTML = '<option value="">-- Sin vincular a partido específico --</option>';
                 if (matches.length > 0) {
                     matches.forEach(p => {
@@ -607,7 +614,7 @@ export class FinanceModule {
 
     async handlePagoSubmit(e) {
         e.preventDefault();
-        
+
         const submitBtn = e.target.querySelector('button[type="submit"]') || document.querySelector('#modal-pago button[type="submit"]');
         if (submitBtn) {
             submitBtn.disabled = true;
@@ -648,14 +655,14 @@ export class FinanceModule {
             if (response.ok) {
                 const ticketData = await response.json();
                 Core.closeModal('modal-pago');
-                
+
                 // Actualizar la tabla correspondiente
                 if (data.tipo === 'Arbitraje') {
                     this.loadArbitrajes();
                 } else {
                     this.loadInscripciones();
                 }
-                
+
                 // Actualizar contadores globales
                 if (this.ui && this.ui.loadInitialStats) {
                     this.ui.loadInitialStats();
@@ -670,9 +677,9 @@ export class FinanceModule {
                     submitBtn.innerHTML = 'Generar Ticket y Guardar';
                 }
             }
-        } catch (error) { 
+        } catch (error) {
             console.error('Payment Error:', error);
-            alert('Error de conexión'); 
+            alert('Error de conexión');
             if (submitBtn) {
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = 'Generar Ticket y Guardar';
@@ -787,7 +794,7 @@ ${data.reglamento ? `<strong>REGLAMENTO:</strong>\n${data.reglamento}\n\n` : ''}
         const isArb = data.tipo === 'Arbitraje';
         const color = isArb ? '#0ea5e9' : '#059669';
         const folio = data.folio || ('FUT-' + String(data.pago_id).padStart(6, '0'));
-        
+
         const partidoSection = data.partido ? `
   <div class="info-box" style="grid-column: span 2; border-style: dashed; background: #f0f9ff;">
     <span class="lbl">Partido Relacionado (Arbitraje)</span>
@@ -910,11 +917,11 @@ ${data.reglamento ? `<strong>REGLAMENTO:</strong>\n${data.reglamento}\n\n` : ''}
                 } else {
                     this.loadInscripciones();
                 }
-                
+
                 if (this.ui && this.ui.loadInitialStats) {
                     this.ui.loadInitialStats();
                 }
-                
+
                 alert('Aportación anulada correctamente.');
             } else {
                 const err = await response.json();
@@ -930,7 +937,7 @@ ${data.reglamento ? `<strong>REGLAMENTO:</strong>\n${data.reglamento}\n\n` : ''}
             Core.showNotification('No se encontró un ID de pago válido para reenviar.', 'error');
             return;
         }
-        
+
         try {
             const url = `/api/pagos/${id}/resend_receipt`;
             console.log(`[DEBUG] Attempting resendReceipt for ID: ${id}, URL: ${url}`);
@@ -943,7 +950,7 @@ ${data.reglamento ? `<strong>REGLAMENTO:</strong>\n${data.reglamento}\n\n` : ''}
                 try {
                     const error = await res.json();
                     errorMsg = error.error || errorMsg;
-                } catch(e) {}
+                } catch (e) { }
                 Core.showNotification(`${errorMsg} (Status: ${res.status})`, 'error');
             }
         } catch (error) {

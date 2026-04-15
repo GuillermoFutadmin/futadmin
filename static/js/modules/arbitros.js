@@ -6,6 +6,11 @@ export class ArbitrosModule {
         this.ligas = [];
         this.arbitros = []; // Caché local para evitar fetch redundantes
         this.pagination = null;
+
+        // Desacoplamiento v72.0: Auto-inicialización vía eventos
+        window.addEventListener('futadmin:view-change', (e) => {
+            if (e.detail.viewId === 'arbitros') this.loadArbitros();
+        });
     }
 
     async changePage(page) {
@@ -16,7 +21,7 @@ export class ArbitrosModule {
     async loadArbitros(page = 1) {
         const container = document.getElementById('arbitros-container');
         if (!container) return;
-        
+
         if (this.arbitros.length === 0) {
             container.innerHTML = '<p>Cargando cuerpo arbitral...</p>';
         }
@@ -46,7 +51,7 @@ export class ArbitrosModule {
     renderPlaceholder(container) {
         const userRol = (window.USER_ROL || '').toLowerCase();
         const canAdd = ['admin', 'ejecutivo', 'dueño_liga', 'super_arbitro', 'equipo', 'dueno_cancha'].includes(userRol);
-        
+
         container.innerHTML = `
             <div class="stat-card" style="text-align: center; padding: 3rem; grid-column: 1 / -1;">
                 <span style="font-size: 3rem;">🏁</span>
@@ -62,7 +67,7 @@ export class ArbitrosModule {
     renderArbitros(arbitros) {
         const container = document.getElementById('arbitros-container');
         if (!container) return;
-        
+
         if (arbitros.length === 0) {
             this.renderPlaceholder(container);
             return;
@@ -170,8 +175,8 @@ export class ArbitrosModule {
         document.getElementById('arbitro-id').value = '';
         document.getElementById('arbitro-foto').value = '';
         document.getElementById('arbitro-telegram').value = '';
-        document.getElementById('arbitro-password').value = ''; 
-        document.getElementById('arbitro-email').value = ''; 
+        document.getElementById('arbitro-password').value = '';
+        document.getElementById('arbitro-email').value = '';
 
         const ligaSelect = document.getElementById('arbitro-liga-id');
         if (ligaSelect) {
@@ -180,11 +185,11 @@ export class ArbitrosModule {
 
         const ligaContainer = document.getElementById('arbitro-liga-container');
         const userRol = (window.USER_ROL || '').toLowerCase();
-        
+
         if (['admin', 'ejecutivo'].includes(userRol)) {
             if (ligaContainer && ligaSelect) {
                 ligaContainer.style.display = 'block';
-                ligaSelect.innerHTML = '<option value="">-- Sin Liga / Independiente --</option>' + 
+                ligaSelect.innerHTML = '<option value="">-- Sin Liga / Independiente --</option>' +
                     this.ligas.map(l => `<option value="${l.id}">${l.nombre}</option>`).join('');
             }
         } else {
@@ -197,7 +202,7 @@ export class ArbitrosModule {
     async editArbitro(id) {
         // Usar caché si está disponible, si no, cargar
         if (this.arbitros.length === 0) await this.loadArbitros();
-        
+
         const a = this.arbitros.find(x => x.id === id);
 
         if (a) {
@@ -218,7 +223,7 @@ export class ArbitrosModule {
             if (['admin', 'ejecutivo'].includes(userRol)) {
                 if (ligaContainer && ligaSelect) {
                     ligaContainer.style.display = 'block';
-                    ligaSelect.innerHTML = '<option value="">-- Sin Liga / Independiente --</option>' + 
+                    ligaSelect.innerHTML = '<option value="">-- Sin Liga / Independiente --</option>' +
                         this.ligas.map(l => `<option value="${l.id}">${l.nombre}</option>`).join('');
                     ligaSelect.value = a.liga_id || '';
                 }

@@ -5,14 +5,21 @@ export class CanchasModule {
         this.ui = ui;
         this.canchas = [];
         document.addEventListener('futadmin:limitsLoaded', () => this.checkLimits());
+
+        // Desacoplamiento v72.0: Auto-inicialización vía eventos
+        window.addEventListener('futadmin:view-change', (e) => {
+            const { viewId } = e.detail;
+            if (viewId === 'canchas') this.loadCanchas();
+            else if (viewId === 'campos') this.loadCampos();
+        });
     }
 
     async loadCanchas(page = 1) {
         const container = document.getElementById('canchas-container');
         if (!container) return;
-        
+
         container.innerHTML = '<div class="loading-premium"><span>⌛</span> Cargando sedes...</div>';
-        
+
         try {
             const data = await Core.fetchAPI(`/api/canchas?page=${page}`);
             this.canchas = data.items || data;
@@ -46,7 +53,7 @@ export class CanchasModule {
                         c._sede_color = sede.color || 'var(--primary)';
                     });
                     allCampos = allCampos.concat(campos);
-                } catch(e2) {}
+                } catch (e2) { }
             }
             this.renderCampos(allCampos);
         } catch (e) {
@@ -139,19 +146,19 @@ export class CanchasModule {
         const query = document.getElementById('cancha-search-filter').value.toLowerCase();
         if (!this.canchas) return;
 
-        const filtered = this.canchas.filter(c => 
-            c.nombre.toLowerCase().includes(query) || 
+        const filtered = this.canchas.filter(c =>
+            c.nombre.toLowerCase().includes(query) ||
             (c.email_encargado && c.email_encargado.toLowerCase().includes(query)) ||
             (c.encargado && c.encargado.toLowerCase().includes(query))
         );
-        
+
         this.renderCanchas(filtered);
     }
 
     checkLimits() {
         const btn = document.getElementById('btn-nueva-cancha');
         if (!btn) return;
-        
+
         const userRol = (window.USER_ROL || '').toLowerCase().replace('ñ', 'n');
         const canManage = ['dueno_liga', 'dueno_cancha', 'super_arbitro', 'equipo', 'admin', 'ejecutivo'].includes(userRol);
 
@@ -164,14 +171,14 @@ export class CanchasModule {
         }
 
         if (!window.FutAdminLimits || !window.FutAdminCounts) return;
-        
+
         const limit = window.FutAdminLimits.canchas;
         const count = window.FutAdminCounts.canchas || 0;
-        
+
         // Actualizar contador visual
         const counterMain = document.getElementById('venue-counter-main');
         const counterModal = document.getElementById('venue-counter-modal');
-        
+
         const isAdmin = userRol === 'admin' || userRol === 'ejecutivo';
         const displayLimit = isAdmin ? '∞' : limit;
         const counterText = limit !== undefined ? `${count} / ${displayLimit}` : `${count}`;
@@ -294,26 +301,26 @@ export class CanchasModule {
                             <div style="font-size: 0.7rem; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; font-weight: bold;">Cuentas con Acceso:</div>
                             <div style="display: flex; flex-direction: column; gap: 4px;">
                                 ${c.usuarios.map(u => {
-                                    const icons =    { 'dueno_cancha': '🏠', 'arbitro': '⚖️', 'dueño_liga': '👑', 'entrenador': '📋', 'super_arbitro': '🚀', 'equipo': '🛡️', 'resultados': '📊', 'admin': '⭐', 'ejecutivo': '💼' };
-                                    const rolColors = {
-                                        'dueno_cancha':  { bg: 'rgba(0,255,136,0.08)',  border: 'rgba(0,255,136,0.25)',  text: '#00ff88' },
-                                        'dueño_liga':    { bg: 'rgba(255,215,0,0.08)',  border: 'rgba(255,215,0,0.25)',  text: '#ffd700' },
-                                        'arbitro':       { bg: 'rgba(245,158,11,0.08)', border: 'rgba(245,158,11,0.25)', text: '#f59e0b' },
-                                        'super_arbitro': { bg: 'rgba(251,146,60,0.08)', border: 'rgba(251,146,60,0.25)', text: '#fb923c' },
-                                        'entrenador':    { bg: 'rgba(59,130,246,0.08)', border: 'rgba(59,130,246,0.25)', text: '#3b82f6' },
-                                        'equipo':        { bg: 'rgba(167,139,250,0.08)', border: 'rgba(167,139,250,0.25)', text: '#a78bfa' },
-                                        'resultados':    { bg: 'rgba(100,116,139,0.08)', border: 'rgba(100,116,139,0.25)', text: '#94a3b8' },
-                                        'admin':         { bg: 'rgba(236,72,153,0.08)', border: 'rgba(236,72,153,0.25)', text: '#ec4899' },
-                                        'ejecutivo':     { bg: 'rgba(20,184,166,0.08)', border: 'rgba(20,184,166,0.25)', text: '#14b8a6' },
-                                    };
-                                    const clr = rolColors[u.rol] || { bg: 'rgba(255,255,255,0.03)', border: 'rgba(255,255,255,0.08)', text: '#aaa' };
-                                    return `
+                const icons = { 'dueno_cancha': '🏠', 'arbitro': '⚖️', 'dueño_liga': '👑', 'entrenador': '📋', 'super_arbitro': '🚀', 'equipo': '🛡️', 'resultados': '📊', 'admin': '⭐', 'ejecutivo': '💼' };
+                const rolColors = {
+                    'dueno_cancha': { bg: 'rgba(0,255,136,0.08)', border: 'rgba(0,255,136,0.25)', text: '#00ff88' },
+                    'dueño_liga': { bg: 'rgba(255,215,0,0.08)', border: 'rgba(255,215,0,0.25)', text: '#ffd700' },
+                    'arbitro': { bg: 'rgba(245,158,11,0.08)', border: 'rgba(245,158,11,0.25)', text: '#f59e0b' },
+                    'super_arbitro': { bg: 'rgba(251,146,60,0.08)', border: 'rgba(251,146,60,0.25)', text: '#fb923c' },
+                    'entrenador': { bg: 'rgba(59,130,246,0.08)', border: 'rgba(59,130,246,0.25)', text: '#3b82f6' },
+                    'equipo': { bg: 'rgba(167,139,250,0.08)', border: 'rgba(167,139,250,0.25)', text: '#a78bfa' },
+                    'resultados': { bg: 'rgba(100,116,139,0.08)', border: 'rgba(100,116,139,0.25)', text: '#94a3b8' },
+                    'admin': { bg: 'rgba(236,72,153,0.08)', border: 'rgba(236,72,153,0.25)', text: '#ec4899' },
+                    'ejecutivo': { bg: 'rgba(20,184,166,0.08)', border: 'rgba(20,184,166,0.25)', text: '#14b8a6' },
+                };
+                const clr = rolColors[u.rol] || { bg: 'rgba(255,255,255,0.03)', border: 'rgba(255,255,255,0.08)', text: '#aaa' };
+                return `
                                         <div style="display: flex; align-items: center; justify-content: space-between; padding: 4px 8px; background: ${clr.bg}; border-radius: 6px; border: 1px solid ${clr.border};">
                                             <span style="font-size: 0.75rem; color: ${clr.text}; font-weight: 600;">${u.nombre}</span>
                                             <span style="font-size: 0.8rem; padding: 1px 4px;">${icons[u.rol] || '👤'}</span>
                                         </div>
                                     `;
-                                }).join('')}
+            }).join('')}
                             </div>
                         </div>
                     ` : ''}
@@ -359,7 +366,7 @@ export class CanchasModule {
         const torneosNav = document.querySelector('.nav-item[data-view="torneos"]');
         // Cambiar a la vista 'torneos' y directamente a la pestaña 'torneos-lista'
         this.ui.switchView('torneos', 'torneos-lista', torneosNav);
-        
+
         // Esperar un momento a que la vista se cargue y aplicar el filtro
         setTimeout(() => {
             if (this.ui.leagues) {
@@ -382,7 +389,7 @@ export class CanchasModule {
         const modal = btn.closest('.modal');
         modal.querySelectorAll('.modal-tab').forEach(b => b.classList.remove('active'));
         modal.querySelectorAll('.modal-tab-content').forEach(c => c.classList.remove('active'));
-        
+
         // Activar seleccionada
         btn.classList.add('active');
         document.getElementById(`cancha-tab-${tabId}`).classList.add('active');
@@ -402,7 +409,7 @@ export class CanchasModule {
     initGeoSelectors() {
         const estadoSelect = document.getElementById('cancha-estado');
         if (!estadoSelect || estadoSelect.options.length > 1) return; // Ya inicializado
-        
+
         const estados = Object.keys(window.MEXICO_GEO || {}).sort();
         estados.forEach(e => {
             const opt = document.createElement('option');
@@ -416,7 +423,7 @@ export class CanchasModule {
         const estadoSelect = document.getElementById('cancha-estado');
         const municipioSelect = document.getElementById('cancha-municipio');
         const estado = estadoSelect.value;
-        
+
         municipioSelect.innerHTML = '<option value="">Selecciona Municipio...</option>';
         municipioSelect.disabled = !estado;
 
@@ -428,7 +435,7 @@ export class CanchasModule {
                 opt.textContent = m;
                 municipioSelect.appendChild(opt);
             });
-            
+
             if (selectedMunicipio) {
                 municipioSelect.value = selectedMunicipio;
             }
@@ -457,10 +464,10 @@ export class CanchasModule {
 - No se permite el ingreso de mascotas al terreno de juego.
 
 "El deporte es salud y sana convivencia."`;
-        
+
         const textarea = document.getElementById('cancha-notas');
         if (textarea.value.trim() && !confirm('¿Deseas reemplazar el contenido actual con la plantilla base?')) return;
-        
+
         textarea.value = template;
         Core.showNotification('Plantilla cargada con éxito');
     }
@@ -473,13 +480,13 @@ export class CanchasModule {
 
         const sedeSelect = document.getElementById('campo-sede-id');
         if (sedeSelect) {
-            sedeSelect.innerHTML = '<option value="">-- Selecciona una Sede --</option>' + 
+            sedeSelect.innerHTML = '<option value="">-- Selecciona una Sede --</option>' +
                 this.canchas.map(sede => `<option value="${sede.id}">${sede.nombre}</option>`).join('');
         }
 
         const form = document.getElementById('campo-form');
         if (form) form.reset();
-        
+
         document.getElementById('campo-id').value = '';
         document.getElementById('campo-modal-title').innerText = '🥅 Nuevo Campo de Juego';
 
@@ -552,9 +559,9 @@ export class CanchasModule {
                 return;
             }
         }
-        
 
-        
+
+
         const form = document.getElementById('cancha-form');
         form.reset();
         document.getElementById('cancha-id').value = '';
@@ -580,11 +587,11 @@ export class CanchasModule {
                 document.getElementById('cancha-costo').value = c.costo_renta;
                 document.getElementById('cancha-unidad-cobro').value = c.unidad_cobro || 'Partido';
                 document.getElementById('cancha-direccion').value = c.direccion;
-                
+
                 // Geolocalización
                 document.getElementById('cancha-estado').value = c.estado || '';
                 this.handleEstadoChange(c.municipio);
-                
+
                 document.getElementById('cancha-notas').value = c.notas;
                 document.getElementById('cancha-foto').value = c.foto_url || '';
 

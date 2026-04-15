@@ -1,8 +1,24 @@
 class EntrenamientosModule {
-    constructor() {
+    constructor(ui) {
+        this.ui = ui;
         this.currentGrupoId = null;
         this.paginationGrupos = null;
         this.paginationAlumnos = null;
+
+        // Desacoplamiento v72.0: Auto-inicialización vía eventos
+        window.addEventListener('futadmin:view-change', (e) => {
+            const { viewId, tabId } = e.detail;
+            if (viewId === 'entrenamientos') {
+                // Manejar lógica de pestañas interna de entrenamientos
+                document.querySelectorAll('#view-entrenamientos .tab-content').forEach(c => c.style.display = 'none');
+                const target = document.getElementById(`entrenamientos-${tabId || 'grupos'}`);
+                if (target) {
+                    target.style.display = 'block';
+                    if ((tabId || 'grupos') === 'grupos') this.loadGrupos();
+                    else if (tabId === 'alumnos') this.loadAlumnos();
+                }
+            }
+        });
     }
 
     async changeGruposPage(page) {
