@@ -197,7 +197,7 @@
                 <div class="mermaid-wrapper">
                     <div class="mermaid">
                         graph TD
-                        A[main.js Orquestador] -- "1. Dispatch Event" --> BUS{{"⚡ EVENT BUS"}}
+                        A[main.js Orquestador] -- "1. Dispatch Event" --> BUS(EVENT BUS GLOBAL)
 
                         BUS -- "2. Listen" --> D[leagues.js]
                         BUS -- "2. Listen" --> E[teams.js]
