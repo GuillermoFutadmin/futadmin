@@ -178,6 +178,16 @@ class FutAdminUI {
         });
 
         const targetView = document.getElementById(`view-${viewId}`);
+        if (!window.__torneosObserverSet) {
+            window.__torneosObserverSet = true;
+            new MutationObserver(m => {
+                m.forEach(mutation => {
+                    if (mutation.attributeName === 'style' && mutation.target.id === 'view-torneos') {
+                        console.error('[MUTATION] view-torneos style changed to:', mutation.target.style.display, mutation.target.classList.contains('active') ? 'IS ACTIVE' : 'NOT ACTIVE', new Error().stack);
+                    }
+                });
+            }).observe(document.body, { attributes: true, subtree: true, attributeFilter: ['style', 'class'] });
+        }
         console.log(`[Navigation] switching to view: ${viewId}, tab: ${tabId}`);
         if (targetView) {
             targetView.style.display = 'block';
