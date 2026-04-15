@@ -27,7 +27,7 @@
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
         }
 
@@ -77,7 +77,6 @@
             gap: 10px;
         }
 
-        /* Flujo de Propagación Styles */
         .flow-container {
             display: flex;
             align-items: center;
@@ -93,7 +92,6 @@
             border-radius: 12px;
             font-size: 0.85rem;
             white-space: nowrap;
-            position: relative;
         }
 
         .flow-step.active {
@@ -102,16 +100,35 @@
             background: rgba(0, 255, 136, 0.05);
         }
 
-        .flow-arrow {
-            color: var(--text-muted);
+        .mermaid {
+            background: rgba(0, 0, 0, 0.2) !important;
+            padding: 20px;
+            border-radius: 16px;
+            min-height: 600px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .warning-note {
+            background: rgba(251, 191, 36, 0.05);
+            border: 1px solid rgba(251, 191, 36, 0.2);
+            padding: 24px;
+            border-radius: 16px;
+            margin-top: 30px;
+        }
+
+        .warning-note h4 {
+            margin: 0 0 12px 0;
+            color: #fbbf24;
             font-size: 1.2rem;
         }
 
-        /* Composición UI Styles */
-        .comp-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
+        .btn-back {
+            display: inline-block;
+            margin-top: 20px;
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
         }
 
         .comp-item {
@@ -122,10 +139,6 @@
             border-bottom: 1px solid var(--border);
         }
 
-        .comp-item:last-child {
-            border-bottom: none;
-        }
-
         .badge {
             background: rgba(0, 255, 136, 0.1);
             color: var(--primary);
@@ -134,206 +147,138 @@
             font-size: 0.75rem;
             font-weight: 600;
         }
-
-        .layout-preview {
-            background: #000;
-            border-radius: 16px;
-            height: 300px;
-            position: relative;
-            border: 1px solid var(--border);
-        }
-
-        .preview-nav {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            right: 10px;
-            height: 60px;
-            background: rgba(0, 255, 136, 0.2);
-            border: 1px solid var(--primary);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.8rem;
-        }
-
-        .preview-sidebar {
-            position: absolute;
-            top: 80px;
-            left: 10px;
-            bottom: 10px;
-            width: 80px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.7rem;
-            writing-mode: vertical-rl;
-            transform: rotate(180deg);
-        }
-
-        .preview-main {
-            position: absolute;
-            top: 80px;
-            left: 100px;
-            right: 10px;
-            bottom: 10px;
-            background: rgba(255, 255, 255, 0.02);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.8rem;
-            color: var(--text-muted);
-        }
-
-        .mermaid {
-            background: transparent !important;
-        }
-
-        /* Scalability Note */
-        .warning-note {
-            background: rgba(251, 191, 36, 0.05);
-            border: 1px solid rgba(251, 191, 36, 0.2);
-            padding: 20px;
-            border-radius: 16px;
-            margin-top: 30px;
-        }
-
-        .warning-note h4 {
-            margin: 0 0 10px 0;
-            color: #fbbf24;
-        }
-
-        .btn-back {
-            display: inline-block;
-            margin-top: 20px;
-            color: var(--primary);
-            text-decoration: none;
-            font-weight: 600;
-        }
     </style>
 </head>
 
 <body>
     <div class="container">
         <div class="header">
-            <h1>Stitch Flow Intelligence</h1>
-            <p>Arquitectura de Propagación de Datos Freemium | v71.1 Stable</p>
+            <h1>Panorama Stitch Flow</h1>
+            <p>Arquitectura de Propagación de Datos Total | v71.2 Pro+</p>
         </div>
 
         <div class="grid">
-            <!-- 1. Flujo de Datos -->
             <div class="card full-width">
-                <h2><span>🟢</span> Flujo de Datos Freemium (Propagación)</h2>
+                <h2><span>🟢</span> Flujo de Datos Freemium (Propagación In-Stream)</h2>
                 <div class="flow-container">
-                    <div class="flow-step active">Usuario Registrado</div>
+                    <div class="flow-step active">Registro Usuario</div>
                     <div class="flow-arrow">➜</div>
-                    <div class="flow-step">Auto-gen DB</div>
+                    <div class="flow-step">Auto-gen (Ligas/Cuentas)</div>
                     <div class="flow-arrow">➜</div>
-                    <div class="flow-step active">Cuentas Acceso</div>
+                    <div class="flow-step active">Access Control</div>
                     <div class="flow-arrow">➜</div>
-                    <div class="flow-step">Logic Core</div>
+                    <div class="flow-step">Torneo Composition</div>
                     <div class="flow-arrow">➜</div>
-                    <div class="flow-step active">Liga Independiente</div>
+                    <div class="flow-step active">DB Persistence</div>
                     <div class="flow-arrow">➜</div>
-                    <div class="flow-step">Composition Engine</div>
+                    <div class="flow-step">Serialization Hub</div>
                     <div class="flow-arrow">➜</div>
-                    <div class="flow-step active">Resultados / Tablas</div>
+                    <div class="flow-step active">Stitch Visual Engine</div>
                     <div class="flow-arrow">➜</div>
-                    <div class="flow-step">Serialization</div>
-                    <div class="flow-arrow">➜</div>
-                    <div class="flow-step active">Dashboard UI</div>
-                </div>
-                <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 15px;">
-                    Cada nodo representa un punto de falla potencial. Si la serialización en el backend falla, el
-                    "Stitch" visual del cliente no se renderiza.
-                </p>
-            </div>
-
-            <!-- 2. Composición de Pantalla -->
-            <div class="card">
-                <h2><span>🧩</span> Composición de Pantalla</h2>
-                <ul class="comp-list">
-                    <li class="comp-item">
-                        <div>
-                            <strong>Módulo Core (JS)</strong>
-                            <div style="font-size: 0.75rem; color: var(--text-muted);">Manejo global de peticiones</div>
-                        </div>
-                        <span class="badge">Fetch & Cache</span>
-                    </li>
-                    <li class="comp-item">
-                        <div>
-                            <strong>Dashboard Module</strong>
-                            <div style="font-size: 0.75rem; color: var(--text-muted);">Inyección de estadísticas rápidas
-                            </div>
-                        </div>
-                        <span class="badge">Cards & Stats</span>
-                    </li>
-                    <li class="comp-item">
-                        <div>
-                            <strong>Leagues Module</strong>
-                            <div style="font-size: 0.75rem; color: var(--text-muted);">Manejo de filtros y persistencia
-                            </div>
-                        </div>
-                        <span class="badge">Filters & Logic</span>
-                    </li>
-                </ul>
-            </div>
-
-            <!-- 3. Preview Visual -->
-            <div class="card">
-                <h2><span>🖥️</span> Arquitectura Visual (Stitch)</h2>
-                <div class="layout-preview">
-                    <div class="preview-nav">Nav: Header / Global Actions</div>
-                    <div class="preview-sidebar">Sidebar Navigation</div>
-                    <div class="preview-main">Main: Component Injection (Sub-Views)</div>
+                    <div class="flow-step">Renderización UI</div>
                 </div>
             </div>
 
-            <!-- 4. Diagrama de Conexiones -->
+            <div class="card">
+                <h2><span>🧩</span> Componentes del Stitch</h2>
+                <div class="comp-item">
+                    <div><strong>Engine Core</strong>
+                        <div style="font-size: 0.75rem; color: var(--text-muted);">Peticiones y Cache</div>
+                    </div>
+                    <span class="badge">fetch()</span>
+                </div>
+                <div class="comp-item">
+                    <div><strong>Modulo Finanzas</strong>
+                        <div style="font-size: 0.75rem; color: var(--text-muted);">Pagos y Aportaciones</div>
+                    </div>
+                    <span class="badge">Inscripciones</span>
+                </div>
+                <div class="comp-item">
+                    <div><strong>Modulo Participantes</strong>
+                        <div style="font-size: 0.75rem; color: var(--text-muted);">Equipos y Jugadores</div>
+                    </div>
+                    <span class="badge">Gestion</span>
+                </div>
+                <div class="comp-item">
+                    <div><strong>Modulo Academias</strong>
+                        <div style="font-size: 0.75rem; color: var(--text-muted);">Entrenamientos y Cobros</div>
+                    </div>
+                    <span class="badge">Grupos</span>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2><span>🖥️</span> Arquitectura Visual</h2>
+                <div
+                    style="background: #000; border-radius: 16px; height: 260px; position: relative; border: 1px solid var(--border);">
+                    <div
+                        style="position: absolute; top: 10px; left: 10px; right: 10px; height: 50px; background: rgba(0,255,136,0.1); border: 1px solid var(--primary); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 0.8rem;">
+                        Top Bar (Title / Profile)</div>
+                    <div
+                        style="position: absolute; top: 70px; left: 10px; bottom: 10px; width: 60px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 8px; font-size: 0.6rem; padding: 10px;">
+                        Sidebar</div>
+                    <div
+                        style="position: absolute; top: 70px; left: 80px; right: 10px; bottom: 10px; background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; color: var(--text-muted);">
+                        Sub-View Container (Injection)</div>
+                </div>
+            </div>
+
             <div class="card full-width">
-                <h2><span>🔗</span> Diagrama de Conexiones (Arquitectura de Módulos)</h2>
+                <h2><span>🔗</span> Mapa de Dependencias 360° (Full Panorama)</h2>
                 <div class="mermaid">
-                    graph TD
+                    graph LR
                     A[index.html] --> B[main.js Orquestador]
-                    B --> C[core.js API]
-                    B --> D[leagues.js]
-                    B --> E[canchas.js]
-                    B --> F[arbitros.js]
-                    B --> G[dashboard_map.js]
+                    B --> C[core.js Utility]
 
-                    style B fill:#003322,stroke:#00ff88,stroke-width:2px
+                    B --> D[leagues.js]
+                    B --> E[teams.js]
+                    B --> F[players.js]
+                    B --> G[finance.js]
+                    B --> H[arbitros.js]
+                    B --> I[canchas.js]
+                    B --> J[pagos-canchas.js]
+                    B --> K[entrenamientos.js]
+                    B --> L[pagos-academia.js]
+                    B --> M[marketing.js]
+                    B --> N[dashboard_map.js]
+                    B --> O[analytics.js]
+                    B --> P[settings.js]
+                    B --> Q[onboarding.js]
+
+                    C -.-> R((API Railway))
+                    R -.-> S[(PostgreSQL DB)]
+
+                    style B fill:#003322,stroke:#00ff88,stroke-width:4px
+                    style R fill:#1a1a2e,stroke:#3b82f6,stroke-width:3px
+                    style S fill:#1a1a2e,stroke:#fbbf24,stroke-width:2px
                 </div>
             </div>
         </div>
 
         <div class="warning-note">
-            <h4>🚀 Nota de Escalabilidad: El Cuello de Botella de main.js</h4>
-            <p style="font-size: 0.9rem; margin: 0;">
-                Actualmente, <strong>main.js</strong> actúa como un <i>Mediator Pattern</i> (Orquestador Central).
-                Para evitar un cuello de botella en el futuro (cuando la App crezca a +50 módulos), la hoja de ruta
-                propone:
+            <h4>🚀 Estrategia de Escalabilidad (main.js Decoupling)</h4>
+            <p style="font-size: 0.95rem; margin: 0;">
+                El crecimiento de <strong>main.js</strong> como "Punto de Falla Único" se mitigará mediante:
                 <br><br>
-                1. **Descentralización vía Eventos**: Módulos que escuchan `futadmin:viewChanged` en lugar de ser
-                llamados directamente.
+                1. <strong>Event Bus</strong>: Migrar de llamadas directas a un sistema de publicación/suscripción.
                 <br>
-                2. **Dynamic Imports**: Carga de archivos JS por demanda (Lazy Loading) solo cuando la vista sea
-                activada.
+                2. <strong>Dynamic Imports</strong>: Los módulos solo se cargarán cuando el usuario navegue a su sección
+                respectiva.
                 <br>
-                3. **State Management**: Separar la lógica de datos de la lógica de renderizado del DOM.
+                3. <strong>State Isolation</strong>: Cada módulo gestionará su propio estado de datos, independizando la
+                UI central de la lógica de negocio.
             </p>
         </div>
 
-        <a href="/" class="btn-back">← Volver al Sistema</a>
+        <a href="/" class="btn-back">← Volver al Dashboard</a>
     </div>
 
     <script>
-        mermaid.initialize({ startOnLoad: true, theme: 'dark' });
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'dark',
+            flowchart: { useMaxWidth: false, htmlLabels: true }
+        });
     </script>
 </body>
 
