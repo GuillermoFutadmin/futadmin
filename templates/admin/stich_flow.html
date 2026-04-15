@@ -250,14 +250,14 @@
                         end
 
                         subgraph "Frontend Engine (React-Like)"
-                        W1 & W2 & W3 & W4 -- "Load View" --> M[main.js Orquestador]
-                        M -- "Dispatch 'view-change'" --> BUS(EVENT BUS GLOBAL)
-                        BUS -- "Reactive Load" --> MODS[14+ Data Modules]
+                        W1 & W2 & W3 & W4 -- "Load View" --> M["main.js Orquestador"]
+                        M -- "Dispatch 'view-change'" --> BUS("EVENT BUS GLOBAL")
+                        BUS -- "Reactive Load" --> MODS["14+ Data Modules"]
                         end
 
                         subgraph "Persistencia & Datos"
-                        MODS -- "SQLAlchemy Pool (5+10)" --> DB[(PostgreSQL Cluster)]
-                        MODS -- "FS Mount" --> VOL[/app/static/uploads]
+                        MODS -- "SQLAlchemy Pool (5+10)" --> DB[("PostgreSQL Cluster")]
+                        MODS -- "FS Mount" --> VOL["/app/static/uploads"]
                         end
 
                         style B fill:#05080a,stroke:#3b82f6,stroke-width:2px
