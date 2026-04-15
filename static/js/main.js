@@ -175,12 +175,10 @@ class FutAdminUI {
 
         const targetView = document.getElementById(`view-${viewId}`);
         if (targetView) {
-            // Pequeño retraso para permitir que el ojo note el cambio de estado
-            setTimeout(() => {
-                targetView.style.display = 'block';
-                // La clase .active dispara la animación CSS fadeInUp
-                setTimeout(() => targetView.classList.add('active'), 20);
-            }, 50);
+            targetView.style.display = 'block';
+            // Forzar reflow para que la animación se dispare
+            void targetView.offsetWidth;
+            targetView.classList.add('active');
         }
 
         const titleMap = {
@@ -245,7 +243,8 @@ class FutAdminUI {
         const targetContent = document.getElementById(`tab-${tabId}`);
         if (targetContent) {
             targetContent.style.display = 'block';
-            setTimeout(() => targetContent.classList.add('active'), 10);
+            void targetContent.offsetWidth; // Force reflow
+            targetContent.classList.add('active');
         }
 
         if (tabId === 'torneos-lista') this.leagues.loadLeagues();
