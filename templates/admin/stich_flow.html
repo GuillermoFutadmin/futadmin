@@ -17,10 +17,19 @@
             --text-muted: #94a3b8;
         }
 
-        /* Custom Premium Scrollbar - GLOBAL */
+        /* Power Overwrite: Forzar Scroll Global */
+        html,
+        body {
+            overflow: auto !important;
+            height: auto !important;
+            min-height: 100vh;
+        }
+
+        /* Custom Premium Scrollbar - GLOBAL & VISIBLE */
         ::-webkit-scrollbar {
-            width: 10px;
-            height: 10px;
+            width: 14px;
+            /* Más ancha para visibilidad */
+            height: 14px;
         }
 
         ::-webkit-scrollbar-track {
@@ -28,9 +37,10 @@
         }
 
         ::-webkit-scrollbar-thumb {
-            background: rgba(0, 255, 136, 0.2);
+            background: rgba(0, 255, 136, 0.3);
             border-radius: 10px;
-            border: 2px solid #05080a;
+            border: 3px solid #05080a;
+            box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.5);
         }
 
         ::-webkit-scrollbar-thumb:hover {
@@ -44,6 +54,8 @@
             margin: 0;
             padding: 40px;
             line-height: 1.6;
+            display: block !important;
+            /* Salir del modo flex si existe */
         }
 
         .container {
@@ -114,23 +126,22 @@
             white-space: nowrap;
         }
 
-        /* Mermaid Wrapper for Scrolling - FIX CRÍTICO */
+        /* Mermaid Wrapper for Local Horizontal Scrolling */
         .mermaid-wrapper {
             background: #05080a !important;
             padding: 40px;
             border-radius: 16px;
-            height: 800px;
-            /* Altura Fija para forzar scroll vertical */
-            overflow: auto !important;
-            /* Forzar scrollbars */
-            border: 1px solid var(--primary);
-            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5);
+            min-height: 800px;
+            overflow-x: auto !important;
+            overflow-y: hidden;
+            border: 1px solid var(--border);
+            display: flex;
+            justify-content: flex-start;
         }
 
         .mermaid {
             background: transparent !important;
             min-width: 1200px;
-            /* Asegurar que no se contraiga horizontalmente */
             display: block;
         }
 
@@ -155,14 +166,6 @@
             text-decoration: none;
             font-weight: 600;
         }
-
-        .comp-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px 0;
-            border-bottom: 1px solid var(--border);
-        }
     </style>
 </head>
 
@@ -170,7 +173,7 @@
     <div class="container">
         <div class="header">
             <h1>Panorama Stitch Flow</h1>
-            <p>Arquitectura de Propagación de Datos Total | v71.4 Ultra-View+</p>
+            <p>Arquitectura de Propagación de Datos Total | v71.5 Pro+ Ultra-View++</p>
         </div>
 
         <div class="grid">
@@ -196,7 +199,7 @@
             </div>
 
             <div class="card full-width">
-                <h2><span>🔗</span> Mapa de Dependencias 360° (Navega con las barras)</h2>
+                <h2><span>🔗</span> Mapa de Dependencias 360° (Usa la barra de la horilla para bajar)</h2>
                 <div class="mermaid-wrapper">
                     <div class="mermaid">
                         graph LR
@@ -244,7 +247,9 @@
             </p>
         </div>
 
-        <a href="/" class="btn-back">← Volver al Dashboard</a>
+        <div style="padding: 40px 0;">
+            <a href="/" class="btn-back">← Volver al Dashboard Principal</a>
+        </div>
     </div>
 
     <script>
