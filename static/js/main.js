@@ -1,24 +1,24 @@
 /**
  * Punto de entrada principal - FutAdmin ESM
  */
-import { Core } from './modules/core.js?v=70';
-import { LeaguesModule } from './modules/leagues.js?v=70';
-import { TeamsModule } from './modules/teams.js?v=70';
-import { PlayersModule } from './modules/players.js?v=70';
-import { FinanceModule } from './modules/finance.js?v=70';
-import { ArbitrosModule } from './modules/arbitros.js?v=70';
-import { DashboardModule } from './modules/dashboard.js?v=70';
-import EntrenamientosModule from './modules/entrenamientos.js?v=70';
-import PagosAcademiaModule from './modules/pagos-academia.js?v=70';
-import { CanchasModule } from './modules/canchas.js?v=70';
-import { PagosCanchasModule } from './modules/pagos-canchas.js?v=70';
-import { SettingsModule } from './modules/settings.js?v=70';
-import { AnalyticsModule } from './modules/analytics.js?v=70';
-import { PrivacyModule } from './modules/privacy.js?v=70';
-import { DashboardMap } from './modules/dashboard_map.js?v=70';
-import { MarketingModule } from './modules/marketing.js?v=70';
-import { Perfil } from './modules/perfil.js?v=70';
-import { OnboardingModule } from './modules/onboarding.js?v=70';
+import { Core } from './modules/core.js?v=71';
+import { LeaguesModule } from './modules/leagues.js?v=71';
+import { TeamsModule } from './modules/teams.js?v=71';
+import { PlayersModule } from './modules/players.js?v=71';
+import { FinanceModule } from './modules/finance.js?v=71';
+import { ArbitrosModule } from './modules/arbitros.js?v=71';
+import { DashboardModule } from './modules/dashboard.js?v=71';
+import EntrenamientosModule from './modules/entrenamientos.js?v=71';
+import PagosAcademiaModule from './modules/pagos-academia.js?v=71';
+import { CanchasModule } from './modules/canchas.js?v=71';
+import { PagosCanchasModule } from './modules/pagos-canchas.js?v=71';
+import { SettingsModule } from './modules/settings.js?v=71';
+import { AnalyticsModule } from './modules/analytics.js?v=71';
+import { PrivacyModule } from './modules/privacy.js?v=71';
+import { DashboardMap } from './modules/dashboard_map.js?v=71';
+import { MarketingModule } from './modules/marketing.js?v=71';
+import { Perfil } from './modules/perfil.js?v=71';
+import { OnboardingModule } from './modules/onboarding.js?v=71';
 
 class FutAdminUI {
     constructor() {
