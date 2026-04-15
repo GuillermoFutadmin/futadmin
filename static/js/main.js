@@ -189,6 +189,9 @@ class FutAdminUI {
             }).observe(document.body, { attributes: true, subtree: true, attributeFilter: ['style', 'class'] });
         }
         console.log(`[Navigation] switching to view: ${viewId}, tab: ${tabId}`);
+        if (viewId === 'resumen') {
+            console.error('[STACK TRACE FOR RESUMEN]', new Error().stack);
+        }
         if (targetView) {
             targetView.style.display = 'block';
             console.log(`[Navigation] targetView found:`, targetView);
