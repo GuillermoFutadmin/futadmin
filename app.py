@@ -3799,10 +3799,13 @@ def _get_stats_impl():
         print(f"WARN total_equipos: {e}")
         total_equipos = 0
 
+    total_partidos_global = sum(t['partidos_jugados'] for t in torneos_detalle)
+
     return jsonify({
         "torneos_activos": len(active_tournaments),
         "total_jugadores": total_jugadores,
         "total_equipos": total_equipos,
+        "total_partidos": total_partidos_global,
         "torneos_detalle": torneos_detalle,
         "limits": limits,
         "current_counts": current_counts,

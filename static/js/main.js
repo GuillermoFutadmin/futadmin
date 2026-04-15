@@ -271,15 +271,19 @@ class FutAdminUI {
                     container.innerHTML = `
                         <div class="stat-card">
                             <p class="section-title">LIGAS ACTIVAS</p>
-                            <div class="value" style="font-size: 2.5rem; font-weight: 700; color: var(--primary);">${data.torneos_activos || 0}</div>
+                            <div class="value" style="font-size: 2.22rem; font-weight: 700; color: var(--primary);">${data.torneos_activos || 0}</div>
+                        </div>
+                        <div class="stat-card">
+                            <p class="section-title">PARTIDOS JUGADOS</p>
+                            <div class="value" style="font-size: 2.22rem; font-weight: 700; color: var(--primary);">${data.total_partidos || 0}</div>
                         </div>
                         <div class="stat-card">
                             <p class="section-title">EQUIPOS TOTALES</p>
-                            <div class="value" style="font-size: 2.5rem; font-weight: 700;">${data.total_equipos || 0}</div>
+                            <div class="value" style="font-size: 2.22rem; font-weight: 700;">${data.total_equipos || 0}</div>
                         </div>
                         <div class="stat-card">
                             <p class="section-title">JUGADORES REGISTRADOS</p>
-                            <div class="value" style="font-size: 2.5rem; font-weight: 700;">${data.total_jugadores || 0}</div>
+                            <div class="value" style="font-size: 2.22rem; font-weight: 700;">${data.total_jugadores || 0}</div>
                         </div>
                     `;
                 }

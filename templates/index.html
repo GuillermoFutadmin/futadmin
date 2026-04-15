@@ -27,11 +27,7 @@
         window.BRANDING_COLOR = "{{ branding.color }}";
     </script>
     <style>
-        :root {
-            --primary: {
-                    {
-                    branding.color
-                }
+        :root { --primary: {{ branding.color }}; --primary-glow: {{ branding.color }}4D; }
             }
 
             ;
