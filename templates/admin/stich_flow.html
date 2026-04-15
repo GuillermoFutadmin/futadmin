@@ -199,21 +199,32 @@
                         graph TD
                         A[main.js Orquestador] -- "1. Dispatch Event" --> BUS(EVENT BUS GLOBAL)
 
-                        BUS -- "2. Listen" --> D[leagues.js]
-                        BUS -- "2. Listen" --> E[teams.js]
-                        BUS -- "2. Listen" --> F[players.js]
-                        BUS -- "2. Listen" --> G[finance.js]
-                        BUS -- "2. Listen" --> H[arbitros.js]
-                        BUS -- "2. Listen" --> I[canchas.js]
-                        BUS -- "2. Listen" --> J[pagos-canchas.js]
-                        BUS -- "2. Listen" --> K[entrenamientos.js]
-                        BUS -- "2. Listen" --> L[pagos-academia.js]
-                        BUS -- "2. Listen" --> M[marketing.js]
-                        BUS -- "2. Listen" --> N[dashboard.js]
-                        BUS -- "2. Listen" --> O[analytics.js]
-                        BUS -- "2. Listen" --> P[settings.js]
+                        subgraph "Módulos de Gestión Core"
+                        BUS -- "Listen" --> D[leagues.js]
+                        BUS -- "Listen" --> E[teams.js]
+                        BUS -- "Listen" --> F[players.js]
+                        BUS -- "Listen" --> G[finance.js]
+                        end
 
-                        D --> DB[(PostgreSQL)]
+                        subgraph "Módulos de Operación"
+                        BUS -- "Listen" --> H[arbitros.js]
+                        BUS -- "Listen" --> I[canchas.js]
+                        BUS -- "Listen" --> J[pagos-canchas.js]
+                        BUS -- "Listen" --> K[entrenamientos.js]
+                        end
+
+                        subgraph "Módulos de Academia y Marketing"
+                        BUS -- "Listen" --> L[pagos-academia.js]
+                        BUS -- "Listen" --> M[marketing.js]
+                        end
+
+                        subgraph "Módulos de Análisis y Config"
+                        BUS -- "Listen" --> N[dashboard.js]
+                        BUS -- "Listen" --> O[analytics.js]
+                        BUS -- "Listen" --> P[settings.js]
+                        end
+
+                        D --> DB[(PostgreSQL DB)]
                         G --> DB
                         I --> DB
                         K --> DB
