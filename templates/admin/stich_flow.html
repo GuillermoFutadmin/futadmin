@@ -4,372 +4,336 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stitch Architecture Flow | FutAdmin Pro</title>
+    <title>Stitch Hub | FutAdmin Architecture</title>
+    <link rel="stylesheet" href="/static/css/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
     <style>
         :root {
             --primary: #00ff88;
-            --secondary: #00d4ff;
-            --bg: #0a0e14;
-            --card-bg: rgba(255, 255, 255, 0.05);
-            --text: #ffffff;
-            --text-muted: rgba(255, 255, 255, 0.6);
-            --danger: #ff4d4d;
-            --success: #00ff88;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+            --bg: #0a0f14;
+            --card-bg: #141a21;
+            --border: rgba(255, 255, 255, 0.08);
+            --text-muted: #94a3b8;
         }
 
         body {
+            background-color: var(--bg);
+            color: #fff;
             font-family: 'Outfit', sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            overflow-x: hidden;
+            margin: 0;
+            padding: 40px;
             line-height: 1.6;
         }
 
-        .stitch-container {
+        .container {
             max-width: 1200px;
             margin: 0 auto;
-            padding: 40px 20px;
         }
 
-        header {
-            text-align: center;
-            margin-bottom: 60px;
+        .header {
+            margin-bottom: 40px;
+            border-left: 4px solid var(--primary);
+            padding-left: 20px;
         }
 
-        h1 {
-            font-size: 3rem;
-            font-weight: 800;
-            background: linear-gradient(90deg, var(--primary), var(--secondary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 10px;
+        .header h1 {
+            font-size: 2.5rem;
+            margin: 0;
+            letter-spacing: -1px;
         }
 
-        .subtitle {
-            font-size: 1.1rem;
+        .header p {
             color: var(--text-muted);
-            letter-spacing: 2px;
-            text-transform: uppercase;
+            margin: 5px 0 0 0;
         }
 
-        .grid-diagnostics {
+        .grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 30px;
             margin-bottom: 40px;
         }
 
-        .card.error-card {
-            grid-column: span 2;
+        .full-width {
+            grid-column: 1 / -1;
         }
 
         .card {
             background: var(--card-bg);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 30px;
+            border: 1px solid var(--border);
             border-radius: 24px;
-            transition: transform 0.3s ease;
+            padding: 30px;
+            position: relative;
+            overflow: hidden;
         }
 
-        .card:hover {
-            transform: translateY(-5px);
-            border-color: var(--primary);
-        }
-
-        .card-title {
-            font-weight: 600;
-            font-size: 1.2rem;
-            margin-bottom: 20px;
+        .card h2 {
+            font-size: 1.5rem;
+            margin-top: 0;
+            margin-bottom: 25px;
             display: flex;
             align-items: center;
             gap: 10px;
         }
 
-        .status-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background: var(--success);
-            box-shadow: 0 0 10px var(--success);
+        /* Flujo de Propagación Styles */
+        .flow-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            overflow-x: auto;
+            padding: 20px 0;
         }
 
-        .status-dot.error {
-            background: var(--danger);
-            box-shadow: 0 0 10px var(--danger);
+        .flow-step {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border);
+            padding: 12px 20px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            white-space: nowrap;
+            position: relative;
         }
 
-        .flow-section {
-            background: var(--card-bg);
-            border-radius: 24px;
-            padding: 40px;
-            margin-bottom: 40px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+        .flow-step.active {
+            border-color: var(--primary);
+            color: var(--primary);
+            background: rgba(0, 255, 136, 0.05);
+        }
+
+        .flow-arrow {
+            color: var(--text-muted);
+            font-size: 1.2rem;
+        }
+
+        /* Composición UI Styles */
+        .comp-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .comp-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .comp-item:last-child {
+            border-bottom: none;
+        }
+
+        .badge {
+            background: rgba(0, 255, 136, 0.1);
+            color: var(--primary);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .layout-preview {
+            background: #000;
+            border-radius: 16px;
+            height: 300px;
+            position: relative;
+            border: 1px solid var(--border);
+        }
+
+        .preview-nav {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            height: 60px;
+            background: rgba(0, 255, 136, 0.2);
+            border: 1px solid var(--primary);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+        }
+
+        .preview-sidebar {
+            position: absolute;
+            top: 80px;
+            left: 10px;
+            bottom: 10px;
+            width: 80px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            writing-mode: vertical-rl;
+            transform: rotate(180deg);
+        }
+
+        .preview-main {
+            position: absolute;
+            top: 80px;
+            left: 100px;
+            right: 10px;
+            bottom: 10px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            color: var(--text-muted);
         }
 
         .mermaid {
             background: transparent !important;
-            display: flex;
-            justify-content: center;
         }
 
-        .checklist-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-        }
-
-        .checklist-item:last-child {
-            border-bottom: none;
-        }
-
-        .tag {
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 700;
-            background: rgba(0, 255, 136, 0.1);
-            color: var(--primary);
-        }
-
-        .tag.error {
-            background: rgba(255, 77, 77, 0.1);
-            color: var(--danger);
-        }
-
-        .composition-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 40px;
-        }
-
-        .screen-preview {
-            background: #000;
-            border-radius: 12px;
+        /* Scalability Note */
+        .warning-note {
+            background: rgba(251, 191, 36, 0.05);
+            border: 1px solid rgba(251, 191, 36, 0.2);
             padding: 20px;
-            border: 4px solid #1a1f26;
-            position: relative;
+            border-radius: 16px;
+            margin-top: 30px;
         }
 
-        .screen-preview::before {
-            content: "";
-            position: absolute;
-            top: -10px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 60px;
-            height: 5px;
-            background: #333;
-            border-radius: 5px;
+        .warning-note h4 {
+            margin: 0 0 10px 0;
+            color: #fbbf24;
         }
 
-        .footer {
-            text-align: center;
-            margin-top: 60px;
-            color: var(--text-muted);
-            font-size: 0.9rem;
-        }
-
-        .loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: var(--bg);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
-
-        .spinner {
-            width: 50px;
-            height: 50px;
-            border: 5px solid rgba(255, 255, 255, 0.1);
-            border-top-color: var(--primary);
-            border-radius: 50%;
-            animation: spin 1s infinite linear;
-        }
-
-        @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
+        .btn-back {
+            display: inline-block;
+            margin-top: 20px;
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
         }
     </style>
 </head>
 
 <body>
-    <div id="loading" class="loading-overlay">
-        <div class="spinner"></div>
-    </div>
+    <div class="container">
+        <div class="header">
+            <h1>Stitch Flow Intelligence</h1>
+            <p>Arquitectura de Propagación de Datos Freemium | v71.1 Stable</p>
+        </div>
 
-    <div class="stitch-container">
-        <header>
-            <h1>FutAdmin Stitch</h1>
-            <p class="subtitle">Architecture & Data Logic Flow</p>
-        </header>
-
-        <section class="grid-diagnostics">
-            <div class="card">
-                <div class="card-title">
-                    <span id="platform-dot" class="status-dot"></span>
-                    Estado de Plataforma
+        <div class="grid">
+            <!-- 1. Flujo de Datos -->
+            <div class="card full-width">
+                <h2><span>🟢</span> Flujo de Datos Freemium (Propagación)</h2>
+                <div class="flow-container">
+                    <div class="flow-step active">Usuario Registrado</div>
+                    <div class="flow-arrow">➜</div>
+                    <div class="flow-step">Auto-gen DB</div>
+                    <div class="flow-arrow">➜</div>
+                    <div class="flow-step active">Cuentas Acceso</div>
+                    <div class="flow-arrow">➜</div>
+                    <div class="flow-step">Logic Core</div>
+                    <div class="flow-arrow">➜</div>
+                    <div class="flow-step active">Liga Independiente</div>
+                    <div class="flow-arrow">➜</div>
+                    <div class="flow-step">Composition Engine</div>
+                    <div class="flow-arrow">➜</div>
+                    <div class="flow-step active">Resultados / Tablas</div>
+                    <div class="flow-arrow">➜</div>
+                    <div class="flow-step">Serialization</div>
+                    <div class="flow-arrow">➜</div>
+                    <div class="flow-step active">Dashboard UI</div>
                 </div>
-                <div id="platform-status" style="font-size: 2rem; font-weight: 800; color: var(--primary);">
-                    ANALIZANDO...
-                </div>
-                <p id="platform-msg" style="color: var(--text-muted); margin-top: 10px;">Validando integridad del
-                    esquema Freemium.</p>
-            </div>
-
-            <div class="card">
-                <div class="card-title">Integridad de Esquema</div>
-                <div id="migration-list">
-                    <!-- Dynamic -->
-                </div>
-            </div>
-
-            <div class="card error-card">
-                <div class="card-title" style="justify-content: space-between;">
-                    <span>🚨 Registro de Errores e Inconsistencias</span>
-                    <button onclick="clearError()"
-                        style="background: rgba(255,255,255,0.1); border: none; color: #fff; padding: 5px 15px; border-radius: 6px; cursor: pointer; font-size: 0.7rem;">Limpiar
-                        Registro</button>
-                </div>
-                <div id="last-error-box"
-                    style="font-family: 'Courier New', Courier, monospace; font-size: 0.9rem; background: #000; padding: 20px; border-radius: 12px; color: #ff5555; overflow-y: auto; min-height: 200px; max-height: 600px; border: 1px solid rgba(255, 77, 77, 0.2); white-space: pre-wrap;">
-                    Ningún error crítico detectado en el ciclo actual.
-                </div>
-            </div>
-        </section>
-
-        <section class="flow-section">
-            <h2 style="margin-bottom: 30px; border-left: 4px solid var(--primary); padding-left: 15px;">Flujo de Datos
-                Freemium (Propagación)</h2>
-            <div class="mermaid">
-                graph LR
-                U[Usuario Registered] -->|Auto-gen| A[Cuentas de Acceso]
-                A -->|Logic| L[Liga Independiente]
-                L -->|Composition| T[Torneos]
-                T -->|Serialization| R[Resultados / Tablas]
-                R -->|Visualization| D[Dashboard UI]
-
-                style U fill:#1a1f26,stroke:#00ff88,color:#fff
-                style R fill:#003322,stroke:#00ff88,color:#fff
-                style D fill:#001122,stroke:#00d4ff,color:#fff
-            </div>
-        </section>
-
-        <section class="composition-grid">
-            <div class="flow-section">
-                <h2 style="margin-bottom: 20px;">Composición de Pantalla</h2>
-                <div class="checklist-item">
-                    <span>Módulo Core (JS)</span>
-                    <span class="tag">Fetch & Cache</span>
-                </div>
-                <div class="checklist-item">
-                    <span>Dashboard Module</span>
-                    <span class="tag">Cards & Stats</span>
-                </div>
-                <div class="checklist-item">
-                    <span>Leagues Module</span>
-                    <span class="tag">Filters & Logic</span>
-                </div>
-                <p style="margin-top: 20px; font-size: 0.9rem; color: var(--text-muted);">
-                    Cada pantalla se compone de fragmentos inyectados por la API. Si la serialización falla en el
-                    backend, el "Stitch" visual se rompe.
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 15px;">
+                    Cada nodo representa un punto de falla potencial. Si la serialización en el backend falla, el
+                    "Stitch" visual del cliente no se renderiza.
                 </p>
             </div>
 
-            <div class="screen-preview">
-                <div
-                    style="width: 100%; height: 100px; background: rgba(0,255,136,0.2); border-radius: 8px; margin-bottom: 15px; display: flex; align-items: center; justify-content: center;">
-                    Nav: Header</div>
-                <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 10px;">
-                    <div style="height: 150px; background: rgba(255,255,255,0.05); border-radius: 8px;">Sidebar</div>
-                    <div
-                        style="height: 150px; background: rgba(255,255,255,0.1); border-radius: 8px; display: flex; align-items: center; justify-content: center;">
-                        Main: Dashboard Stats</div>
+            <!-- 2. Composición de Pantalla -->
+            <div class="card">
+                <h2><span>🧩</span> Composición de Pantalla</h2>
+                <ul class="comp-list">
+                    <li class="comp-item">
+                        <div>
+                            <strong>Módulo Core (JS)</strong>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">Manejo global de peticiones</div>
+                        </div>
+                        <span class="badge">Fetch & Cache</span>
+                    </li>
+                    <li class="comp-item">
+                        <div>
+                            <strong>Dashboard Module</strong>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">Inyección de estadísticas rápidas
+                            </div>
+                        </div>
+                        <span class="badge">Cards & Stats</span>
+                    </li>
+                    <li class="comp-item">
+                        <div>
+                            <strong>Leagues Module</strong>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">Manejo de filtros y persistencia
+                            </div>
+                        </div>
+                        <span class="badge">Filters & Logic</span>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- 3. Preview Visual -->
+            <div class="card">
+                <h2><span>🖥️</span> Arquitectura Visual (Stitch)</h2>
+                <div class="layout-preview">
+                    <div class="preview-nav">Nav: Header / Global Actions</div>
+                    <div class="preview-sidebar">Sidebar Navigation</div>
+                    <div class="preview-main">Main: Component Injection (Sub-Views)</div>
                 </div>
             </div>
-        </section>
 
-        <div class="footer">
-            &copy; 2026 FutAdmin Pro - High Standards Engineering Report
+            <!-- 4. Diagrama de Conexiones -->
+            <div class="card full-width">
+                <h2><span>🔗</span> Diagrama de Conexiones (Arquitectura de Módulos)</h2>
+                <div class="mermaid">
+                    graph TD
+                    A[index.html] --> B[main.js Orquestador]
+                    B --> C[core.js API]
+                    B --> D[leagues.js]
+                    B --> E[canchas.js]
+                    B --> F[arbitros.js]
+                    B --> G[dashboard_map.js]
+
+                    style B fill:#003322,stroke:#00ff88,stroke-width:2px
+                </div>
+            </div>
         </div>
+
+        <div class="warning-note">
+            <h4>🚀 Nota de Escalabilidad: El Cuello de Botella de main.js</h4>
+            <p style="font-size: 0.9rem; margin: 0;">
+                Actualmente, <strong>main.js</strong> actúa como un <i>Mediator Pattern</i> (Orquestador Central).
+                Para evitar un cuello de botella en el futuro (cuando la App crezca a +50 módulos), la hoja de ruta
+                propone:
+                <br><br>
+                1. **Descentralización vía Eventos**: Módulos que escuchan `futadmin:viewChanged` en lugar de ser
+                llamados directamente.
+                <br>
+                2. **Dynamic Imports**: Carga de archivos JS por demanda (Lazy Loading) solo cuando la vista sea
+                activada.
+                <br>
+                3. **State Management**: Separar la lógica de datos de la lógica de renderizado del DOM.
+            </p>
+        </div>
+
+        <a href="/" class="btn-back">← Volver al Sistema</a>
     </div>
 
     <script>
         mermaid.initialize({ startOnLoad: true, theme: 'dark' });
-
-        async function loadHealth() {
-            try {
-                const res = await fetch('/api/admin/high-standards-health');
-                const data = await res.json();
-
-                document.getElementById('loading').style.display = 'none';
-
-                // Platform Status
-                const statusEl = document.getElementById('platform-status');
-                const dotEl = document.getElementById('platform-dot');
-                statusEl.innerText = data.platform_status;
-                if (data.platform_status !== 'Operational') {
-                    statusEl.style.color = 'var(--danger)';
-                    dotEl.classList.add('error');
-                    document.getElementById('platform-msg').innerText = "Se detectaron faltantes en el esquema de la base de datos.";
-                } else {
-                    document.getElementById('platform-msg').innerText = "Todas las capas de datos responden correctamente.";
-                }
-
-                // Error Box
-                if (data.last_stats_error && data.last_stats_error !== "No errors yet") {
-                    document.getElementById('last-error-box').innerText = data.last_stats_error;
-                    document.getElementById('last-error-box').style.color = '#ff5555';
-                } else {
-                    document.getElementById('last-error-box').innerText = "Sistema estable. Sin errores de serialización recientes.";
-                    document.getElementById('last-error-box').style.color = 'var(--primary)';
-                }
-
-                // Migration List
-                const listEl = document.getElementById('migration-list');
-                listEl.innerHTML = '';
-                for (const [key, value] of Object.entries(data.migration_check)) {
-                    listEl.innerHTML += `
-                        <div class="checklist-item">
-                            <span>${key}</span>
-                            <span class="tag ${value ? '' : 'error'}">${value ? 'OK' : 'MISSING'}</span>
-                        </div>
-                    `;
-                }
-
-            } catch (e) {
-                console.error(e);
-                document.getElementById('platform-status').innerText = "ERROR API";
-                document.getElementById('platform-status').style.color = "var(--danger)";
-            }
-        }
-
-        async function clearError() {
-            if (!confirm("¿Deseas limpiar el registro de errores del servidor?")) return;
-            try {
-                await fetch('/api/admin/clear-error');
-                loadHealth();
-            } catch (e) { alert("Error al limpiar"); }
-        }
-
-        window.onload = loadHealth;
     </script>
 </body>
 
