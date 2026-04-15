@@ -27,21 +27,11 @@
         window.BRANDING_COLOR = "{{ branding.color }}";
     </script>
     <style>
-        :root { --primary: {{ branding.color }}; --primary-glow: {{ branding.color }}4D; }
-            }
-
-            ;
-
-            --primary-glow: {
-                    {
-                    branding.color
-                }
-            }
-
-            4D;
-            /* 30% alpha */
+    <style>
+        :root {
+            --primary: {{ branding.color }};
+            --primary-glow: {{ branding.color }}4D; /* 30% alpha */
         }
-
         .premium-tooltip {
             pointer-events: none;
             transition: opacity 0.3s ease, transform 0.3s ease;
