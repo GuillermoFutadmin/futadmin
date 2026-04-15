@@ -26,11 +26,26 @@
         window.USER_ROL = "{{ user_rol.lower() or 'invitado' }}";
         window.BRANDING_COLOR = "{{ branding.color }}";
     </script>
-        <style>
+    <style>
         :root {
-            --primary: {{ branding.color }};
-            --primary-glow: {{ branding.color }}4D; /* 30% alpha */
+            --primary: {
+                    {
+                    branding.color
+                }
+            }
+
+            ;
+
+            --primary-glow: {
+                    {
+                    branding.color
+                }
+            }
+
+            4D;
+            /* 30% alpha */
         }
+
         .premium-tooltip {
             pointer-events: none;
             transition: opacity 0.3s ease, transform 0.3s ease;
@@ -1675,9 +1690,6 @@
             </div>
         </div>
     </div>
-
-    </div>
-
     <!-- Los modales de entrenamiento han sido movidos a components/entrenamientos.html -->
 
     <!-- Modal: Pagos Masivos (Fase 5) -->
@@ -1799,8 +1811,6 @@
             </div>
         </div>
     </div>
-
-    {% include 'components/marketing.html' %}
 
     <input type="file" id="global-file-upload" style="display: none;" accept="image/*"
         onchange="Core.handleGlobalFileUpload(event)">
