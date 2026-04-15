@@ -17,20 +17,20 @@
             --text-muted: #94a3b8;
         }
 
-        /* Custom Premium Scrollbar */
+        /* Custom Premium Scrollbar - GLOBAL */
         ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
+            width: 10px;
+            height: 10px;
         }
 
         ::-webkit-scrollbar-track {
-            background: var(--bg);
+            background: #05080a;
         }
 
         ::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(0, 255, 136, 0.2);
             border-radius: 10px;
-            border: 2px solid var(--bg);
+            border: 2px solid #05080a;
         }
 
         ::-webkit-scrollbar-thumb:hover {
@@ -114,29 +114,24 @@
             white-space: nowrap;
         }
 
-        .flow-step.active {
-            border-color: var(--primary);
-            color: var(--primary);
-            background: rgba(0, 255, 136, 0.05);
-        }
-
-        /* Mermaid Wrapper for Scrolling */
+        /* Mermaid Wrapper for Scrolling - FIX CRÍTICO */
         .mermaid-wrapper {
-            background: rgba(0, 0, 0, 0.2) !important;
-            padding: 30px;
+            background: #05080a !important;
+            padding: 40px;
             border-radius: 16px;
-            min-height: 600px;
-            overflow-x: auto;
-            overflow-y: hidden;
-            border: 1px solid var(--border);
-            display: flex;
-            justify-content: flex-start;
+            height: 800px;
+            /* Altura Fija para forzar scroll vertical */
+            overflow: auto !important;
+            /* Forzar scrollbars */
+            border: 1px solid var(--primary);
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5);
         }
 
         .mermaid {
             background: transparent !important;
-            flex-shrink: 0;
-            /* Important to avoid collapsing */
+            min-width: 1200px;
+            /* Asegurar que no se contraiga horizontalmente */
+            display: block;
         }
 
         .warning-note {
@@ -168,15 +163,6 @@
             padding: 15px 0;
             border-bottom: 1px solid var(--border);
         }
-
-        .badge {
-            background: rgba(0, 255, 136, 0.1);
-            color: var(--primary);
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 0.75rem;
-            font-weight: 600;
-        }
     </style>
 </head>
 
@@ -184,7 +170,7 @@
     <div class="container">
         <div class="header">
             <h1>Panorama Stitch Flow</h1>
-            <p>Arquitectura de Propagación de Datos Total | v71.3 Ultra-View</p>
+            <p>Arquitectura de Propagación de Datos Total | v71.4 Ultra-View+</p>
         </div>
 
         <div class="grid">
@@ -209,52 +195,8 @@
                 </div>
             </div>
 
-            <div class="card">
-                <h2><span>🧩</span> Componentes del Stitch</h2>
-                <div class="comp-item">
-                    <div><strong>Engine Core</strong>
-                        <div style="font-size: 0.75rem; color: var(--text-muted);">Peticiones y Cache</div>
-                    </div>
-                    <span class="badge">fetch()</span>
-                </div>
-                <div class="comp-item">
-                    <div><strong>Modulo Finanzas</strong>
-                        <div style="font-size: 0.75rem; color: var(--text-muted);">Pagos y Aportaciones</div>
-                    </div>
-                    <span class="badge">Inscripciones</span>
-                </div>
-                <div class="comp-item">
-                    <div><strong>Modulo Participantes</strong>
-                        <div style="font-size: 0.75rem; color: var(--text-muted);">Equipos y Jugadores</div>
-                    </div>
-                    <span class="badge">Gestion</span>
-                </div>
-                <div class="comp-item">
-                    <div><strong>Modulo Academias</strong>
-                        <div style="font-size: 0.75rem; color: var(--text-muted);">Entrenamientos y Cobros</div>
-                    </div>
-                    <span class="badge">Grupos</span>
-                </div>
-            </div>
-
-            <div class="card">
-                <h2><span>🖥️</span> Arquitectura Visual</h2>
-                <div
-                    style="background: #000; border-radius: 16px; height: 260px; position: relative; border: 1px solid var(--border);">
-                    <div
-                        style="position: absolute; top: 10px; left: 10px; right: 10px; height: 50px; background: rgba(0,255,136,0.1); border: 1px solid var(--primary); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 0.8rem;">
-                        Top Bar (Title / Profile)</div>
-                    <div
-                        style="position: absolute; top: 70px; left: 10px; bottom: 10px; width: 60px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 8px; font-size: 0.6rem; padding: 10px;">
-                        Sidebar</div>
-                    <div
-                        style="position: absolute; top: 70px; left: 80px; right: 10px; bottom: 10px; background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; color: var(--text-muted);">
-                        Sub-View Container (Injection)</div>
-                </div>
-            </div>
-
             <div class="card full-width">
-                <h2><span>🔗</span> Mapa de Dependencias 360° (Usa la barra para explorar)</h2>
+                <h2><span>🔗</span> Mapa de Dependencias 360° (Navega con las barras)</h2>
                 <div class="mermaid-wrapper">
                     <div class="mermaid">
                         graph LR
