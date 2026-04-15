@@ -174,16 +174,21 @@ class FutAdminUI {
         });
 
         const targetView = document.getElementById(`view-${viewId}`);
+        console.log(`[Navigation] switching to view: ${viewId}, tab: ${tabId}`);
         if (targetView) {
             targetView.style.display = 'block';
+            console.log(`[Navigation] targetView found:`, targetView);
             // Forzar reflow para que la animación se dispare
             void targetView.offsetWidth;
             targetView.classList.add('active');
 
             // Soporte para sub-pestañas (V72.0)
             if (viewId === 'torneos' && tabId) {
+                console.log(`[Navigation] calling switchTorneosTab(${tabId})`);
                 this.switchTorneosTab(tabId);
             }
+        } else {
+            console.warn(`[Navigation] targetView NOT found for id: view-${viewId}`);
         }
 
         const titleMap = {
@@ -227,10 +232,13 @@ class FutAdminUI {
         });
 
         const targetContent = document.getElementById(`tab-${tabId}`);
+        console.log(`[Navigation] switchTorneosTab target: tab-${tabId}`, targetContent);
         if (targetContent) {
             targetContent.style.display = 'block';
             void targetContent.offsetWidth; // Force reflow
             targetContent.classList.add('active');
+        } else {
+            console.warn(`[Navigation] tab target NOT found for id: tab-${tabId}`);
         }
 
         if (tabId === 'torneos-lista') this.leagues.loadLeagues();

@@ -399,13 +399,20 @@ export class LeaguesModule {
 
     async loadLeagues(filterVenue = null) {
         const container = document.getElementById('leagues-container');
-        if (!container) return;
+        console.log(`[Leagues] loadLeagues called. Container:`, container);
+        if (!container) {
+            console.warn(`[Leagues] #leagues-container NOT found in DOM`);
+            return;
+        }
         container.innerHTML = '<p>Cargando torneos...</p>';
 
         try {
             const response = await Core.fetchAPI('/api/torneos?per_page=1000');
+            console.log(`[Leagues] fetchAPI response:`, response);
             const torneos = response.items || response;
             this.pagination = response.pagination || null;
+
+            // Poblar filtro de sedes... (resto del código igual)
 
             // Poblar filtro de sedes si está vacío (excluyendo la opción por defecto)
             const venueFilter = document.getElementById('league-venue-filter');
