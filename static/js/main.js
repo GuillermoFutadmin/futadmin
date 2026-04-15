@@ -179,6 +179,11 @@ class FutAdminUI {
             // Forzar reflow para que la animación se dispare
             void targetView.offsetWidth;
             targetView.classList.add('active');
+
+            // Soporte para sub-pestañas (V72.0)
+            if (viewId === 'torneos' && tabId) {
+                this.switchTorneosTab(tabId);
+            }
         }
 
         const titleMap = {
