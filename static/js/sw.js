@@ -1,4 +1,4 @@
-const CACHE_NAME = 'futadmin-v1';
+const CACHE_NAME = 'futadmin-v2';
 const ASSETS = [
   '/',
   '/static/css/style.css',
@@ -37,8 +37,8 @@ self.addEventListener('fetch', (event) => {
       return caches.match(event.request).then(response => {
         // Return match or a generic failure response if both fail
         return response || new Response('Network error occurred', {
-            status: 408,
-            headers: { 'Content-Type': 'text/plain' }
+          status: 408,
+          headers: { 'Content-Type': 'text/plain' }
         });
       });
     })
