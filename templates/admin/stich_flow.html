@@ -147,10 +147,13 @@
             flex: 1;
             background: #000;
             border-radius: 12px;
-            overflow: hidden;
+            overflow: auto;
+            /* Permitir scroll si es muy grande */
             display: flex;
-            align-items: center;
+            align-items: flex-start;
+            /* Alinear al inicio para mejor control del zoom */
             justify-content: center;
+            padding: 20px;
         }
 
         .footer-slim {
@@ -252,12 +255,19 @@
                         subgraph "Frontend Engine (React-Like)"
                         W1 & W2 & W3 & W4 -- "Load View" --> M["main.js Orquestador"]
                         M -- "Dispatch 'view-change'" --> BUS("EVENT BUS GLOBAL")
-                        BUS -- "Reactive Load" --> MODS["14+ Data Modules"]
+                        subgraph "14+ Data Modules (Lógica Independiente)"
+                        BUS --- LIG["Leagues"] & TEA["Teams"] & PLA["Players"]
+                        BUS --- FIN["Finance"] & ARB["Arbitros"] & CAN["Canchas"]
+                        BUS --- ENT["Training"] & ACAD["Academia"] & SET["Settings"]
+                        BUS --- MKT["Marketing"] & ANA["Analytics"] & PRI["Privacy"]
+                        BUS --- DASH["Dashboard"] & MAP["MapEngine"]
+                        end
                         end
 
-                        subgraph "Persistencia & Datos"
-                        MODS -- "SQLAlchemy Pool (5+10)" --> DB[("PostgreSQL Cluster")]
-                        MODS -- "FS Mount" --> VOL["/app/static/uploads"]
+                        subgraph "Capa de Persistencia"
+                        LIG & TEA & PLA & FIN & ARB & CAN & SET & DASH -- "SQLAlchemy Pool" --> DB[("PostgreSQL
+                        Cluster")]
+                        MKT & ACAD & ENT -- "FS Mount" --> VOL["/app/static/uploads"]
                         end
 
                         style B fill:#05080a,stroke:#3b82f6,stroke-width:2px
@@ -265,6 +275,9 @@
                         style BUS fill:#05080a,stroke:#00ff88,stroke-width:2px,stroke-dasharray: 5 5
                         style DB fill:#1a1a2e,stroke:#fbbf24,stroke-width:2px
                         style VOL fill:#1a1a2e,stroke:#ec4899,stroke-width:2px
+
+                        classDef mod fill:#0d1217,stroke:#64748b,stroke-width:1px,font-size:10px;
+                        class LIG,TEA,PLA,FIN,ARB,CAN,ENT,ACAD,SET,MKT,ANA,PRI,DASH,MAP mod
                     </div>
                 </div>
             </section>
@@ -320,7 +333,7 @@
             theme: 'dark',
             securityLevel: 'loose',
             flowchart: {
-                useMaxWidth: true,
+                useMaxWidth: false, /* Desactivar para permitir que crezca */
                 htmlLabels: true,
                 curve: 'basis'
             }
