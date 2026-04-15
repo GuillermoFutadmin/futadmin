@@ -54,6 +54,10 @@ class FutAdminUI {
 
         // Sensor Global del Logo (Pulsación de actividad)
         this.initLogoStatusSync();
+
+        // Inicializar Estado de Vista (V72.1: Hotfix persistencia)
+        const initialNavItem = document.querySelector('.nav-item[data-view="resumen"]');
+        this.switchView('resumen', null, initialNavItem);
     }
 
     /**
